@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 					object = elements[2];
 				}
 			}
-			int jump = 5;
+			int jump = 1;
 			int totalIterations = ((numVersions - 1) / jump) + 1; //-1 because we start in 0
 			for (int i = 0; i < totalIterations; i++) {
 				int versionQuery = 0; //always compare against the first version
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
 					}
 				}
 
-				double time = st.toMillis();
+				double time = st.stopReal() / 1000000;
 				times[i] = times[i] + time;
 				cout << "-- " << adds << " adds and " << dels << " dels, in "
 						<< time << " ms" << endl;

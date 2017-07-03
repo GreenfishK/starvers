@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
 				}
 			}
 
-			int jump = 5;
+			int jump = 1;
 			int totalIterations = ((numVersions - 1) / jump) + 1; //-1 because we start in 0
 			for (int i = 0; i < totalIterations; i++) {
 				int versionQuery = 1; //always compare against the first version=0, then we compare the changes with the next one, version=1
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
 					dels++;
 				}
 
-				double time = st.toMillis();
+				double time = st.stopReal() / 1000000;
 				times[i] = times[i] + time;
 				cout << "-- " << adds << " adds and " << dels << " dels, in "
 						<< time << " ms" << endl;

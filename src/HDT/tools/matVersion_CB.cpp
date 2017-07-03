@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
 						<< "------------" << endl;
 				int numResults = materializeQuery(i, HDTversions_add, subject,
 						predicate, object, HDTversions_del);
-				double time = st.toMillis();
+				double time = st.stopReal() / 1000000;
 				cout << numResults << " results in " << time << " ms" << endl;
 				times[i] = times[i] + time;
 

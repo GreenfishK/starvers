@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
 					numResults++;
 				}
 				delete it;
-				double time = st.toMillis();
+				double time = st.stopReal() / 1000000;
 				cout << numResults << " Results in " << time << " ms" << endl;
 				times[i] = times[i] + time;
 			}
