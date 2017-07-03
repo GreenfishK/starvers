@@ -255,7 +255,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 			ExecutionException, IOException {
 		ArrayList<Map<Integer, DiffSolution>> ret = new ArrayList<Map<Integer, DiffSolution>>();
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -553,7 +553,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 			vStats.put(i, new DescriptiveStatistics());
 		}
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		while ((line = br.readLine()) != null) {
 			String[] parts = line.split(" ");
 			// String element = parts[0]; //we take all parts in order to process all TP patterns
@@ -908,7 +908,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 		}
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		while ((line = br.readLine()) != null) {
 			Map<Integer, ArrayList<String>> AllSolutions = new HashMap<Integer, ArrayList<String>>();

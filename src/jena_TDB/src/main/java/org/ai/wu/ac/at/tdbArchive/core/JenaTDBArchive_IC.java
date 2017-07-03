@@ -217,7 +217,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				Query query = QueryFactory.create(queryString);
 				long startTime = System.currentTimeMillis();
 
-				if (!rol.equalsIgnoreCase("SPO"))
+				if (true || !rol.equalsIgnoreCase("SPO"))
 					solutions.put(i, materializeQuery(i, query));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
@@ -284,7 +284,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				Query query = QueryFactory.create(queryString);
 
 				ArrayList<String> sols;
-				if (!rol.equalsIgnoreCase("SPO")){
+				if (true || !rol.equalsIgnoreCase("SPO")){
 					sols = materializeQuery(i, query);
 				}
 				else
@@ -512,7 +512,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 
 				Set<TaskThread> a = new HashSet<TaskThread>();
 
-				Boolean askQuery = rol.equalsIgnoreCase("SPO");
+				Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 				TaskThread taskStart = new TaskThread(query, datasets.get(versionQuery), versionQuery, resultStart, askQuery);
 				TaskThread taskEnd = new TaskThread(query, datasets.get(postversionQuery), postversionQuery, resultEnd, askQuery);
@@ -722,7 +722,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			/**
 			 * START PARALELL
 			 */
-			Boolean askQuery = rol.equalsIgnoreCase("SPO");
+			Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 			Collection<Callable<QueryResult>> tasks = new ArrayList<Callable<QueryResult>>();
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				tasks.add(new TaskCallable(query, datasets.get(i), i, true, askQuery));

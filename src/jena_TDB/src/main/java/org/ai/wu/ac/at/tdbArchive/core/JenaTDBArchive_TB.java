@@ -110,6 +110,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// System.out.println("numVersions:" + numVersions);
 			TOTALVERSIONS = Integer.parseInt(numVersions);
 		}
+        TOTALVERSIONS=10; // TODO
 		 //System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
 	}
 
@@ -233,7 +234,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line = "";
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
@@ -268,7 +269,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 					postversionQuery = Math.min((index + 1) * jump, TOTALVERSIONS - 1);
 					versionQuery = 0;
 				}
-				// System.out.println("versionQuery:" + versionQuery + " ; postQuery:" + postversionQuery);
+				System.out.println("versionQuery:" + versionQuery + " ; postQuery:" + postversionQuery);
 
 				String queryStringStart = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, versionQuery, metadataVersions);
 				String queryStringEnd = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, postversionQuery, metadataVersions);
@@ -466,7 +467,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			vStats.put(i, new DescriptiveStatistics());
 		}
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		int lines = 0;
 		while ((line = br.readLine()) != null) {
@@ -673,7 +674,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line = "";
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {

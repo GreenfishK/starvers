@@ -257,7 +257,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 			vStats.put(i, new DescriptiveStatistics());
 		}
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
@@ -309,6 +309,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 					soln = sortResults.next();
 					// assume we have a graph variable as a response
 					String graphResponse = soln.getResource("graph").toString();
+                    if (!graphResponse.contains(prefixGraphsVersions)) break;
 					String versionSuffix = graphResponse.split(prefixGraphsVersions)[1];
 					int versionFull = Integer.parseInt(versionSuffix);
 					// System.out.println("versionFull:"+versionFull);
@@ -484,7 +485,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		while ((line = br.readLine()) != null) {
 
 			String[] parts = line.split(" ");
@@ -558,6 +559,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 			// assume we have a graph variable as a response
 			String graphResponse = soln.getResource("graph").toString();
 			// System.out.println("--graphResponse:" + graphResponse);
+            if (!graphResponse.contains(prefixGraphsVersions)) break;
 			String versionSuffix = graphResponse.split(prefixGraphsVersions)[1];
 			// System.out.println("--versionSuffix:" + versionSuffix);
 			int versionFull = Integer.parseInt(versionSuffix);
@@ -615,6 +617,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 			// System.out.println(soln);
 			// assume we have a graph variable as a response
 			String graphResponse = soln.getResource("graph").toString();
+            if (!graphResponse.contains(prefixGraphsVersions)) break;
 			// System.out.println("--graphResponse:" + graphResponse);
 			String versionSuffix = graphResponse.split(prefixGraphsVersions)[1];
 			// System.out.println("--versionSuffix:" + versionSuffix);
@@ -797,7 +800,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 		}
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		while ((line = br.readLine()) != null) {
 			Map<Integer, ArrayList<String>> AllSolutions = new HashMap<Integer, ArrayList<String>>();
@@ -830,6 +833,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 				// assume we have a graph variable as a response
 				String graphResponse = soln.getResource("graph").toString();
 				// System.out.println("--graphResponse:" + graphResponse);
+                if (!graphResponse.contains(prefixGraphsVersions)) break;
 				String versionSuffix = graphResponse.split(prefixGraphsVersions)[1];
 				// System.out.println("--versionSuffix:" + versionSuffix);
 				int versionFull = Integer.parseInt(versionSuffix);

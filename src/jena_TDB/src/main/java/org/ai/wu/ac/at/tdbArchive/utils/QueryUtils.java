@@ -102,7 +102,7 @@ public final class QueryUtils {
 				predicate = "<" + predicate + ">";
 			if (object.startsWith("http"))
 				object = "<" + object + ">";
-			queryString = "ASK WHERE { "+subject+" "+predicate+ " " +object+" . }";
+			queryString = "SELECT * WHERE { "+subject+" "+predicate+ " " +object+" . }";
 		}
 		else{ //if (qtype==QueryRol.ALL){
 		
@@ -361,7 +361,7 @@ public final class QueryUtils {
 				predicate = "<" + predicate + ">";
 			if (object.startsWith("http"))
 				object = "<" + object + ">";
-			queryString = "ASK WHERE { "+graphWHERE + "GRAPH ?graph{ "+subject+" "+predicate+" "+object+" ."+"} }";
+			queryString = "SELECT * WHERE { "+graphWHERE + "GRAPH ?graph{ "+subject+" "+predicate+" "+object+" ."+"} }";
 		}
 		else{ //if (qtype==QueryRol.ALL){
 		

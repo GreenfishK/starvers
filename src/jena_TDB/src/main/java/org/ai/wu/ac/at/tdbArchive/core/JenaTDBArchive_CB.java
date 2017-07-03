@@ -225,7 +225,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		while ((line = br.readLine()) != null) {
 			Map<Integer, DiffSolution> solutions = new HashMap<Integer, DiffSolution>();
@@ -471,7 +471,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 			vStats.put(i, new DescriptiveStatistics());
 		}
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		while ((line = br.readLine()) != null) {
 			String[] parts = line.split(" ");
@@ -752,7 +752,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 		}
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO");
+		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
 		while ((line = br.readLine()) != null) {
 			Map<Integer, ArrayList<String>> AllSolutions = new HashMap<Integer, ArrayList<String>>();
