@@ -11,10 +11,12 @@ ENV CATEGORY mat
 ENV QUERY subjectLookup/queries-sel-10-e0.2.txt
 
 CMD java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query \
+    -e 9 \
+    -j 1 \
     -p $POLICY \
     -d /var/data/dataset/$POLICY \
     -r $ROLE \
     -c $CATEGORY \
     -a /var/data/queries/$QUERY \
-    -t /var/data/output/time-$(echo $QUERY | sed "s/\//-/g").txt
+    -t /var/data/output/time-$POLICY-$CATEGORY-$(echo $QUERY | sed "s/\//-/g").txt
 
