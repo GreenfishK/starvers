@@ -36,6 +36,15 @@ vector<string> split(const string& str, const string& delim) {
 	} while (pos < str.length() && prev < str.length());
 	return tokens;
 }
+string remove_brackets(string element) {
+    if (element.at(0) == '<') {
+        return element.substr(1, element.size() - 2);
+    }
+    if (element.at(0) == '?') {
+        return "";
+    }
+    return element;
+}
 int main(int argc, char *argv[]) {
 
 	int c;
@@ -179,6 +188,9 @@ int main(int argc, char *argv[]) {
 					object = elements[2];
 				}
 			}
+            subject = remove_brackets(subject);
+            predicate = remove_brackets(predicate);
+            object = remove_brackets(object);
 
 			StopWatch st;
 			int numResults = 0;
@@ -196,7 +208,7 @@ int main(int argc, char *argv[]) {
 				delete it;
 
 			}
-			double time = st.stopReal() / 1000000;
+			double time = (double) st.stopReal() / 1000;
 			totalTime += time;
 			cout << numResults << " results in " << time << " ms" << endl;
 			num_queries++;

@@ -6,6 +6,15 @@ ADD make-all.sh /tmp/make-all.sh
 RUN mkdir /opt/bear
 RUN cd /opt/hdt/hdt-lib && /tmp/make-all.sh
 
+ENV POLICY ic
+ENV CATEGORY mat
+ENV QUERY subjectLookup/queries-sel-10-e0.2.txt
+
 WORKDIR /opt/bear
-CMD /opt/bear/query-ic-mat
+CMD /opt/bear/query-$POLICY-$CATEGORY \
+    -d /var/data/dataset/$POLICY/ \
+    -l 1298 \
+    -t spo \
+    -i /var/data/queries/$QUERY\
+    -o /var/data/output/time-hdt-$POLICY-$CATEGORY-$(echo $QUERY | sed "s/\//-/g").txt
 

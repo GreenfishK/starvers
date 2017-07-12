@@ -40,6 +40,16 @@ vector<string> split(const string& str, const string& delim) {
 	return tokens;
 }
 
+string remove_brackets(string element) {
+    if (element.at(0) == '<') {
+        return element.substr(1, element.size() - 2);
+    }
+    if (element.at(0) == '?') {
+        return "";
+    }
+    return element;
+}
+
 int materializeQuery(int staticVersionQuery,
 		const vector<HDT*>& HDTversions_add, const string& subject,
 		const string& predicate, const string& object,
@@ -264,13 +274,16 @@ int main(int argc, char *argv[]) {
 					object = elements[2];
 				}
 			}
+            subject = remove_brackets(subject);
+            predicate = remove_brackets(predicate);
+            object = remove_brackets(object);
 			for (int i = 0; i < numVersions; i++) {
 				StopWatch st;
 				cout << endl << endl << "-------- QUERY AT VERSION " << i
 						<< "------------" << endl;
 				int numResults = materializeQuery(i, HDTversions_add, subject,
 						predicate, object, HDTversions_del);
-				double time = st.stopReal() / 1000000;
+				double time = (double) st.stopReal() / 1000;
 				cout << numResults << " results in " << time << " ms" << endl;
 				times[i] = times[i] + time;
 
@@ -283,7 +296,7 @@ int main(int argc, char *argv[]) {
 	//compute mean of queries
 	*out << "<version>,<mean_time>,<total>" << endl;
 	for (int i = 0; i < numVersions; i++) {
-		*out << (i + 1) << "," << times[i] / num_queries <<","<<times[i] << endl;
+		*out << (i) << "," << times[i] / num_queries <<","<<times[i] << endl;
 	}
 
 	for (int i = 0; i < numVersions; i++) {
