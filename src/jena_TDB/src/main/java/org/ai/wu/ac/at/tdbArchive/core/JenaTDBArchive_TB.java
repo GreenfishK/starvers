@@ -273,6 +273,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 				String queryStringStart = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, versionQuery, metadataVersions);
 				String queryStringEnd = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, postversionQuery, metadataVersions);
+                int limit = QueryUtils.getLimit(parts);
 				long startTime = System.currentTimeMillis();
 				QueryExecution qexecStart = QueryExecutionFactory.create(queryStringStart, dataset);
 				QueryExecution qexecEnd = QueryExecutionFactory.create(queryStringEnd, dataset);
@@ -282,7 +283,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 					ResultSet resultsStart = qexecStart.execSelect();
 
 					QuerySolution soln = null;
-					while (resultsStart.hasNext()) {
+					while (resultsStart.hasNext() && limit-- > 0) {
 						soln = resultsStart.next();
 						String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
 						// System.out.println("solutionStart: "+rowResult);
@@ -291,7 +292,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 					ResultSet resultsEnd = qexecEnd.execSelect();
 
-					while (resultsEnd.hasNext()) {
+					while (resultsEnd.hasNext() && limit-- > 0) {
 						soln = resultsEnd.next();
 						String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
 						// System.out.println("solutionEnd: "+rowResult);
@@ -368,7 +369,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		Query query = QueryFactory.create(queryString);
 		long startTime = System.currentTimeMillis();
 
-		ArrayList<String> ret = materializeQuery(version, query);
+		ArrayList<String> ret = materializeQuery(version, query, Integer.MAX_VALUE);
 
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
@@ -420,7 +421,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			Query query = QueryFactory.create(queryString);
 			long startTime = System.currentTimeMillis();
 
-			ret.add(materializeQuery(staticVersionQuery, query));
+			ret.add(materializeQuery(staticVersionQuery, query, Integer.MAX_VALUE));
 
 			long endTime = System.currentTimeMillis();
 			// System.out.println("Time:" + (endTime - startTime));
@@ -487,10 +488,11 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				// System.out.println("\n Query at version " + i);
 				long startTime = System.currentTimeMillis();
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
+                int limit = QueryUtils.getLimit(parts);
 				// System.out.println(queryString);
 				Query query = QueryFactory.create(queryString);
-				if (!askQuery)
-					solutions.put(i, materializeQuery(i, query));
+				if (true || !askQuery)
+					solutions.put(i, materializeQuery(i, query, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
@@ -522,7 +524,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @param query
 	 * @return
 	 */
-	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
+	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit) throws InterruptedException, ExecutionException {
 		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
 		ArrayList<String> ret = new ArrayList<String>();
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
@@ -533,7 +535,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		// Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
 
-		while (results.hasNext() && !higherVersion) {
+		while (results.hasNext() && !higherVersion && limit-- > 0) {
 			// numRows++;
 			QuerySolution soln = results.next();
 
@@ -695,6 +697,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// String element = parts[0];
 
 			String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, metadataVersions);
+            int limit = QueryUtils.getLimit(parts);
 
 			System.out.println("the queryString: " + queryString);
 			Query query = QueryFactory.create(queryString);
@@ -703,7 +706,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 
 			ResultSet results = qexec.execSelect();
-			while (results.hasNext()) {
+			while (results.hasNext() && limit-- > 0) {
 				System.out.println("SOLUTION");
 				QuerySolution soln = results.next();
 				// assume we have a graph variable as a response

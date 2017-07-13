@@ -497,4 +497,11 @@ public final class QueryUtils {
 		return rowResult.trim();
 	}
 
+    public static final int getLimit(String[] terms) {
+        if (terms.length > 4) {
+            return Integer.parseInt(terms[3]) + Integer.parseInt(terms[4]);
+        }
+        return Integer.MAX_VALUE;
+    }
+
 }

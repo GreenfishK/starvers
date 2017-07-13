@@ -98,7 +98,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 
 		long startTime = System.currentTimeMillis();
 
-		ArrayList<String> ret = materializeQuery(version, query);
+		ArrayList<String> ret = materializeQuery(version, query, Integer.MAX_VALUE);
 
 		long endTime = System.currentTimeMillis();
 
@@ -152,7 +152,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			long startTime = System.currentTimeMillis();
 			Query query = QueryFactory.create(queryString);
 
-			ret.add(materializeQuery(staticVersionQuery, query));
+			ret.add(materializeQuery(staticVersionQuery, query, Integer.MAX_VALUE));
 
 			long endTime = System.currentTimeMillis();
 			// system.out.println("Time:" + (endTime - startTime));
@@ -209,6 +209,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			warmup();
 
 			String queryString = QueryUtils.createLookupQuery(rol, parts);
+            int limit = QueryUtils.getLimit(parts);
 			//System.out.println("queryString:" + queryString);
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			for (int i = 0; i < TOTALVERSIONS; i++) {
@@ -218,7 +219,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				long startTime = System.currentTimeMillis();
 
 				if (true || !rol.equalsIgnoreCase("SPO"))
-					solutions.put(i, materializeQuery(i, query));
+					solutions.put(i, materializeQuery(i, query, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 
@@ -285,7 +286,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 
 				ArrayList<String> sols;
 				if (true || !rol.equalsIgnoreCase("SPO")){
-					sols = materializeQuery(i, query);
+					sols = materializeQuery(i, query, Integer.MAX_VALUE);
 				}
 				else
 					sols= materializeASKQuery(i, query);
@@ -305,7 +306,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 		return ret;
 	}
 
-	private ArrayList<String> materializeQuery(int version, Query query) throws InterruptedException, ExecutionException {
+	private ArrayList<String> materializeQuery(int version, Query query, int limit) throws InterruptedException, ExecutionException {
 
 		ArrayList<String> ret = new ArrayList<String>();
 
@@ -315,7 +316,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 		//System.out.println(query);
 		// System.out.println("Version:" + version);
 
-		while (results.hasNext()) {
+		while (results.hasNext() && limit-- > 0) {
 			QuerySolution soln = results.next();
 			String rowResult = QueryUtils.serializeSolution(soln);
 			ret.add(rowResult);
@@ -500,6 +501,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				String queryString = QueryUtils.createLookupQuery(rol, parts);
 				//System.out.println("queryString:" + queryString);
 				Query query = QueryFactory.create(queryString);
+                int limit = QueryUtils.getLimit(parts);
 
 				long startTime = System.currentTimeMillis();
 
@@ -536,7 +538,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				HashSet<String> finalResultsStart = new HashSet<String>();
 				HashSet<String> finalResultsEnd = new HashSet<String>();
 				if (!askQuery) {
-					while (resultStart.get(versionQuery).getSol().hasNext()) {
+					while (resultStart.get(versionQuery).getSol().hasNext() && limit-- > 0) {
 						QuerySolution soln = resultStart.get(versionQuery).getSol().next();
 						String rowResult = QueryUtils.serializeSolution(soln);
 
@@ -544,7 +546,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 						//System.out.println("start:" + rowResult);
 
 					}
-					while (resultEnd.get(postversionQuery).getSol().hasNext()) {
+					while (resultEnd.get(postversionQuery).getSol().hasNext() && limit-- > 0) {
 						QuerySolution soln = resultEnd.get(postversionQuery).getSol().next();
 						String rowResult = QueryUtils.serializeSolution(soln);
 
@@ -715,6 +717,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			warmup();
 
 			String queryString = QueryUtils.createLookupQuery(rol, parts);
+            int limit = QueryUtils.getLimit(parts);
 			Query query = QueryFactory.create(queryString);
 
 			long startTime = System.currentTimeMillis();
@@ -740,7 +743,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 				// system.out.println("version:" + res.version);
 				// System.out.println("version:" + res.sol.hasNext());
 				if (!askQuery) {
-					while (res.getSol().hasNext()) {
+					while (res.getSol().hasNext() && limit-- > 0) {
 						QuerySolution soln = res.getSol().next();
 						String rowResult = QueryUtils.serializeSolution(soln);
 						// system.out.println("rowResult:" + rowResult);
