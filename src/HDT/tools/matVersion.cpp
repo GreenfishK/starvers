@@ -165,6 +165,7 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
+            int results = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -187,17 +188,21 @@ int main(int argc, char *argv[]) {
 					predicate = elements[1];
 					object = elements[2];
 				}
+                if (elements.size() > 4) {
+                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                }
 			}
             subject = remove_brackets(subject);
             predicate = remove_brackets(predicate);
             object = remove_brackets(object);
 
-			for (int i = 0; i < numVersions; i++) {
+            for (int i = 0; i < numVersions; i++) {
 				StopWatch st;
 				IteratorTripleString *it = HDTversions[i]->search(
 						subject.c_str(), predicate.c_str(), object.c_str());
 				int numResults = 0;
-				while (it->hasNext()) {
+                int c_results = results;
+				while (it->hasNext() && (c_results == -2 || c_results-- > 0)) {
 					TripleString *triple = it->next();
 					//cout << "Result: " << triple->getSubject() << ", " << triple->getPredicate() << ", " << triple->getObject() << endl;
 					numResults++;

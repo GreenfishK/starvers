@@ -167,6 +167,7 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
+            int results = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -189,6 +190,9 @@ int main(int argc, char *argv[]) {
 					predicate = elements[1];
 					object = elements[2];
 				}
+                if (elements.size() > 4) {
+                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                }
 			}
             subject = remove_brackets(subject);
             predicate = remove_brackets(predicate);
@@ -196,6 +200,7 @@ int main(int argc, char *argv[]) {
 			int jump = 1;
 			int totalIterations = ((numVersions - 1) / jump) + 1; //-1 because we start in 0
 			for (int i = 0; i < totalIterations; i++) {
+                int c_results = results;
 				int versionQuery = 0; //always compare against the first version
 				int postversionQuery = min((i + 1) * jump, numVersions) - 1;
 				cout << "diff between " << versionQuery << " "
@@ -214,7 +219,7 @@ int main(int argc, char *argv[]) {
 				set<string> results2;
 				//cout<<"iterating results"<<endl;
 				int countResults1 = 0;
-				while (it1->hasNext()) {
+				while (it1->hasNext() && (c_results == -2 || c_results-- > 0)) {
 					TripleString *triple1 = it1->next();
 					results1.insert(
 							triple1->getSubject() + " "
@@ -225,7 +230,7 @@ int main(int argc, char *argv[]) {
 				delete it1;
 				//cout<<"inserted results1:"<<countResults1<<endl;
 				int countResults2 = 0;
-				while (it2->hasNext()) {
+				while (it2->hasNext() && (c_results == -2 || c_results-- > 0)) {
 					TripleString *triple2 = it2->next();
 					results2.insert(
 							triple2->getSubject() + " "

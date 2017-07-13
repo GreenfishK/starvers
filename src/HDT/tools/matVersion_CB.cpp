@@ -53,7 +53,7 @@ string remove_brackets(string element) {
 int materializeQuery(int staticVersionQuery,
 		const vector<HDT*>& HDTversions_add, const string& subject,
 		const string& predicate, const string& object,
-		const vector<HDT*>& HDTversions_del) {
+		const vector<HDT*>& HDTversions_del, int c_results) {
 	set<string> results;
 	//this should be in parallel but we do it sequential because is very fast so far
 
@@ -72,6 +72,7 @@ int materializeQuery(int staticVersionQuery,
 		}
 		//cout << numResults << " results inserted" << endl;
 		delete it_add;
+
 		//cout << "search del in i=" << i << endl;
 		//FIXME patch error on empty HDTs
 		//if (i != 0 && i != 30) {
@@ -79,7 +80,7 @@ int materializeQuery(int staticVersionQuery,
 			IteratorTripleString* it_del = HDTversions_del[i]->search(
 					subject.c_str(), predicate.c_str(), object.c_str());
 
-			while (it_del->hasNext()) {
+			while (it_del->hasNext() && (c_results == -2 || c_results-- > 0)) {
 				TripleString* tripledel = it_del->next();
 				//cout << "Result: " << triple->getSubject() << ", " << triple->getPredicate() << ", " << triple->getObject() << endl;
 				int erased = results.erase(
@@ -94,7 +95,7 @@ int materializeQuery(int staticVersionQuery,
 		//cout << numResults << " results after deletion" << endl;
 	}
 	int numResults = 0;
-	for (std::set<string>::iterator it = results.begin(); it != results.end();
+	for (std::set<string>::iterator it = results.begin(); it != results.end() && (c_results == -2 || c_results-- > 0);
 			++it) {
 		numResults++;
 	}
@@ -251,6 +252,7 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
+            int results = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -273,6 +275,9 @@ int main(int argc, char *argv[]) {
 					predicate = elements[1];
 					object = elements[2];
 				}
+                if (elements.size() > 4) {
+                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                }
 			}
             subject = remove_brackets(subject);
             predicate = remove_brackets(predicate);
@@ -282,7 +287,7 @@ int main(int argc, char *argv[]) {
 				cout << endl << endl << "-------- QUERY AT VERSION " << i
 						<< "------------" << endl;
 				int numResults = materializeQuery(i, HDTversions_add, subject,
-						predicate, object, HDTversions_del);
+						predicate, object, HDTversions_del, results);
 				double time = (double) st.stopReal() / 1000;
 				cout << numResults << " results in " << time << " ms" << endl;
 				times[i] = times[i] + time;

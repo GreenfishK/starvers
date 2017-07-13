@@ -49,7 +49,7 @@ string remove_brackets(string element) {
 }
 int verQuery(int numVersions, const vector<HDT*>& HDTversions_add,
 		const string& subject, const string& predicate, const string& object,
-		const vector<HDT*>& HDTversions_del) {
+		const vector<HDT*>& HDTversions_del, int c_results) {
 	set<string> results;
 	//this should be in parallel but we do it sequential because is very fast so far
 
@@ -92,10 +92,14 @@ int verQuery(int numVersions, const vector<HDT*>& HDTversions_add,
 
 		//iterate to show the results at version i
 		for (std::set<string>::iterator it = results.begin();
-				it != results.end(); ++it) {
+				it != results.end() && (c_results == -2 || c_results-- > 0); ++it) {
 			numResults++;
 		}
 		//cout << numResults << " results after deletion" << endl;
+
+        if (c_results == -1) {
+            break;
+        }
 	}
 
 	return numResults;
@@ -251,6 +255,7 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
+            int results = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -273,6 +278,9 @@ int main(int argc, char *argv[]) {
 					predicate = elements[1];
 					object = elements[2];
 				}
+                if (elements.size() > 4) {
+                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                }
 			}
             subject = remove_brackets(subject);
             predicate = remove_brackets(predicate);
@@ -281,7 +289,7 @@ int main(int argc, char *argv[]) {
 			StopWatch st;
 
 			numResults += verQuery(numVersions, HDTversions_add, subject,
-					predicate, object, HDTversions_del);
+					predicate, object, HDTversions_del, results);
 
 			double time = (double) st.stopReal() / 1000;
 			cout << numResults << " results in " << time << " ms" << endl;

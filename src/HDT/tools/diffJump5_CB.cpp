@@ -197,6 +197,7 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
+            int results = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -219,6 +220,9 @@ int main(int argc, char *argv[]) {
 					predicate = elements[1];
 					object = elements[2];
 				}
+                if (elements.size() > 4) {
+                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                }
 			}
             subject = remove_brackets(subject);
             predicate = remove_brackets(predicate);
@@ -227,6 +231,7 @@ int main(int argc, char *argv[]) {
 			int jump = 1;
 			int totalIterations = ((numVersions - 1) / jump) + 1; //-1 because we start in 0
 			for (int i = 0; i < totalIterations; i++) {
+                int c_results = results;
 				int versionQuery = 1; //always compare against the first version=0, then we compare the changes with the next one, version=1
 				int postversionQuery = min((i + 1) * jump, numVersions) - 1;
 				cout << "diff between " << versionQuery-1 << " "
@@ -281,13 +286,15 @@ int main(int argc, char *argv[]) {
 				//cout<<"results1 size:"<<results1.size()<<endl;
 				//cout<<"results2 size:"<<results2.size()<<endl;
 				for (std::set<string>::iterator it = results_add.begin();
-						it != results_add.end(); ++it) {
+						it != results_add.end() && (c_results == -2 || c_results-- > 0); ++it) {
 					adds++;
 				}
+                if (c_results == -2 || c_results > 0) {
 				for (std::set<string>::iterator it = results_del.begin();
-						it != results_del.end(); ++it) {
+						it != results_del.end() && (c_results == -2 || c_results-- > 0); ++it) {
 					dels++;
 				}
+                }
 
 				double time = (double) st.stopReal() / 1000;
 				times[i] = times[i] + time;
