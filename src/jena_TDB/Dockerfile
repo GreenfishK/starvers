@@ -9,9 +9,9 @@ ENV POLICY ic
 ENV ROLE s
 ENV CATEGORY mat
 ENV QUERY subjectLookup/queries-sel-10-e0.2.txt
-
+# -e 1298
 CMD java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query \
-    -e 9 \
+    -e 89 \
     -j 1 \
     -p $POLICY \
     -d /var/data/dataset/$POLICY \

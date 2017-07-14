@@ -110,7 +110,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// System.out.println("numVersions:" + numVersions);
 			TOTALVERSIONS = Integer.parseInt(numVersions);
 		}
-        TOTALVERSIONS=10; // TODO
+//TOTALVERSIONS=10; // TODO
 		 //System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
 	}
 

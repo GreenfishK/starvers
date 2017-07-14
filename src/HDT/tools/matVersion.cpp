@@ -165,7 +165,8 @@ int main(int argc, char *argv[]) {
 		if (pos != std::string::npos) {
 			string query = linea.substr(0, pos);
 			string subject = "", predicate = "", object = "";
-            int results = -2;
+            int offset = -2;
+            int limit = -2;
 			if (type == "s") {
 				subject = query;
 			} else if (type == "p") {
@@ -189,7 +190,8 @@ int main(int argc, char *argv[]) {
 					object = elements[2];
 				}
                 if (elements.size() > 4) {
-                    results = atoi((char*) elements[3].c_str()) + atoi((char*) elements[4].c_str());
+                    offset = atoi((char*) elements[3].c_str());
+                    limit = atoi((char*) elements[4].c_str());
                 }
 			}
             subject = remove_brackets(subject);
@@ -198,16 +200,42 @@ int main(int argc, char *argv[]) {
 
             for (int i = 0; i < numVersions; i++) {
 				StopWatch st;
-				IteratorTripleString *it = HDTversions[i]->search(
-						subject.c_str(), predicate.c_str(), object.c_str());
-				int numResults = 0;
-                int c_results = results;
-				while (it->hasNext() && (c_results == -2 || c_results-- > 0)) {
-					TripleString *triple = it->next();
-					//cout << "Result: " << triple->getSubject() << ", " << triple->getPredicate() << ", " << triple->getObject() << endl;
-					numResults++;
-				}
-				delete it;
+                int numResults = 0;
+                if (offset > 0 || limit > 0) {
+                    Dictionary *dict = HDTversions[i]->getDictionary();
+                    TripleString tripleString(subject.c_str(), predicate.c_str(), object.c_str());
+                    TripleID tripleId;
+                    dict->tripleStringtoTripleID(tripleString, tripleId);
+                    IteratorTripleID *it = HDTversions[i]->getTriples()->search(tripleId);
+                    int c_offset = offset;
+                    if (c_offset > 0) {
+                        if (it->canGoTo()) {
+                            try {
+                                it->goTo(c_offset);
+                                offset = 0;
+                            } catch (char const* error) {}
+                        }
+                        while(c_offset-- > 0 && it->hasNext()) it->next();
+                    }
+                    int c_limit = limit;
+                    while (it->hasNext() && (c_limit == -2 || c_limit-- > 0)) {
+                        TripleID *triple = it->next();
+                        TripleString ts;
+                        dict->tripleIDtoTripleString(*triple, ts);
+                        //cout << "Result: " << triple->getSubject() << ", " << triple->getPredicate() << ", " << triple->getObject() << endl;
+                        numResults++;
+                    }
+                    delete it;
+                } else {
+                    IteratorTripleString *it = HDTversions[i]->search(
+                                        subject.c_str(), predicate.c_str(), object.c_str());
+                    while (it->hasNext()) {
+                            TripleString *triple = it->next();
+                            //cout << "Result: " << triple->getSubject() << ", " << triple->getPredicate() << ", " << triple->getObject() << endl;
+                          numResults++;
+                    }
+                    delete it;
+                }
 				double time = (double) st.stopReal() / 1000;
 				cout << numResults << " Results in " << time << " ms" << endl;
 				times[i] = times[i] + time;
