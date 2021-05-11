@@ -1,16 +1,13 @@
-﻿# Compile
+[This](README_ORIG.md) was the original README.
 
-Please compile and execute the tools with the HDT-C++ library: https://github.com/rdfhdt/hdt-cpp
+# Reproducing experiments on HDT
 
-# Run Queries
+## Prerequisites
 
- - Run each tool with the following arguments:
+Have [docker](https://docs.docker.com/get-docker/) installed. At time of writing, version `Docker version 20.10.6, build 370c289` was used on Ubuntu 18.04.
 
-| Argument      | Result      |
-| ------------- |-------------|
-| -d `<arg>`              | DIR to load the HDT versions|
-| -h                      |Shows help|
-| -i `<arg>`              | Input SPARQL query to process|
-| -l `<arg>`              |Limit up to the *number* of versions|
-| -o `<arg>`              | Output file with Results|
-| -t `<arg>`              | Type of query: subject (s) &#124; predicate (p) &#124; object (o)|
+## Create docker
+
+```sh
+docker build -t bear-hdt .
+```

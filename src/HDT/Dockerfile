@@ -4,6 +4,8 @@ ADD tools /tmp/tools
 ADD make-all.sh /tmp/make-all.sh
 
 RUN mkdir /opt/bear
+# next line tackles changes to rfdhdt/hdt-cpp
+RUN ln -s /usr/local/src/hdt-cpp /opt/hdt
 RUN cd /opt/hdt/hdt-lib && /tmp/make-all.sh
 
 ENV POLICY ic
