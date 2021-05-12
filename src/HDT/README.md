@@ -9,6 +9,7 @@ Execute all commands shown below in this directory of a working copy cloned from
 ### Docker
 
 Have [docker](https://docs.docker.com/get-docker/) installed and [get access as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
+If the latter is not possible, prefix docker commands and scripts calling docker commands with `sudo`.
 
 ## Create docker image
 
@@ -38,7 +39,7 @@ mkdir -p /mnt/datastore/data/dslab/experimental/patch
 rsync -rtv donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt /mnt/datastore/data/dslab/experimental/patch
 rsync -rtv donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb /mnt/datastore/data/dslab/experimental/patch/BEAR
 # fix the data for HDT
-find /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt -iname '*.index' -delete
+sudo find /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt -iname '*.index' -delete
 ```
 
 
