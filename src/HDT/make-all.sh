@@ -11,13 +11,15 @@ for policy in ${policies[@]}; do
 cati=0
 for category in ${categories[@]}; do
 g++ -std=gnu++11 \
-    -L/opt/hdt/hdt-lib/ \
-    -L/opt/hdt/libcds-v1.0.12/lib/ \
+    -L${HDT_LIBDIR} \
+    -L${CDS_LIBDIR} \
     -I include \
     -o /opt/bear/query-$policy-$category \
     /tmp/tools/${categoriesnames[$cati]}${policiesnames[$poli]}.cpp \
+    -Wl,-Bstatic \
     -lhdt \
     -lcds \
+    -Wl,-Bdynamic \
     -lz \
     -lraptor2 \
     -lserd-0
