@@ -9,7 +9,6 @@ Execute all commands shown below in this directory of a working copy cloned from
 ### Docker
 
 Have [docker](https://docs.docker.com/get-docker/) installed and [get access as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
-If the latter is not possible, prefix docker commands and scripts calling docker commands with `sudo`.
 
 ## Create docker image
 
@@ -52,6 +51,7 @@ sudo find /mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt -iname '*.
 
 ## Run the experiments
 
+Note - on the server you may want to do this in a **screen** session.
 ```sh
 ./run-docker.sh beara && ./run-docker.sh bearb-day && ./run-docker.sh bearb-hour
 ```
