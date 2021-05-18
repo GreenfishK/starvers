@@ -17,34 +17,41 @@ If the latter is not possible, prefix docker commands and scripts calling docker
 docker build -t bear-hdt .
 ```
 
-## Put the BEAR data and queries in place
+## Put the data and queries in place
 
-Script `run-docker.sh` assumes:
-
-| item | available in local directory |
-| ---- | ---------------------------- |
-| data | `/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/` |
-| queries | `/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/` |
-| output | `/mnt/datastore/data/dslab/experimental/patch/output/` |
+This step is needed to run locally. When running on server donizetti.labnet, the data is already there.
 
 **TODO: Document how to create input, starting from [the BEAR documentation](https://aic.ai.wu.ac.at/qadlod/bear.html).**
 
-Temporary workaround:
+See the script `run-docker.sh` to find out which data and queries are used for which experiment.
+
 ```sh
 # create directories
 sudo mkdir /mnt/datastore
 sudo chmod 777 /mnt/datastore/
 mkdir -p /mnt/datastore/data/dslab/experimental/patch
-# copy data from where it was created earlier
-rsync -rtv donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt /mnt/datastore/data/dslab/experimental/patch
-rsync -rtv donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb /mnt/datastore/data/dslab/experimental/patch/BEAR
-# fix the data for HDT
-sudo find /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt -iname '*.index' -delete
+# copy data
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/beara-hdt/cb /mnt/datastore/data/dslab/experimental/patch/beara-hdt
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/beara-hdt/ic /mnt/datastore/data/dslab/experimental/patch/beara-hdt
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/cb /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/ic /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt/cb /mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt/ic /mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt
+# copy queries
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_new /mnt/datastore/data/dslab/experimental/patch/BEAR
+rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb /mnt/datastore/data/dslab/experimental/patch/BEAR
 ```
 
-
-## Run the experiment
+## Delete possible index files from previous runs
 
 ```sh
-./run-docker.sh
+sudo find /mnt/datastore/data/dslab/experimental/patch/beara-hdt -iname '*.index' -delete
+sudo find /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt -iname '*.index' -delete
+sudo find /mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt -iname '*.index' -delete
+```
+
+## Run the experiments
+
+```sh
+./run-docker.sh beara && ./run-docker.sh bearb-day && ./run-docker.sh bearb-hour
 ```

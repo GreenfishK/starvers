@@ -1,29 +1,63 @@
 #!/bin/bash
 
+case "$1" in
+  beara)
+    datasetdir=/mnt/datastore/data/dslab/experimental/patch/beara-hdt/
+    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_new/
+    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/beara/
+    limit=10
+    ;;
+  bearb-day)
+    datasetdir=/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/
+    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
+    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-day/
+    limit=88
+    ;;
+  bearb-hour)
+    datasetdir=/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt/
+    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
+    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-hour/
+    limit=1298
+    ;;
+  *)
+    echo "Usage: $0 {beara|bearb-day|bearb-hour}"
+    exit 2
+    ;;
+esac
+
 policies="ic cb"
 categories="mat diff ver"
-queries=$(cd /mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/ && ls -v)
+queries=$(cd ${querydir} && ls -v)
+echo ${queries}
 
-# Override here for testing if need be
+# Overrides for local testing - to be put in comments in committed version
 #policies="ic"
 #categories="mat"
-#queries="s-queries-lowCardinality.txt s-queries-highCardinality.txt p-queries-highCardinality.txt p-queries-lowCardinality.txt o-queries-highCardinality.txt o-queries-lowCardinality.txt po-queries-highCardinality.txt po-queries-lowCardinality.txt so-queries-lowCardinality.txt sp-queries-highCardinality.txt sp-queries-lowCardinality.txt spo-queries.txt"
-#queries="p.txt po.txt"
-#queries="p.txt"
+#case "$1" in
+#  beara)
+#    queries="o-queries-lowCardinality.txt"
+#    ;;
+#  bearb-day | bearb-hour)
+#    queries="p.txt"
+#    ;;
+#esac
+# End overrides for local testing
 
 for policy in ${policies[@]}; do
 for category in ${categories[@]}; do
 for query in ${queries[@]}; do
 
 docker run -it --rm \
-    -e POLICY="$policy" \
-    -e CATEGORY="$category" \
-    -e QUERY="$query" \
-    -v /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/:/var/data/dataset/ \
-    -v /mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/:/var/data/queries/ \
-    -v /mnt/datastore/data/dslab/experimental/patch/output/:/var/data/output/ \
-    bear-hdt
-
+    -v ${datasetdir}:/var/data/dataset/ \
+    -v ${querydir}:/var/data/queries/ \
+    -v ${outputdir}:/var/data/output/ \
+    bear-hdt \
+    ./query-${policy}-${category} \
+    -d /var/data/dataset/${policy}/ \
+    -l ${limit} \
+    -t spo \
+    -i /var/data/queries/${query} \
+    -o /var/data/output/time-hdt-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").txt
 done
 done
 done
