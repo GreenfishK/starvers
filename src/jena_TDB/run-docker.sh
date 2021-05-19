@@ -47,6 +47,7 @@ for policy in ${policies[@]}; do
 for category in ${categories[@]}; do
 for query in ${queries[@]}; do
 
+echo "===== Running docker for ${policy}, ${category}, ${query} "
 docker run -it --rm \
     -v ${datasetdir}:/var/data/dataset/ \
     -v ${querydir}:/var/data/queries/ \
