@@ -22,20 +22,23 @@ This step is needed to run locally. When running on server donizetti.labnet, the
 
 **TODO: Document how to create input, starting from [the BEAR documentation](https://aic.ai.wu.ac.at/qadlod/bear.html).**
 
-See the script `run-docker.sh` to find out which data and queries are used for which experiment.
-
 ```sh
 # create directories
 sudo mkdir /mnt/datastore
 sudo chmod 777 /mnt/datastore/
 mkdir -p /mnt/datastore/data/dslab/experimental/patch
-# copy data (full - lots of data!)
-#rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/beara-hdt /mnt/datastore/data/dslab/experimental/patch/
-#rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt /mnt/datastore/data/dslab/experimental/patch
-#rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt /mnt/datastore/data/dslab/experimental/patch
-# copy data (subset - sufficient for policy "cb" only)
+# copy data; select:
+# - beara, full
+rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/beara-hdt /mnt/datastore/data/dslab/experimental/patch/
+# - bearb-day, full
+rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt /mnt/datastore/data/dslab/experimental/patch
+# - baerb-hour, full
+rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt /mnt/datastore/data/dslab/experimental/patch
+# - beara, policy "cb" only
 rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/beara-hdt/cb /mnt/datastore/data/dslab/experimental/patch/beara-hdt
+# - bearb-day, policy "cb" only
 rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/cb /mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt
+# - baerb-hour, policy "cb" only
 rsync -rtvz --exclude='*.tar.gz' donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt/cb /mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt
 # copy queries
 rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_new /mnt/datastore/data/dslab/experimental/patch/BEAR
