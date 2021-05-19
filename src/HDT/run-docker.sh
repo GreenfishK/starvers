@@ -31,7 +31,7 @@ queries=$(cd ${querydir} && ls -v)
 echo ${queries}
 
 # Overrides for local testing - to be put in comments in committed version
-#policies="ic"
+#policies="cb"
 #categories="mat"
 #case "$1" in
 #  beara)
