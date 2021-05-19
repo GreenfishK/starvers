@@ -57,5 +57,7 @@ sudo find /mnt/datastore/data/dslab/experimental/patch/tdb-bearb-hour -iname '*.
 
 Note - on the server you may want to do this in a **screen** session.
 ```sh
-./run-docker.sh beara && ./run-docker.sh bearb-day && ./run-docker.sh bearb-hour
+./run-docker.sh beara 2>&1 | tee beara.log
+./run-docker.sh bearb-day 2>&1 | tee bearb-day.log
+./run-docker.sh bearb-hour 2>&1 | tee bearb-hour.log
 ```
