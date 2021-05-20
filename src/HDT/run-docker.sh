@@ -35,7 +35,7 @@ echo ${queries}
 #categories="mat"
 #case "$1" in
 #  beara)
-#    queries="o-queries-lowCardinality.txt"
+#    queries="po-queries-lowCardinality.txt"
 #    ;;
 #  bearb-day | bearb-hour)
 #    queries="p.txt"
