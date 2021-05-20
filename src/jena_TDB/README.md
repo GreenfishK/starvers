@@ -45,6 +45,20 @@ rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/q
 rsync -rtvz donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb /mnt/datastore/data/dslab/experimental/patch/BEAR
 ```
 
+## Fix some queries
+
+The code crashes on some of the query files, where the fields are not separated with exactly one space.
+
+```sh
+cd /mnt/datastore/data/dslab/experimental/patch/BEAR
+# find them
+# note: I found one file: `./queries_new/po-queries-lowCardinality.txt`.
+find . -wholename '**/*queries*/**.txt' | while read f ; do grep -E -l '\s{2,}\.$' $f ; done
+# fix them with sed (or do this with a text editor if you're in doubt)
+# note: on server donizetti.labnet, do this as root user 
+find . -wholename '**/*queries*/**.txt' | while read f ; do grep -E -l '\s{2,}\.$' $f ; done | while read g ; do sed --in-place -E 's/ {2,}/ /g' $g ; done
+```
+
 ## Delete possible lock files from previous runs
 
 ```sh
