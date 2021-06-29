@@ -1,8 +1,6 @@
-﻿[This](README_ORIG.md) was the original README.
+﻿This file replaces [the original README](README_ORIG.md) found in this directory.
 
 # Reproducing experiments on jena
-
-Execute all commands shown below in this directory of a working copy cloned from this repository.
 
 ## Prerequisites
 
@@ -16,11 +14,13 @@ Have [docker](https://docs.docker.com/get-docker/) installed and [get access as 
 docker build -t bear-jena .
 ```
 
+## Get input data and queries
+
+See paragraph with the same name in [this common README](../common/README.md).
+
 ## Put the data and queries in place
 
-This step is needed to run locally. When running on server donizetti.labnet, the data is already there.
-
-**TODO: Document how to create input, starting from [the BEAR documentation](https://aic.ai.wu.ac.at/qadlod/bear.html).**
+This step is needed to run locally, assuming the data and queries at `donizetti.labnet:/mnt/datastore/data/dslab/experimental/patch/` are golden.
 
 ```sh
 # create directories
@@ -69,7 +69,10 @@ sudo find /mnt/datastore/data/dslab/experimental/patch/tdb-bearb-hour -iname '*.
 
 ## Run the experiments
 
+Execute in the directory containing this README, in a working copy cloned from this repository.
+
 Note - on the server you may want to do this in a **screen** session.
+
 ```sh
 ./run-docker.sh beara 2>&1 | tee beara.log
 ./run-docker.sh bearb-day 2>&1 | tee bearb-day.log
