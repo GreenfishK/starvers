@@ -10,6 +10,8 @@ Have [docker](https://docs.docker.com/get-docker/) installed and [get access as 
 
 ## Create docker image
 
+Execute in the directory containing this README, in a working copy cloned from this repository.
+
 ```sh
 docker build -t bear-jena .
 ```
