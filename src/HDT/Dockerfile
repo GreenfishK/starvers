@@ -1,11 +1,3 @@
-# hdt-cpp, old "latest" image (mind the typo (rfd)) and corresponding environment variables
-#FROM rfdhdt/hdt-cpp
-#ENV HDT_DIR=/usr/local/src/hdt-cpp
-#ENV HDT_LIBDIR=${HDT_DIR}/hdt-lib
-#ENV CDS_LIBDIR=${HDT_DIR}/libcds-v1.0.12/lib
-#ENV MAKE_ALL_RUNDIR=${HDT_DIR}/hdt-lib
-
-# hdt-cpp, tagged versions v1.3.x and corresponding environment variables
 FROM rdfhdt/hdt-cpp:v1.3.3
 ENV HDT_DIR=/usr/local/src/hdt-cpp
 ENV HDT_LIBDIR=${HDT_DIR}/libhdt/.libs

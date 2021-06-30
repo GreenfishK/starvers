@@ -1,6 +1,12 @@
 ﻿# BEAR
 BEAR Benchmark on RDF archives
 
+_This repo has been modified for running OSTRICH experiments_
+
+[Learn more on the BEAR website](https://aic.ai.wu.ac.at/qadlod/bear.html), which contains all raw data and queries.
+
+_[Original repo](https://github.com/webdata/BEAR)_
+
 Publication
 ==============
 This benchmark is provided as part of the paper:
