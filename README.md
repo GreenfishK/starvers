@@ -30,8 +30,8 @@ Contents
 
 Reproduce experiment
 ==============
-## Requirements
-### Docker setup
+## Install docker 
+If you have docker installed already, continue with [Build docker images](### Build docker images)
 install docker on [Ubuntu](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) or [other OS](https://docs.docker.com/get-docker/)
 [get access as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user). Find the commands from that page bellow (07.12.2021).
 ```
@@ -40,6 +40,8 @@ sudo usermod -aG docker $USER
 newgrp docker
 docker run hello-world
 ```
+
+## Build docker images
 Go to BEAR/src/Jena_TDB and build docker with: 
 ```
 docker build -t bear-jena .
