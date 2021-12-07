@@ -4,10 +4,10 @@
 See [here](https://github.com/GreenfishK/BEAR/blob/master/data/rawdata-bearb/hour/README.md)
 
 Following datasets were not used from this framework:
-BEAR-A
-BEAR-B day
-BEAR-B instant
-BEAR-C
+* BEAR-A
+* BEAR-B day
+* BEAR-B instant
+* BEAR-C
 
 ## Queries
 Queries are already provided in the [queries_bearb](https://github.com/GreenfishK/BEAR/tree/master/data/queries_bearb) folder. 
