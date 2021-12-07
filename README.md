@@ -58,7 +58,83 @@ Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ub
 See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 
 ## Load data into Jena and HDT
-See [here]()
+Use the scripts from our [data directory](https://github.com/GreenfishK/BEAR/tree/master/data) to load the data. Execute the scripts one by one. After termination following new files will be added (marked in bold):
+
+home/.BEAR/
+├── queries
+│   └── queries_bearb
+│       ├── lookup_queries_po.txt
+│       └── lookup_queries_p.txt
+├── rawdata-bearb
+│   └── hour
+│       ├── alldata.CB.nt
+│       │   ├── data-added_1-2.nt
+│       │   ├── data-deleted_1-2.nt
+│       │   ├── .
+│       │   ├── .
+│       │   ├── .
+│       │   ├── data-added_1298-1299.nt
+│       │   ├── data-deleted_1298-1299.nt
+│       ├── alldata.IC.nt
+│       │   ├── 000001.nt
+│       │   ├── .
+│       │   ├── .
+│       │   ├── .
+│       │   └── 001299.nt
+│       ├── alldata.TB.nq
+│       └── alldiffQuads.nq
+├── tdb-bearb-hour
+│   ├── cb
+│   │   ├── **0**
+│   │   │   ├── **add**
+│   │   │   │   ├── **jenda database files**
+│   │   │   ├── **del**
+│   │   │   │   └── **jenda database files**
+│   │   │   ├── **.**
+│   │   │   ├── **.**
+│   │   │   ├── **.**
+│   │   ├── **1298**
+│   │   │   ├── **add**
+│   │   │   │   ├── **jenda database files**
+│   │   │   └── **del**
+│   │   │       └── **jenda database files**
+│   ├── ic
+│   │   ├── **0**
+│   │   │   ├── **jena database files**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **1298**
+│   │   │   ├── jena database files
+│   └── tb
+│       ├── **jena database files**
+├── hdt-bearb-hour
+│   ├── ic
+│   │   ├── **0.hdt**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **1298.hdt**
+│   ├── cb
+│   │   ├── **0.add.hdt**
+│   │   ├── **1.add.hdt**
+│   │   ├── **1.del.hdt**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **.**
+│   │   ├── **1298.del.hdt**
+│   │   ├── **1298.del.hdt**
+├── output
+│   ├── **log files from data import**
+│   └── time
+│       └── bearb-hour
+│           └── log files from queries
+├── load-bearb-hourly-cb-hdt.sh
+├── load-bearb-hourly-cb-jena.sh
+├── load-bearb-hourly-ic-hdt.sh
+├── load-bearb-hourly-ic-jena.sh
+└── load-bearb-hourly-tb-jena.sh
+
 
 Contact
 ==============
