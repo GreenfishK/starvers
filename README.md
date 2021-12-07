@@ -26,8 +26,28 @@ Contents
 ==============
 - src: includes the source code of the benchmark for three archiving policies: IC, CB and TB.
 - plots: includes plots of the experiments.
-- data: includes data, queries and scripts to run the experiments.
+- data: includes datasets, queries and scripts to run the experiments.
+
+Reproduce experiment
+==============
+## Requirements
+### Docker setup
+install docker on [Ubuntu](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) or [other OS](https://docs.docker.com/get-docker/)
+[get access as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user). Find the commands from that page bellow (07.12.2021).
+```
+(sudo groupadd docker)
+sudo usermod -aG docker $USER 
+newgrp docker
+docker run hello-world
+Go to BEAR/src/Jena_TDB and build docker with: 
+docker build -t bear-jena .
+Go to BEAR/src/HDT and build docker with: 
+docker build -t bear-hdt .
+```
+Error1: “Docker does not have a release file”
+Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ubuntu version for which there is a docker release, e.g. “focal”: https://stackoverflow.com/questions/41133455/docker-repository-does-not-have-a-release-file-on-running-apt-get-update-on-ubun 
+
 
 Contact
 ==============
-{filip.kovacevic}@tuwien.ac.at
+filip.kovacevic@tuwien.ac.at
