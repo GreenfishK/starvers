@@ -39,9 +39,13 @@ install docker on [Ubuntu](https://docs.docker.com/engine/install/ubuntu/#instal
 sudo usermod -aG docker $USER 
 newgrp docker
 docker run hello-world
+```
 Go to BEAR/src/Jena_TDB and build docker with: 
+```
 docker build -t bear-jena .
+```
 Go to BEAR/src/HDT and build docker with: 
+```
 docker build -t bear-hdt .
 ```
 Error1: “Docker does not have a release file”
