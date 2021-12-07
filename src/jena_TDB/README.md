@@ -2,6 +2,21 @@ Run the following command to execute the queries for all policies (TB, CB, IC) a
 ```
 ./run-docker.sh bearb-hour 2>&1 | tee bearb-day.log
 ```
+Upon execution a new directory is created:
+
+```
+home/.BEAR/  
+.
+.
+.
+└── output  
+    └── *time
+        └── *bearb-hour
+	   └── *18 datasets with time and other measurements for each policy, query category and query set.
+
+
+```
+
 We get a warning that the logger is not properly initialized
 
 ```
