@@ -12,13 +12,13 @@ Most of the queries could be executed but some fail due to a java.lang.OutOfMemo
 
 | Policy      | Query category | Query set     |
 | :---        |    :----:   |          ---: |
-| - ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC | <span style="color:red">MAT</span>  | <span style="color:red">lookup_queries_p.txt</span>  |
+| ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC | MAT | lookup_queries_p.txt  |
 | CB | MAT | lookup_queries_p.txt |
 | TB | MAT | lookup_queries_p.txt |
-| <span style="color:red">IC</span>  | <span style="color:red">VER</span>  | <span style="color:red">lookup_queries_p.txt</span>  |
+|![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC | VER  |lookup_queries_p.txt |
 | CB | VER | lookup_queries_p.txt |
 | TB | VER | lookup_queries_p.txt |
-| <span style="color:red">IC</span>  | <span style="color:red">DIFF</span>  | <span style="color:red">lookup_queries_p.txt</span>  |
+|![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC| DIFF  | lookup_queries_p.txt  |
 | CB | DIFF | lookup_queries_p.txt |
 | TB | DIFF | lookup_queries_p.txt |
 | IC | MAT | lookup_queries_po.txt |
