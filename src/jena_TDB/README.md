@@ -11,7 +11,7 @@ log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more in
 Most of the queries could be executed but some fail due to a java.lang.OutOfMemoryError exception (stack trace see below):
 
 | Policy      | Query category | Query set     | error/no error |
-| :---        |    :----:   |          ---: |
+| :---        |    :----:   |  :----:   |       ---: |
 |  IC | MAT | lookup_queries_p.txt  | ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) |
 | CB | MAT | lookup_queries_p.txt | ![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
 | TB | MAT | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
