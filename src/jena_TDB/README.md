@@ -2,7 +2,7 @@ Run the following command to execute the queries for all policies (TB, CB, IC) a
 ```
 ./run-docker.sh bearb-hour 2>&1 | tee bearb-day.log
 ```
-Upon execution a new directory is created:
+Upon execution following new directories and files are created (marked with *):
 
 ```
 home/.BEAR/  
