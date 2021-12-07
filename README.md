@@ -26,8 +26,8 @@ Contents
 ==============
 - src: includes the source code of the benchmark for three archiving policies: IC, CB and TB.
 - plots: includes plots of the experiments.
-- scripts: includes scripts to run the experiments.
+- data: includes data, queries and scripts to run the experiments.
 
 Contact
 ==============
-{javier.fernandez,juergen.umbrich,axel.polleres}@wu.ac.at, magnus.knuth@hpi.de
+{filip.kovacevic}@tuwien.ac.at
