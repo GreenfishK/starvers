@@ -60,6 +60,7 @@ See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 ## Load data into Jena and HDT
 Use the scripts from our [data directory](https://github.com/GreenfishK/BEAR/tree/master/data) to load the data. Execute the scripts one by one. After termination following new files will be added (marked in bold):
 
+```
 home/.BEAR/  
 ├── queries  
 │   └── queries_bearb  
@@ -134,7 +135,7 @@ home/.BEAR/
 ├── load-bearb-hourly-ic-hdt.sh  
 ├── load-bearb-hourly-ic-jena.sh  
 └── load-bearb-hourly-tb-jena.sh  
-
+```
 
 Contact
 ==============
