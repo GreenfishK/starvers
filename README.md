@@ -110,6 +110,9 @@ home/.BEAR/
     └──*log files from data import   
 ```
 
+## Run queries and log performance
+Run the queries via docker for [Jena](https://github.com/GreenfishK/BEAR/tree/master/src/jena_TDB), HDT and Jena_RDF_star.
+
 Contact
 ==============
 filip.kovacevic@tuwien.ac.at
