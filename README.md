@@ -86,47 +86,47 @@ home/.BEAR/
 │       └── alldiffQuads.nq  
 ├── tdb-bearb-hour  
 │   ├── cb  
-│   │   ├── **0**  
-│   │   │   ├── **add**  
-│   │   │   │   ├── **jenda database files**  
-│   │   │   ├── **del**  
-│   │   │   │   └── **jenda database files**  
-│   │   │   ├── **.**  
-│   │   │   ├── **.**  
-│   │   │   ├── **.**  
-│   │   ├── **1298**  
-│   │   │   ├── **add**  
-│   │   │   │   ├── **jenda database files**  
-│   │   │   └── **del**  
-│   │   │       └── **jenda database files**  
+│   │   ├── **0  
+│   │   │   ├── **add  
+│   │   │   │   ├── **jenda database files  
+│   │   │   ├── **del  
+│   │   │   │   └── **jenda database files  
+│   │   │   ├── **.  
+│   │   │   ├── **.  
+│   │   │   ├── **.  
+│   │   ├── **1298  
+│   │   │   ├── **add  
+│   │   │   │   ├── **jenda database files  
+│   │   │   └── **del  
+│   │   │       └── **jenda database files  
 │   ├── ic  
-│   │   ├── **0**  
-│   │   │   ├── **jena database files**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **1298**  
+│   │   ├── **0  
+│   │   │   ├── **jena database files  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **1298  
 │   │   │   ├── jena database files  
 │   └── tb  
-│       ├── **jena database files**  
+│       ├── **jena database files  
 ├── hdt-bearb-hour  
 │   ├── ic  
-│   │   ├── **0.hdt**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **1298.hdt**  
+│   │   ├── **0.hdt  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **1298.hdt  
 │   ├── cb  
-│   │   ├── **0.add.hdt**  
-│   │   ├── **1.add.hdt**  
-│   │   ├── **1.del.hdt**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **.**  
-│   │   ├── **1298.del.hdt**  
-│   │   ├── **1298.del.hdt**  
+│   │   ├── **0.add.hdt  
+│   │   ├── **1.add.hdt  
+│   │   ├── **1.del.hdt  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **.  
+│   │   ├── **1298.del.hdt  
+│   │   ├── **1298.del.hdt  
 ├── output  
-│   ├── **log files from data import**  
+│   ├── **log files from data import  
 │   └── time  
 │       └── bearb-hour  
 │           └── log files from queries  
