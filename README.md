@@ -58,7 +58,7 @@ Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ub
 See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 
 ## Load data into Jena and HDT
-Use the scripts from our [data directory](https://github.com/GreenfishK/BEAR/tree/master/data) to load the data. Execute the scripts one by one. After termination following new files will be added (marked in bold):
+Use the scripts from our [data directory](https://github.com/GreenfishK/BEAR/tree/master/data) to load the data. Execute the scripts one by one. After termination following new files will be added (marked with *):
 
 ```
 home/.BEAR/  
