@@ -1,4 +1,5 @@
 # Data Acquisition
+Create a directory .BEAR in your home directory abd copy this data directory recursively into ~/.BEAR
 
 ## Datasets
 See [here](https://github.com/GreenfishK/BEAR/blob/master/data/rawdata-bearb/hour/README.md)
