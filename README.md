@@ -54,6 +54,11 @@ Error1: “Docker does not have a release file”
 
 Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ubuntu version for which there is a docker release, e.g. “focal”: https://stackoverflow.com/questions/41133455/docker-repository-does-not-have-a-release-file-on-running-apt-get-update-on-ubun 
 
+## Get data
+See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
+
+## Load data into Jena and HDT
+See [here]()
 
 Contact
 ==============
