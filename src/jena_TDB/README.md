@@ -10,26 +10,26 @@ log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more in
 ```
 Most of the queries could be executed but some fail due to a java.lang.OutOfMemoryError exception (stack trace see below):
 
-| Policy      | Query category | Query set     |
+| Policy      | Query category | Query set     | error/no error |
 | :---        |    :----:   |          ---: |
-| ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC | MAT | lookup_queries_p.txt  |
-| CB | MAT | lookup_queries_p.txt |
-| TB | MAT | lookup_queries_p.txt |
-|![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC | VER  |lookup_queries_p.txt |
-| CB | VER | lookup_queries_p.txt |
-| TB | VER | lookup_queries_p.txt |
-|![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) IC| DIFF  | lookup_queries_p.txt  |
-| CB | DIFF | lookup_queries_p.txt |
-| TB | DIFF | lookup_queries_p.txt |
-| IC | MAT | lookup_queries_po.txt |
-| CB | MAT | lookup_queries_po.txt |
-| TB | MAT | lookup_queries_po.txt |
-| IC | VER | lookup_queries_po.txt |
-| CB | VER | lookup_queries_po.txt |
-| TB | VER | lookup_queries_po.txt |
-| IC | DIFF | lookup_queries_po.txt |
-| CB | DIFF | lookup_queries_po.txt |
-| TB | DIFF | lookup_queries_po.txt |
+|  IC | MAT | lookup_queries_p.txt  | ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) |
+| CB | MAT | lookup_queries_p.txt | ![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | MAT | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| IC | VER  |lookup_queries_p.txt | ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) |
+| CB | VER | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | VER | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| IC| DIFF  | lookup_queries_p.txt  | ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) |
+| CB | DIFF | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | DIFF | lookup_queries_p.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| IC | MAT | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| CB | MAT | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | MAT | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| IC | VER | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| CB | VER | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | VER | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| IC | DIFF | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| CB | DIFF | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
+| TB | DIFF | lookup_queries_po.txt |![#c5f015](https://via.placeholder.com/15/c5f015/000000?text=+) |
 
 ```
 Exception in thread "main" java.lang.OutOfMemoryError: GC overhead limit exceeded
