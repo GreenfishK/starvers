@@ -8,7 +8,7 @@ log4j:WARN No appenders could be found for logger (org.apache.jena.riot.system.s
 log4j:WARN Please initialize the log4j system properly.
 log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
 ```
-Most of the queries could be executed but some fail due to a java.lang.OutOfMemoryError exception (stack trace see below):
+Most of the queries could be executed but some fail due to a java.lang.OutOfMemoryError exception (stack trace see below). We use a machine with 8GB RAM on Linux Mint 20.2 Uma.
 
 | Policy      | Query category | Query set     | error/no error |
 | :---        |    :----:   |  :----:   |       ---: |
