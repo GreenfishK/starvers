@@ -2,21 +2,21 @@
 
 case "$1" in
   beara)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/tdb/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_new/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/beara/
+    datasetdir=~/.BEAR/tdb/
+    querydir=~/.BEAR/queries/queries_new/
+    outputdir=~/.BEAR/output/time/beara/
     limit=9
     ;;
   bearb-day)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/tdb-bearb-day/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-day/
+    datasetdir=~/.BEAR/tdb-bearb-day/
+    querydir=~/.BEAR/queries/queries_bearb/
+    outputdir=~/.BEAR/output/time/bearb-day/
     limit=88
     ;;
   bearb-hour)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/tdb-bearb-hour/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-hour/
+    datasetdir=~/.BEAR/tdb-bearb-hour/
+    querydir=~/.BEAR/queries/queries_bearb/
+    outputdir=~/.BEAR/output/time/bearb-hour/
     limit=1298
     ;;
   *)
@@ -25,7 +25,7 @@ case "$1" in
     ;;
 esac
 
-policies="ic cb tb cbtb"
+policies="ic cb tb" # cbtb"
 categories="mat diff ver"
 queries=$(cd ${querydir} && ls -v)
 echo ${queries}
@@ -48,7 +48,9 @@ for category in ${categories[@]}; do
 for query in ${queries[@]}; do
 
 echo "===== Running docker for ${policy}, ${category}, ${query} "
-docker run -it --rm \
+docker run \
+    -it \
+    --rm \
     -v ${datasetdir}:/var/data/dataset/ \
     -v ${querydir}:/var/data/queries/ \
     -v ${outputdir}:/var/data/output/ \
