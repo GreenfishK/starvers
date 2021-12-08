@@ -1,6 +1,6 @@
 Run the following command to execute the queries for all policies (TB, CB, IC) and query types (mat, diff, ver):
 ```
-./run-docker.sh bearb-hour 2>&1 | tee bearb-day.log
+./run-docker.sh bearb-hour 2>&1 | tee bearb-hour.log
 ```
 Upon execution following new directories and files are created (marked with *):
 
