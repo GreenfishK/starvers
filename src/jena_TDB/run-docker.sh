@@ -1,5 +1,7 @@
 #!/bin/bash
 
+lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
+
 case "$1" in
   beara)
     datasetdir=~/.BEAR/tdb/
@@ -25,8 +27,10 @@ case "$1" in
     ;;
 esac
 
-policies="ic cb tb" # cbtb"
-categories="mat diff ver"
+# policies="ic cb tb" # cbtb"
+policies="tb" 
+# categories="mat diff ver"
+categories="mat"
 queries=$(cd ${querydir} && ls -v)
 echo ${queries}
 
@@ -56,14 +60,18 @@ docker run \
     -v ${outputdir}:/var/data/output/ \
     bear-jena \
     java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query \
-    -e ${limit} \
-    -j 1 \
-    -p ${policy} \
-    -d /var/data/dataset/${policy} \
-    -r spo \
-    -c ${category} \
-    -a /var/data/queries/${query} \
-    -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").txt
+        -e ${limit} \
+        -j 1 \
+        -p ${policy} \
+        -d /var/data/dataset/${policy} \
+        -r spo \
+        -c ${category} \
+        -a /var/data/queries/${query} \
+        -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv
 done
 done
 done
+
+# Move to directory with local host name and local timestamp
+sudo mkdir ${outputdir}/${HOSTNAME}-${lokal_timestamp}
+sudo mv ${outputdir}/time* ${outputdir}/${HOSTNAME}-${lokal_timestamp}
