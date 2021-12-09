@@ -78,21 +78,22 @@ def annotate_changeset():
 
         # annotate deleted triples
         with open(change_sets_path + "/" + t[2], "r") as cs:
+            alldata_versioned = open(alldata_versioned_path, "r")
+            alldata_versioned_new = alldata_versioned.read()
             for triple in cs:
                 # Remove dot from statement
                 triple_trimmed = triple[:-2]
 
-                alldata_versioned = open(alldata_versioned_path, "r")
-                alldata_versioned_new = alldata_versioned.read().\
+                alldata_versioned_new = alldata_versioned_new.\
                     replace('<<{triple}>> {vers_p} "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .'.
                             format(triple=triple_trimmed, vers_p=valid_until_predicate),
                             '<<{triple}>> {vers_p} "{ts}{tz_offset}"^^xsd:dateTime .'.
                             format(triple=triple_trimmed, ts=t[3], vers_p=valid_until_predicate,
                                    tz_offset=tz_offset)
                             )
-                alldata_versioned = open(alldata_versioned_path, "w")
-                alldata_versioned.write(alldata_versioned_new)
-                alldata_versioned.close()
+            alldata_versioned = open(alldata_versioned_path, "w")
+            alldata_versioned.write(alldata_versioned_new)
+            alldata_versioned.close()
 
 
 annotate_initial_set()
