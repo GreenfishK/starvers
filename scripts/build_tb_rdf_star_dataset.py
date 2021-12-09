@@ -37,7 +37,8 @@ def annotate_changeset():
 
     :return:
     """
-    pass
+
+    # build list (version, filename_added, filename_deleted, version_timestamp)
     change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.CB.nt"
     new_triples = {}
     deleted_triples = {}
@@ -57,7 +58,7 @@ def annotate_changeset():
         vers_ts = vers_ts + timedelta(seconds=1)
         change_sets.append((vers, new_trpls, deleted_triples[vers], datetime.strftime(vers_ts,
                                                                                       "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
-
+    # build dataset with rdf* annotations
     for t in change_sets:
         # annotate new triples
         print("Changeset version {0} processing".format(t[0]))

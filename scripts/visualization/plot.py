@@ -23,12 +23,12 @@ def plot_mat_lookup_queries(timestamp: datetime, policy: str, triple_pattern: st
     filename = "time-{policy}-mat-lookup_queries_{triple_pattern}.csv".format(policy=policy,
                                                                               triple_pattern=triple_pattern)
     df = pd.read_csv("{dir}/{fn}".format(dir=output_dir, fn=filename), delimiter=" ", skiprows=1,
-                     names=['ver', 'min', 'mean', 'max', 'stddev', 'cnt_queries', '?'])
+                     names=['ver', 'min', 'mean', 'max', 'stddev', 'cnt_queries', 'total_time_in_ms'])
 
     ax = plt.gca()
-    df.plot(kind="line", x="ver", y="mean", ax=ax)
+    df.plot(kind="line", x="ver", y="total_time_in_ms", ax=ax)
     ax.set_xlabel("Version")
-    ax.set_ylabel("query time in ms")
+    ax.set_ylabel("total query time (in ms)")
 
     plt.show()
 
