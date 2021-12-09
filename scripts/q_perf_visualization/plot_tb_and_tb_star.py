@@ -16,6 +16,7 @@ def plot_mat_lookup_queries(timestamp: datetime, policy: str, triple_pattern: st
     :param timestamp:
     :return:
     """
+    # TODO: make a list of policies as argument and pass tb and tb_star. For each policy a curve should be plotted for the respective set of queries.
 
     ts_formatted = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
     output_dir = "~/.BEAR/output/time/bearb-hour/{hostname}-{timestamp}".format(hostname=hostname,
