@@ -2,7 +2,7 @@
 Create a directory .BEAR in your home directory and copy the content of this data directory including all sub-directories into ~/.BEAR .
 
 ## Datasets
-See [here](https://github.com/GreenfishK/BEAR/blob/master/data/rawdata-bearb/hour/README.md)
+BEAR-B hour dataset. See [here](https://github.com/GreenfishK/BEAR/blob/master/data/rawdata-bearb/hour/README.md)
 
 Following datasets were not used from this framework:
 * BEAR-A
