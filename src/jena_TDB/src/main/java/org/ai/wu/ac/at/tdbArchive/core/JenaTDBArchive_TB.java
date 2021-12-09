@@ -373,7 +373,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
-			// System.out.println("Time:" + (endTime - startTime));
+			System.out.println("matQuery: Time:" + (endTime - startTime)); //DEBUG
 			PrintWriter pw;
 			try {
 				pw = new PrintWriter(new File(outputTime));
@@ -424,7 +424,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			ret.add(materializeQuery(staticVersionQuery, query, Integer.MAX_VALUE));
 
 			long endTime = System.currentTimeMillis();
-			// System.out.println("Time:" + (endTime - startTime));
+			System.out.println("bulkMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
 			vStats.get(staticVersionQuery).addValue((endTime - startTime));
 
@@ -496,7 +496,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
-				// System.out.println("Time:" + (endTime - startTime));
+				System.out.println("bulkAllMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
 				vStats.get(i).addValue((endTime - startTime));
 

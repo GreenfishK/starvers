@@ -27,10 +27,9 @@ case "$1" in
     ;;
 esac
 
-# policies="ic cb tb" # cbtb"
-policies="tb" 
-# categories="mat diff ver"
+policies="tb" # ic cb cbtb"
 categories="mat"
+#categories="mat diff ver"
 queries=$(cd ${querydir} && ls -v)
 echo ${queries}
 
