@@ -5,7 +5,7 @@ import os
 
 valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
 valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
-alldata_versioned_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.TB_star.nts"
+alldata_versioned_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.TB_star.ttl"
 sys_ts = datetime.now()
 
 
@@ -52,12 +52,13 @@ def annotate_changeset():
         if filename.startswith("data-deleted"):
             deleted_triples[version] = filename
 
-    # datetime.timedelta(0,3)
     vers_ts = sys_ts
     for vers, new_trpls in sorted(new_triples.items()):
         vers_ts = vers_ts + timedelta(seconds=1)
         change_sets.append((vers, new_trpls, deleted_triples[vers], datetime.strftime(vers_ts,
                                                                                       "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
+
+    change_sets = change_sets[0:10]
     # build dataset with rdf* annotations
     for t in change_sets:
         # annotate new triples
