@@ -40,7 +40,7 @@ cb_comp_dir = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.CB_computed.
 if not os.path.exists(cb_comp_dir):
     os.makedirs(cb_comp_dir)
 
-for i in range(1, 1300):
+for i in range(1, 1299):
     output = diff_set(i, i+1)
     cs_added = output.query("change_type == 'a'")
     assert isinstance(cs_added, pd.DataFrame)
