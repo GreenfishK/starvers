@@ -32,14 +32,16 @@ def annotate_initial_set():
             ic0_ds_versioned.close()
 
 
-def annotate_changeset():
+def annotate_changeset(cb_rel_path: str):
     """
+    :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
+    but only the relative path to "/.BEAR/rawdata-bearb/hour/
 
     :return:
     """
 
     # build list (version, filename_added, filename_deleted, version_timestamp)
-    change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.CB.nt"
+    change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/{0}".format(cb_rel_path)
     new_triples = {}
     deleted_triples = {}
     change_sets = []
@@ -58,7 +60,9 @@ def annotate_changeset():
         change_sets.append((vers, new_trpls, deleted_triples[vers], datetime.strftime(vers_ts,
                                                                                       "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
 
-    change_sets = change_sets[0:10]
+    # only for testing
+    # change_sets = change_sets[0:10]
+
     # build dataset with rdf* annotations
     for t in change_sets:
         # annotate new triples
@@ -98,4 +102,5 @@ def annotate_changeset():
 
 
 annotate_initial_set()
-annotate_changeset()
+# Take the change sets that were manually computed from the ICs by compute_change_sets.py
+annotate_changeset("alldata.CB_computed.nt")
