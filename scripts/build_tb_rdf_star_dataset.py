@@ -2,11 +2,19 @@ from pathlib import Path
 from datetime import datetime
 from datetime import timedelta
 import os
+import numpy as np
+import pandas as pd
+from pandas import IndexSlice as idx
 
 valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
 valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
 alldata_versioned_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.TB_star.ttl"
 sys_ts = datetime.now()
+
+desired_width=320
+pd.set_option('display.width', desired_width)
+# np.set_printoption(linewidth=desired_width)
+pd.set_option('display.max_columns',10)
 
 
 def annotate_initial_set():
@@ -32,7 +40,7 @@ def annotate_initial_set():
             ic0_ds_versioned.close()
 
 
-def annotate_changeset(cb_rel_path: str):
+def construct_tb_star_ds(cb_rel_path: str):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
     but only the relative path to "/.BEAR/rawdata-bearb/hour/
@@ -40,6 +48,31 @@ def annotate_changeset(cb_rel_path: str):
     :return:
     """
 
+    """ Annotation of initial version triples """
+    ic0_ds_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.IC.nt/000001.nt"
+    tz_offset = "+02:00"
+    valid_ufn_ts = '9999-12-31T00:00:00.000'
+    sys_ts_formatted = datetime.strftime(sys_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+    init_ds = []
+    with open(ic0_ds_path, "r") as ic0:
+        for triple in ic0:
+            # Remove dot from statement
+            triple_trimmed = triple[:-2]
+            triple_tuple = triple_trimmed.split(" ")
+            init_ds.append(["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
+                            ">>", valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                           ts=sys_ts_formatted, tz_offset=tz_offset),
+                            ".", "initial"])
+            init_ds.append(["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
+                            ">>", valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                           ts=valid_ufn_ts, tz_offset=tz_offset),
+                            ".", "initial"])
+
+    df_tb_set = pd.DataFrame(init_ds, columns=['open_pointy_brackets', 's', 'p', 'o', 'closing_pointy_brackets',
+                                                    'vers_predicate', 'timestamp', 'dot', 'change_type'])
+
+    """ Loading change set files """
     # build list (version, filename_added, filename_deleted, version_timestamp)
     change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/{0}".format(cb_rel_path)
     new_triples = {}
@@ -60,47 +93,47 @@ def annotate_changeset(cb_rel_path: str):
         change_sets.append((vers, new_trpls, deleted_triples[vers], datetime.strftime(vers_ts,
                                                                                       "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
 
-    # only for testing
-    # change_sets = change_sets[0:10]
+    """ Annotation of change set triples """
 
-    # build dataset with rdf* annotations
+    """ Annotate added triples using rdf* syntax """
     for t in change_sets:
-        # annotate new triples
-        print("Changeset version {0} processing".format(t[0]))
-        tz_offset = "+02:00"
+        print("Change set between version {0} and {1} processing. ".format(int(t[0])-1, int(t[0])))
         with open(change_sets_path + "/" + t[1], "r") as cs:
             for triple in cs:
                 # Remove dot from statement
                 triple_trimmed = triple[:-2]
+                triple_tuple = triple_trimmed.split(" ")
+                df_tb_set.loc[len(df_tb_set)] = ["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
+                                                           ">>", valid_from_predicate,
+                                                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                               ts=t[3], tz_offset=tz_offset),
+                                                           ".", "added"]
+                df_tb_set.loc[len(df_tb_set)] = ["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
+                                                           ">>", valid_until_predicate,
+                                                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                               ts=valid_ufn_ts,
+                                                               tz_offset=tz_offset), ".", "added"]
 
-                alldata_versioned = open(alldata_versioned_path, "a")
-                alldata_versioned.write('<<{triple}>> {vers_p} "{ts}{tz_offset}"^^xsd:dateTime .\n'.
-                                        format(triple=triple_trimmed, ts=t[3], vers_p=valid_from_predicate,
-                                               tz_offset=tz_offset))
-                alldata_versioned.write('<<{triple}>> {vers_p} "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .\n'.
-                                        format(triple=triple_trimmed, vers_p=valid_until_predicate))
-                alldata_versioned.close()
+        df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate', 'timestamp'], drop=False, inplace=True)
 
-        # annotate deleted triples
+        """ Annotate deleted triples using rdf* syntax """
         with open(change_sets_path + "/" + t[2], "r") as cs:
             alldata_versioned = open(alldata_versioned_path, "r")
             alldata_versioned_new = alldata_versioned.read()
             for triple in cs:
                 # Remove dot from statement
                 triple_trimmed = triple[:-2]
+                triple_tuple = triple_trimmed.split(" ")
+                df_tb_set.loc[(triple_tuple[0], triple_tuple[1], triple_tuple[2],
+                                valid_until_predicate,
+                                '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
+                                                                         tz_offset=tz_offset)), 'timestamp'] = \
+                    '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)
+                # df_tb_set.loc[[triple_tuple[0], triple_tuple[1], triple_tuple[2]], :]['timestamp'] = 'test'
 
-                alldata_versioned_new = alldata_versioned_new.\
-                    replace('<<{triple}>> {vers_p} "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .'.
-                            format(triple=triple_trimmed, vers_p=valid_until_predicate),
-                            '<<{triple}>> {vers_p} "{ts}{tz_offset}"^^xsd:dateTime .'.
-                            format(triple=triple_trimmed, ts=t[3], vers_p=valid_until_predicate,
-                                   tz_offset=tz_offset)
-                            )
-            alldata_versioned = open(alldata_versioned_path, "w")
-            alldata_versioned.write(alldata_versioned_new)
-            alldata_versioned.close()
+        print("Number of triples: {0}" .format(len(df_tb_set.query('timestamp == \'"{0}{1}"^^xsd:dateTime\''.format(valid_ufn_ts, tz_offset)))))
 
 
-annotate_initial_set()
+# annotate_initial_set()
 # Take the change sets that were manually computed from the ICs by compute_change_sets.py
-annotate_changeset("alldata.CB_computed.nt")
+construct_tb_star_ds("alldata.CB_computed.nt")
