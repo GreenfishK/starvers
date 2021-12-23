@@ -2,9 +2,8 @@ from pathlib import Path
 from datetime import datetime
 from datetime import timedelta
 import os
-import numpy as np
 import pandas as pd
-from pandas import IndexSlice as idx
+from rdflib import Graph
 
 valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
 valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
@@ -14,30 +13,7 @@ sys_ts = datetime.now()
 desired_width=320
 pd.set_option('display.width', desired_width)
 # np.set_printoption(linewidth=desired_width)
-pd.set_option('display.max_columns',10)
-
-
-def annotate_initial_set():
-    """
-    Annotates all triples with the system timestamp as the start date the 31.12.9999 as the end date.
-    :return:
-    """
-
-    ic0_ds_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.IC.nt/000001.nt"
-    tz_offset = "+02:00"
-    sys_ts_formatted = datetime.strftime(sys_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
-
-    with open(ic0_ds_path, "r") as ic0:
-        for triple in ic0:
-            # Remove dot from statement
-            triple_trimmed = triple[:-2]
-
-            ic0_ds_versioned = open(alldata_versioned_path, "a")
-            ic0_ds_versioned.write('<<{triple}>> {vers_p} "{ts}{tz_offset}"^^xsd:dateTime .\n'.format(
-                triple=triple_trimmed, ts=sys_ts_formatted, vers_p=valid_from_predicate, tz_offset=tz_offset))
-            ic0_ds_versioned.write('<<{triple}>> {vers_p} "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .\n'.format(
-                triple=triple_trimmed, vers_p=valid_until_predicate))
-            ic0_ds_versioned.close()
+pd.set_option('display.max_columns', 10)
 
 
 def construct_tb_star_ds(cb_rel_path: str):
@@ -49,32 +25,32 @@ def construct_tb_star_ds(cb_rel_path: str):
     """
 
     """ Annotation of initial version triples """
+    output_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.TB_star.ttl"
     ic0_ds_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.IC.nt/000001.nt"
+    change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/{0}".format(cb_rel_path)
     tz_offset = "+02:00"
     valid_ufn_ts = '9999-12-31T00:00:00.000'
     sys_ts_formatted = datetime.strftime(sys_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
+    ic0 = Graph()
+    ic0.parse(ic0_ds_path)
+
     init_ds = []
-    with open(ic0_ds_path, "r") as ic0:
-        for triple in ic0:
-            # Remove dot from statement
-            triple_trimmed = triple[:-2]
-            triple_tuple = triple_trimmed.split(" ")
-            init_ds.append(["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                            ">>", valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                           ts=sys_ts_formatted, tz_offset=tz_offset),
-                            ".", "initial"])
-            init_ds.append(["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                            ">>", valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                           ts=valid_ufn_ts, tz_offset=tz_offset),
-                            ".", "initial"])
+    for s, p, o in ic0:
+        init_ds.append(["<<", s.n3(), p.n3(), o.n3(),
+                        ">>", valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                       ts=sys_ts_formatted, tz_offset=tz_offset),
+                        "."])
+        init_ds.append(["<<", s.n3(), p.n3(), o.n3(),
+                        ">>", valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+                                                       ts=valid_ufn_ts, tz_offset=tz_offset),
+                        "."])
 
     df_tb_set = pd.DataFrame(init_ds, columns=['open_pointy_brackets', 's', 'p', 'o', 'closing_pointy_brackets',
-                                                    'vers_predicate', 'timestamp', 'dot', 'change_type'])
+                                               'vers_predicate', 'timestamp', 'dot'])
 
     """ Loading change set files """
     # build list (version, filename_added, filename_deleted, version_timestamp)
-    change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/{0}".format(cb_rel_path)
     new_triples = {}
     deleted_triples = {}
     change_sets = []
@@ -95,9 +71,10 @@ def construct_tb_star_ds(cb_rel_path: str):
 
     """ Annotation of change set triples """
 
-    """ Annotate added triples using rdf* syntax """
-    for t in change_sets:
+    for t in change_sets[0:2]:
         print("Change set between version {0} and {1} processing. ".format(int(t[0])-1, int(t[0])))
+        
+        """ Annotate added triples using rdf* syntax """
         with open(change_sets_path + "/" + t[1], "r") as cs:
             for triple in cs:
                 # Remove dot from statement
@@ -107,31 +84,43 @@ def construct_tb_star_ds(cb_rel_path: str):
                                                            ">>", valid_from_predicate,
                                                            '"{ts}{tz_offset}"^^xsd:dateTime'.format(
                                                                ts=t[3], tz_offset=tz_offset),
-                                                           ".", "added"]
+                                                           "."]
                 df_tb_set.loc[len(df_tb_set)] = ["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
                                                            ">>", valid_until_predicate,
                                                            '"{ts}{tz_offset}"^^xsd:dateTime'.format(
                                                                ts=valid_ufn_ts,
-                                                               tz_offset=tz_offset), ".", "added"]
+                                                               tz_offset=tz_offset), "."]
 
         df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate', 'timestamp'], drop=False, inplace=True)
 
         """ Annotate deleted triples using rdf* syntax """
         with open(change_sets_path + "/" + t[2], "r") as cs:
-            alldata_versioned = open(alldata_versioned_path, "r")
-            alldata_versioned_new = alldata_versioned.read()
+            # alldata_versioned = open(alldata_versioned_path, "r")
+            # alldata_versioned_new = alldata_versioned.read()
             for triple in cs:
                 # Remove dot from statement
                 triple_trimmed = triple[:-2]
                 triple_tuple = triple_trimmed.split(" ")
                 df_tb_set.loc[(triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                                valid_until_predicate,
-                                '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
-                                                                         tz_offset=tz_offset)), 'timestamp'] = \
+                               valid_until_predicate,
+                               '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
+                                                                        tz_offset=tz_offset)), 'timestamp'] = \
                     '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)
-                # df_tb_set.loc[[triple_tuple[0], triple_tuple[1], triple_tuple[2]], :]['timestamp'] = 'test'
 
         print("Number of triples: {0}" .format(len(df_tb_set.query('timestamp == \'"{0}{1}"^^xsd:dateTime\''.format(valid_ufn_ts, tz_offset)))))
+
+    """ Export dataset by reading out each line. Pandas does so far not provide any function to export to ttl oder n3"""
+    print("Export data set.")
+    f = open(output_path, "w")
+    f.write("")
+    f.close()
+    with open(output_path, "a") as output_tb_ds:
+        for index, row in df_tb_set.iterrows():
+            triple = "{0} {1} {2}".format(row['s'], row['p'], row['o'])
+            output_tb_ds.write("<<{triple}>> {vers_p} {ts} .\n".format(triple=triple,
+                                                                       vers_p=row['vers_predicate'],
+                                                                       ts=row['timestamp']))
+        output_tb_ds.close()
 
 
 # annotate_initial_set()
