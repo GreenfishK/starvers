@@ -65,7 +65,7 @@ def construct_tb_star_ds(cb_rel_path: str):
 
     """ Annotation of change set triples """
 
-    for t in change_sets[0:2]:
+    for t in change_sets:
         print("Change set between version {0} and {1} processing. ".format(int(t[0])-1, int(t[0])))
         
         """ Annotate added triples using rdf* syntax """
