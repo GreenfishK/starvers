@@ -17,7 +17,7 @@ def diff_set(version1: int, version2: int):
     ic1_df = pd.DataFrame(ic1_list, columns=['s1', 'p1', 'o1'])
 
     ic2 = Graph()
-    ic2.parse(ic1_ds_path)
+    ic2.parse(ic2_ds_path)
     ic2_list = []
     for s, p, o in ic2:
         ic2_list.append([s.n3(), p.n3(), o.n3()])
@@ -49,7 +49,7 @@ for i in range(1, 1299):
     f.close()
     with open(cb_comp_dir + "/" + "data-added_{0}-{1}.nt".format(i, i+1), "a") as output_tb_ds:
         for index, row in cs_added.iterrows():
-            output_tb_ds.write("{0} {1} {2} .".format(row['s1'], row['p1'], row['o1']))
+            output_tb_ds.write("{0} {1} {2} .\n".format(row['s1'], row['p1'], row['o1']))
         output_tb_ds.close()
 
     print("Create and load data-deleted_{0}-{1}.nt".format(i, i+1))
@@ -57,7 +57,7 @@ for i in range(1, 1299):
     f.write("")
     f.close()
     with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i+1), "a") as output_tb_ds:
-        for index, row in cs_added.iterrows():
-            output_tb_ds.write("{0} {1} {2} .".format(row['s1'], row['p1'], row['o1']))
+        for index, row in cs_deleted.iterrows():
+            output_tb_ds.write("{0} {1} {2} .\n".format(row['s1'], row['p1'], row['o1']))
         output_tb_ds.close()
 
