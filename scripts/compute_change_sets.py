@@ -2,28 +2,25 @@ import csv
 import pandas as pd
 from pathlib import Path
 import os
+from rdflib import Graph
 
 
 def diff_set(version1: int, version2: int):
     ic1_ds_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.IC.nt/00{0}.nt".format(str(version1).zfill(4))
     ic2_ds_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/alldata.IC.nt/00{0}.nt".format(str(version2).zfill(4))
 
+    ic1 = Graph()
+    ic1.parse(ic1_ds_path)
     ic1_list = []
-    with open(ic1_ds_path, "r") as ic0:
-        for triple in ic0:
-            tr_array = triple[:-2].split(" ", 2)
-            if len(tr_array) == 3:
-                ic1_list.append(tr_array)
-
+    for s, p, o in ic1:
+        ic1_list.append([s.n3(), p.n3(), o.n3()])
     ic1_df = pd.DataFrame(ic1_list, columns=['s1', 'p1', 'o1'])
 
+    ic2 = Graph()
+    ic2.parse(ic1_ds_path)
     ic2_list = []
-    with open(ic2_ds_path, "r") as ic0:
-        for triple in ic0:
-            tr_array = triple[:-2].split(" ", 2)
-            if len(tr_array) == 3:
-                ic2_list.append(tr_array)
-
+    for s, p, o in ic2:
+        ic2_list.append([s.n3(), p.n3(), o.n3()])
     ic2_df = pd.DataFrame(ic2_list, columns=['s1', 'p1', 'o1'])
 
     df_del = ic1_df.merge(ic2_df, indicator='i', how='left').query('i == "left_only"').drop('i', 1)
@@ -46,10 +43,21 @@ for i in range(1, 1299):
     cs_deleted = output.query("change_type == 'd'")
     assert isinstance(cs_deleted, pd.DataFrame)
 
-    cs_added[['s1', 'p1', 'o1', 'dot']].to_csv(cb_comp_dir + "/" + "data-added_{0}-{1}.nt".format(i, i+1),
-                                               index=False, sep=" ", header=False, quoting=csv.QUOTE_NONE,
-                                               quotechar="", escapechar=' ')
-    cs_deleted[['s1', 'p1', 'o1', 'dot']].to_csv(cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i+1),
-                                                 index=False, sep=" ", header=False, quoting=csv.QUOTE_NONE,
-                                                 quotechar="", escapechar=' ')
+    print("Create and load data-added_{0}-{1}.nt".format(i, i+1))
+    f = open(cb_comp_dir + "/" + "data-added_{0}-{1}.nt".format(i, i+1), "w")
+    f.write("")
+    f.close()
+    with open(cb_comp_dir + "/" + "data-added_{0}-{1}.nt".format(i, i+1), "a") as output_tb_ds:
+        for index, row in cs_added.iterrows():
+            output_tb_ds.write("{0} {1} {2} .".format(row['s1'], row['p1'], row['o1']))
+        output_tb_ds.close()
+
+    print("Create and load data-deleted_{0}-{1}.nt".format(i, i+1))
+    f = open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i+1), "w")
+    f.write("")
+    f.close()
+    with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i+1), "a") as output_tb_ds:
+        for index, row in cs_added.iterrows():
+            output_tb_ds.write("{0} {1} {2} .".format(row['s1'], row['p1'], row['o1']))
+        output_tb_ds.close()
 
