@@ -37,17 +37,12 @@ def construct_tb_star_ds(cb_rel_path: str):
 
     init_ds = []
     for s, p, o in ic0:
-        init_ds.append(["<<", s.n3(), p.n3(), o.n3(),
-                        ">>", valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                       ts=sys_ts_formatted, tz_offset=tz_offset),
-                        "."])
-        init_ds.append(["<<", s.n3(), p.n3(), o.n3(),
-                        ">>", valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                       ts=valid_ufn_ts, tz_offset=tz_offset),
-                        "."])
+        init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+            ts=sys_ts_formatted, tz_offset=tz_offset)])
+        init_ds.append([s.n3(), p.n3(), o.n3(), valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
+            ts=valid_ufn_ts, tz_offset=tz_offset)])
 
-    df_tb_set = pd.DataFrame(init_ds, columns=['open_pointy_brackets', 's', 'p', 'o', 'closing_pointy_brackets',
-                                               'vers_predicate', 'timestamp', 'dot'])
+    df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'vers_predicate', 'timestamp'])
 
     """ Loading change set files """
     # build list (version, filename_added, filename_deleted, version_timestamp)
@@ -57,7 +52,6 @@ def construct_tb_star_ds(cb_rel_path: str):
 
     for filename in os.listdir(change_sets_path):
         version = filename.split('-')[2].split('.')[0].zfill(4)
-
         if filename.startswith("data-added"):
             new_triples[version] = filename
         if filename.startswith("data-deleted"):
@@ -75,37 +69,26 @@ def construct_tb_star_ds(cb_rel_path: str):
         print("Change set between version {0} and {1} processing. ".format(int(t[0])-1, int(t[0])))
         
         """ Annotate added triples using rdf* syntax """
-        with open(change_sets_path + "/" + t[1], "r") as cs:
-            for triple in cs:
-                # Remove dot from statement
-                triple_trimmed = triple[:-2]
-                triple_tuple = triple_trimmed.split(" ")
-                df_tb_set.loc[len(df_tb_set)] = ["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                                                           ">>", valid_from_predicate,
-                                                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                               ts=t[3], tz_offset=tz_offset),
-                                                           "."]
-                df_tb_set.loc[len(df_tb_set)] = ["<<", triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                                                           ">>", valid_until_predicate,
-                                                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-                                                               ts=valid_ufn_ts,
-                                                               tz_offset=tz_offset), "."]
+        cs_add = Graph()
+        cs_add.parse(change_sets_path + "/" + t[1])
+        for s, p, o in cs_add:
+            df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_from_predicate,
+                                             '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)]
+            df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_until_predicate,
+                                             '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
+                                                                                      tz_offset=tz_offset)]
 
         df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate', 'timestamp'], drop=False, inplace=True)
 
         """ Annotate deleted triples using rdf* syntax """
-        with open(change_sets_path + "/" + t[2], "r") as cs:
-            # alldata_versioned = open(alldata_versioned_path, "r")
-            # alldata_versioned_new = alldata_versioned.read()
-            for triple in cs:
-                # Remove dot from statement
-                triple_trimmed = triple[:-2]
-                triple_tuple = triple_trimmed.split(" ")
-                df_tb_set.loc[(triple_tuple[0], triple_tuple[1], triple_tuple[2],
-                               valid_until_predicate,
-                               '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
-                                                                        tz_offset=tz_offset)), 'timestamp'] = \
-                    '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)
+        cs_del = Graph()
+        cs_del.parse(change_sets_path + "/" + t[2])
+        for s, p, o in cs_del:
+            # Remove dot from statement
+            df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate,
+                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
+                                                                    tz_offset=tz_offset)), 'timestamp'] = \
+                '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)
 
         print("Number of triples: {0}" .format(len(df_tb_set.query('timestamp == \'"{0}{1}"^^xsd:dateTime\''.format(valid_ufn_ts, tz_offset)))))
 
