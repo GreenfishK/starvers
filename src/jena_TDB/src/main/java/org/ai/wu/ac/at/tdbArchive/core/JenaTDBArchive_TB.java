@@ -373,7 +373,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
-			System.out.println("matQuery: Time:" + (endTime - startTime)); //DEBUG
+			//System.out.println("matQuery: Time:" + (endTime - startTime)); //DEBUG
 			PrintWriter pw;
 			try {
 				pw = new PrintWriter(new File(outputTime));
@@ -424,7 +424,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			ret.add(materializeQuery(staticVersionQuery, query, Integer.MAX_VALUE));
 
 			long endTime = System.currentTimeMillis();
-			System.out.println("bulkMatQuerying: Time:" + (endTime - startTime)); //DEBUG
+			//System.out.println("bulkMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
 			vStats.get(staticVersionQuery).addValue((endTime - startTime));
 
@@ -489,14 +489,14 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				long startTime = System.currentTimeMillis();
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
-				// System.out.println(queryString);
+				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
 				if (true || !askQuery)
 					solutions.put(i, materializeQuery(i, query, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
-				System.out.println("bulkAllMatQuerying: Time:" + (endTime - startTime)); //DEBUG
+				//System.out.println("bulkAllMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
 				vStats.get(i).addValue((endTime - startTime));
 
