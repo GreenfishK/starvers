@@ -417,11 +417,131 @@ public final class QueryUtils {
 	}
 
     public static final String createLookupQueryRDFStar(final String queryType, String term, int staticVersionQuery, String metadataVersions) {
-        //TODO: implement
+        String[] terms={term};
+		return createLookupQueryRDFStar(queryType,terms,staticVersionQuery,metadataVersions);
     }
 
-    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions) {
-        //TODO: implement
+    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions, version_timestamp) {
+        String queryString = "";
+		QueryRol qtype = getQueryRol(queryType);
+		String subject, predicate, object;
+		
+		//String graphWHERE= "GRAPH <http://example.org/versions> {?graph " + metadataVersions + " "
+		//		+ staticVersionQuery + " . }\n";
+        String prefixes = "PREFIX vers:<https://github.com/GreenfishK/DataCitation/versioning/> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+		//String version_ts = "2021-12-24T19:25:53.915+02:00"
+
+		if (qtype==QueryRol.S){
+			subject = terms[0];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			queryString = prefixes
+                        + "SELECT ?element1 ?element2 WHERE { "
+                        + "<< "+subject+" ?element1 ?element2 >> vers:valid_from ?valid_from. " 
+                        + "<< "+subject+" ?element1 ?element2 >> vers:valid_until ?valid_until. " 
+                        + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+                        + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+                        + "}";
+		}
+		else if (qtype==QueryRol.P){
+			predicate = terms[0];
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			queryString = prefixes
+            + "SELECT ?element1 ?element2 WHERE { "
+            + "<< ?element1 " +predicate+ " ?element2 >> vers:valid_from ?valid_from. " 
+            + "<< ?element1 " +predicate+ " ?element2 >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else if (qtype==QueryRol.O){
+			object = terms[0];
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+            + "SELECT ?element1 ?element2 WHERE { "
+            + "<< ?element1 ?element2 " +object+ " >> vers:valid_from ?valid_from. " 
+            + "<< ?element1 ?element2 " +object+ " >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else if (qtype==QueryRol.SP){
+			subject = terms[0];
+			predicate = terms[1];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			queryString = prefixes
+            + "SELECT ?element1 WHERE { "
+            + "<< " + subject + predicate + " ?element1 >> vers:valid_from ?valid_from. " 
+            + "<< " + subject + predicate + " ?element1 >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else if (qtype==QueryRol.SO){
+			subject = terms[0];
+			object = terms[1];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+            + "SELECT ?element1 WHERE { "
+            + "<< "+subject+" ?element1 "+object+" >> vers:valid_from ?valid_from. " 
+            + "<< "+subject+" ?element1 "+object+" >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else if (qtype==QueryRol.PO){
+			predicate = terms[0];
+			object = terms[1];
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+            + "SELECT ?element1 WHERE { "
+            + "<< ?element1 "+predicate+" "+object+" >> vers:valid_from ?valid_from. " 
+            + "<< ?element1 "+predicate+" "+object+" >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else if (qtype==QueryRol.SPO){
+			subject = terms[0];
+			predicate = terms[1];
+			object = terms[2];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+            + "SELECT * WHERE { "
+            + "<< "+subject+" "+predicate+" "+object+" >> vers:valid_from ?valid_from. " 
+            + "<< "+subject+" "+predicate+" "+object+" >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		else{ //if (qtype==QueryRol.ALL){
+			queryString = prefixes
+            + "SELECT * WHERE { "
+            + "<< ?element1 ?element2 ?element3 >> vers:valid_from ?valid_from. " 
+            + "<< ?element1 ?element2 ?element3 >> vers:valid_until ?valid_until. " 
+            + "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+            + "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)" 
+            + "}";
+		}
+		
+
+		return queryString;
     }
 	
 	public static final String createTPLookupQuery(final String rol, String element) {
