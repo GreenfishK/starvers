@@ -371,6 +371,8 @@ public final class QueryUtils {
 
 		return queryString;
 	}
+
+
 	/*
 	public static final String createLookupQueryAnnotatedGraph2(final String rol, String element, int staticVersionQuery, String metadataVersions) {
 		String queryString = "";
@@ -413,6 +415,14 @@ public final class QueryUtils {
 		// System.out.println("Query is:"+queryString);
 		return queryString;
 	}
+
+    public static final String createLookupQueryRDFStar(final String queryType, String term, int staticVersionQuery, String metadataVersions) {
+        //TODO: implement
+    }
+
+    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions) {
+        //TODO: implement
+    }
 	
 	public static final String createTPLookupQuery(final String rol, String element) {
 		String queryString = "";
