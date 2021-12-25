@@ -57,7 +57,9 @@ import org.apache.jena.util.FileManager;
  import com.hp.hpl.jena.util.FileManager;
  */
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
-
+import java.time.format.DateTimeFormatter;  
+import java.time.LocalDateTime;   
+import java.time.ZoneOffset;
 //import org.apache.jena.system.JenaSystem;
 
 public class JenaTDBArchive_TB_star implements JenaTDBArchive {
@@ -189,7 +191,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol, String version_ts) throws FileNotFoundException, IOException,
+	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 		InterruptedException, ExecutionException {
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
 
@@ -203,7 +205,11 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		}
 
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
-
+        //TODO: this is just for testing! Extend the interface of this function to also include the version timestamp.
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ss.SSSz").withZone(ZoneOffset.UTC);  
+        LocalDateTime version_dt = LocalDateTime.of(2021,12,24,19,25,53,915);
+        String version_ts = version_dt.format(dtf);    
+     
 		int lines = 0;
 		while ((line = br.readLine()) != null) {
 			lines++;
