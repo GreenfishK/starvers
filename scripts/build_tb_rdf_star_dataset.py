@@ -63,6 +63,7 @@ def construct_tb_star_ds(cb_rel_path: str):
     change_sets_path = str(Path.home()) + "/.BEAR/rawdata-bearb/hour/{0}".format(cb_rel_path)
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
+    xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
     tz_offset = "+02:00"
     valid_ufn_ts = '9999-12-31T00:00:00.000'
     sys_ts = datetime.now()
@@ -74,10 +75,10 @@ def construct_tb_star_ds(cb_rel_path: str):
 
     init_ds = []
     for s, p, o in ic0:
-        init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-            ts=sys_ts_formatted, tz_offset=tz_offset)])
-        init_ds.append([s.n3(), p.n3(), o.n3(), valid_until_predicate, '"{ts}{tz_offset}"^^xsd:dateTime'.format(
-            ts=valid_ufn_ts, tz_offset=tz_offset)])
+        init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, '"{ts}{tz_offset}"^^{datetimeref}'.format(
+            ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime)])
+        init_ds.append([s.n3(), p.n3(), o.n3(), valid_until_predicate, '"{ts}{tz_offset}"^^{datetimeref}'.format(
+            ts=valid_ufn_ts, tz_offset=tz_offset, datetimeref=xsd_datetime)])
 
     df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'vers_predicate', 'timestamp'])
 
@@ -109,10 +110,12 @@ def construct_tb_star_ds(cb_rel_path: str):
         cs_add.parse(change_sets_path + "/" + t[1])
         for s, p, o in cs_add:
             df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_from_predicate,
-                                             '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)]
+                                             '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=t[3], tz_offset=tz_offset,
+                                                                                       datetimeref=xsd_datetime)]
             df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_until_predicate,
-                                             '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
-                                                                                      tz_offset=tz_offset)]
+                                             '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=valid_ufn_ts,
+                                                                                       tz_offset=tz_offset,
+                                                                                       datetimeref=xsd_datetime)]
 
         df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate', 'timestamp'], drop=False, inplace=True)
 
@@ -122,11 +125,14 @@ def construct_tb_star_ds(cb_rel_path: str):
         for s, p, o in cs_del:
             # Remove dot from statement
             df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate,
-                           '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=valid_ufn_ts,
-                                                                    tz_offset=tz_offset)), 'timestamp'] = \
-                '"{ts}{tz_offset}"^^xsd:dateTime'.format(ts=t[3], tz_offset=tz_offset)
+                           '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=valid_ufn_ts,
+                                                                     tz_offset=tz_offset,
+                                                                     datetimeref=xsd_datetime)), 'timestamp'] = \
+                '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=t[3], tz_offset=tz_offset, datetimeref=xsd_datetime)
 
-        print("Number of triples: {0}" .format(len(df_tb_set.query('timestamp == \'"{0}{1}"^^xsd:dateTime\''.format(valid_ufn_ts, tz_offset)))))
+        print("Number of triples: {0}" .format(
+            len(df_tb_set.query('timestamp == \'"{0}{1}"^^{2}\''.format(
+                valid_ufn_ts, tz_offset, xsd_datetime)))))
 
     """ Export dataset by reading out each line. Pandas does so far not provide any function 
     to serialize in ttl oder n3 format"""
