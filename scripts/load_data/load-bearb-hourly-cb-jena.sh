@@ -1,5 +1,5 @@
 #/bin/bash
-sudo rm -rf $(pwd)/tdb-bearb-hour/cb/* # to clear database files created by jena if the script needs to be re-executed
+sudo rm -rf ~/.BEAR/tdb-bearb-hour/cb/* # to clear database files created by jena if the script needs to be re-executed
 
 for v in $(seq 0 1 1298); do
     echo $v
@@ -16,19 +16,19 @@ for v in $(seq 0 1 1298); do
     time docker run \
         -it \
         --rm \
-        -v $(pwd)/tdb-bearb-hour/:/var/data/out/ \
-        -v $(pwd)/rawdata-bearb/hour/:/var/data/in/ \
+        -v ~/.BEAR/tdb-bearb-hour/:/var/data/out/ \
+        -v ~/.BEAR/rawdata-bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/add $fileadd \
-        > output/load-bearb-hour-cb-$v-add-.txt
+        > ~/.BEAR/output/load-bearb-hour-cb-$v-add-.txt
     time docker run \
         -it \
         --rm \
-        -v $(pwd)/tdb-bearb-hour/:/var/data/out/ \
-        -v $(pwd)/rawdata-bearb/hour/:/var/data/in/ \
+        -v ~/.BEAR/tdb-bearb-hour/:/var/data/out/ \
+        -v ~/.BEAR/rawdata-bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/del $filedel \
-        > output/load-bearb-hour-cb-$v-del-.txt
+        > ~/.BEAR/output/load-bearb-hour-cb-$v-del-.txt
 done
 
 # stain/jena --sort-args "-S=16G" \ # returned an error message with the latest jena/stain image as of 04.12.2021

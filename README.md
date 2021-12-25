@@ -58,7 +58,7 @@ Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ub
 See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 
 ## Load data into Jena and HDT
-Use the scripts from our [data directory](https://github.com/GreenfishK/BEAR/tree/master/data) to load the data. Execute the scripts one by one. After termination following new files will be added (marked with *):
+Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/tree/master/scripts/load_data) to load the data. These scripts assume that you already created a .BEAR directory in your home directory. Execute the scripts one by one. After termination following new files will be added (marked with *):
 
 ```
 home/.BEAR/  
@@ -69,7 +69,7 @@ home/.BEAR/
 │   ├── cb  
 │   │   ├── *0  
 │   │   │   ├── *add  
-│   │   │   │   ├── *jena database files  
+│   │   │   │   └── *jena database files 
 │   │   │   ├── *del  
 │   │   │   │   └── *jena database files  
 │   │   │   ├── *.  
@@ -77,7 +77,7 @@ home/.BEAR/
 │   │   │   ├── *.  
 │   │   ├── *1298  
 │   │   │   ├── *add  
-│   │   │   │   ├── *jena database files  
+│   │   │   │   └── *jena database files 
 │   │   │   └── *del  
 │   │   │       └── *jena database files  
 │   ├── ic  
@@ -87,9 +87,11 @@ home/.BEAR/
 │   │   ├── *.  
 │   │   ├── *.  
 │   │   ├── *1298  
-│   │   │   ├── jena database files  
-│   └── tb  
-│       ├── *jena database files  
+│   │   │   └── *jena database files 
+│   ├── tb
+│   │   ├── *jena database files
+│   └── tb_star 
+│       └── *jena database files
 ├── hdt-bearb-hour  
 │   ├── ic  
 │   │   ├── *0.hdt  
