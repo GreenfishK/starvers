@@ -149,5 +149,5 @@ def construct_tb_star_ds(cb_rel_path: str):
         output_tb_ds.close()
 
 
-construct_change_sets(1, 1299)
+construct_change_sets(1, 11)
 construct_tb_star_ds("alldata.CB_computed.nt")
