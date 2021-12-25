@@ -89,7 +89,7 @@ Contact
 ==============
 filip.kovacevic@tuwien.ac.at
 
-﻿# Original BEAR README
+# Original BEAR README
 BEAR Benchmark on RDF archives
 
 _This repo has been modified for running OSTRICH experiments_
