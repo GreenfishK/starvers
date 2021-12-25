@@ -55,7 +55,7 @@ Error1: “Docker does not have a release file”
 Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ubuntu version for which there is a docker release, e.g. “focal”: https://stackoverflow.com/questions/41133455/docker-repository-does-not-have-a-release-file-on-running-apt-get-update-on-ubun 
 
 ## Get data
-Download the data and compute the changesets from the ICs to build the RDF* dataset. See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
+Create the local data directories for this experiment. Download the datasets & queries and compute the changesets from the ICs to build the RDF* dataset. See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 
 ## Load data into Jena and HDT
 Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/tree/master/scripts/load_data) to load the data. These scripts assume that you already created a .BEAR directory in your home directory. Execute the scripts one by one. After termination following new files will be added (marked with *):
