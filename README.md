@@ -1,5 +1,6 @@
 Reproduce experiment
 ==============
+Follow the instructions below to reproduce this experiment.
 ## Install docker 
 If you have docker installed already, continue with [Build docker images](https://github.com/GreenfishK/BEAR/blob/master/README.md#build-docker-images)
 install docker on [Ubuntu](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) or [other OS](https://docs.docker.com/get-docker/)
