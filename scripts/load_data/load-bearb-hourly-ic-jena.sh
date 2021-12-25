@@ -1,6 +1,6 @@
 #/bin/bash
-files=$(echo $(pwd)/rawdata-bearb/hour/alldata.IC.nt/*.nt | sed "s%$(pwd)/rawdata-bearb/hour/alldata.IC.nt%/var/data/in%g")
-sudo rm -rf $(pwd)/tdb-bearb-hour/ic/* # to clear database files created by jena if the script needs to be re-executed
+files=$(echo ~/.BEAR/rawdata-bearb/hour/alldata.IC.nt/*.nt | sed "s%~/.BEAR/rawdata-bearb/hour/alldata.IC.nt%/var/data/in%g")
+sudo rm -rf ~/.BEAR/tdb-bearb-hour/ic/* # to clear database files created by jena if the script needs to be re-executed
 
 for file in $files; do
     v=$(echo $file | sed "s/^.*\/\([0-9][0-9]*\)\.nt$/\1-1/" | bc)
@@ -9,11 +9,11 @@ for file in $files; do
         time docker run \
             -it \
             --rm \
-            -v $(pwd)/tdb-bearb-hour/:/var/data/out/ \
-            -v $(pwd)/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
+            -v ~/.BEAR/tdb-bearb-hour/:/var/data/out/ \
+            -v ~/.BEAR/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
             stain/jena /jena/bin/tdbloader2 \
                 --loc /var/data/out/ic/$v $file \
-            > output/load-bearb-hour-ic-$v-.txt
+            > ~/.BEAR/output/load-bearb-hour-ic-$v-.txt
     #fi
 done
 

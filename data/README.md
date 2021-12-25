@@ -14,6 +14,3 @@ Following datasets were not used from this framework:
 Queries are already provided in the [queries_bearb](https://github.com/GreenfishK/BEAR/tree/master/data/queries_bearb) folder. 
 See [readme](https://github.com/GreenfishK/BEAR/tree/master/data/queries_bearb/README.md)
 
-## Scripts
-We use bash scripts to create the database repositories and import data. The original scripts from the [OSTRICH/BEAR github page](https://github.com/rdfostrich/BEAR/tree/master/src/common/data-prepare-scripts) where taken and modified to fit our directory structure and scenarios we evaluated.
-

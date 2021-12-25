@@ -1,5 +1,5 @@
 #/bin/bash
-sudo rm -rf $(pwd)/hdt-bearb-hour/cb/* # to clear database files created by hdt if the script needs to be re-executed
+sudo rm -rf ~/.BEAR/hdt-bearb-hour/cb/* # to clear database files created by hdt if the script needs to be re-executed
 
 for v in $(seq 0 1 1298); do
     echo $v
@@ -15,16 +15,16 @@ for v in $(seq 0 1 1298); do
     time docker run \
         -it \
         --rm \
-        -v $(pwd)/hdt-bearb-hour/:/var/data/out/ \
-        -v $(pwd)/rawdata-bearb/hour/:/var/data/in/ \
+        -v ~/.BEAR/hdt-bearb-hour/:/var/data/out/ \
+        -v ~/.BEAR/rawdata-bearb/hour/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $fileadd /var/data/out/cb/$v.add.hdt 
-        > output/load-bearb-hour-cb-$v-add-hdt.txt
+        > ~/.BEAR/output/load-bearb-hour-cb-$v-add-hdt.txt
     time docker run \
         -it \
         --rm \
-        -v $(pwd)/hdt-bearb-hour/:/var/data/out/ \
-        -v $(pwd)/rawdata-bearb/hour/:/var/data/in/ \
+        -v ~/.BEAR/hdt-bearb-hour/:/var/data/out/ \
+        -v ~/.BEAR/rawdata-bearb/hour/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $filedel /var/data/out/cb/$v.del.hdt 
-        > output/load-bearb-hour-cb-$v-del-hdt.txt
+        > ~/.BEAR/output/load-bearb-hour-cb-$v-del-hdt.txt
 done
 
