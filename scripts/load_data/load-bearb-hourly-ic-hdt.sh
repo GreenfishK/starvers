@@ -1,8 +1,7 @@
 #/bin/bash
-files=$(echo ~/.BEAR/rawdata-bearb/hour/alldata.IC.nt/*.nt | sed "s%~/.BEAR/rawdata-bearb/hour/alldata.IC.nt%/var/data/in%g")
-sudo rm -rf ~/.BEAR/hdt-bearb-hour/ic/* # to clear database files created by hdt if the script needs to be re-executed
-
-echo $files
+data_dir=~/.BEAR
+files=$(echo $data_dir/rawdata-bearb/hour/alldata.IC.nt/*.nt | sed "s%$data_dir/rawdata-bearb/hour/alldata.IC.nt%/var/data/in%g")
+# rm -rf $data_dir/hdt-bearb-hour/ic/* # to clear database files created by hdt if the script needs to be re-executed
 
 for file in $files; do
     v=$(echo $file | sed "s/^.*\/\([0-9][0-9]*\)\.nt$/\1-1/" | bc)
@@ -11,9 +10,9 @@ for file in $files; do
     time docker run \
         -it \
         --rm \
-        -v ~/.BEAR/hdt-bearb-hour/:/var/data/out/ \
-        -v ~/.BEAR/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
+        -v $data_dir/hdt-bearb-hour/:/var/data/out/ \
+        -v $data_dir/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $file /var/data/out/ic/$v.hdt \
-        > ~/.BEAR/output/load-bearb-hour-ic-$v-hdt.txt
+        > $data_dir/output/load-bearb-hour-ic-$v-hdt.txt
 done
 
