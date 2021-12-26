@@ -1,5 +1,5 @@
 # Data Acquisition
-Create a directory .BEAR in your home directory and copy the content of this data directory including all sub-directories into ~/.BEAR .
+Create a directory .BEAR in your home directory and copy the content of this data directory including all sub-directories into ~/.BEAR . Give all user groups full permission (read, write, execute) to this directory and all subdirectories (chmod 777). 
 
 ## Datasets
 Download the BEAR-B hour dataset. See [here](https://github.com/GreenfishK/BEAR/blob/master/data/rawdata-bearb/hour/README.md)
