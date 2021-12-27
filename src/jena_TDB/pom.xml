@@ -4,7 +4,7 @@
 
 	<groupId>org.ai.wu.ac.at</groupId>
 	<artifactId>tdbQuery</artifactId>
-	<version>0.6</version>
+	<version>0.8</version>
 	<packaging>jar</packaging>
 
 	<name>tdbQuery</name>
