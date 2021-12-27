@@ -29,7 +29,6 @@ public interface JenaTDBArchive {
 	/**
 	 * close Jena TDB and release resources 
 	 * 
-	 * @param directory
 	 * @throws RuntimeException
 	 */
 	public void close () throws RuntimeException;

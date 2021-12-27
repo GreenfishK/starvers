@@ -838,8 +838,6 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 
 	/**
 	 * @param queryFile
-	 * @param dataset_adds
-	 * @param dataset_dels
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 * @throws IOException
@@ -852,7 +850,6 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 	/**
 	 * close Jena TDB and release resources
 	 * 
-	 * @param directory
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {

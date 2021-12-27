@@ -536,7 +536,6 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -594,7 +593,6 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -962,7 +960,6 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	/**
 	 * close Jena TDB and release resources
 	 * 
-	 * @param directory
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
