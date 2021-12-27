@@ -28,6 +28,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.jena.base.Sys;
 
 public class JenaTDBArchive_query {
 
@@ -200,6 +201,7 @@ public class JenaTDBArchive_query {
 		}
 		System.out.println("Loading archive "+policy.toUpperCase()+"...");
 		long startTime = System.currentTimeMillis();
+		System.out.println(jenaArchive.getClass()); //DEBUG
 		jenaArchive.load(dirTDBs);
 		long endTime = System.currentTimeMillis();
 		System.out.println("Loaded in "+(endTime - startTime) +" ms");
