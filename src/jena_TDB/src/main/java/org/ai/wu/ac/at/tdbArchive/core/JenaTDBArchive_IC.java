@@ -39,6 +39,7 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
+import org.apache.jena.query.ARQ;
 
 public class JenaTDBArchive_IC implements JenaTDBArchive {
 
@@ -71,6 +72,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 	 */
 	public void load(String directory) {
 		// Initialize Jena
+		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 		File folder = new File(directory);

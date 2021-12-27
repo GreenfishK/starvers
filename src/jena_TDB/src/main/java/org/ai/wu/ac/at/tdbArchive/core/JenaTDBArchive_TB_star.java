@@ -94,6 +94,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	 */
 	public void load(String directory) {
 		// Initialize Jena
+		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 		System.out.println(directory);
@@ -250,7 +251,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		if (measureTime) {
 			// PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynmat-" + inputFile.getName()));
 			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##ver, min, mean, max, stddev, count");
+			pw.println("##ver, min, mean, max, stddev, count, sum");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
 				pw.println(ent.getKey() + " " + ent.getValue().getMin() + " " + ent.getValue().getMean() + " " + ent.getValue().getMax() + " "
 						+ ent.getValue().getStandardDeviation() + " " + ent.getValue().getN()+" "+ent.getValue().getSum());

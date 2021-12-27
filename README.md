@@ -17,7 +17,7 @@ Go to BEAR/src/Jena_TDB and build docker with:
 ```
 docker build -t bear-jena .
 ```
-Go to BEAR/src/HDT and build docker with: 
+Go to BEAR/src/HDT and build with docker which uses maven to build and package the project with dependencies via maven: 
 ```
 docker build -t bear-hdt .
 ```
