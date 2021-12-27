@@ -174,6 +174,7 @@ public class JenaTDBArchive_query {
 			}
 
 		} catch (ParseException e) {
+			System.out.println("EXCEPTION!!!");
 			HelpFormatter format = new HelpFormatter();
 			format.printHelp("App", options);
 			Logger.getLogger(JenaTDBArchive_query.class.getName()).log(Level.SEVERE, null, e);
@@ -201,7 +202,6 @@ public class JenaTDBArchive_query {
 		}
 		System.out.println("Loading archive "+policy.toUpperCase()+"...");
 		long startTime = System.currentTimeMillis();
-		System.out.println(jenaArchive.getClass()); //DEBUG
 		jenaArchive.load(dirTDBs);
 		long endTime = System.currentTimeMillis();
 		System.out.println("Loaded in "+(endTime - startTime) +" ms");

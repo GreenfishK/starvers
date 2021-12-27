@@ -58,7 +58,7 @@ docker run \
     -v ${querydir}:/var/data/queries/ \
     -v ${outputdir}:/var/data/output/ \
     bear-jena \
-    java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query \
+    java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
         -e ${limit} \
         -j 1 \
         -p ${policy} \
