@@ -26,13 +26,7 @@ import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.*;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 
@@ -83,6 +77,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	 */
 	public void load(String directory) {
 		// Initialize Jena
+		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 		dataset = TDBFactory.createDataset(directory);
@@ -351,20 +346,20 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 										finalResultsDel.add(rowResult);
 								}
 							} else {
-								rowResult = new Boolean(true).toString();
+								rowResult = "true";
 								if (isAdd) {
 									// check if it was already as a delete
 									// result and, if so, delete this
 									if (!finalResultsDel.remove(checkOpposite)) {
 										finalResultsAdd.add(rowResult);
-										finalResultsDel.add(new Boolean(false).toString());
+										finalResultsDel.add("true");
 									}
 								} else {
 									// check if it was already as an added
 									// result and, if so, delete this
 									if (!finalResultsAdd.remove(checkOpposite)) {
 										finalResultsDel.add(rowResult);
-										finalResultsAdd.add(new Boolean(false).toString());
+										finalResultsAdd.add("true");
 									}
 								}
 

@@ -29,11 +29,7 @@ import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
 import org.ai.wu.ac.at.tdbArchive.utils.TaskThread;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.*;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 
@@ -71,6 +67,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 	 */
 	public void load(String directory) {
 		// Initialize Jena
+		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 		/*
