@@ -19,6 +19,7 @@ import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_CBTB;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_Hybrid;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_TB;
+import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_TB_star;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -187,6 +188,8 @@ public class JenaTDBArchive_query {
 			jenaArchive = new JenaTDBArchive_CB();
 		} else if (policy.equalsIgnoreCase("tb")) {
 			jenaArchive = new JenaTDBArchive_TB();
+		} else if (policy.equalsIgnoreCase("tb_star")) {
+			jenaArchive = new JenaTDBArchive_TB_star();
 		} else if (policy.equalsIgnoreCase("cbtb")) {
 			jenaArchive = new JenaTDBArchive_CBTB();
 		} else if (policy.equalsIgnoreCase("hybrid")) {

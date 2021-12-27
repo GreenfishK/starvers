@@ -632,4 +632,20 @@ public final class QueryUtils {
         return Integer.MAX_VALUE;
     }
 
+	public static final String getInitialVersionTimestamp() {
+		String queryString = "select (min(?valid_from) as ?initialVersionTS)  where {\n" +
+				"    <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
+				"}";
+
+		return queryString;
+	}
+
+	public static final String getVersionInfos() {
+		String queryString = "select " +
+				"(count(distinct(?valid_from)) as ?cnt_versions) " +
+				"(min(?valid_from) as ?initial_version_ts) where { \n" +
+				"    <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
+				"}\n";
+		return queryString;
+	}
 }

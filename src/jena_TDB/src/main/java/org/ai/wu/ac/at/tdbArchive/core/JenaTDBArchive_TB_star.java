@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -65,11 +66,10 @@ import java.time.ZoneOffset;
 public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 
 	private int TOTALVERSIONS = 0;
-
+	private String initialVersionTS;
 	private String outputTime = "timeApp.txt";
 	private Dataset dataset;
 	private Boolean measureTime = false;
-
 	private static String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
 
 	// private static String metadataVersions = "<http://example.org/isVersion>";
@@ -98,22 +98,22 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		dataset = TDBFactory.createDataset(directory);
 
 		/*
-		 * get number of graphs in order to know the number of versions
+		 * Get number of distinct versions.
 		 */
-
-		String queryGraphs = QueryUtils.getNumGraphVersions(metadataVersions);
-		//System.out.println("queryGraphs:"+queryGraphs);
-		Query query = QueryFactory.create(queryGraphs);
-		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
-		ResultSet results = qexec.execSelect();
+		String cntVersionsQ = QueryUtils.getVersionInfos();
+		Query query1 = QueryFactory.create(cntVersionsQ);
+		QueryExecution qexec1 = QueryExecutionFactory.create(query1, dataset);
+		ResultSet results = qexec1.execSelect();
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
-			String numVersions = soln.getLiteral("numVersions").getLexicalForm();
-			// System.out.println("numVersions:" + numVersions);
-			TOTALVERSIONS = Integer.parseInt(numVersions);
+			int cntVersions = soln.getLiteral("cnt_versions").getInt();
+			System.out.println("Number of distinct versions:" + cntVersions); //DEBUG
+			String initVersionTS = soln.getLiteral("initial_version_ts").getString();
+			System.out.println("Initial version timestamp:" + initVersionTS); //DEBUG
+
+			this.TOTALVERSIONS = cntVersions;
+			this.initialVersionTS = initVersionTS;
 		}
-//TOTALVERSIONS=10; // TODO
-		 //System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
 	}
 
 	/**
@@ -206,11 +206,9 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		}
 
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
-        //TODO: this is just for testing! Extend the interface of this function to also include the version timestamp.
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-ddTHH:mm:ss.SSSz").withZone(ZoneOffset.UTC);  
-        LocalDateTime version_dt = LocalDateTime.of(2021,12,24,19,25,53,915);
-        String version_ts = version_dt.format(dtf);    
-     
+		DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
+		OffsetDateTime version_ts = OffsetDateTime.parse(this.initialVersionTS, DATE_TIME_FORMATTER);
+
 		int lines = 0;
 		while ((line = br.readLine()) != null) {
 			lines++;
@@ -228,7 +226,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				// System.out.println("\n Query at version " + i);
 				long startTime = System.currentTimeMillis();
-				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts);
+				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts.toString());
                 int limit = QueryUtils.getLimit(parts);
 				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
@@ -240,6 +238,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 				//System.out.println("bulkAllMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
 				vStats.get(i).addValue((endTime - startTime));
+				version_ts = version_ts.plusSeconds(1);
 
 			}
 			ret.add(solutions);
