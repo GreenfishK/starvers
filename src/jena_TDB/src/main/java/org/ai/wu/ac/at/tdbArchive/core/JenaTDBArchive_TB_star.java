@@ -143,6 +143,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	 * @throws IOException
 	 */
 	public ArrayList<Map<Integer, DiffSolution>> bulkAlldiffQuerying(String queryFile, String rol, int jump) throws InterruptedException,
+			ExecutionException, IOException {
      	//TODO: implement, if necessary 
 		return null;
 	}
@@ -227,7 +228,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				// System.out.println("\n Query at version " + i);
 				long startTime = System.currentTimeMillis();
-				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, i, metadataVersions, version_ts);
+				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts);
                 int limit = QueryUtils.getLimit(parts);
 				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
@@ -259,7 +260,6 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -289,7 +289,6 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -325,7 +324,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	/**
 	 * Get the results of the provided query in all versions
 	 * 
-	 * @param queryString
+	 * @param TP
 	 * @return
 	 * @throws InterruptedException
 	 * @throws ExecutionException
@@ -395,7 +394,6 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	/**
 	 * close Jena TDB and release resources
 	 * 
-	 * @param directory
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {

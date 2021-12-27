@@ -519,7 +519,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -549,7 +548,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	}
 
 	/**
-	 * @param dataset
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
@@ -593,7 +591,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	/**
 	 * Get the results of the provided query in all versions
 	 * 
-	 * @param queryString
+	 * @param TP
 	 * @return
 	 * @throws InterruptedException
 	 * @throws ExecutionException
@@ -796,7 +794,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	/**
 	 * close Jena TDB and release resources
 	 * 
-	 * @param directory
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
