@@ -33,6 +33,7 @@ import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.jena.base.Sys;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.Query;
@@ -95,6 +96,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		// Initialize Jena
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
+		System.out.println(directory);
 		dataset = TDBFactory.createDataset(directory);
 
 		/*
