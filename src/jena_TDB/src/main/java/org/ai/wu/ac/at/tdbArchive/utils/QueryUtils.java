@@ -416,12 +416,12 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-    public static final String createLookupQueryRDFStar(final String queryType, String term, int staticVersionQuery, String metadataVersions) {
+    public static final String createLookupQueryRDFStar(final String queryType, String term, String version_ts) {
         String[] terms={term};
-		return createLookupQueryRDFStar(queryType,terms,staticVersionQuery,metadataVersions);
+		return createLookupQueryRDFStar(queryType,terms,version_ts);
     }
 
-    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions, version_timestamp) {
+    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, String version_ts) {
         String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
@@ -583,7 +583,6 @@ public final class QueryUtils {
 
 	/**
 	 * @param soln
-	 * @param rowResult
 	 * @return
 	 * @return
 	 */
@@ -605,7 +604,6 @@ public final class QueryUtils {
 
 	/**
 	 * @param soln
-	 * @param rowResult
 	 * @return
 	 * @return
 	 */
