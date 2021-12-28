@@ -33,56 +33,54 @@ Create the local data directories for this experiment. Download the datasets & q
 Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/tree/master/scripts/load_data) to load the data. These scripts assume that you already created a .BEAR directory in your home directory. Execute the scripts one by one. After termination following new files will be added (marked with *):
 
 ```
-home/.BEAR/  
-.
-.
-.
-├── tdb-bearb-hour  
-│   ├── cb  
-│   │   ├── *0  
-│   │   │   ├── *add  
+├── databases
+│   ├── tdb-bearb-hour
+│   │   ├── cb
+│   │   │   ├── *0  
+│   │   │   │   ├── *add  
+│   │   │   │   │   └── *jena database files 
+│   │   │   │   ├── *del  
+│   │   │   │   │   └── *jena database files  
+│   │   │   │   ├── *.  
+│   │   │   │   ├── *.  
+│   │   │   │   ├── *.  
+│   │   │   ├── *1298  
+│   │   │   │   ├── *add  
+│   │   │   │   │   └── *jena database files 
+│   │   │   │   └── *del  
+│   │   │   │       └── *jena database files  
+│   │   └── ic
+│   │   │   ├── *0  
+│   │   │   │   ├── *jena database files  
+│   │   │   ├── *.  
+│   │   │   ├── *.  
+│   │   │   ├── *.  
+│   │   │   ├── *1298  
 │   │   │   │   └── *jena database files 
-│   │   │   ├── *del  
-│   │   │   │   └── *jena database files  
-│   │   │   ├── *.  
-│   │   │   ├── *.  
-│   │   │   ├── *.  
-│   │   ├── *1298  
-│   │   │   ├── *add  
-│   │   │   │   └── *jena database files 
-│   │   │   └── *del  
-│   │   │       └── *jena database files  
-│   ├── ic  
-│   │   ├── *0  
-│   │   │   ├── *jena database files  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   ├── *1298  
-│   │   │   └── *jena database files 
-│   ├── tb
-│   │   ├── *jena database files
-│   └── tb_star 
-│       └── *jena database files
-├── hdt-bearb-hour  
-│   ├── ic  
-│   │   ├── *0.hdt  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   └── *1298.hdt  
-│   ├── cb  
-│   │   ├── *0.add.hdt  
-│   │   ├── *1.add.hdt  
-│   │   ├── *1.del.hdt  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   ├── *.  
-│   │   ├── *1298.del.hdt  
-│   │   └── *1298.del.hdt  
-└── output  
-    └──logs
-       └── *log files from data import   
+│   │   ├── tb
+│   │   │   ├── *jena database files
+│   │   └── tb_star 
+│   │       └── *jena database files
+│   └── hdt-bearb-hour
+│       ├── ic  
+│       │   ├── *0.hdt  
+│       │   ├── *.  
+│       │   ├── *.  
+│       │   ├── *.  
+│       │   └── *1298.hdt  
+│       └── cb  
+│           ├── *0.add.hdt  
+│           ├── *1.add.hdt  
+│           ├── *1.del.hdt  
+│           ├── *.  
+│           ├── *.  
+│           ├── *.  
+│           ├── *1298.del.hdt  
+│           └── *1298.del.hdt  
+└── output
+    └── logs
+        └── *log files from data import  
+
 ```
 
 ## Run queries and log performance
