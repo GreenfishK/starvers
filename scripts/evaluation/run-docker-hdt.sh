@@ -2,21 +2,21 @@
 
 case "$1" in
   beara)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/beara-hdt/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_new/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/beara/
+    datasetdir=~/.BEAR/databases/hdt-beara/
+    querydir=~/.BEAR/queries/queries_new/
+    outputdir=~/.BEAR/output/time/hdt/beara/
     limit=10
     ;;
   bearb-day)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/bearb-day-hdt/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-day/
+    datasetdir=~/.BEAR/databases/hdt-bearb-day/
+    querydir=~/.BEAR/queries/queries_bearb/
+    outputdir=~/.BEAR/output/time/hdt/bearb-day/
     limit=88
     ;;
   bearb-hour)
-    datasetdir=/mnt/datastore/data/dslab/experimental/patch/bearb-hour-hdt/
-    querydir=/mnt/datastore/data/dslab/experimental/patch/BEAR/queries_bearb/
-    outputdir=/mnt/datastore/data/dslab/experimental/patch/output/time/bearb-hour/
+    datasetdir=~/.BEAR/databases/hdt-bearb-hour/
+    querydir=~/.BEAR/queries/queries_bearb/
+    outputdir=~/.BEAR/output/time/hdt/bearb-hour/
     limit=1298
     ;;
   *)
@@ -58,7 +58,12 @@ docker run -it --rm \
     -l ${limit} \
     -t spo \
     -i /var/data/queries/${query} \
-    -o /var/data/output/time-hdt-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").txt
+    -o /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").txt
 done
 done
 done
+
+# Move to directory with local host name and local timestamp
+lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
+sudo mkdir ${outputdir}/${HOSTNAME}-${lokal_timestamp}
+sudo mv ${outputdir}/time* ${outputdir}/${HOSTNAME}-${lokal_timestamp}

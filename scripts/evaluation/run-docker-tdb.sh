@@ -1,24 +1,22 @@
 #!/bin/bash
 
-lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
-
 case "$1" in
   beara)
-    datasetdir=~/.BEAR/tdb/
+    datasetdir=~/.BEAR/databases/tdb-beara/
     querydir=~/.BEAR/queries/queries_new/
-    outputdir=~/.BEAR/output/time/beara/
+    outputdir=~/.BEAR/output/time/tdb/beara/
     limit=9
     ;;
   bearb-day)
-    datasetdir=~/.BEAR/tdb-bearb-day/
+    datasetdir=~/.BEAR/databases/tdb-bearb-day/
     querydir=~/.BEAR/queries/queries_bearb/
-    outputdir=~/.BEAR/output/time/bearb-day/
+    outputdir=~/.BEAR/output/time/tdb/bearb-day/
     limit=88
     ;;
   bearb-hour)
-    datasetdir=~/.BEAR/tdb-bearb-hour/
+    datasetdir=~/.BEAR/databases/tdb-bearb-hour/
     querydir=~/.BEAR/queries/queries_bearb/
-    outputdir=~/.BEAR/output/time/bearb-hour/
+    outputdir=~/.BEAR/output/time/tdb/bearb-hour/
     limit=1298
     ;;
   *)
@@ -27,24 +25,11 @@ case "$1" in
     ;;
 esac
 
-policies="tb_star tb" # ic cb cbtb"
-categories="mat"
-#categories="mat diff ver"
+
+policies="tb" # tb tb_star ic cb cbtb"
+categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
 echo ${queries}
-
-# Overrides for local testing - to be put in comments in committed version
-#policies="cb"
-#categories="mat"
-#case "$1" in
-#  beara)
-#    queries="po-queries-lowCardinality.txt"
-#    ;;
-#  bearb-day | bearb-hour)
-#    queries="p.txt"
-#    ;;
-#esac
-# End overrides for local testing
 
 for policy in ${policies[@]}; do
 for category in ${categories[@]}; do
@@ -72,5 +57,6 @@ done
 done
 
 # Move to directory with local host name and local timestamp
+lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
 sudo mkdir ${outputdir}/${HOSTNAME}-${lokal_timestamp}
 sudo mv ${outputdir}/time* ${outputdir}/${HOSTNAME}-${lokal_timestamp}

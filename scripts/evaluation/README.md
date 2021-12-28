@@ -1,6 +1,7 @@
+# Jena TDB
 Run the following command to execute the queries for all policies (TB, CB, IC) and query types (mat, diff, ver):
 ```
-./run-docker.sh bearb-hour 2>&1 | tee bearb-hour.log
+./run-docker-tdb.sh bearb-hour 2>&1 | tee bearb-hour.log
 ```
 Upon execution following new directories and files are created (marked with *):
 
@@ -12,7 +13,7 @@ home/.BEAR/
 └── output  
     └── *time
         └── *bearb-hour
-	   └── *18 datasets with time and other measurements for each policy, query category and query set.
+	        └── *18 datasets with time and other measurements for each policy, query category and query set.
 
 
 ```
@@ -71,3 +72,5 @@ Exception in thread "main" java.lang.OutOfMemoryError: GC overhead limit exceede
 	at org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC.bulkAllMatQuerying(JenaTDBArchive_IC.java:209)
 	at org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query.main(JenaTDBArchive_query.java:242)
 ```
+# HDT
+Not evaluated yet.
