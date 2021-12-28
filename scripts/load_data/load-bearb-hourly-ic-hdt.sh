@@ -13,6 +13,6 @@ for file in $files; do
         -v $data_dir/hdt-bearb-hour/:/var/data/out/ \
         -v $data_dir/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $file /var/data/out/ic/$v.hdt \
-        > $data_dir/output/load-bearb-hour-ic-$v-hdt.txt
+        > $data_dir/output/logs/load-bearb-hour-ic-$v-hdt.txt
 done
 
