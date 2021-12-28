@@ -21,7 +21,7 @@ for v in $(seq 0 1 1298); do
         -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/add $fileadd \
-        > $data_dir/output/load-bearb-hour-cb-$v-add-.txt
+        > $data_dir/output/logs/load-bearb-hour-cb-$v-add-.txt
     time docker run \
         -it \
         --rm \
@@ -29,7 +29,7 @@ for v in $(seq 0 1 1298); do
         -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/del $filedel \
-        > $data_dir/output/load-bearb-hour-cb-$v-del-.txt
+        > $data_dir/output/logs/load-bearb-hour-cb-$v-del-.txt
 done
 
 # stain/jena --sort-args "-S=16G" \ # returned an error message with the latest jena/stain image as of 04.12.2021

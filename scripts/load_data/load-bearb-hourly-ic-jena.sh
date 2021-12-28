@@ -14,7 +14,7 @@ for file in $files; do
             -v $data_dir/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
             stain/jena /jena/bin/tdbloader2 \
                 --loc /var/data/out/ic/$v $file \
-            > $data_dir/output/load-bearb-hour-ic-$v-.txt
+            > $data_dir/output/logs/load-bearb-hour-ic-$v-.txt
     #fi
 done
 
