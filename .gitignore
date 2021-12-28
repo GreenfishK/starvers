@@ -1,4 +1,5 @@
 .idea/
+.ipynb_checkpoints/
 .DS_Store
 **/*.log
 src/jena_TDB/target/*
