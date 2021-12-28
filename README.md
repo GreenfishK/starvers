@@ -93,5 +93,5 @@ Contact
 ==============
 filip.kovacevic@tuwien.ac.at
 
-# Original BEAR README
+# Original OSTRICH README
 see README_orig.txt
