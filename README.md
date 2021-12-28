@@ -21,6 +21,7 @@ Go to BEAR/src/HDT and build with docker.
 ```
 docker build -t bear-hdt .
 ```
+### Troubleshoot
 Error1: “Docker does not have a release file”
 
 Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ubuntu version for which there is a docker release, e.g. “focal”: https://stackoverflow.com/questions/41133455/docker-repository-does-not-have-a-release-file-on-running-apt-get-update-on-ubun 
@@ -69,7 +70,7 @@ home/.BEAR/
 │   │   ├── *.  
 │   │   ├── *.  
 │   │   ├── *.  
-│   │   ├── *1298.hdt  
+│   │   └── *1298.hdt  
 │   ├── cb  
 │   │   ├── *0.add.hdt  
 │   │   ├── *1.add.hdt  
@@ -78,9 +79,10 @@ home/.BEAR/
 │   │   ├── *.  
 │   │   ├── *.  
 │   │   ├── *1298.del.hdt  
-│   │   ├── *1298.del.hdt  
+│   │   └── *1298.del.hdt  
 └── output  
-    └──*log files from data import   
+    └──logs
+       └── *log files from data import   
 ```
 
 ## Run queries and log performance
