@@ -13,7 +13,7 @@ docker run hello-world
 ```
 
 ## Build docker images
-Go to BEAR/src/Jena_TDB and build with docker which uses maven to build and package the project with dependencies via maven: 
+Go to BEAR/src/Jena_TDB and build with docker. The docker file uses a maven image to build and package the project with dependencies: 
 ```
 docker build -t bear-jena .
 ```
