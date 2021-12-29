@@ -475,7 +475,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
-			System.err.println("Query " + lines+1);
+			System.out.printf("Query %x%n", lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);

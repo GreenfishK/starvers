@@ -196,8 +196,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	 * @throws ExecutionException
 	 */
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
-		InterruptedException, ExecutionException {
-		System.out.println("Running bulkAllMatQuerying");
+			InterruptedException, ExecutionException {
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -217,7 +216,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
-			System.err.println("Query " + lines+1);
+			System.out.printf("Query %x%n", lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts.toString());
