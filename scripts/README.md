@@ -1,11 +1,11 @@
 # Data processing and visualization 
 ## Building the RDF* dataset
-We use the script build_tb_rdf_star_dataset.py to first compute change sets from the original dbpedia ICs provided on the [BEAR webpage](https://aic.ai.wu.ac.at/qadlod/bear.html). From the initial dataset 000001.nt and the computed change sets we build the RDF* datasets alldata.TB_star_flat.ttl and alldata.TB_star_hierarchical.ttl. Both datasets are annotated using RDF* syntax but the annotation style differs. In former dataset we use a "flat" style, meaning that we have as many data triples stored as there are annotations:\
+We use the script build_tb_rdf_star_dataset.py to first compute change sets from the original dbpedia ICs provided on the [BEAR webpage](https://aic.ai.wu.ac.at/qadlod/bear.html). From the initial dataset 000001.nt and the computed change sets we build the RDF* datasets alldata.TB_star_flat.ttl and alldata.TB_star_hierarchical.ttl. Both datasets are annotated using RDF* syntax but the annotation style differs. In former dataset we use a "flat" style, meaning that we have as many data triples stored as there are annotations:
 ```
 <<<s> <p> <o>>> <valid_from_predicate> <valid_from_date> 
 <<<s> <p> <o>>> <valid_until_predicate> <valid_until_date> 
 ```
-In the latter dataset we use a hierarchical approach and nest one specific triple as many times as there are annotation for that triple. This means that the data triple is uniquely represented in the whole dataset: \
+In the latter dataset we use a hierarchical approach and nest one specific triple as many times as there are annotation for that triple. This means that the data triple is uniquely represented in the whole dataset: 
 ```
 <<<<<s> <p> <o>>> <valid_from_predicate> <valid_from_date>>> <valid_until_predicate> <valid_until_date> 
 ```
