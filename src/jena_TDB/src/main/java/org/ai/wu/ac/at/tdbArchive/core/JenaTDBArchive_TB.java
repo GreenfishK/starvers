@@ -480,7 +480,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
-				System.out.println(queryString); //DEBUG
+				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
 
 				long startTime = System.currentTimeMillis();
