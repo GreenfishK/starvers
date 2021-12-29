@@ -561,21 +561,18 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				// System.out.println("Query at version " + i);
 				// System.out.println(queryString);
-
 				Query query = QueryFactory.create(queryString);
+
 				long startTime = System.currentTimeMillis();
 				if (!askQuery)
 					solutions.put(i, materializeQuery(i, query));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
-
 				long endTime = System.currentTimeMillis();
-				// System.out.println("Time:" + (endTime - startTime));
-				vStats.get(i).addValue((endTime - startTime));
 
+				vStats.get(i).addValue((endTime - startTime));
 			}
 			ret.add(solutions);
-
 		}
 		br.close();
 

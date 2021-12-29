@@ -470,35 +470,25 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		}
 
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
-
-		int lines = 0;
-		while ((line = br.readLine()) != null) {
-			lines++;
+		for (int lines = 0; (line = br.readLine()) != null; lines++) {
 			String[] parts = line.split(" ");
-
-			// String element = parts[0];
-
-			/*
-			 * warmup the system
-			 */
 			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
-			System.err.println("Query " + lines);
+			System.err.println("Query " + lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
-				// System.out.println("\n Query at version " + i);
-				long startTime = System.currentTimeMillis();
+				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
-				//System.out.println(queryString); //DEBUG
+				System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
+
+				long startTime = System.currentTimeMillis();
 				if (true || !askQuery)
 					solutions.put(i, materializeQuery(i, query, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
-				//System.out.println("bulkAllMatQuerying: Time:" + (endTime - startTime)); //DEBUG
-
 				vStats.get(i).addValue((endTime - startTime));
 
 			}
@@ -773,15 +763,13 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			QuerySolution soln = sortResults.next();
 			// assume we have a graph variable as a response
 			String graphResponse = soln.getResource("graph").toString();
-			// System.out.println("--graphResponse:" + graphResponse);
 			finalResults.add(graphResponse);
 		}
-
 		long endTime = System.currentTimeMillis();
-		// System.out.println("Warmup Time:" + (endTime - startTime));
+		System.out.println("Warmup Time:" + (endTime - startTime));
+		System.out.println(finalResults);
 
 		qexec.close();
-
 	}
 
 	private static String createWarmupQuery() {

@@ -507,9 +507,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
 				// System.out.println("Time:" + (endTime - startTime));
-
 				vStats.get(i).addValue((endTime - startTime));
-
 				timeVersion[i] += (endTime - startTime);
 				numQueriesVersion[i] += 1;
 			}
