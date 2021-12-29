@@ -135,25 +135,20 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
                 df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_from_predicate, valid_from_ts_res,
                                                  valid_until_predicate, valid_ufn_ts_res]
 
-        if annotation_style == AnnotationStyle.FLAT:
-            df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate', 'timestamp'], drop=False, inplace=True)
-        if annotation_style == AnnotationStyle.HIERARCHICAL:
-            df_tb_set.set_index(['s', 'p', 'o', 'valid_until_predicate', 'valid_until_timestamp'],
-                                drop=False, inplace=True)
-
         """ Annotate deleted triples using rdf* syntax """
+        df_tb_set.set_index(['s', 'p', 'o'], drop=False, inplace=True)
         cs_del = Graph()
         cs_del.parse(change_sets_path + "/" + t[2])
         if annotation_style == AnnotationStyle.FLAT:
             for s, p, o in cs_del:
-                df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate, valid_ufn_ts_res),
-                              'timestamp'] = valid_from_ts_res
-            print("Number of triples: {0}".format(len(df_tb_set.query('timestamp == {0}'.format(valid_ufn_ts_res)))))
+                df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'timestamp'] = valid_from_ts_res
+            print("Number of triples: {0}".format(len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
         if annotation_style == AnnotationStyle.HIERARCHICAL:
             for s, p, o in cs_del:
-                df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate, valid_ufn_ts_res),
-                              'valid_until_predicate'] = valid_from_ts_res
-            print("Number of triples: {0}".format(len(df_tb_set)))
+                df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'valid_until_timestamp'] = valid_from_ts_res
+            print("Number of triples: {0}".format(
+                len(df_tb_set.query("valid_until_timestamp == '{0}'".format(valid_ufn_ts_res)))))
+
     """ Export dataset by reading out each line. Pandas does so far not provide any function 
     to serialize in ttl oder n3 format"""
     print("Export data set.")
@@ -187,5 +182,5 @@ add_change_sets_until_vers = 10
 construct_tb_star_ds(dataset_dir=ds_dir,
                      cb_rel_path="alldata.CB_computed.nt",
                      last_change_set=add_change_sets_until_vers,
-                     output_file="alldata.TB_star_hierarchical_annotation.ttl",
+                     output_file="alldata.TB_star_flat_hierarchical.ttl",
                      annotation_style=AnnotationStyle.HIERARCHICAL)
