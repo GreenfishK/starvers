@@ -84,7 +84,7 @@ Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/
 ```
 
 ## Run queries and log performance
-Run the queries via docker for [Jena](https://github.com/GreenfishK/BEAR/blob/master/scripts/evaluation/run-docker-tdb.sh) and HDT to evaluate the triple store vendors' performance for different archiving policies and query categories.
+Run the queries via docker for [Jena](https://github.com/GreenfishK/BEAR/blob/master/scripts/evaluation) and HDT to evaluate the triple store vendors' performance for different archiving policies and query categories.
 
 ## Plot performance measurements
 Use the [python script](https://github.com/GreenfishK/BEAR/blob/master/scripts/plot_tb_and_tb_star.py) to plot the performance across all versions for different archiving policies, query categories and query sets.
