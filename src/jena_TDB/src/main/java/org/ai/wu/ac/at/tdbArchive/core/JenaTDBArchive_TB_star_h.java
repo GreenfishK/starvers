@@ -325,7 +325,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	}
 
 	private static String createWarmupQuery() {
-		return "select ?s ?p ?o where { <<<<?s ?p ?o>> ?x ?y >> ?a ? b . } limit 100";
+		return "select ?s ?p ?o where { <<<<?s ?p ?o>> ?x ?y >> ?a ?b . } limit 100";
 	}
 
 	/**
