@@ -8,7 +8,7 @@ time docker run \
     -v $data_dir/databases/tdb-bearb-hour/:/var/data/out/ \
     -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
     stain/jena /jena/bin/tdbloader2 \
-        --loc /var/data/out/tb_star /var/data/in/alldata.TB_star_flat.ttl \
+        --loc /var/data/out/tb_star_f /var/data/in/alldata.TB_star_flat.ttl \
     > $data_dir/output/logs/load-bearb-hour-tb_star_f--.txt
 
 # stain/jena --sort-args "-S=16G" \ # returned an error message with the latest jena/stain image as of 04.12.2021
