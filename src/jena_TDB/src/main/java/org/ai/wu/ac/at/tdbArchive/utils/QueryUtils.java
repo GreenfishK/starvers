@@ -416,20 +416,17 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-    public static final String createLookupQueryRDFStar(final String queryType, String term, String version_ts) {
+    public static final String createLookupQueryRDFStar_f(final String queryType, String term, String version_ts) {
         String[] terms={term};
-		return createLookupQueryRDFStar(queryType,terms,version_ts);
+		return createLookupQueryRDFStar_f(queryType,terms,version_ts);
     }
 
-    public static final String createLookupQueryRDFStar(final String queryType, String[] terms, String version_ts) {
+    public static final String createLookupQueryRDFStar_f(final String queryType, String[] terms, String version_ts) {
         String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
-		
-		//String graphWHERE= "GRAPH <http://example.org/versions> {?graph " + metadataVersions + " "
-		//		+ staticVersionQuery + " . }\n";
+
         String prefixes = "PREFIX vers:<https://github.com/GreenfishK/DataCitation/versioning/> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
-		//String version_ts = "2021-12-24T19:25:53.915+02:00"
 
 		if (qtype==QueryRol.S){
 			subject = terms[0];
@@ -543,7 +540,124 @@ public final class QueryUtils {
 
 		return queryString;
     }
-	
+
+	public static final String createLookupQueryRDFStar_h(final String queryType, String term, String version_ts) {
+		String[] terms={term};
+		return createLookupQueryRDFStar_h(queryType,terms,version_ts);
+	}
+
+	public static final String createLookupQueryRDFStar_h(final String queryType, String[] terms, String version_ts) {
+		String queryString = "";
+		QueryRol qtype = getQueryRol(queryType);
+		String subject, predicate, object;
+
+		String prefixes = "PREFIX vers:<https://github.com/GreenfishK/DataCitation/versioning/> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ";
+
+		if (qtype==QueryRol.S){
+			subject = terms[0];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 ?element2 WHERE { "
+					+ "<<<< "+subject+" ?element1 ?element2 >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.P){
+			predicate = terms[0];
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 ?element2 WHERE { "
+					+ "<<<< ?element1 " +predicate+ " ?element2 >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until."
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.O){
+			object = terms[0];
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 ?element2 WHERE { "
+					+ "<<<< ?element1 ?element2 " +object+ " >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.SP){
+			subject = terms[0];
+			predicate = terms[1];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 WHERE { "
+					+ "<<<< " + subject + predicate + " ?element1 >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.SO){
+			subject = terms[0];
+			object = terms[1];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 WHERE { "
+					+ "<<<< "+subject+" ?element1 "+object+" >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.PO){
+			predicate = terms[0];
+			object = terms[1];
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+					+ "SELECT ?element1 WHERE { "
+					+ "<<<< ?element1 "+predicate+" "+object+" >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else if (qtype==QueryRol.SPO){
+			subject = terms[0];
+			predicate = terms[1];
+			object = terms[2];
+			if (subject.startsWith("http"))
+				subject = "<" + subject + ">";
+			if (predicate.startsWith("http"))
+				predicate = "<" + predicate + ">";
+			if (object.startsWith("http"))
+				object = "<" + object + ">";
+			queryString = prefixes
+					+ "SELECT * WHERE { "
+					+ "<<<< "+subject+" "+predicate+" "+object+" >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+		else{ //if (qtype==QueryRol.ALL){
+			queryString = prefixes
+					+ "SELECT * WHERE { "
+					+ "<<<< ?element1 ?element2 ?element3 >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until. "
+					+ "bind(\"" + version_ts + "\"^^xsd:dateTime as ?TimeOfExecution) "
+					+ "filter(?valid_from <= ?TimeOfExecution &&  ?TimeOfExecution < ?valid_until)"
+					+ "}";
+		}
+
+
+		return queryString;
+	}
+
 	public static final String createTPLookupQuery(final String rol, String element) {
 		String queryString = "";
 		if (rol.equalsIgnoreCase("subject") || rol.equalsIgnoreCase("s") || rol.equalsIgnoreCase("subjects")) {
@@ -632,19 +746,21 @@ public final class QueryUtils {
         return Integer.MAX_VALUE;
     }
 
-	public static final String getInitialVersionTimestamp() {
-		String queryString = "select (min(?valid_from) as ?initialVersionTS)  where {\n" +
-				"    <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
-				"}";
-
-		return queryString;
-	}
-
-	public static final String getVersionInfos() {
+	public static final String getVersionInfos_f() {
 		String queryString = "select " +
 				"(count(distinct(?valid_from)) as ?cnt_versions) " +
 				"(min(?valid_from) as ?initial_version_ts) where { \n" +
 				"    <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
+				"}\n";
+		return queryString;
+	}
+
+	public static final String getVersionInfos_h() {
+		String queryString = "select " +
+				"(count(distinct(?valid_from)) as ?cnt_versions) " +
+				"(min(?valid_from) as ?initial_version_ts) where { \n" +
+				"    <<<<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >>" +
+				" <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.\n" +
 				"}\n";
 		return queryString;
 	}

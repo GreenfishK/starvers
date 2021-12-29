@@ -59,7 +59,9 @@ Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/
 │   │   │   │   └── *jena database files 
 │   │   ├── tb
 │   │   │   ├── *jena database files
-│   │   └── tb_star 
+│   │   ├── tb_star_f 
+│   │   │   └── *jena database files
+│   │   └── tb_star_h 
 │   │       └── *jena database files
 │   └── hdt-bearb-hour
 │       ├── ic  

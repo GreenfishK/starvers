@@ -1,70 +1,27 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
+import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
+import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.jena.query.*;
+import org.apache.jena.sparql.mgt.Explain;
+import org.apache.jena.tdb.TDBFactory;
+import org.apache.jena.util.FileManager;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
-import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
-import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
-import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
-import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.jena.base.Sys;
-import org.apache.jena.query.ARQ;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.Query;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QueryFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
-import org.apache.jena.rdf.model.Literal;
-import org.apache.jena.sparql.mgt.Explain;
-import org.apache.jena.tdb.TDBFactory;
-import org.apache.jena.util.FileManager;
-/*import com.hp.hpl.jena.query.Dataset;
- import com.hp.hpl.jena.query.Query;
- import com.hp.hpl.jena.query.QueryExecution;
- import com.hp.hpl.jena.query.QueryExecutionFactory;
- import com.hp.hpl.jena.query.QueryFactory;
- import com.hp.hpl.jena.query.QuerySolution;
- import com.hp.hpl.jena.query.ResultSet;
- import com.hp.hpl.jena.rdf.model.Literal;
- import com.hp.hpl.jena.rdf.model.RDFNode;
- import com.hp.hpl.jena.tdb.TDBFactory;
- import com.hp.hpl.jena.util.FileManager;
- */
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
-import java.time.format.DateTimeFormatter;  
-import java.time.LocalDateTime;   
-import java.time.ZoneOffset;
 //import org.apache.jena.system.JenaSystem;
 
-public class JenaTDBArchive_TB_star implements JenaTDBArchive {
+public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 
 	private int TOTALVERSIONS = 0;
 	private String initialVersionTS;
@@ -83,7 +40,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_TB_star() throws FileNotFoundException {
+	public JenaTDBArchive_TB_star_h() throws FileNotFoundException {
 		this.measureTime = false;
 	}
 
@@ -103,7 +60,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		/*
 		 * Get number of distinct versions.
 		 */
-		String cntVersionsQ = QueryUtils.getVersionInfos();
+		String cntVersionsQ = QueryUtils.getVersionInfos_h();
 		Query query1 = QueryFactory.create(cntVersionsQ);
 		QueryExecution qexec1 = QueryExecutionFactory.create(query1, dataset);
 		ResultSet results = qexec1.execSelect();
@@ -219,7 +176,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 			System.out.printf("Query %x%n", lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				//System.out.println("Query at version: " + i); //DEBUG
-				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts.toString());
+				String queryString = QueryUtils.createLookupQueryRDFStar_h(rol, parts, version_ts.toString());
 				int limit = QueryUtils.getLimit(parts);
 				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
@@ -354,7 +311,6 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 		ResultSet results = qexec.execSelect();
 
-		//Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
 		HashSet<String> finalResults = new HashSet<>();
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
@@ -369,7 +325,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 	}
 
 	private static String createWarmupQuery() {
-		return "select ?s ?p ?o where { <<?s ?p ?o>> ?x ?y . } limit 100";
+		return "select ?s ?p ?o where { <<<<?s ?p ?o>> ?x ?y >> ?a ? b . } limit 100";
 	}
 
 	/**
