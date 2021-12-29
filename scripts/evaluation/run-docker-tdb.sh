@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 
-policies="tb" # tb tb_star ic cb cbtb"
+policies="tb_star tb" # tb tb_star ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
 echo ${queries}

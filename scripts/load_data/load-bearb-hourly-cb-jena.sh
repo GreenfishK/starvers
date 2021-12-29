@@ -17,16 +17,16 @@ for v in $(seq 0 1 1298); do
     time docker run \
         -it \
         --rm \
-        -v $data_dir/tdb-bearb-hour/:/var/data/out/ \
-        -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
+        -v $data_dir/databases/tdb-bearb-hour/:/var/data/out/ \
+        -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/add $fileadd \
         > $data_dir/output/logs/load-bearb-hour-cb-$v-add-.txt
     time docker run \
         -it \
         --rm \
-        -v $data_dir/tdb-bearb-hour/:/var/data/out/ \
-        -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
+        -v $data_dir/databases/tdb-bearb-hour/:/var/data/out/ \
+        -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
         stain/jena /jena/bin/tdbloader2 \
             --loc /var/data/out/cb/$v/del $filedel \
         > $data_dir/output/logs/load-bearb-hour-cb-$v-del-.txt

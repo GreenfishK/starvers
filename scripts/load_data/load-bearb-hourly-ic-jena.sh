@@ -10,8 +10,8 @@ for file in $files; do
         time docker run \
             -it \
             --rm \
-            -v $data_dir/tdb-bearb-hour/:/var/data/out/ \
-            -v $data_dir/rawdata-bearb/hour/alldata.IC.nt/:/var/data/in/ \
+            -v $data_dir/databases/tdb-bearb-hour/:/var/data/out/ \
+            -v $data_dir/rawdata/bearb/hour/alldata.IC.nt/:/var/data/in/ \
             stain/jena /jena/bin/tdbloader2 \
                 --loc /var/data/out/ic/$v $file \
             > $data_dir/output/logs/load-bearb-hour-ic-$v-.txt

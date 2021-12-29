@@ -5,8 +5,8 @@ data_dir=~/.BEAR
 time docker run \
     -it \
     --rm \
-    -v $data_dir/tdb-bearb-hour/:/var/data/out/ \
-    -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
+    -v $data_dir/databases/tdb-bearb-hour/:/var/data/out/ \
+    -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
     stain/jena /jena/bin/tdbloader2 \
         --loc /var/data/out/tb /var/data/in/alldata.TB.nq \
     > $data_dir/output/logs/load-bearb-hour-tb--.txt
