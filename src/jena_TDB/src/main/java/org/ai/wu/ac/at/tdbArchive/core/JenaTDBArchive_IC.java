@@ -216,22 +216,18 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				// system.out.println("Query at version " + i);
-
 				Query query = QueryFactory.create(queryString);
-				long startTime = System.currentTimeMillis();
 
+				long startTime = System.currentTimeMillis();
 				if (true || !rol.equalsIgnoreCase("SPO"))
 					solutions.put(i, materializeQuery(i, query, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
-
 				long endTime = System.currentTimeMillis();
-				// system.out.println("Time:" + (endTime - startTime));
-				vStats.get(i).addValue((endTime - startTime));
 
+				vStats.get(i).addValue((endTime - startTime));
 			}
 			ret.add(solutions);
-
 		}
 		br.close();
 
@@ -742,8 +738,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			for (Future<QueryResult> result : results) {
 				ArrayList<String> solutions = new ArrayList<String>();
 				QueryResult res = result.get();
-				// system.out.println("version:" + res.version);
-				// System.out.println("version:" + res.sol.hasNext());
+
 				if (!askQuery) {
 					while (res.getSol().hasNext() && limit-- > 0) {
 						QuerySolution soln = res.getSol().next();
@@ -820,10 +815,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 			// System.out.println("Iterating results " + i);
 			while (results.get(i).getSol().hasNext()) {
 				QuerySolution soln = results.get(i).getSol().next();
-				// System.out.println("++ ADDED in Version:" + i);
 				String rowResult = QueryUtils.serializeSolution(soln);
-
-				// System.out.println("****** RowResult: " + rowResult);
 				finalResults.add(rowResult);
 			}
 		}

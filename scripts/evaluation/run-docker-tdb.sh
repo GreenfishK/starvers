@@ -35,7 +35,7 @@ for policy in ${policies[@]}; do
 for category in ${categories[@]}; do
 for query in ${queries[@]}; do
 
-echo "===== Running docker for ${policy}, ${category}, ${query} "
+echo "===== Running docker for ${policy}, ${category}, ${query} ===== \n"
 docker run \
     -it \
     --rm \

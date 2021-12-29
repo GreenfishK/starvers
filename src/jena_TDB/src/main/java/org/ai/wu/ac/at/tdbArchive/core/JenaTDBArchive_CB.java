@@ -490,16 +490,13 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 				// pr.waitFor();
 
 				long startTime = System.currentTimeMillis();
-
 				if (!askQuery)
 					solutions.put(i, materializeQuery(i, query));
 				else
 					solutions.put(i, materializeASKQuery(i, query));
-
 				long endTime = System.currentTimeMillis();
 				// System.out.println("Time:" + (endTime - startTime));
 				vStats.get(i).addValue((endTime - startTime));
-
 			}
 			ret.add(solutions);
 
