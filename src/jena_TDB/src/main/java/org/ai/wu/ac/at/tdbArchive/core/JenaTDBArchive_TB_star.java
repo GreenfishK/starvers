@@ -222,7 +222,7 @@ public class JenaTDBArchive_TB_star implements JenaTDBArchive {
 				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryRDFStar(rol, parts, version_ts.toString());
 				int limit = QueryUtils.getLimit(parts);
-				System.out.println(queryString); //DEBUG
+				//System.out.println(queryString); //DEBUG
 				Query query = QueryFactory.create(queryString);
 
 				long startTime = System.currentTimeMillis();
