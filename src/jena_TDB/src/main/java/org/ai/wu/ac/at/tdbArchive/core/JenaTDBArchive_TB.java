@@ -44,18 +44,6 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.sparql.mgt.Explain;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
-/*import com.hp.hpl.jena.query.Dataset;
- import com.hp.hpl.jena.query.Query;
- import com.hp.hpl.jena.query.QueryExecution;
- import com.hp.hpl.jena.query.QueryExecutionFactory;
- import com.hp.hpl.jena.query.QueryFactory;
- import com.hp.hpl.jena.query.QuerySolution;
- import com.hp.hpl.jena.query.ResultSet;
- import com.hp.hpl.jena.rdf.model.Literal;
- import com.hp.hpl.jena.rdf.model.RDFNode;
- import com.hp.hpl.jena.tdb.TDBFactory;
- import com.hp.hpl.jena.util.FileManager;
- */
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 
 //import org.apache.jena.system.JenaSystem;
