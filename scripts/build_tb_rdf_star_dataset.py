@@ -142,11 +142,11 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
         if annotation_style == AnnotationStyle.FLAT:
             for s, p, o in cs_del:
                 df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'timestamp'] = valid_from_ts_res
-            print("Number of triples: {0}".format(len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
+            print("Number of data triples: {0}".format(len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
         if annotation_style == AnnotationStyle.HIERARCHICAL:
             for s, p, o in cs_del:
                 df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'valid_until_timestamp'] = valid_from_ts_res
-            print("Number of triples: {0}".format(
+            print("Number of data triples: {0}".format(
                 len(df_tb_set.query("valid_until_timestamp == '{0}'".format(valid_ufn_ts_res)))))
 
     """ Export dataset by reading out each line. Pandas does so far not provide any function 
