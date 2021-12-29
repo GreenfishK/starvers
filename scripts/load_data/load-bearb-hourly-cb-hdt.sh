@@ -16,15 +16,15 @@ for v in $(seq 0 1 1298); do
     time docker run \
         -it \
         --rm \
-        -v $data_dir/hdt-bearb-hour/:/var/data/out/ \
-        -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
+        -v $data_dir/databases/hdt-bearb-hour/:/var/data/out/ \
+        -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $fileadd /var/data/out/cb/$v.add.hdt 
         > $data_dir/output/logs/load-bearb-hour-cb-$v-add-hdt.txt
     time docker run \
         -it \
         --rm \
-        -v $data_dir/hdt-bearb-hour/:/var/data/out/ \
-        -v $data_dir/rawdata-bearb/hour/:/var/data/in/ \
+        -v $data_dir/databases/hdt-bearb-hour/:/var/data/out/ \
+        -v $data_dir/rawdata/bearb/hour/:/var/data/in/ \
         rfdhdt/hdt-cpp rdf2hdt -f ntriples $filedel /var/data/out/cb/$v.del.hdt 
         > $data_dir/output/logs/load-bearb-hour-cb-$v-del-hdt.txt
 done
