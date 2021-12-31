@@ -10,8 +10,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_CB;
@@ -30,9 +28,26 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/*
+Example execution in console
+java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
+        -e 1298 \
+        -j 1 \
+        -p tb_star_h \
+        -d http://localhost:3030/BEARB_hour_tb_star_h/sparql \
+        -r spo \
+        -c mat \
+        -a /var/data/queries/lookup_queries_p.txt \
+        -t /var/data/output/time-tb_star_h-mat-$(echo lookup_queries_p.txt | sed "s/\//-/g").csv
+ */
+
 public class JenaTDBArchive_query {
 
 	public static void main(String[] args) throws FileNotFoundException, InterruptedException, ExecutionException {
+		final Logger logger = LogManager.getLogger(JenaTDBArchive_query.class);
 
 		String dirTDBs = null;
 		String queryFile = null;
@@ -42,6 +57,7 @@ public class JenaTDBArchive_query {
 		String queryCategory = "all"; // query everything;
 		String outputTime = "";
 		String policy = "ic";
+		String service = "";
 		Options options = new Options();
 		int versionQuery = 0;
 		int endversionQuery = 0;
@@ -59,6 +75,10 @@ public class JenaTDBArchive_query {
 			Option queryPolicyOpt = new Option("p", "policy", true, "Policy implementation: ic | cb | tb | cbtb | hybrid ");
 			queryPolicyOpt.setRequired(true);
 			options.addOption(queryPolicyOpt);
+
+			Option serviceOpt = new Option("x", "service", true, "SPARQL http endpoint");
+			queryPolicyOpt.setRequired(true);
+			options.addOption(serviceOpt);
 
 			Option inputDirOpt = new Option("d", "dir", true, "DIR to load TDBs");
 			inputDirOpt.setRequired(true);
@@ -90,7 +110,7 @@ public class JenaTDBArchive_query {
 			Option outputDirOpt = new Option("o", "OutputResults", true, "Output file with Results");
 			outputDirOpt.setRequired(false);
 			options.addOption(outputDirOpt);
-			
+
 			Option SplitVersionOpt = new Option("S", "SplitResults", false, "Split Results by version (creates one file fer version)");
 			SplitVersionOpt.setRequired(false);
 			options.addOption(SplitVersionOpt);
@@ -123,6 +143,9 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("p")) {
 				policy = cmdLine.getOptionValue("p");
 			}
+			if (cmdLine.hasOption("x")) {
+				service = cmdLine.getOptionValue("x");
+			}
 			if (cmdLine.hasOption("d")) {
 				dirTDBs = cmdLine.getOptionValue("d");
 			}
@@ -132,14 +155,14 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("v")) {
 				versionQuery = Integer.parseInt(cmdLine.getOptionValue("v"));
 			}
-			
+
 			if (cmdLine.hasOption("e")) {
 				endversionQuery = Integer.parseInt(cmdLine.getOptionValue("e"));
 			}
 			if (cmdLine.hasOption("o")) {
 				outputResults = cmdLine.getOptionValue("o");
 			}
-			
+
 			if (cmdLine.hasOption("t")) {
 				outputTime = cmdLine.getOptionValue("t");
 			}
@@ -174,10 +197,10 @@ public class JenaTDBArchive_query {
 			}
 
 		} catch (ParseException e) {
-			System.out.println("EXCEPTION!!!");
+			logger.error("EXCEPTION!!!");
 			HelpFormatter format = new HelpFormatter();
 			format.printHelp("App", options);
-			Logger.getLogger(JenaTDBArchive_query.class.getName()).log(Level.SEVERE, null, e);
+			logger.error(e);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -202,12 +225,12 @@ public class JenaTDBArchive_query {
 		if (outputTime != "") {
 			jenaArchive.setOutputTime(outputTime);
 		}
-		System.out.println("Loading archive "+policy.toUpperCase()+"...");
+		logger.info("Loading archive "+policy.toUpperCase()+"...");
 		long startTime = System.currentTimeMillis();
 		jenaArchive.load(dirTDBs);
 		long endTime = System.currentTimeMillis();
-		System.out.println("Loaded in "+(endTime - startTime) +" ms");
-		
+		logger.info("Loaded in "+(endTime - startTime) +" ms");
+
 		PrintStream os = System.out;
 		if (outputResults != "") {
 			if (!splitResultsByVersion)
@@ -216,7 +239,7 @@ public class JenaTDBArchive_query {
 		PrintStream printStream = new PrintStream(os);
 
 		try {
-			System.out.println("* Your Query is " + queryCategory);
+			logger.info("Your query category is " + queryCategory);
 			if (queryCategory.equalsIgnoreCase("mat")) {
 
 				/*
@@ -224,7 +247,7 @@ public class JenaTDBArchive_query {
 				 */
 				if (!bulkQueries) {
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
-					System.out.println("** The input query is '" + queryCategory + "' at version " + versionQuery);
+					logger.info("The input query is '" + queryCategory + "' at version " + versionQuery);
 					ArrayList<String> solution = jenaArchive.matQuery(versionQuery, queryString);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
@@ -259,7 +282,7 @@ public class JenaTDBArchive_query {
 			} else if (queryCategory.equalsIgnoreCase("diff")) {
 
 				if (!bulkQueries) {
-					System.out.println("Diff between version " + versionQuery + " and version " + endversionQuery);
+					logger.info("Diff between version " + versionQuery + " and version " + endversionQuery);
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
 
 					DiffSolution solution = jenaArchive.diffQuerying(versionQuery, endversionQuery, queryString);
@@ -268,9 +291,9 @@ public class JenaTDBArchive_query {
 						printSolutionDiff(os, solution);
 					}
 				} else {
-					System.out.println("Diff of all versions ");
+					logger.info("Diff of all versions ");
 					if (jump > 0)
-						System.out.println("     with jump " + jump);
+						logger.info("     with jump " + jump);
 					ArrayList<Map<Integer, DiffSolution>> solution = jenaArchive.bulkAlldiffQuerying(queryFileDynamic, rol, jump);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
@@ -289,7 +312,7 @@ public class JenaTDBArchive_query {
 				 */
 				if (!bulkQueries) {
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
-					System.out.println(queryString);
+					logger.info(queryString);
 					Map<Integer, ArrayList<String>> solution = jenaArchive.verQuery(queryString);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
@@ -311,7 +334,7 @@ public class JenaTDBArchive_query {
 				}
 
 			} else if (queryCategory.equalsIgnoreCase("change")) {
-				System.out.println("Change between versions");
+				logger.info("Change between versions");
 
 				// TODO TODO
 
@@ -321,6 +344,7 @@ public class JenaTDBArchive_query {
 			e.printStackTrace();
 		}
 		printStream.close();
+		jenaArchive.close();
 	}
 
 	private static void printSolutionDiffAll(PrintStream os, ArrayList<Map<Integer, DiffSolution>> sols) {
@@ -343,26 +367,26 @@ public class JenaTDBArchive_query {
 	}
 	private static void printSolutionDiffAll(String filename, ArrayList<Map<Integer, DiffSolution>> sols) throws FileNotFoundException {
 
-		
+
 		int numQuery=0;
 		for (Map<Integer, DiffSolution> solJump : sols) {
 			numQuery++;
 			PrintStream os = new PrintStream(filename+"-query-"+numQuery);
-			
+
 			for (Integer i : solJump.keySet()) {
-				
-					
+
+
 				for (String sol : solJump.get(i).getAdds()) {
 					os.println("[ADD in jump "+i+"]" +sol);
 				}
 				for (String sol : solJump.get(i).getDels()) {
 					os.println("[DEL in jump "+i+"]" +sol);
 				}
-				
+
 			}
 			os.close();
 		}
-		
+
 	}
 
 	private static void printSolutionDiff(PrintStream os, DiffSolution sols) {
