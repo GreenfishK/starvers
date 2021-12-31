@@ -31,18 +31,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-/*
-Example execution in console
-java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
-        -e 1298 \
-        -j 1 \
-        -p tb_star_h \
-        -d http://localhost:3030/BEARB_hour_tb_star_h/sparql \
-        -r spo \
-        -c mat \
-        -a /var/data/queries/lookup_queries_p.txt \
-        -t /var/data/output/time-tb_star_h-mat-$(echo lookup_queries_p.txt | sed "s/\//-/g").csv
- */
 
 public class JenaTDBArchive_query {
 
