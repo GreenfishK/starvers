@@ -45,17 +45,18 @@ import org.apache.jena.sparql.mgt.Explain;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 //import org.apache.jena.system.JenaSystem;
 
 public class JenaTDBArchive_TB implements JenaTDBArchive {
+	private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB.class);
 
 	private int TOTALVERSIONS = 0;
-
 	private String outputTime = "timeApp.txt";
 	private Dataset dataset;
 	private Boolean measureTime = false;
-
 	private static String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
 
 	// private static String metadataVersions = "<http://example.org/isVersion>";
@@ -99,8 +100,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// System.out.println("numVersions:" + numVersions);
 			TOTALVERSIONS = Integer.parseInt(numVersions);
 		}
-//TOTALVERSIONS=10; // TODO
-		 //System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
+		//TOTALVERSIONS=10; // TODO
+		//System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
 	}
 
 	/**
@@ -258,7 +259,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 					postversionQuery = Math.min((index + 1) * jump, TOTALVERSIONS - 1);
 					versionQuery = 0;
 				}
-				System.out.println("versionQuery:" + versionQuery + " ; postQuery:" + postversionQuery);
+				logger.info("versionQuery:" + versionQuery + " ; postQuery:" + postversionQuery);
 
 				String queryStringStart = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, versionQuery, metadataVersions);
 				String queryStringEnd = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, postversionQuery, metadataVersions);

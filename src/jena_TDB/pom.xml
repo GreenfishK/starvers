@@ -44,8 +44,8 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.8.1</version>
 					<configuration>
-						<source>17</source>
-						<target>17</target>
+						<source>11</source>
+						<target>11</target>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -53,13 +53,46 @@
 	</build>
 	<dependencies>
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.32</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.7.32</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.17.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.17.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.jena</groupId>
 			<artifactId>apache-jena-libs</artifactId>
 			<version>4.3.2</version>
-			<!-- <version>3.0.0</version> -->
-			<!-- <version>2.13.0</version> -->
 			<type>pom</type>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>jena-rdfconnection</artifactId>
+			<version>4.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>jena-fuseki-main</artifactId>
+			<version>4.3.2</version> <!-- Set the version -->
+		</dependency>
+		<!--<dependency>
+			<groupId>org.aksw.jena-sparql-api</groupId>
+			<artifactId>jena-sparql-api-core</artifactId>
+			<version>3.17.0-1</version>
+		</dependency> -->
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
@@ -71,11 +104,11 @@
 			<version>2.8.4</version>
 		</dependency>
 
-		<dependency>
+		<!-- <dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<version>1.0.13</version>
-		</dependency>
+		</dependency> -->
 
 		<dependency>
 			<groupId>org.apache.commons</groupId>
