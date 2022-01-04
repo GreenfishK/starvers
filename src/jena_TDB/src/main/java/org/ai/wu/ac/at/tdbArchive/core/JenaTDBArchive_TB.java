@@ -1,11 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,6 +27,7 @@ import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.Query;
@@ -41,12 +37,19 @@ import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
+import org.apache.jena.rdfconnection.RDFConnection;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.sparql.mgt.Explain;
 import org.apache.jena.tdb.TDBFactory;
+import org.apache.jena.tdb.TDBLoader;
+import org.apache.jena.tdb.setup.DatasetBuilderStd;
+import org.apache.jena.tdb.store.DatasetGraphTDB;
 import org.apache.jena.util.FileManager;
+import org.apache.jena.tdb.base.file.Location;
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.util.thread.Scheduler;
 
 //import org.apache.jena.system.JenaSystem;
 
@@ -55,7 +58,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 	private int TOTALVERSIONS = 0;
 	private String outputTime = "timeApp.txt";
-	private Dataset dataset;
+	private FusekiServer server;
+	private RDFConnection conn;
 	private Boolean measureTime = false;
 	private static String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
 
@@ -76,32 +80,53 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	/**
 	 * Load Jena TDB from directory
 	 * 
-	 * @param directory
+	 * @param directory The directory of multiple rdf files
+	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
 	public void load(String directory) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
-		dataset = TDBFactory.createDataset(directory);
 
-		/*
-		 * get number of graphs in order to know the number of versions
-		 */
+		//Create a TDB persistent dataset in tmp/TDB and load the .nq file into it.
+		String tdb_loc = "target/TDB";
+		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
+		logger.info(String.format("If you are using docker the TDB dataset will be located " +
+				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
+		InputStream in = fm.open(directory);
+		TDBLoader.load(dsg, in, Lang.NQ,false, true);
 
+		Dataset dataset;
+		try {
+			//Create a dataset object from the persistent TDB dataset
+			dataset = TDBFactory.createDataset(tdb_loc);
+
+			//Create a fuseki server, load the dataset into the repository
+			// http://localhost:3030/in_memory_server/sparql and connect to it.
+			server = FusekiServer.create()
+					.add("/in_memory_server", dataset)
+					.build();
+			server.start();
+			conn = RDFConnection.connect("http://localhost:3030/in_memory_server/sparql");
+			dataset.end();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		//Get the number of versions in the dataset (number of named graphs)
 		String queryGraphs = QueryUtils.getNumGraphVersions(metadataVersions);
-		//System.out.println("queryGraphs:"+queryGraphs);
 		Query query = QueryFactory.create(queryGraphs);
-		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
-		ResultSet results = qexec.execSelect();
+		QueryExecution qExec = conn.query(query);
+		ResultSet results = qExec.execSelect();
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
 			String numVersions = soln.getLiteral("numVersions").getLexicalForm();
-			// System.out.println("numVersions:" + numVersions);
 			TOTALVERSIONS = Integer.parseInt(numVersions);
+			logger.info("Totalversions: " + TOTALVERSIONS);
 		}
-		//TOTALVERSIONS=10; // TODO
-		//System.out.println("TOTALVERSIONS:" + TOTALVERSIONS);
+		qExec.close();
+		conn.close();
 	}
 
 	/**
@@ -134,8 +159,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		// // Note that it is +1 in order to compute the difference with the
 		// // following one
 
-		tasks.add(new TaskCallable(queryStart, dataset, startVersionQuery, true));
-		tasks.add(new TaskCallable(queryEnd, dataset, endVersionQuery, true));
+		tasks.add(new TaskCallable(queryStart, conn.fetchDataset(), startVersionQuery, true));
+		tasks.add(new TaskCallable(queryEnd, conn.fetchDataset(), endVersionQuery, true));
 		ExecutorService executor = Executors.newFixedThreadPool(TOTALVERSIONS);
 		List<Future<QueryResult>> results = executor.invokeAll(tasks);
 
@@ -265,8 +290,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				String queryStringEnd = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, postversionQuery, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
 				long startTime = System.currentTimeMillis();
-				QueryExecution qexecStart = QueryExecutionFactory.create(queryStringStart, dataset);
-				QueryExecution qexecEnd = QueryExecutionFactory.create(queryStringEnd, dataset);
+				QueryExecution qexecStart = conn.query(queryStringStart);
+				QueryExecution qexecEnd = conn.query(queryStringEnd);
 				HashSet<String> finalResultsStart = new HashSet<String>();
 				HashSet<String> finalResultsEnd = new HashSet<String>();
 				if (!askQuery) {
@@ -504,26 +529,22 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @return
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit) throws InterruptedException, ExecutionException {
-		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
+		QueryExecution qexec = conn.query(query);
 		ArrayList<String> ret = new ArrayList<String>();
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
-
 		ResultSet results = qexec.execSelect();
-
 		Boolean higherVersion = false;
-
-		// Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
 			// numRows++;
 			QuerySolution soln = results.next();
-
 			String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
-
 			// System.out.println(rowResult);
 			ret.add(rowResult);
 		}
 		qexec.close();
+		conn.close();
+
 		return ret;
 	}
 
@@ -533,7 +554,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @return
 	 */
 	private ArrayList<String> materializeASKQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
-		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
+		QueryExecution qexec = conn.query(query);
 		ArrayList<String> ret = new ArrayList<String>();
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 
@@ -590,7 +611,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			String fullQuery = QueryUtils.createLookupQueryAnnotatedGraph(TP, i, metadataVersions);
 
 			Query query = QueryFactory.create(fullQuery);
-			tasks.add(new TaskCallable(query, dataset, i, true));
+			tasks.add(new TaskCallable(query, conn.fetchDataset(), i, true));
 		}
 		ExecutorService executor = Executors.newFixedThreadPool(TOTALVERSIONS);
 		List<Future<QueryResult>> results = executor.invokeAll(tasks);
@@ -601,8 +622,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		for (Future<QueryResult> result : results) {
 			QueryResult res = result.get();
-			// system.out.println("version:" + res.version);
-			// system.out.println("version:" + res.sol.hasNext());
 			ArrayList<String> solutions = new ArrayList<String>();
 			while (res.getSol().hasNext()) {
 				QuerySolution soln = res.getSol().next();
@@ -610,12 +629,10 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				solutions.add(rowResult);
 				// rowResult is the final result for version res.version
 			}
-
 			ret.put(res.getVersion(), solutions);
 		}
 
 		executor.shutdown(); // always reclaim resources
-
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
 			PrintWriter pw;
@@ -628,10 +645,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			}
 
 		}
-		// for (int i=0;i<TOTALVERSIONS;i++){
-		// qexec_add[i].close();
-		// qexec_del[i].close();
-		// }
+
 		return ret;
 	}
 
@@ -680,7 +694,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			System.out.println("the queryString: " + queryString);
 			Query query = QueryFactory.create(queryString);
 			long startTime = System.currentTimeMillis();
-			QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
+			QueryExecution qexec = conn.query(query);
 			qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 
 			ResultSet results = qexec.execSelect();
@@ -715,6 +729,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// System.out.println("Time:" + (endTime - startTime));
 			// printStreamTime.println(queryFile + "," + (endTime - startTime));
 			qexec.close();
+			conn.close();
 			total.addValue((endTime - startTime));
 
 			// vStats.get(versionQuery).addValue((endTime-startTime));
@@ -741,9 +756,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	public void warmup() throws InterruptedException, ExecutionException {
 		Query query = QueryFactory.create(createWarmupQuery());
 		long startTime = System.currentTimeMillis();
-		QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
-		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
-
+		QueryExecution qexec = conn.query(query);
+		//qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 		ResultSet results = qexec.execSelect();
 
 		Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
@@ -759,6 +773,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		System.out.println(finalResults);
 
 		qexec.close();
+		conn.close();
 	}
 
 	private static String createWarmupQuery() {
@@ -775,6 +790,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
-		dataset.end();
+		server.stop();
 	}
 }

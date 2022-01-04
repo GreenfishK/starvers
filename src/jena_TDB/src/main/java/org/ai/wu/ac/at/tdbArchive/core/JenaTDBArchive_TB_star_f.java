@@ -31,7 +31,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	private int TOTALVERSIONS = 0;
 	private String initialVersionTS;
 	private String outputTime = "timeApp.txt";
-	private Dataset dataset;
 	private Boolean measureTime = false;
 	private FusekiServer server;
 	private RDFConnection conn;
@@ -57,6 +56,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	public void load(String directory) {
 		ARQ.init();
+		Dataset dataset;
 
 		try {
 			dataset = TDBFactory.createDataset(directory);
@@ -342,8 +342,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
-		//dataset.end();
-		//conn.close();
 		server.stop();
 	}
 }
