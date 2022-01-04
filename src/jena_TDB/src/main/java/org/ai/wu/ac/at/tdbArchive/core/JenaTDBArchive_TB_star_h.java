@@ -2,6 +2,7 @@ package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
+import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
@@ -9,8 +10,14 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.*;
 import org.apache.jena.rdfconnection.RDFConnection;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.sparql.mgt.Explain;
 import org.apache.jena.tdb.TDBFactory;
+import org.apache.jena.tdb.TDBLoader;
+import org.apache.jena.tdb.base.file.Location;
+import org.apache.jena.tdb.setup.DatasetBuilderStd;
+import org.apache.jena.tdb.store.DatasetGraphTDB;
+import org.apache.jena.util.FileManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +37,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	private int TOTALVERSIONS = 0;
 	private String initialVersionTS;
 	private String outputTime = "timeApp.txt";
-	private Dataset dataset;
 	private Boolean measureTime = false;
 	private FusekiServer server;
 	private RDFConnection conn;
@@ -52,13 +58,30 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	/**
 	 * Load Jena TDB from directory
 	 * 
-	 * @param directory
+	 * @param directory The directory of multiple rdf files
+	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
 	public void load(String directory) {
+		// Initialize Jena
 		ARQ.init();
+		FileManager fm = FileManager.get();
+		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 
+		//Create a TDB persistent dataset in tmp/TDB and load the .nq file into it.
+		String tdb_loc = "target/TDB";
+		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
+		logger.info(String.format("If you are using docker the TDB dataset will be located " +
+				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
+		InputStream in = fm.open(directory);
+		TDBLoader.load(dsg, in, Lang.NQ,false, true);
+
+		Dataset dataset;
 		try {
+			//Create a dataset object from the persistent TDB dataset
 			dataset = TDBFactory.createDataset(directory);
+
+			//Create a fuseki server, load the dataset into the repository
+			// http://localhost:3030/in_memory_server/sparql and connect to it.
 			server = FusekiServer.create()
 					.add("/in_memory_server", dataset)
 					.build();
@@ -69,6 +92,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 			e.printStackTrace();
 		}
 
+		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
 		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_h());
 		ARQ.setExecutionLogging(Explain.InfoLevel.NONE) ;
 		ResultSet results = qExec.execSelect();

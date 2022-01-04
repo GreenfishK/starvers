@@ -10,8 +10,14 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.*;
 import org.apache.jena.rdfconnection.RDFConnection;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.sparql.mgt.Explain;
 import org.apache.jena.tdb.TDBFactory;
+import org.apache.jena.tdb.TDBLoader;
+import org.apache.jena.tdb.base.file.Location;
+import org.apache.jena.tdb.setup.DatasetBuilderStd;
+import org.apache.jena.tdb.store.DatasetGraphTDB;
+import org.apache.jena.util.FileManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -52,14 +58,30 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	/**
 	 * Load Jena TDB from directory
 	 * 
-	 * @param directory
+	 * @param directory The directory of multiple rdf files
+	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
 	public void load(String directory) {
+		// Initialize Jena
 		ARQ.init();
-		Dataset dataset;
+		FileManager fm = FileManager.get();
+		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 
+		//Create a TDB persistent dataset in tmp/TDB and load the .nq file into it.
+		String tdb_loc = "target/TDB";
+		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
+		logger.info(String.format("If you are using docker the TDB dataset will be located " +
+				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
+		InputStream in = fm.open(directory);
+		TDBLoader.load(dsg, in, Lang.NQ,false, true);
+
+		Dataset dataset;
 		try {
+			//Create a dataset object from the persistent TDB dataset
 			dataset = TDBFactory.createDataset(directory);
+
+			//Create a fuseki server, load the dataset into the repository
+			// http://localhost:3030/in_memory_server/sparql and connect to it.
 			server = FusekiServer.create()
 					.add("/in_memory_server", dataset)
 					.build();
@@ -70,6 +92,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 			e.printStackTrace();
 		}
 
+		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
 		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
 		ResultSet results = qExec.execSelect();
 		logger.info("Results from load query: " + results);
