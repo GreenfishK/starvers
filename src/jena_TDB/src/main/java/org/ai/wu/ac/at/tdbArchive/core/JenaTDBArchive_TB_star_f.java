@@ -67,18 +67,19 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 
-		//Create a TDB persistent dataset in tmp/TDB and load the .nq file into it.
-		String tdb_loc = "target/TDB";
+		//Create a TDB persistent dataset in tmp/TDB/currentTimestamp and load the .nq file into it.
+		String currentTimestamp = String.valueOf(System.currentTimeMillis());
+		String tdb_loc = "target/TDB"; // + currentTimestamp;
 		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
 		logger.info(String.format("If you are using docker the TDB dataset will be located " +
 				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
 		InputStream in = fm.open(directory);
-		TDBLoader.load(dsg, in, Lang.NQ,false, true);
+		TDBLoader.load(dsg, in, Lang.TTL,false, true);
 
 		Dataset dataset;
 		try {
 			//Create a dataset object from the persistent TDB dataset
-			dataset = TDBFactory.createDataset(directory);
+			dataset = TDBFactory.createDataset(tdb_loc);
 
 			//Create a fuseki server, load the dataset into the repository
 			// http://localhost:3030/in_memory_server/sparql and connect to it.
@@ -86,7 +87,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 					.add("/in_memory_server", dataset)
 					.build();
 			server.start();
-			conn = RDFConnection.connect("http://localhost:3030/in_memory_server/sparql");
+			conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql",
+					server.getHttpPort()));
 			dataset.end();
 		} catch (Exception e) {
 			e.printStackTrace();
