@@ -178,7 +178,7 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
 ds_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
 
-# construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
+construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
 construct_tb_star_ds(dataset_dir=ds_dir,
                      cb_rel_path="alldata.CB_computed.nt",
                      last_change_set=add_change_sets_until_vers,

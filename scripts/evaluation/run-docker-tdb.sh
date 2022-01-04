@@ -2,19 +2,19 @@
 
 case "$1" in
   beara)
-    datasetdir=~/.BEAR/databases/tdb-beara/
+    datasetdir=~/.BEAR/databases/tdb-beara/ # TODO: change this
     querydir=~/.BEAR/queries/queries_new/
     outputdir=~/.BEAR/output/time/tdb/beara/
     limit=9
     ;;
   bearb-day)
-    datasetdir=~/.BEAR/databases/tdb-bearb-day/
+    datasetdir=~/.BEAR/databases/tdb-bearb-day/ # TODO: change this
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/tdb/bearb-day/
     limit=88
     ;;
   bearb-hour)
-    datasetdir=~/.BEAR/databases/tdb-bearb-hour/
+    datasetdir=~/.BEAR/rawdata/bearb/hour/ # ~/.BEAR/databases/tdb-bearb-hour/
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/tdb/bearb-hour/
     limit=1298
@@ -26,7 +26,13 @@ case "$1" in
 esac
 
 
-policies="tb_star_h tb_star_f" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="tb" # tb tb_star_h tb_star_f ic cb cbtb"
+case $policies in 
+    tb) ds_name="alldata.TB.nq" ;;
+    tb_star_f) ds_name="alldata.TB_star_flat.ttl" ;;
+    tb_star_h) ds_name="alldata.TB_star_hierarchical.ttl" ;;
+    *) echo "Other polices than timestamp-based are not covered yet" ;;
+esac
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
 
@@ -48,7 +54,7 @@ docker run \
         -e ${limit} \
         -j 1 \
         -p ${policy} \
-        -d /var/data/dataset/${policy} \
+        -d /var/data/dataset/${ds_name} \
         -r spo \
         -c ${category} \
         -a /var/data/queries/${query} \
