@@ -2,19 +2,19 @@
 
 case "$1" in
   beara)
-    datasetdir=~/.BEAR/databases/tdb-beara/ # TODO: change this
+    datasetdir=~/.BEAR/rawdata/bearb/hour/ 
     querydir=~/.BEAR/queries/queries_new/
     outputdir=~/.BEAR/output/time/tdb/beara/
     limit=9
     ;;
   bearb-day)
-    datasetdir=~/.BEAR/databases/tdb-bearb-day/ # TODO: change this
+    datasetdir=~/.BEAR/rawdata/bearb/hour/ 
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/tdb/bearb-day/
     limit=88
     ;;
   bearb-hour)
-    datasetdir=~/.BEAR/rawdata/bearb/hour/ # ~/.BEAR/databases/tdb-bearb-hour/
+    datasetdir=~/.BEAR/rawdata/bearb/hour/ 
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/tdb/bearb-hour/
     limit=1298
