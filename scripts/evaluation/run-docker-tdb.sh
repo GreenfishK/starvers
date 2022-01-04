@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 
-policies="tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="tb tb_star_f tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
 case $policies in 
     tb) ds_name="alldata.TB.nq" ;;
     tb_star_f) ds_name="alldata.TB_star_flat.ttl" ;;
