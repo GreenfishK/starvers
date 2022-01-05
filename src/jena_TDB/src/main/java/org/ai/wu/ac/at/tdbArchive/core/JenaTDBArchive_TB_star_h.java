@@ -250,6 +250,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
 			throws InterruptedException, ExecutionException {
 		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
+		logger.info(String.format("Executing version %d", staticVersionQuery));
 		QueryExecution qExec = conn.query(query.toString());
 		ResultSet results = qExec.execSelect();
 		Boolean higherVersion = false;
