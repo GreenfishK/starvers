@@ -190,6 +190,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	 */
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
+		warmup();
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -206,7 +207,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 
 		for (int lines = 0; (line = br.readLine()) != null; lines++) {
 			String[] parts = line.split(" ");
-			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			logger.info(String.format("Query %x%n", lines+1));
@@ -224,7 +224,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 
 				vStats.get(i).addValue((endTime - startTime));
 				version_ts = version_ts.plusSeconds(1);
-
 			}
 			ret.add(solutions);
 		}
