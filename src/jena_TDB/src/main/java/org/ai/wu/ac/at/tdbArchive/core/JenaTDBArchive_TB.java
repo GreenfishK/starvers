@@ -117,9 +117,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		}
 
 		//Get the number of versions in the dataset (number of named graphs)
-		String queryGraphs = QueryUtils.getNumGraphVersions(metadataVersions);
-		Query query = QueryFactory.create(queryGraphs);
-		QueryExecution qExec = conn.query(query);
+		String query_string = QueryUtils.getNumGraphVersions(metadataVersions);
+		//Query query = QueryFactory.create(queryGraphs);
+		QueryExecution qExec = conn.query(query_string);
 		ResultSet results = qExec.execSelect();
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
@@ -474,23 +474,23 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 */
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
-		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
+		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<>();
 		warmup();
 
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line = "";
 
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
+		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
 
-		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
+		boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		for (int lines = 0; (line = br.readLine()) != null; lines++) {
 			String[] parts = line.split(" ");
 
-			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
+			Map<Integer, ArrayList<String>> solutions = new HashMap<>();
 			System.out.printf("Query %x%n", lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				//System.out.println("Query at version: " + i); //DEBUG
@@ -513,7 +513,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		br.close();
 
 		if (measureTime) {
-			// PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynmat-" + inputFile.getName()));
 			PrintWriter pw = new PrintWriter(new File(outputTime));
 			pw.println("##ver, min, mean, max, stddev, count, sum");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
@@ -531,8 +530,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @return
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit) throws InterruptedException, ExecutionException {
-		QueryExecution qexec = conn.query(query);
-		ArrayList<String> ret = new ArrayList<String>();
+		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
+		QueryExecution qexec = conn.query(query.toString());
+		ArrayList<String> ret = new ArrayList<>();
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 		ResultSet results = qexec.execSelect();
 		Boolean higherVersion = false;
@@ -756,21 +756,22 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @throws ExecutionException
 	 */
 	public void warmup() throws InterruptedException, ExecutionException {
-		Query query = QueryFactory.create(createWarmupQuery());
-		long startTime = System.currentTimeMillis();
-		QueryExecution qexec = conn.query(query);
-		//qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
-		ResultSet results = qexec.execSelect();
+		logger.info("Running warmup query");
+		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
 
-		Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
+		long startTime = System.currentTimeMillis();
+		QueryExecution qexec = conn.query(createWarmupQuery());
+		ResultSet results = qexec.execSelect();
+		long endTime = System.currentTimeMillis();
+
 		HashSet<String> finalResults = new HashSet<String>();
+		Iterator<QuerySolution> sortResults = orderedResultSet(results, "graph");
 		while (sortResults.hasNext()) {
 			QuerySolution soln = sortResults.next();
 			// assume we have a graph variable as a response
 			String graphResponse = soln.getResource("graph").toString();
 			finalResults.add(graphResponse);
 		}
-		long endTime = System.currentTimeMillis();
 		System.out.println("Warmup Time:" + (endTime - startTime));
 		System.out.println(finalResults);
 

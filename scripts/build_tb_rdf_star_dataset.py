@@ -55,7 +55,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int):
         cs_deleted.serialize(destination=cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i + 1), format="nt")
 
 
-def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, output_file: str,
+def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, output_file: str,
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
@@ -79,6 +79,8 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
                                                             datetimeref=xsd_datetime)
 
     """ Annotation of initial version triples """
+    print("Building version 1. ")
+
     ic0 = Graph()
     ic0.parse(ic0_ds_path)
 
@@ -89,12 +91,16 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
                             valid_until_predicate, valid_ufn_ts_res])
         df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'valid_from_predicate', 'valid_from_timestamp',
                                                    'valid_until_predicate', 'valid_until_timestamp'])
+        print("Number of data triples: {0}".format(
+            len(df_tb_set.query("valid_until_timestamp == '{0}'".format(valid_ufn_ts_res)))))
     else:
         assert(annotation_style == AnnotationStyle.FLAT)
         for s, p, o in ic0:
             init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, init_ts_res])
             init_ds.append([s.n3(), p.n3(), o.n3(), valid_until_predicate, valid_ufn_ts_res])
         df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'vers_predicate', 'timestamp'])
+        print("Number of data triples: {0}".format(
+            len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
 
     """ Loading change set files """
     # build list (version, filename_added, filename_deleted, version_timestamp)
@@ -111,6 +117,7 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
             new_triples[version] = filename
         if filename.startswith("data-deleted"):
             deleted_triples[version] = filename
+    print("{0} change sets are in directory {1}".format(len(new_triples), change_sets_path))
 
     vers_ts = sys_ts
     for vers, new_trpls in sorted(new_triples.items()):
@@ -119,8 +126,9 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
                                                                                       "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
 
     """ Annotation of change set triples """
-    for t in change_sets[0:last_change_set-1]:
-        print("Change set between version {0} and {1} processing. ".format(int(t[0])-1, int(t[0])))
+    assert last_version - 1 <= len(change_sets)
+    for t in change_sets[0:last_version-1]:
+        print("Building version {0}. ".format(int(t[0])))
         
         """ Annotate added triples using rdf* syntax """
         cs_add = Graph()
@@ -178,15 +186,15 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_change_set: int, ou
 ds_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
 
-construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
+# construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
 construct_tb_star_ds(dataset_dir=ds_dir,
                      cb_rel_path="alldata.CB_computed.nt",
-                     last_change_set=add_change_sets_until_vers,
+                     last_version=add_change_sets_until_vers,
                      output_file="alldata.TB_star_hierarchical.ttl",
                      annotation_style=AnnotationStyle.HIERARCHICAL)
 
 construct_tb_star_ds(dataset_dir=ds_dir,
                      cb_rel_path="alldata.CB_computed.nt",
-                     last_change_set=add_change_sets_until_vers,
+                     last_version=add_change_sets_until_vers,
                      output_file="alldata.TB_star_flat.ttl",
                      annotation_style=AnnotationStyle.FLAT)
