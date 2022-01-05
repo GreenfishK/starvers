@@ -69,4 +69,4 @@ done
 lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
 sudo mkdir ${outputdir}/${HOSTNAME}-${lokal_timestamp}
 sudo mv ${outputdir}/time* ${outputdir}/${HOSTNAME}-${lokal_timestamp}
-sudo mv ${outputdir}/dataset_infos.csv ${outputdir}/${HOSTNAME}-${lokal_timestamp}
+sudo mv ${outputdir}dataset_infos.csv ${outputdir}/${HOSTNAME}-${lokal_timestamp}

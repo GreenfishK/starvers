@@ -96,7 +96,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 			// Writes in the same directory as the query performance file
 			if(!this.outputTime.equals("")) {
 				File datasetLogFileDir = new File(this.outputTime).getParentFile();
-				long tbdDirSize = FileUtils.sizeOfDirectory(datasetLogFileDir);
+				long tbdDirSize = FileUtils.sizeOfDirectory(new File(tdb_loc));
 
 				logger.debug(datasetLogFileDir);
 				String datasetLogFile = datasetLogFileDir + "/dataset_infos_tb.csv";
