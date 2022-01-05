@@ -390,7 +390,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
-			//System.out.println("matQuery: Time:" + (endTime - startTime)); //DEBUG
 			PrintWriter pw;
 			try {
 				pw = new PrintWriter(new File(outputTime));
@@ -531,9 +530,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit) throws InterruptedException, ExecutionException {
 		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
+		logger.info(String.format("Executing version %d", staticVersionQuery));
 		QueryExecution qexec = conn.query(query.toString());
 		ArrayList<String> ret = new ArrayList<>();
-		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 		ResultSet results = qexec.execSelect();
 		Boolean higherVersion = false;
 
