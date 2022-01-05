@@ -475,6 +475,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
+		warmup();
 
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -488,7 +489,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		for (int lines = 0; (line = br.readLine()) != null; lines++) {
 			String[] parts = line.split(" ");
-			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			System.out.printf("Query %x%n", lines+1);

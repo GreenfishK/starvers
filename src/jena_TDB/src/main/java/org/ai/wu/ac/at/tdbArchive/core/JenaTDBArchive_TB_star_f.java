@@ -189,6 +189,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
+		warmup();
+
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -198,14 +200,12 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
-
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
 		OffsetDateTime version_ts = OffsetDateTime.parse(this.initialVersionTS, DATE_TIME_FORMATTER);
 
 		for (int lines = 0; (line = br.readLine()) != null; lines++) {
 			String[] parts = line.split(" ");
-			warmup();
 
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			logger.info(String.format("Query %x%n", lines+1));
@@ -223,7 +223,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 				vStats.get(i).addValue((endTime - startTime));
 				version_ts = version_ts.plusSeconds(1);
-
 			}
 			ret.add(solutions);
 		}
