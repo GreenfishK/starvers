@@ -97,6 +97,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 			if(!this.outputTime.equals("")) {
 				File datasetLogFileDir = new File(this.outputTime).getParentFile();
 				long tbdDirSize = FileUtils.sizeOfDirectory(new File(tdb_loc));
+				long rawDataFileSize = FileUtils.sizeOf(new File(directory));
 
 				logger.debug(datasetLogFileDir);
 				String datasetLogFile = datasetLogFileDir + "/dataset_infos_tb.csv";
@@ -109,8 +110,8 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 				else {
 					pw = new PrintWriter(datasetLogFile);
 				}
-				pw.append("ds_name, tdb_ds_size\n");
-				pw.append("bearb_jena_tdb_tb_star_h" + "," + tbdDirSize + "\n");
+				pw.append("ds_name, raw_data_size_in_MB, tdb_ds_size_in_MB\n");
+				pw.append("bearb_jena_tdb_tb" +  " " + rawDataFileSize/1000000+ "," + tbdDirSize/1000000 + "\n");
 				pw.close();
 				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
 			}
