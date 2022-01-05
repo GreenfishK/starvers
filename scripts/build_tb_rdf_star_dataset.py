@@ -144,14 +144,15 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
                                                  valid_until_predicate, valid_ufn_ts_res]
 
         """ Annotate deleted triples using rdf* syntax """
-        df_tb_set.set_index(['s', 'p', 'o'], drop=False, inplace=True)
         cs_del = Graph()
         cs_del.parse(change_sets_path + "/" + t[2])
         if annotation_style == AnnotationStyle.FLAT:
+            df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate'], drop=False, inplace=True)
             for s, p, o in cs_del:
-                df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'timestamp'] = valid_from_ts_res
+                df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate), 'timestamp'] = valid_from_ts_res
             print("Number of data triples: {0}".format(len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
         if annotation_style == AnnotationStyle.HIERARCHICAL:
+            df_tb_set.set_index(['s', 'p', 'o'], drop=False, inplace=True)
             for s, p, o in cs_del:
                 df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'valid_until_timestamp'] = valid_from_ts_res
             print("Number of data triples: {0}".format(
@@ -187,11 +188,11 @@ ds_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
 
 # construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
-construct_tb_star_ds(dataset_dir=ds_dir,
-                     cb_rel_path="alldata.CB_computed.nt",
-                     last_version=add_change_sets_until_vers,
-                     output_file="alldata.TB_star_hierarchical.ttl",
-                     annotation_style=AnnotationStyle.HIERARCHICAL)
+#construct_tb_star_ds(dataset_dir=ds_dir,
+#                     cb_rel_path="alldata.CB_computed.nt",
+#                     last_version=add_change_sets_until_vers,
+#                     output_file="alldata.TB_star_hierarchical.ttl",
+#                     annotation_style=AnnotationStyle.HIERARCHICAL)
 
 construct_tb_star_ds(dataset_dir=ds_dir,
                      cb_rel_path="alldata.CB_computed.nt",
