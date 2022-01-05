@@ -223,10 +223,7 @@ public class JenaTDBArchive_query {
 		}
 
 		logger.info("Loading archive "+policy.toUpperCase()+"...");
-		long startTime = System.currentTimeMillis();
 		jenaArchive.load(dirTDBs);
-		long endTime = System.currentTimeMillis();
-		logger.info("Loaded in "+(endTime - startTime) +" ms");
 
 		PrintStream os = System.out;
 		if (outputResults != "") {

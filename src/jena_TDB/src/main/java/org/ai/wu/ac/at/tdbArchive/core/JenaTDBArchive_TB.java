@@ -96,7 +96,10 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		logger.info(String.format("If you are using docker the TDB dataset will be located " +
 				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
 		InputStream in = fm.open(directory);
+		long startTime = System.currentTimeMillis();
 		TDBLoader.load(dsg, in, Lang.NQ,false, true);
+		long endTime = System.currentTimeMillis();
+		logger.info("Loaded in "+(endTime - startTime)/1000 +" seconds");
 
 		Dataset dataset;
 		try {
@@ -111,7 +114,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				long rawDataFileSize = FileUtils.sizeOf(new File(directory));
 
 				logger.debug(datasetLogFileDir);
-				String datasetLogFile = datasetLogFileDir + "/dataset_infos_tb.csv";
+				String datasetLogFile = datasetLogFileDir + "/dataset_infos.csv";
 				logger.debug(datasetLogFile);
 				File f = new File(datasetLogFile);
 				PrintWriter pw;
@@ -121,8 +124,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				else {
 					pw = new PrintWriter(datasetLogFile);
 				}
-				pw.append("ds_name, raw_data_size_in_MB, tdb_ds_size_in_MB\n");
-				pw.append("bearb_jena_tdb_tb" +  " " + rawDataFileSize/1000000+ "," + tbdDirSize/1000000 + "\n");
+				pw.append("ds_name, rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
+				pw.append("bearb_jena_tdb_tb" + "," + "Jena TDB" + "," + rawDataFileSize/1000000+ ","
+						+ tbdDirSize/1000000 + "," + (endTime - startTime)/1000 +"\n");
 				pw.close();
 				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
 			}
