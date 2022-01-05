@@ -44,6 +44,7 @@ public class JenaTDBArchive_query {
 		String outputResults = "";
 		String queryCategory = "all"; // query everything;
 		String outputTime = "";
+		//String logDatasetInfos = "";
 		String policy = "ic";
 		String service = "";
 		Options options = new Options();
@@ -111,6 +112,11 @@ public class JenaTDBArchive_query {
 			timeOpt.setRequired(false);
 			options.addOption(timeOpt);
 
+			//Option logDatasetInfosOpt = new Option("D", "logDatasetInfos", true,
+			//		"whether to create an output file with the dataset infos");
+			//logDatasetInfosOpt.setRequired(false);
+			//options.addOption(logDatasetInfosOpt);
+
 			Option jumpCatOpt = new Option("j", "jump", true, "Jump step for the diff: e.g. 5 (0-5,0-10..)");
 			jumpCatOpt.setRequired(false);
 			options.addOption(jumpCatOpt);
@@ -143,7 +149,6 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("v")) {
 				versionQuery = Integer.parseInt(cmdLine.getOptionValue("v"));
 			}
-
 			if (cmdLine.hasOption("e")) {
 				endversionQuery = Integer.parseInt(cmdLine.getOptionValue("e"));
 			}
@@ -154,6 +159,9 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("t")) {
 				outputTime = cmdLine.getOptionValue("t");
 			}
+			//if (cmdLine.hasOption("D")) {
+			//	logDatasetInfos = cmdLine.getOptionValue("D");
+			//}
 			if (cmdLine.hasOption("q")) {
 				queryFile = cmdLine.getOptionValue("q");
 			}
@@ -213,6 +221,7 @@ public class JenaTDBArchive_query {
 		if (outputTime != "") {
 			jenaArchive.setOutputTime(outputTime);
 		}
+
 		logger.info("Loading archive "+policy.toUpperCase()+"...");
 		long startTime = System.currentTimeMillis();
 		jenaArchive.load(dirTDBs);

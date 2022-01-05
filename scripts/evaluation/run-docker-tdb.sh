@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 
-policies="tb" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
 
@@ -60,7 +60,7 @@ for policy in ${policies[@]}; do
                 -r spo \
                 -c ${category} \
                 -a /var/data/queries/${query} \
-                -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv
+                -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv 
         done
     done
 done
@@ -69,3 +69,4 @@ done
 lokal_timestamp="$(TZ=UTC-1 date "+%Y-%m-%dT%H:%M:%S")"
 sudo mkdir ${outputdir}/${HOSTNAME}-${lokal_timestamp}
 sudo mv ${outputdir}/time* ${outputdir}/${HOSTNAME}-${lokal_timestamp}
+sudo mv ${outputdir}/dataset_infos.csv ${outputdir}/${HOSTNAME}-${lokal_timestamp}
