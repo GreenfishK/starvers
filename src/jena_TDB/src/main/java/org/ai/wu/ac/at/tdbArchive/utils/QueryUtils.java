@@ -748,20 +748,42 @@ public final class QueryUtils {
 
 	public static final String getVersionInfos_f() {
 		String queryString = "select " +
-				"(count(distinct(?valid_from)) as ?cnt_versions) " +
-				"(min(?valid_from) as ?initial_version_ts) where { \n" +
-				"    <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
-				"}\n";
+				"Select (count(distinct ?ts) -1 as ?cnt_versions) where {\n" +
+				"    {\n" +
+				"        select \n" +
+				"        distinct (?valid_from as ?ts) where {\n" +
+				"            <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from.\n" +
+				"        } \n" +
+				"    }\n" +
+				"    union\n" +
+				"    {\n" +
+				"        select \n" +
+				"        distinct (?valid_until as ?ts) where {\n" +
+				"            <<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.\n" +
+				"        }\n" +
+				"    }\n" +
+				"}";
 		return queryString;
 	}
 
 	public static final String getVersionInfos_h() {
-		String queryString = "select " +
-				"(count(distinct(?valid_from)) as ?cnt_versions) " +
-				"(min(?valid_from) as ?initial_version_ts) where { \n" +
-				"    <<<<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >>" +
-				" <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.\n" +
-				"}\n";
+		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions) where {\n" +
+				"    {\n" +
+				"        select \n" +
+				"        distinct (?valid_from as ?ts) where {\n" +
+				"            <<<<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> " +
+				"?valid_from>>  <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.\n" +
+				"        } \n" +
+				"    }\n" +
+				"    union\n" +
+				"    {\n" +
+				"        select \n" +
+				"        distinct (?valid_until as ?ts) where {\n" +
+				"            <<<<?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> " +
+				"?valid_from>>  <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.\n" +
+				"        }\n" +
+				"    }\n" +
+				"}";
 		return queryString;
 	}
 
