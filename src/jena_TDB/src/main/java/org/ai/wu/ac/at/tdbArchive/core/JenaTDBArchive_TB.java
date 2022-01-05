@@ -26,6 +26,7 @@ import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.ARQ;
@@ -89,8 +90,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
 
-		//Create a TDB persistent dataset in tmp/TDB/currentTimestamp and load the .nq file into it.
-		String currentTimestamp = String.valueOf(System.currentTimeMillis());
+		// Create a TDB persistent dataset in tmp/TDB/currentTimestamp and load the .nq file into it.
 		String tdb_loc = "target/TDB"; //+ currentTimestamp;
 		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
 		logger.info(String.format("If you are using docker the TDB dataset will be located " +
@@ -100,10 +100,33 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		Dataset dataset;
 		try {
-			//Create a dataset object from the persistent TDB dataset
-			dataset = TDBFactory.createDataset(tdb_loc);
+			// Create a dataset object from the persistent TDB dataset
+			dataset = TDBFactory.createDataset(tdb_loc); //dsg.getDefaultGraphTDB().getDataset();
 
-			//Create a fuseki server, load the dataset into the repository
+			// Write dataset info file if the location of file where the query performances will be stored is given
+			// Writes in the same directory as the query performance file
+			if(!this.outputTime.equals("")) {
+				File datasetLogFileDir = new File(this.outputTime).getParentFile();
+				long tbdDirSize = FileUtils.sizeOfDirectory(datasetLogFileDir);
+
+				logger.debug(datasetLogFileDir);
+				String datasetLogFile = datasetLogFileDir + "/dataset_infos_tb.csv";
+				logger.debug(datasetLogFile);
+				File f = new File(datasetLogFile);
+				PrintWriter pw;
+				if ( f.exists() && !f.isDirectory() ) {
+					pw = new PrintWriter(new FileOutputStream(datasetLogFile, true));
+				}
+				else {
+					pw = new PrintWriter(datasetLogFile);
+				}
+				pw.append("ds_name, tdb_ds_size\n");
+				pw.append("bearb_jena_tdb_tb" + "," + tbdDirSize + "\n");
+				pw.close();
+				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
+			}
+
+			// Create a fuseki server, load the dataset into the repository
 			// http://localhost:3030/in_memory_server/sparql and connect to it.
 			server = FusekiServer.create()
 					.add("/in_memory_server", dataset)

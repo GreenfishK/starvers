@@ -764,4 +764,5 @@ public final class QueryUtils {
 				"}\n";
 		return queryString;
 	}
+
 }
