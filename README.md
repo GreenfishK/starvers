@@ -13,14 +13,11 @@ docker run hello-world
 ```
 
 ## Build docker images
-Go to BEAR/src/Jena_TDB and build with docker. The docker file uses a maven image to build and package the project with dependencies: 
+Go to BEAR/src/Jena_TDB and build the java Jena-TDB project with docker. The docker file uses a maven image to build and package the project with dependencies: 
 ```
 docker build -t bear-jena .
 ```
-Go to BEAR/src/HDT and build with docker.
-```
-docker build -t bear-hdt .
-```
+
 ### Troubleshoot
 Error1: “Docker does not have a release file”
 
@@ -29,64 +26,9 @@ Fix: Edit etc/apt/source.list.d/docker.list and set the release version to an Ub
 ## Get data
 Create the local data directories for this experiment. Download the datasets & queries and compute the changesets from the ICs to build the RDF* dataset. See [here](https://github.com/GreenfishK/BEAR/tree/master/data).
 
-## Load data into Jena and HDT
-Use the scripts from our [scripts directory](https://github.com/GreenfishK/BEAR/tree/master/scripts/load_data) to load the data. These scripts assume that you already created a .BEAR directory in your home directory. Execute the scripts one by one. After termination following new files will be added (marked with *):
-
-```
-├── databases
-│   ├── tdb-bearb-hour
-│   │   ├── cb
-│   │   │   ├── *0  
-│   │   │   │   ├── *add  
-│   │   │   │   │   └── *jena database files 
-│   │   │   │   ├── *del  
-│   │   │   │   │   └── *jena database files  
-│   │   │   │   ├── *.  
-│   │   │   │   ├── *.  
-│   │   │   │   ├── *.  
-│   │   │   ├── *1298  
-│   │   │   │   ├── *add  
-│   │   │   │   │   └── *jena database files 
-│   │   │   │   └── *del  
-│   │   │   │       └── *jena database files  
-│   │   └── ic
-│   │   │   ├── *0  
-│   │   │   │   ├── *jena database files  
-│   │   │   ├── *.  
-│   │   │   ├── *.  
-│   │   │   ├── *.  
-│   │   │   ├── *1298  
-│   │   │   │   └── *jena database files 
-│   │   ├── tb
-│   │   │   ├── *jena database files
-│   │   ├── tb_star_f 
-│   │   │   └── *jena database files
-│   │   └── tb_star_h 
-│   │       └── *jena database files
-│   └── hdt-bearb-hour
-│       ├── ic  
-│       │   ├── *0.hdt  
-│       │   ├── *.  
-│       │   ├── *.  
-│       │   ├── *.  
-│       │   └── *1298.hdt  
-│       └── cb  
-│           ├── *0.add.hdt  
-│           ├── *1.add.hdt  
-│           ├── *1.del.hdt  
-│           ├── *.  
-│           ├── *.  
-│           ├── *.  
-│           ├── *1298.del.hdt  
-│           └── *1298.del.hdt  
-└── output
-    └── logs
-        └── *log files from data import  
-
-```
-
-## Run queries and log performance
-Run the queries via docker for [Jena](https://github.com/GreenfishK/BEAR/blob/master/scripts/evaluation) and HDT to evaluate the triple store vendors' performance for different archiving policies and query categories.
+## Run the evaluation script 
+Run the built jar file via docker for [Jena](https://github.com/GreenfishK/BEAR/blob/master/scripts/evaluation) to evaluate the data ingestion and query performance for the three timestamp-based archiving policies (tb (=named graphs), tb\_rdf\_star\_h, tb\_rdf\_star\_f) and materialization queries. As opposed to the original BEAR script, the TDB database files are now created during runtime via the Java TDBLoader API and do not need to be manually loaded via CLI. If you still wish to manually create and load the TDB store you can use our scripts provided [here](https://github.com/GreenfishK/BEAR/tree/master/scripts/archive/load_data). The raw RDF(*) datasets are taken from the location which is provided as parameter in the "run docker" script mentioned above. The TDB datasets are then mounted onto Jena's fuseki server, which is also created during runtime. This enables the queries to be executed via http requests, as opposed to direct java invocation as used in the original BEAR-Jena java project. \
+Note that we are not evaluating IC or CB policies. This can, nevertheless, still be done with our script by passing the corresponding parameters. However, one needs to load the TDB datasets manually first and direct java invocation will be used for these policies, as in the original BEAR and OSTRICH framework.
 
 ## Plot performance measurements
 Use the [python script](https://github.com/GreenfishK/BEAR/blob/master/scripts/plot_tb_and_tb_star.py) to plot the performance across all versions for different archiving policies, query categories and query sets.
