@@ -747,7 +747,8 @@ public final class QueryUtils {
     }
 
 	public static final String getVersionInfos_f() {
-		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions) where {\n" +
+		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions)\n" +
+				" (min(?valid_from) as initial_version_ts) where {\n" +
 				"    {\n" +
 				"        select \n" +
 				"        distinct (?valid_from as ?ts) where {\n" +
@@ -766,7 +767,8 @@ public final class QueryUtils {
 	}
 
 	public static final String getVersionInfos_h() {
-		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions) where {\n" +
+		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions)\n" +
+				" (min(?valid_from) as initial_version_ts) where {\n" +
 				"    {\n" +
 				"        select \n" +
 				"        distinct (?valid_from as ?ts) where {\n" +
