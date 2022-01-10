@@ -1,7 +1,8 @@
 from pathlib import Path
+import shutil
 
 
-def correct(dataset: str, source: str, destination: str):
+def correct(dataset: str, file: str):
 
     if dataset == "rdf_star_flat":
         """
@@ -18,9 +19,8 @@ def correct(dataset: str, source: str, destination: str):
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_until> ' \
                     r'"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> . '
 
-        rdf_star_flat_in = source
-        rdf_star_flat_out = destination
-        with open(rdf_star_flat_in) as fin, open(rdf_star_flat_out, "w") as fout:
+        rdf_star_flat_in = file
+        with open(rdf_star_flat_in) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
                 if r"\\\rtf1\\ansi\\ansicpg1252{\\" in line:
                     line = new_line1 + "\n" + new_line2
@@ -31,6 +31,7 @@ def correct(dataset: str, source: str, destination: str):
                 fout.write(line)
         fin.close()
         fout.close()
+        shutil.move("tmp_out.ttl", file)
 
     if dataset == "rdf_star_hierarchical":
         """
@@ -45,9 +46,8 @@ def correct(dataset: str, source: str, destination: str):
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_until> ' \
                     r'"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
 
-        rdf_star_hierarchical_in = source
-        rdf_star_hierarchical_out = destination
-        with open(rdf_star_hierarchical_in) as fin, open(rdf_star_hierarchical_out, "w") as fout:
+        rdf_star_hierarchical_in = file
+        with open(rdf_star_hierarchical_in) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
                 if r"\\\rtf1\\ansi\\ansicpg1252{\\" in line:
                     line = new_line1 + "\n"
@@ -58,10 +58,12 @@ def correct(dataset: str, source: str, destination: str):
                 fout.write(line)
         fin.close()
         fout.close()
+        shutil.move("tmp_out.ttl", file)
 
 
 out_frm = "ttl"
 data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 correct(dataset="rdf_star_hierarchical",
-        source=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
-        destination=data_dir + "/alldata.TB_star_hierarchical_out." + out_frm)
+        file=data_dir + "/alldata.TB_star_hierarchical." + out_frm)
+correct(dataset="rdf_star_flat",
+        file=data_dir + "/alldata.TB_star_flat." + out_frm)
