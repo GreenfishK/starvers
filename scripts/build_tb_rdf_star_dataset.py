@@ -195,7 +195,7 @@ add_change_sets_until_vers = 1299
 in_frm = "ttl"
 out_frm = in_frm
 
-# construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format="nt")
+construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format=out_frm)
 construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
                      source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                      destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -206,11 +206,4 @@ construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
                      source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                      destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                      last_version=add_change_sets_until_vers,
-                     annotation_style=AnnotationStyle.HIERARCHICAL)
-if in_frm == "nt":
-    data_corrections.correct(dataset="rdf_star_flat",
-                             source=data_dir + "/alldata.TB_star_flat." + out_frm,
-                             destination=data_dir + "/alldata.TB_star_flat_out." + out_frm)
-    data_corrections.correct(dataset="rdf_star_hierarchical",
-                             source=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
-                             destination=data_dir + "/alldata.TB_star_hierarchical_out." + out_frm)
+                     annotation_style=AnnotationStyle.FLAT)
