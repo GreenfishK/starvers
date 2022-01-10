@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from rdflib import Graph
 from enum import Enum
-
+import data_corrections
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -207,3 +207,10 @@ construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
                      destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                      last_version=add_change_sets_until_vers,
                      annotation_style=AnnotationStyle.HIERARCHICAL)
+if in_frm == "nt":
+    data_corrections.correct(dataset="rdf_star_flat",
+                             source=data_dir + "/alldata.TB_star_flat." + out_frm,
+                             destination=data_dir + "/alldata.TB_star_flat_out." + out_frm)
+    data_corrections.correct(dataset="rdf_star_hierarchical",
+                             source=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
+                             destination=data_dir + "/alldata.TB_star_hierarchical_out." + out_frm)
