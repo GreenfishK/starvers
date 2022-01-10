@@ -17,42 +17,51 @@ class AnnotationStyle(Enum):
     FLAT = 2
 
 
-def diff_set(dataset_dir: str, version1: int, version2: int) -> [Graph, Graph]:
+def diff_set(dataset_dir: str, version1: int, version2: int, format: str) -> [Graph, Graph]:
+    print("Calculating changeset between version {0} and {1}".format(version1, version2))
     ic1_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version1).zfill(4))
     ic2_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version2).zfill(4))
 
     ic1 = Graph()
-    ic1.parse(ic1_ds_path, format="nt")
+    ic1.parse(ic1_ds_path, format=format)
     ic2 = Graph()
-    ic2.parse(ic2_ds_path, format="nt")
+    ic2.parse(ic2_ds_path, format=format)
 
     cs_add = Graph()
-    cs_add.parse(ic2_ds_path, format="nt")
+    cs_add.parse(ic2_ds_path, format=format)
     cs_add.__isub__(ic1)
 
     cs_del = Graph()
-    cs_del.parse(ic1_ds_path, format="nt")
+    cs_del.parse(ic1_ds_path, format=format)
     cs_del.__isub__(ic2)
 
     return cs_add, cs_del
 
 
-def construct_change_sets(dataset_dir: str, end_vers: int):
-    cb_comp_dir = dataset_dir + "/alldata.CB_computed.nt"
+def construct_change_sets(dataset_dir: str, end_vers: int, format: str):
+    """
+    end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
+    in the dataset_dir.
+    format: ttl or nt.
+
+    """
+    cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
         os.makedirs(cb_comp_dir)
 
-    for i in range(1, end_vers):
-        output = diff_set(dataset_dir, i, i + 1)
+    for i in range(92, end_vers):
+        output = diff_set(dataset_dir, i, i + 1, format)
         cs_added = output[0]
         assert isinstance(cs_added, Graph)
         cs_deleted = output[1]
         assert isinstance(cs_deleted, Graph)
 
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
-        cs_added.serialize(destination=cb_comp_dir + "/" + "data-added_{0}-{1}.nt".format(i, i + 1), format="nt")
+        cs_added.serialize(destination=cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format),
+                           format=format)
         print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
-        cs_deleted.serialize(destination=cb_comp_dir + "/" + "data-deleted_{0}-{1}.nt".format(i, i + 1), format="nt")
+        cs_deleted.serialize(destination=cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format),
+                             format=format)
 
 
 def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, output_file: str,
@@ -187,15 +196,15 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
 ds_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
 
-# construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers)
+construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers, format="ttl")
 #construct_tb_star_ds(dataset_dir=ds_dir,
 #                     cb_rel_path="alldata.CB_computed.nt",
 #                     last_version=add_change_sets_until_vers,
 #                     output_file="alldata.TB_star_hierarchical.ttl",
 #                     annotation_style=AnnotationStyle.HIERARCHICAL)
 
-construct_tb_star_ds(dataset_dir=ds_dir,
-                     cb_rel_path="alldata.CB_computed.nt",
-                     last_version=add_change_sets_until_vers,
-                     output_file="alldata.TB_star_flat.ttl",
-                     annotation_style=AnnotationStyle.FLAT)
+#construct_tb_star_ds(dataset_dir=ds_dir,
+#                     cb_rel_path="alldata.CB_computed.nt",
+#                     last_version=add_change_sets_until_vers,
+#                     output_file="alldata.TB_star_flat.ttl",
+#                     annotation_style=AnnotationStyle.FLAT)
