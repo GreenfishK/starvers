@@ -406,8 +406,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
-		//dataset.end();
-		//conn.close();
 		server.stop();
 	}
 }
