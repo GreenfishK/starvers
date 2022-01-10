@@ -192,17 +192,18 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 """ Parameters and function calls """
 data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
-frm = "ttl"
+in_frm = "ttl"
+out_frm = in_frm
 
 # construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format="nt")
 construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + frm,
-                     destination=data_dir + "/alldata.TB_star_hierarchical." + frm,
+                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                     destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
                      last_version=add_change_sets_until_vers,
                      annotation_style=AnnotationStyle.HIERARCHICAL)
 
 construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + frm,
-                     destination=data_dir + "/alldata.TB_star_flat." + frm,
+                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                     destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                      last_version=add_change_sets_until_vers,
                      annotation_style=AnnotationStyle.HIERARCHICAL)
