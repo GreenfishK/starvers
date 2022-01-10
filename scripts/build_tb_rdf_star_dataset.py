@@ -49,7 +49,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str):
     if not os.path.exists(cb_comp_dir):
         os.makedirs(cb_comp_dir)
 
-    for i in range(92, end_vers):
+    for i in range(1, end_vers):
         output = diff_set(dataset_dir, i, i + 1, format)
         cs_added = output[0]
         assert isinstance(cs_added, Graph)
@@ -64,7 +64,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str):
                              format=format)
 
 
-def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, output_file: str,
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int,
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
@@ -73,9 +73,6 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
     :return:
     """
 
-    output_path = dataset_dir + "/" + output_file
-    ic0_ds_path = dataset_dir + "/alldata.IC.nt/000001.nt"
-    change_sets_path = dataset_dir + "/" + cb_rel_path
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
@@ -91,7 +88,7 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
     print("Building version 1. ")
 
     ic0 = Graph()
-    ic0.parse(ic0_ds_path)
+    ic0.parse(source_ic0)
 
     init_ds = []
     if annotation_style == AnnotationStyle.HIERARCHICAL:
@@ -117,16 +114,16 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
     deleted_triples = {}
     change_sets = []
 
-    if not os.path.exists(change_sets_path):
-        os.makedirs(change_sets_path)
+    if not os.path.exists(source_cs):
+        os.makedirs(source_cs)
 
-    for filename in os.listdir(change_sets_path):
+    for filename in os.listdir(source_cs):
         version = filename.split('-')[2].split('.')[0].zfill(4)
         if filename.startswith("data-added"):
             new_triples[version] = filename
         if filename.startswith("data-deleted"):
             deleted_triples[version] = filename
-    print("{0} change sets are in directory {1}".format(len(new_triples), change_sets_path))
+    print("{0} change sets are in directory {1}".format(len(new_triples), source_cs))
 
     vers_ts = sys_ts
     for vers, new_trpls in sorted(new_triples.items()):
@@ -141,7 +138,7 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
         
         """ Annotate added triples using rdf* syntax """
         cs_add = Graph()
-        cs_add.parse(change_sets_path + "/" + t[1])
+        cs_add.parse(source_cs + "/" + t[1])
         valid_from_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=t[3], tz_offset=tz_offset,
                                                                       datetimeref=xsd_datetime)
         for s, p, o in cs_add:
@@ -154,7 +151,7 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
 
         """ Annotate deleted triples using rdf* syntax """
         cs_del = Graph()
-        cs_del.parse(change_sets_path + "/" + t[2])
+        cs_del.parse(source_cs + "/" + t[2])
         if annotation_style == AnnotationStyle.FLAT:
             df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate'], drop=False, inplace=True)
             for s, p, o in cs_del:
@@ -170,10 +167,10 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
     """ Export dataset by reading out each line. Pandas does so far not provide any function 
     to serialize in ttl oder n3 format"""
     print("Export data set.")
-    f = open(output_path, "w")
+    f = open(destination, "w")
     f.write("")
     f.close()
-    with open(output_path, "a") as output_tb_ds:
+    with open(destination, "a") as output_tb_ds:
         if annotation_style == AnnotationStyle.FLAT:
             for index, row in df_tb_set.iterrows():
                 triple = "{0} {1} {2}".format(row['s'], row['p'], row['o'])
@@ -193,18 +190,19 @@ def construct_tb_star_ds(dataset_dir, cb_rel_path: str, last_version: int, outpu
 
 
 """ Parameters and function calls """
-ds_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
+data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
+frm = "ttl"
 
-construct_change_sets(dataset_dir=ds_dir, end_vers=add_change_sets_until_vers, format="ttl")
-#construct_tb_star_ds(dataset_dir=ds_dir,
-#                     cb_rel_path="alldata.CB_computed.nt",
-#                     last_version=add_change_sets_until_vers,
-#                     output_file="alldata.TB_star_hierarchical.ttl",
-#                     annotation_style=AnnotationStyle.HIERARCHICAL)
+# construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format="nt")
+construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                     source_cs=data_dir + "/alldata.CB_computed." + frm,
+                     destination=data_dir + "/alldata.TB_star_hierarchical." + frm,
+                     last_version=add_change_sets_until_vers,
+                     annotation_style=AnnotationStyle.HIERARCHICAL)
 
-#construct_tb_star_ds(dataset_dir=ds_dir,
-#                     cb_rel_path="alldata.CB_computed.nt",
-#                     last_version=add_change_sets_until_vers,
-#                     output_file="alldata.TB_star_flat.ttl",
-#                     annotation_style=AnnotationStyle.FLAT)
+construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                     source_cs=data_dir + "/alldata.CB_computed." + frm,
+                     destination=data_dir + "/alldata.TB_star_flat." + frm,
+                     last_version=add_change_sets_until_vers,
+                     annotation_style=AnnotationStyle.HIERARCHICAL)
