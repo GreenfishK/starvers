@@ -5,7 +5,6 @@ import os
 import pandas as pd
 from rdflib import Graph
 from enum import Enum
-import data_corrections
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
