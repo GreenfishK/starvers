@@ -95,7 +95,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 					pw.append("ds_name,rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
 				}
 
-				pw.append("bearb_jena_tdb_tb" + "," + "Jena TDB" + "," + rawDataFileSize/1000000+ ","
+				pw.append("bearb_jena_tdb_tb" + "," + tripleStore.toString() + "," + rawDataFileSize/1000000+ ","
 						+ tbdDirSize/1000000 + "," + ts.getIngestionTime() +"\n");
 				pw.close();
 				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
