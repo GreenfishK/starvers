@@ -114,7 +114,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 					pw = new PrintWriter(datasetLogFile);
 					pw.append("ds_name,rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
 				}
-				pw.append("bearb_jena_tdb_tb_star_f" +  "," + "Jena TDB" + "," + rawDataFileSize/1000000
+				pw.append("bearb_jena_tdb_tb_star_f" +  "," + tripleStore.toString() + "," + rawDataFileSize/1000000
 						+ "," + tbdDirSize/1000000  + "," + (endTime - startTime)/1000 +"\n");
 				pw.close();
 				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));

@@ -29,38 +29,42 @@ esac
 policies="tb tb_star_f tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
+tripleStores="JenaTDB" # JenaTDB GraphDB
 
 echo ${queries}
 
-for policy in ${policies[@]}; do
+for tripleStore in ${tripleStores[@]}; do
+    for policy in ${policies[@]}; do
 
-    case $policy in 
-        tb) ds_name="alldata.TB.nq" ;;
-        tb_star_f) ds_name="alldata.TB_star_flat.ttl" ;;
-        tb_star_h) ds_name="alldata.TB_star_hierarchical.ttl" ;;
-        *) echo "Other polices than timestamp-based are not covered yet" ;;
-    esac
+        case $policy in 
+            tb) ds_name="alldata.TB.nq" ;;
+            tb_star_f) ds_name="alldata.TB_star_flat.ttl" ;;
+            tb_star_h) ds_name="alldata.TB_star_hierarchical.ttl" ;;
+            *) echo "Other polices than timestamp-based are not covered yet" ;;
+        esac
 
-    for category in ${categories[@]}; do
-        for query in ${queries[@]}; do
+        for category in ${categories[@]}; do
+            for query in ${queries[@]}; do
 
-        echo "===== Running docker for ${policy}, ${category}, ${query} ===== \n"
-        docker run \
-            -it \
-            --rm \
-            -v ${datasetdir}:/var/data/dataset/ \
-            -v ${querydir}:/var/data/queries/ \
-            -v ${outputdir}:/var/data/output/ \
-            bear-jena \
-            java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
-                -e ${limit} \
-                -j 1 \
-                -p ${policy} \
-                -d /var/data/dataset/${ds_name} \
-                -r spo \
-                -c ${category} \
-                -a /var/data/queries/${query} \
-                -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv 
+            echo "===== Running docker for ${policy}, ${category}, ${query}, ${tripleStore} ===== \n"
+            docker run \
+                -it \
+                --rm \
+                -v ${datasetdir}:/var/data/dataset/ \
+                -v ${querydir}:/var/data/queries/ \
+                -v ${outputdir}:/var/data/output/ \
+                bear-jena \
+                java -cp target/tdbQuery-0.6-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
+                    -e ${limit} \
+                    -j 1 \
+                    -p ${policy} \
+                    -d /var/data/dataset/${ds_name} \
+                    -r spo \
+                    -c ${category} \
+                    -a /var/data/queries/${query} \
+                    -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv \
+                    -T ${tripleStore}
+            done
         done
     done
 done
