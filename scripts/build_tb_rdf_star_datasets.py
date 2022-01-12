@@ -6,6 +6,8 @@ import pandas as pd
 from rdflib import Graph
 from enum import Enum
 
+import data_corrections
+
 desired_width = 320
 pd.set_option('display.width', desired_width)
 pd.set_option('display.max_columns', 10)
@@ -191,8 +193,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 """ Parameters and function calls """
 data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
 add_change_sets_until_vers = 1299
-in_frm = "ttl"
-out_frm = in_frm
+in_frm = "nt"
+out_frm = "ttl"
 
 """construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format=out_frm)
 construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
@@ -206,3 +208,4 @@ construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
                      destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                      last_version=add_change_sets_until_vers,
                      annotation_style=AnnotationStyle.FLAT)
+data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm)
