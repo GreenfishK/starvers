@@ -211,7 +211,7 @@ public class JenaTDBArchive_query {
 		} else if (policy.equalsIgnoreCase("hybrid")) {
 			jenaArchive = new JenaTDBArchive_Hybrid();
 		}
-		if (outputTime.equals("")) {
+		if (!outputTime.equals("")) {
 			jenaArchive.setOutputTime(outputTime);
 		}
 
@@ -219,7 +219,7 @@ public class JenaTDBArchive_query {
 		jenaArchive.load(dirTDBs, tripleStore);
 
 		PrintStream os = System.out;
-		if (outputResults.equals("")) {
+		if (!outputResults.equals("")) {
 			if (!splitResultsByVersion)
 				os = new PrintStream(outputResults);
 		}
