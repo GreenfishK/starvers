@@ -61,7 +61,7 @@ public class AnalyseRes {
 		
 		long start = System.currentTimeMillis();
 		JenaTDBArchive jenaArchive = new JenaTDBArchive_IC();
-		jenaArchive.load(tdbFolder);
+		jenaArchive.load(tdbFolder, null);
 		
 		System.out.println("Loaded "+tdbFolder+" in "+(System.currentTimeMillis()-start)+" ms");
 		

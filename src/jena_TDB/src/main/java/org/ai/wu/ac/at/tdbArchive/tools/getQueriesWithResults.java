@@ -11,6 +11,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -30,6 +32,7 @@ public class getQueriesWithResults {
 		String outputResults = "";
 		Options options = new Options();
 		String rol = "subject"; // for bulk queries
+		TripleStore tripleStore = null;
 
 		try {
 
@@ -44,9 +47,7 @@ public class getQueriesWithResults {
 
 			Option fileDynqueryOpt = new Option("a", "allVersionQueries", true, "dynamic queries to process in all versions");
 			fileDynqueryOpt.setRequired(false);
-			options.addOption(fileDynqueryOpt);	
-
-
+			options.addOption(fileDynqueryOpt);
 
 			Option outputDirOpt = new Option("o", "OutputResults", true, "Output file with Results");
 			outputDirOpt.setRequired(false);
@@ -59,6 +60,10 @@ public class getQueriesWithResults {
 			Option helpOpt = new Option("h", "help", false, "Shows help");
 			helpOpt.setRequired(false);
 			options.addOption(helpOpt);
+
+			Option tripleStoreOpt = new Option("T", "triplestore", false, "Triple store to load. e.g. Jena, GraphDB, ...");
+			tripleStoreOpt.setRequired(false);
+			options.addOption(tripleStoreOpt);
 
 			// Parse input arguments
 			CommandLineParser cliParser = new BasicParser();
@@ -84,6 +89,14 @@ public class getQueriesWithResults {
 			if (cmdLine.hasOption("a")) {
 				queryFileDynamic = cmdLine.getOptionValue("a");
 			}
+			if (cmdLine.hasOption("T")) {
+				switch(cmdLine.getOptionValue("T")) {
+					case "JenaTDB": tripleStore = JenaTDBArchive.TripleStore.JenaTDB; break;
+					case "GraphDB": tripleStore = JenaTDBArchive.TripleStore.GraphDB; break;
+					default: throw new Exception("Please provide a valid triple store." +
+							" Currently supported triple stores are JenaTDB and GraphDB.");
+				}
+			}
 
 		} catch (ParseException e) {
 			HelpFormatter format = new HelpFormatter();
@@ -98,7 +111,7 @@ public class getQueriesWithResults {
 
 		System.out.println("Loading archive IC...");
 		long startTime = System.currentTimeMillis();
-		jenaArchive.load(dirTDBs);
+		jenaArchive.load(dirTDBs, tripleStore);
 		long endTime = System.currentTimeMillis();
 		System.out.println("Loaded in " + (endTime - startTime) + " ms");
 
