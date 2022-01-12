@@ -68,7 +68,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		ts.load(directory, "ttl", tripleStore);
 
 		if(!this.outputTime.equals("")) {
-			logger.debug(this.outputTime);
 			try {
 				// Write dataset info file if the location of file where the query performances will be stored is given
 				// Writes in the same directory as the query performance file

@@ -16,9 +16,7 @@ public class DatasetUtils {
 
     public void logDatasetInfos(TripleStore tripleStore, Long ingestionTime, String tripleStoreLoc,
                                 String datasetLoc, String logFileLoc) throws FileNotFoundException {
-        logger.debug(logFileLoc);
         File datasetLogFileDir = new File(logFileLoc).getParentFile();
-        logger.debug(datasetLogFileDir);
         long tbdDirSize = FileUtils.sizeOfDirectory(new File(tripleStoreLoc));
         long rawDataFileSize = FileUtils.sizeOf(new File(datasetLoc));
 

@@ -148,7 +148,6 @@ public class JenaTDBArchive_query {
 			}
 			if (cmdLine.hasOption("t")) {
 				outputTime = cmdLine.getOptionValue("t");
-				logger.debug(outputTime);
 			}
 			if (cmdLine.hasOption("q")) {
 				queryFile = cmdLine.getOptionValue("q");
