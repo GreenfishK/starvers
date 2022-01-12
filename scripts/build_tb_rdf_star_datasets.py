@@ -71,7 +71,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
     but only the relative path to "/.BEAR/rawdata-bearb/hour/
 
-    :return:
+    :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
+    from which one can get to the desired version timestamp.
     """
 
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
@@ -188,6 +189,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                                    vu_ts_p=row['valid_until_predicate'],
                                                                    vu_ts=row['valid_until_timestamp']))
         output_tb_ds.close()
+        return sys_ts
 
 
 """ Parameters and function calls """
@@ -196,16 +198,15 @@ add_change_sets_until_vers = 1299
 in_frm = "nt"
 out_frm = "ttl"
 
-"""construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format=out_frm)
-construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                     destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
-                     last_version=add_change_sets_until_vers,
-                     annotation_style=AnnotationStyle.HIERARCHICAL)"""
-
-construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                     destination=data_dir + "/alldata.TB_star_flat." + out_frm,
-                     last_version=add_change_sets_until_vers,
-                     annotation_style=AnnotationStyle.FLAT)
-data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm)
+construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format=out_frm)
+init_ts_1 = construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                                 source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                                 destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
+                                 last_version=add_change_sets_until_vers,
+                                 annotation_style=AnnotationStyle.HIERARCHICAL)
+init_ts_2 = construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                                 source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                                 destination=data_dir + "/alldata.TB_star_flat." + out_frm,
+                                 last_version=add_change_sets_until_vers,
+                                 annotation_style=AnnotationStyle.FLAT)
+data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_ts_2)

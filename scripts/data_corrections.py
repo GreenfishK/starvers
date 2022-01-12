@@ -1,19 +1,29 @@
+from datetime import timedelta, datetime
 from pathlib import Path
+from rdflib import Graph
 import shutil
 
 
-def correct(dataset: str, file: str):
+def correct(dataset: str, file: str, init_ts: datetime):
+    """
+    Bug 1: If either the alldata.TB_star_flat.ttl or alldata.TB_star_hierarchical.ttl dataset was constructed
+    from computed .nt change sets there might be occurrences of faulty escapes, such as \\b, \\f and \\r in
+    the alldata.TB_star_flat.ttl file. Triples, where such escapes occur are replaced by the corresponding
+    correct triples from the original change sets. This bug only occurs in version 93.
+    """
 
+    version_ts = init_ts + timedelta(seconds=92)
+    sys_ts_formatted = datetime.strftime(version_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
+    xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
+    tz_offset = "+02:00"
+    rdf_version_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset,
+                                                                   datetimeref=xsd_datetime)
     if dataset == "rdf_star_flat":
-        """
-        Bug 1: If the alldata.TB_star_flat.ttl dataset was constructed from computed .nt change sets there
-        might be occurrences of faulty escapes, such as \\b, \\f and \\r in the alldata.TB_star_flat.ttl file.
-        Triples, where such escapes occur are replaced by the corresponding correct triples from the original change sets.
-        """
+
         new_line1 = r'<<<http://dbpedia.org/resource/Rodeo_(Travis_Scott_album)> <http://dbpedia.org/property/cover> ' \
                     r'"{\\rtf1\\ansi\\ansicpg1252{\\fonttbl}\n{\\colortbl;\\red255\\green255\\blue255;"@en >> ' \
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_from> ' \
-                    r'"2021-12-29T17:41:39.388+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> . '
+                    + rdf_version_ts_res + r' . '
         new_line2 = r'<<<http://dbpedia.org/resource/Rodeo_(Travis_Scott_album)> <http://dbpedia.org/property/cover> ' \
                     r'"{\\rtf1\\ansi\\ansicpg1252{\\fonttbl}\n{\\colortbl;\\red255\\green255\\blue255;"@en >> ' \
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_until> ' \
@@ -34,15 +44,10 @@ def correct(dataset: str, file: str):
         shutil.move("tmp_out.ttl", file)
 
     if dataset == "rdf_star_hierarchical":
-        """
-        Bug 1: If the alldata.TB_star_hierarchical.ttl dataset was constructed from computed .nt change sets there
-        might be occurrences of faulty escapes, such as \\b, \\f and \\r in the alldata.TB_star_flat.ttl file.
-        Triples, where such escapes occur are replaced by the corresponding correct triples from the original change sets.
-        """
         new_line1 = r'<<<<<http://dbpedia.org/resource/Rodeo_(Travis_Scott_album)> <http://dbpedia.org/property/cover> ' \
                     r'"{\\rtf1\\ansi\\ansicpg1252{\\fonttbl}\n{\\colortbl;\\red255\\green255\\blue255;"@en >> ' \
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_from> ' \
-                    r'"2021-12-29T17:41:39.388+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>>> ' \
+                    + rdf_version_ts_res + r'>> ' \
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_until> ' \
                     r'"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime> .'
 
@@ -59,11 +64,3 @@ def correct(dataset: str, file: str):
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)
-
-
-out_frm = "ttl"
-data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
-correct(dataset="rdf_star_hierarchical",
-        file=data_dir + "/alldata.TB_star_hierarchical." + out_frm)
-correct(dataset="rdf_star_flat",
-        file=data_dir + "/alldata.TB_star_flat." + out_frm)
