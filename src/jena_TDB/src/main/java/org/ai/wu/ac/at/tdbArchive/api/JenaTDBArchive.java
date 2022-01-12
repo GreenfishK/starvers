@@ -17,14 +17,19 @@ import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
  */
 public interface JenaTDBArchive {
 
-	
+
+	enum TripleStore {
+		JenaTDB,
+		GraphDB
+	}
+
 	/**
 	 * Load Jena TDB from directory 
 	 * 
 	 * @param directory
 	 * @throws RuntimeException
 	 */
-	public void load (String directory) throws RuntimeException;
+	public void load (String directory, TripleStore tripleStore) throws RuntimeException;
 	
 	/**
 	 * close Jena TDB and release resources 

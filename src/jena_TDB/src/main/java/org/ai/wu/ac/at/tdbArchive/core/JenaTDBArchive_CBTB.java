@@ -75,7 +75,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	 * 
 	 * @param directory
 	 */
-	public void load(String directory) {
+	public void load(String directory, TripleStore tripleStore) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();

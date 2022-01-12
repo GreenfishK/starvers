@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_CB;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_CBTB;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_Hybrid;
@@ -31,7 +32,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 public class JenaTDBArchive_query {
 
 	public static void main(String[] args) throws FileNotFoundException, InterruptedException, ExecutionException {
@@ -40,20 +40,19 @@ public class JenaTDBArchive_query {
 		String dirTDBs = null;
 		String queryFile = null;
 		String queryFileDynamic = null;
-		Boolean bulkQueries = false;
+		boolean bulkQueries = false;
 		String outputResults = "";
 		String queryCategory = "all"; // query everything;
 		String outputTime = "";
-		//String logDatasetInfos = "";
 		String policy = "ic";
-		String service = "";
 		Options options = new Options();
 		int versionQuery = 0;
 		int endversionQuery = 0;
 		int jump = 0;
 		String rol = "subject"; // for bulk queries
-		Boolean silent = false;
-		Boolean splitResultsByVersion=false;
+		boolean silent = false;
+		boolean splitResultsByVersion=false;
+		TripleStore tripleStore = null;
 		try {
 
 			System.out.println(WelcomeASCII());
@@ -64,10 +63,6 @@ public class JenaTDBArchive_query {
 			Option queryPolicyOpt = new Option("p", "policy", true, "Policy implementation: ic | cb | tb | cbtb | hybrid ");
 			queryPolicyOpt.setRequired(true);
 			options.addOption(queryPolicyOpt);
-
-			Option serviceOpt = new Option("x", "service", true, "SPARQL http endpoint");
-			queryPolicyOpt.setRequired(true);
-			options.addOption(serviceOpt);
 
 			Option inputDirOpt = new Option("d", "dir", true, "DIR to load TDBs");
 			inputDirOpt.setRequired(true);
@@ -112,11 +107,6 @@ public class JenaTDBArchive_query {
 			timeOpt.setRequired(false);
 			options.addOption(timeOpt);
 
-			//Option logDatasetInfosOpt = new Option("D", "logDatasetInfos", true,
-			//		"whether to create an output file with the dataset infos");
-			//logDatasetInfosOpt.setRequired(false);
-			//options.addOption(logDatasetInfosOpt);
-
 			Option jumpCatOpt = new Option("j", "jump", true, "Jump step for the diff: e.g. 5 (0-5,0-10..)");
 			jumpCatOpt.setRequired(false);
 			options.addOption(jumpCatOpt);
@@ -129,6 +119,10 @@ public class JenaTDBArchive_query {
 			helpOpt.setRequired(false);
 			options.addOption(helpOpt);
 
+			Option tripleStoreOpt = new Option("T", "triplestore", false, "Triple store to load. e.g. Jena, GraphDB, ...");
+			tripleStoreOpt.setRequired(false);
+			options.addOption(tripleStoreOpt);
+
 			// Parse input arguments
 			CommandLineParser cliParser = new BasicParser();
 			CommandLine cmdLine = cliParser.parse(options, args);
@@ -136,9 +130,6 @@ public class JenaTDBArchive_query {
 			// Read arguments
 			if (cmdLine.hasOption("p")) {
 				policy = cmdLine.getOptionValue("p");
-			}
-			if (cmdLine.hasOption("x")) {
-				service = cmdLine.getOptionValue("x");
 			}
 			if (cmdLine.hasOption("d")) {
 				dirTDBs = cmdLine.getOptionValue("d");
@@ -155,17 +146,12 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("o")) {
 				outputResults = cmdLine.getOptionValue("o");
 			}
-
 			if (cmdLine.hasOption("t")) {
 				outputTime = cmdLine.getOptionValue("t");
 			}
-			//if (cmdLine.hasOption("D")) {
-			//	logDatasetInfos = cmdLine.getOptionValue("D");
-			//}
 			if (cmdLine.hasOption("q")) {
 				queryFile = cmdLine.getOptionValue("q");
 			}
-
 			if (cmdLine.hasOption("Q")) {
 				queryFile = cmdLine.getOptionValue("Q");
 				bulkQueries = true;
@@ -174,7 +160,6 @@ public class JenaTDBArchive_query {
 				queryFileDynamic = cmdLine.getOptionValue("a");
 				bulkQueries = true;
 			}
-
 			if (cmdLine.hasOption("h") || cmdLine.hasOption("help")) {
 				HelpFormatter format = new HelpFormatter();
 				format.printHelp("App", options);
@@ -191,7 +176,14 @@ public class JenaTDBArchive_query {
 			if (cmdLine.hasOption("S")) {
 				splitResultsByVersion = true;
 			}
-
+			if (cmdLine.hasOption("T")) {
+				switch(cmdLine.getOptionValue("T")) {
+					case "JenaTDB": tripleStore = TripleStore.JenaTDB; break;
+					case "GraphDB": tripleStore = TripleStore.GraphDB; break;
+					default: throw new Exception("Please provide a valid triple store." +
+							" Currently supported triple stores are JenaTDB and GraphDB.");
+				}
+			}
 		} catch (ParseException e) {
 			logger.error("EXCEPTION!!!");
 			HelpFormatter format = new HelpFormatter();
@@ -218,15 +210,15 @@ public class JenaTDBArchive_query {
 		} else if (policy.equalsIgnoreCase("hybrid")) {
 			jenaArchive = new JenaTDBArchive_Hybrid();
 		}
-		if (outputTime != "") {
+		if (outputTime.equals("")) {
 			jenaArchive.setOutputTime(outputTime);
 		}
 
 		logger.info("Loading archive "+policy.toUpperCase()+"...");
-		jenaArchive.load(dirTDBs);
+		jenaArchive.load(dirTDBs, tripleStore);
 
 		PrintStream os = System.out;
-		if (outputResults != "") {
+		if (outputResults.equals("")) {
 			if (!splitResultsByVersion)
 				os = new PrintStream(outputResults);
 		}

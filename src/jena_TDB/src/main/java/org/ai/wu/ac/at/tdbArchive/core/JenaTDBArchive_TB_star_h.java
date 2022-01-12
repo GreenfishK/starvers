@@ -72,7 +72,7 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	 * @param directory The directory of multiple rdf files
 	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
-	public void load(String directory) {
+	public void load(String directory, TripleStore tripleStore) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();
