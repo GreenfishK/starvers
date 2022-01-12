@@ -66,7 +66,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 	 * @param directory
 	 * @throws RuntimeException
 	 */
-	public void load(String directory) {
+	public void load(String directory, TripleStore tripleStore) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();
