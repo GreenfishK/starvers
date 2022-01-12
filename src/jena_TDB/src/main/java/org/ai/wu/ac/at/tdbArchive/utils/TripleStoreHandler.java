@@ -41,8 +41,14 @@ public class TripleStoreHandler {
         return this.tripleStoreLoc;
     }
 
-    public void load(String directory, TripleStore tripleStore) {
+    public void load(String directory, String format, TripleStore tripleStore) {
         if (tripleStore == TripleStore.JenaTDB) {
+            Lang rdf_format = null;
+            switch (format) {
+                case "nq": rdf_format = Lang.NQ;
+                case "ttl": rdf_format = Lang.TTL;
+            }
+            logger.info("Initializing Jena Fuseki Server");
             this.tripleStore = TripleStore.JenaTDB;
 
             // Initialize Jena
@@ -57,7 +63,7 @@ public class TripleStoreHandler {
                     "in /var/lib/docker/overlay2/<buildID>/diff/%s", this.tripleStoreLoc));
             InputStream in = fm.open(directory);
             long startTime = System.currentTimeMillis();
-            TDBLoader.load(dsg, in, Lang.NQ,false, true);
+            TDBLoader.load(dsg, in, rdf_format,false, true);
             long endTime = System.currentTimeMillis();
             logger.info("Loaded in "+(endTime - startTime)/1000 +" seconds");
             this.ingestionTime = (endTime - startTime)/1000;
@@ -71,6 +77,7 @@ public class TripleStoreHandler {
                     .build();
             fusekiServer.start();
             this.endpoint = String.format("http://localhost:%d/in_memory_server/sparql", fusekiServer.getHttpPort());
+            logger.info("Jena Fuseki Server endpoint: " + this.endpoint);
             dataset.end();
 
         }
