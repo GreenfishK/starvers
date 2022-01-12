@@ -71,7 +71,7 @@ public class AnalyseRes_OtherPatterns {
 
 		long start = System.currentTimeMillis();
 		JenaTDBArchive_IC jenaArchive = new JenaTDBArchive_IC();
-		jenaArchive.load(tdbFolder);
+		jenaArchive.load(tdbFolder, null);
 
 		System.out.println("Loaded " + tdbFolder + " in " + (System.currentTimeMillis() - start) + " ms");
 
