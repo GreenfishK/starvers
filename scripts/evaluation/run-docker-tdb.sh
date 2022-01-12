@@ -26,7 +26,7 @@ case "$1" in
 esac
 
 
-policies="tb tb_star_f tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="tb_star_f" # tb tb_star_h tb_star_f ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
 tripleStores="JenaTDB" # JenaTDB GraphDB
@@ -61,9 +61,10 @@ for tripleStore in ${tripleStores[@]}; do
                     -d /var/data/dataset/${ds_name} \
                     -r spo \
                     -c ${category} \
+                    -T ${tripleStore} \
                     -a /var/data/queries/${query} \
-                    -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv \
-                    -T ${tripleStore}
+                    -t /var/data/output/time-${policy}-${category}-$(echo ${query} | sed "s/\//-/g").csv 
+
             done
         done
     done

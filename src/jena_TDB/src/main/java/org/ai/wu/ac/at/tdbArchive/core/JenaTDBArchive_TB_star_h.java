@@ -41,8 +41,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 	private Boolean measureTime = false;
 	private FusekiServer server;
 	private RDFConnection conn;
-	private int tdbDatasetSize;
-	private int cntTriples;
 
 	// private static String metadataVersions = "<http://example.org/isVersion>";
 
@@ -58,13 +56,6 @@ public class JenaTDBArchive_TB_star_h implements JenaTDBArchive {
 		this.measureTime = false;
 	}
 
-	public int getTdbDatasetSize() {
-		return this.tdbDatasetSize;
-	}
-
-	public int getCntTriples() {
-		return this.cntTriples;
-	}
 
 	/**
 	 * Load Jena TDB from directory

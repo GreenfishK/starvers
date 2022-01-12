@@ -3,8 +3,10 @@ package org.ai.wu.ac.at.tdbArchive.core;
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
+import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 
+import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
@@ -38,11 +40,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	private int TOTALVERSIONS = 0;
 	private String initialVersionTS;
 	private String outputTime = "timeApp.txt";
+	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
-	private FusekiServer server;
-	private RDFConnection conn;
-	private int tdbDatasetSize;
-	private int cntTriples;
 
 	// private static String metadataVersions = "<http://example.org/isVersion>";
 
@@ -58,14 +57,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		this.measureTime = false;
 	}
 
-	public int getTdbDatasetSize() {
-		return this.tdbDatasetSize;
-	}
-
-	public int getCntTriples() {
-		return this.cntTriples;
-	}
-
 	/**
 	 * Load Jena TDB from directory
 	 * 
@@ -73,67 +64,25 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
 	public void load(String directory, TripleStore tripleStore) {
-		// Initialize Jena
-		ARQ.init();
-		FileManager fm = FileManager.get();
-		fm.addLocatorClassLoader(JenaTDBArchive_query.class.getClassLoader());
+		this.ts = new TripleStoreHandler();
+		ts.load(directory, "ttl", tripleStore);
 
-		//Create a TDB persistent dataset in tmp/TDB/currentTimestamp and load the .nq file into it.
-		String currentTimestamp = String.valueOf(System.currentTimeMillis());
-		String tdb_loc = "target/TDB"; // + currentTimestamp;
-		DatasetGraphTDB dsg = DatasetBuilderStd.create(Location.create(tdb_loc));
-		logger.info(String.format("If you are using docker the TDB dataset will be located " +
-				"in /var/lib/docker/overlay2/<buildID>/diff/%s", tdb_loc));
-		InputStream in = fm.open(directory);
-		long startTime = System.currentTimeMillis();
-		TDBLoader.load(dsg, in, Lang.TTL,false, true);
-		long endTime = System.currentTimeMillis();
-		logger.info("Loaded in "+(endTime - startTime)/1000 +" seconds");
+		if(!this.outputTime.equals("")) {
+			logger.debug(this.outputTime);
+			try {
+				// Write dataset info file if the location of file where the query performances will be stored is given
+				// Writes in the same directory as the query performance file
+				DatasetUtils dsUtils = new DatasetUtils();
+				dsUtils.logDatasetInfos(tripleStore, ts.getIngestionTime(), ts.getTripleStoreLoc(),
+						directory, this.outputTime);
 
-		Dataset dataset;
-		try {
-			//Create a dataset object from the persistent TDB dataset
-			dataset = TDBFactory.createDataset(tdb_loc);
-
-			// Write dataset info file if the location of file where the query performances will be stored is given
-			// Writes in the same directory as the query performance file
-			if(!this.outputTime.equals("")) {
-				File datasetLogFileDir = new File(this.outputTime).getParentFile();
-				long tbdDirSize = FileUtils.sizeOfDirectory(new File(tdb_loc));
-				long rawDataFileSize = FileUtils.sizeOf(new File(directory));
-
-				logger.debug(datasetLogFileDir);
-				String datasetLogFile = datasetLogFileDir + "/dataset_infos.csv";
-				logger.debug(datasetLogFile);
-				File f = new File(datasetLogFile);
-				PrintWriter pw;
-				if ( f.exists() && !f.isDirectory() ) {
-					pw = new PrintWriter(new FileOutputStream(datasetLogFile, true));
-				}
-				else {
-					pw = new PrintWriter(datasetLogFile);
-					pw.append("ds_name,rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
-				}
-				pw.append("bearb_jena_tdb_tb_star_f" +  "," + tripleStore.toString() + "," + rawDataFileSize/1000000
-						+ "," + tbdDirSize/1000000  + "," + (endTime - startTime)/1000 +"\n");
-				pw.close();
-				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-
-			//Create a fuseki server, load the dataset into the repository
-			// http://localhost:3030/in_memory_server/sparql and connect to it.
-			server = FusekiServer.create()
-					.add("/in_memory_server", dataset)
-					.build();
-			server.start();
-			conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql",
-					server.getHttpPort()));
-			dataset.end();
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
+		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
 		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
 		ResultSet results = qExec.execSelect();
 		logger.info("Results from load query: " + results);
@@ -288,7 +237,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
 			throws InterruptedException, ExecutionException {
-		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
+
+		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
 		logger.info(String.format("Executing version %d", staticVersionQuery));
 		QueryExecution qExec = conn.query(query.toString());
 		logger.info(query.toString());
@@ -378,7 +328,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	public void warmup() throws InterruptedException, ExecutionException {
 		logger.info("Running warmup query");
-		conn = RDFConnection.connect(String.format("http://localhost:%d/in_memory_server/sparql", server.getHttpPort()));
+		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
 
 		long startTime = System.currentTimeMillis();
 		QueryExecution qExec = conn.query(createWarmupQuery());
@@ -407,6 +357,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 * @throws RuntimeException
 	 */
 	public void close() throws RuntimeException {
-		server.stop();
+		this.ts.shutdown();
 	}
 }

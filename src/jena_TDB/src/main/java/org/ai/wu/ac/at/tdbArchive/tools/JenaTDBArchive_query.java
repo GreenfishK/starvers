@@ -119,7 +119,7 @@ public class JenaTDBArchive_query {
 			helpOpt.setRequired(false);
 			options.addOption(helpOpt);
 
-			Option tripleStoreOpt = new Option("T", "triplestore", false, "Triple store to load. e.g. Jena, GraphDB, ...");
+			Option tripleStoreOpt = new Option("T", "triplestore", true, "Triple store to load. e.g. Jena, GraphDB, ...");
 			tripleStoreOpt.setRequired(false);
 			options.addOption(tripleStoreOpt);
 
@@ -148,6 +148,7 @@ public class JenaTDBArchive_query {
 			}
 			if (cmdLine.hasOption("t")) {
 				outputTime = cmdLine.getOptionValue("t");
+				logger.debug(outputTime);
 			}
 			if (cmdLine.hasOption("q")) {
 				queryFile = cmdLine.getOptionValue("q");

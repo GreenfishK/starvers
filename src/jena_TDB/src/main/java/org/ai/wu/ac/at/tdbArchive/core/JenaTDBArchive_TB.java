@@ -22,10 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
-import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
-import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
-import org.ai.wu.ac.at.tdbArchive.utils.TaskCallable;
-import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
+import org.ai.wu.ac.at.tdbArchive.utils.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.ARQ;
@@ -72,36 +69,19 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 */
 	public void load(String directory, TripleStore tripleStore) {
 		this.ts = new TripleStoreHandler();
-		ts.load(directory, tripleStore);
+		ts.load(directory, "nq", tripleStore);
 
-		try {
-			// Write dataset info file if the location of file where the query performances will be stored is given
-			// Writes in the same directory as the query performance file
-			if(!this.outputTime.equals("")) {
-				File datasetLogFileDir = new File(this.outputTime).getParentFile();
-				long tbdDirSize = FileUtils.sizeOfDirectory(new File(ts.getTripleStoreLoc()));
-				long rawDataFileSize = FileUtils.sizeOf(new File(directory));
+		if(!this.outputTime.equals("")) {
+			try {
+				// Write dataset info file if the location of file where the query performances will be stored is given
+				// Writes in the same directory as the query performance file
+				DatasetUtils dsUtils = new DatasetUtils();
+				dsUtils.logDatasetInfos(tripleStore, ts.getIngestionTime(), ts.getTripleStoreLoc(),
+						directory, this.outputTime);
 
-				logger.debug(datasetLogFileDir);
-				String datasetLogFile = datasetLogFileDir + "/dataset_infos.csv";
-				logger.debug(datasetLogFile);
-				File f = new File(datasetLogFile);
-				PrintWriter pw;
-				if ( f.exists() && !f.isDirectory() ) {
-					pw = new PrintWriter(new FileOutputStream(datasetLogFile, true));
-				}
-				else {
-					pw = new PrintWriter(datasetLogFile);
-					pw.append("ds_name,rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
-				}
-
-				pw.append("bearb_jena_tdb_tb" + "," + tripleStore.toString() + "," + rawDataFileSize/1000000+ ","
-						+ tbdDirSize/1000000 + "," + ts.getIngestionTime() +"\n");
-				pw.close();
-				logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 
 		//Get the number of versions in the dataset (number of named graphs)
