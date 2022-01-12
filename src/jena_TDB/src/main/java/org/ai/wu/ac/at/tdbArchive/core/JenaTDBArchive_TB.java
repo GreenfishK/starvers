@@ -123,8 +123,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				}
 				else {
 					pw = new PrintWriter(datasetLogFile);
+					pw.append("ds_name,rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
 				}
-				pw.append("ds_name, rdf_store_name,raw_data_size_in_MB,triple_store_size_in_MB,ingestion_time_in_s\n");
+
 				pw.append("bearb_jena_tdb_tb" + "," + "Jena TDB" + "," + rawDataFileSize/1000000+ ","
 						+ tbdDirSize/1000000 + "," + (endTime - startTime)/1000 +"\n");
 				pw.close();
@@ -388,10 +389,10 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		}
 		if (measureTime) {
 			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##bucket, min, mean, max, stddev, count, sum");
+			pw.println("bucket, min, mean, max, stddev, count, sum");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-				pw.println(ent.getKey() + " " + ent.getValue().getMin() + " " + ent.getValue().getMean() + " " + ent.getValue().getMax() + " "
-						+ ent.getValue().getStandardDeviation() + " " + ent.getValue().getN()+" "+ent.getValue().getSum());
+				pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
+						+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()+", "+ent.getValue().getSum());
 			}
 			pw.println("tot," + total.getMin() + "," + total.getMean() + "," + total.getMax() + "," + total.getStandardDeviation() + ","
 					+ total.getN());
@@ -477,10 +478,10 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		if (measureTime) {
 			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##ver, min, mean, max, stddev, count");
+			pw.println("ver, min, mean, max, stddev, count");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-				pw.println(ent.getKey() + " " + ent.getValue().getMin() + " " + ent.getValue().getMean() + " " + ent.getValue().getMax() + " "
-						+ ent.getValue().getStandardDeviation() + " " + ent.getValue().getN());
+				pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
+						+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN());
 			}
 			pw.close();
 		}
@@ -541,10 +542,10 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 
 		if (measureTime) {
 			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##ver, min, mean, max, stddev, count, sum");
+			pw.println("ver, min, mean, max, stddev, count, sum");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-				pw.println(ent.getKey() + " " + ent.getValue().getMin() + " " + ent.getValue().getMean() + " " + ent.getValue().getMax() + " "
-						+ ent.getValue().getStandardDeviation() + " " + ent.getValue().getN()+" "+ent.getValue().getSum());
+				pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
+						+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()+", "+ent.getValue().getSum());
 			}
 			pw.close();
 		}
@@ -768,7 +769,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		if (measureTime) {
 			// PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynver-" + inputFile.getName()));
 			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##name, min, mean, max, stddev, count, sum");
+			pw.println("name, min, mean, max, stddev, count, sum");
 			pw.println("tot," + total.getMin() + "," + total.getMean() + "," + total.getMax() + "," + total.getStandardDeviation() + ","
 					+ total.getN()+", "+total.getSum());
 			pw.close();
