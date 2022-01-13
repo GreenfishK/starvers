@@ -35,7 +35,7 @@ public class TestJenaTDBArchive_TB {
 		jenaArchive = new JenaTDBArchive_TB(); 
 		URL resourceUrl = this.getClass().getResource(FileSystems.getDefault().getSeparator() + "testTB/tdbTest");
 		assertNotNull(resourceUrl);
-		jenaArchive.load(resourceUrl.getFile());
+		jenaArchive.load(resourceUrl.getFile(), JenaTDBArchive.TripleStore.JenaTDB);
 		// ArrayList<String> solution = jenaArchive.matQuery(1, "<http://example.org/uri3>");
 	}
 

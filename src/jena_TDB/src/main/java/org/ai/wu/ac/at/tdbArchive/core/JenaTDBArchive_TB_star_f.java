@@ -2,25 +2,12 @@ package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
-import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
-
 import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-
-import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.*;
 import org.apache.jena.rdfconnection.RDFConnection;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.sparql.mgt.Explain;
-import org.apache.jena.tdb.TDBFactory;
-import org.apache.jena.tdb.TDBLoader;
-import org.apache.jena.tdb.base.file.Location;
-import org.apache.jena.tdb.setup.DatasetBuilderStd;
-import org.apache.jena.tdb.store.DatasetGraphTDB;
-import org.apache.jena.util.FileManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -81,9 +68,11 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		}
 
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
-		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
+		String sparqlEndpoint = this.ts.connectToRepo();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
 		ResultSet results = qExec.execSelect();
+
 		logger.info("Results from load query: " + results);
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
@@ -96,6 +85,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 			this.initialVersionTS = initVersionTS;
 		}
 		conn.close();
+		this.ts.disconnectRepo();
 	}
 
 	/**
@@ -237,7 +227,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
 			throws InterruptedException, ExecutionException {
 
-		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
+		String sparqlEndpoint = this.ts.connectToRepo();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 		logger.info(String.format("Executing version %d", staticVersionQuery));
 		QueryExecution qExec = conn.query(query.toString());
 		logger.info(query.toString());
@@ -252,6 +243,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		}
 		qExec.close();
 		conn.close();
+		this.ts.disconnectRepo();
 		return ret;
 	}
 
@@ -327,7 +319,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	public void warmup() throws InterruptedException, ExecutionException {
 		logger.info("Running warmup query");
-		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
+		String sparqlEndpoint = this.ts.connectToRepo();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 
 		long startTime = System.currentTimeMillis();
 		QueryExecution qExec = conn.query(createWarmupQuery());
@@ -344,6 +337,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		logger.info(finalResults);
 		qExec.close();
 		conn.close();
+		this.ts.disconnectRepo();
+
 	}
 
 	private static String createWarmupQuery() {

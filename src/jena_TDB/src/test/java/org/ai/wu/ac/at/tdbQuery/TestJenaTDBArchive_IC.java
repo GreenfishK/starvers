@@ -33,7 +33,7 @@ public class TestJenaTDBArchive_IC {
 		// Start Archive
 		jenaArchive = new JenaTDBArchive_IC();
 		URL dataUrl = this.getClass().getResource(FileSystems.getDefault().getSeparator() + "testIC/tdbTest");
-		jenaArchive.load(dataUrl.getFile());
+		jenaArchive.load(dataUrl.getFile(), null);
 		
 		/*
 		 * TEST on creating the dataset from NT
