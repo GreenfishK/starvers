@@ -79,6 +79,11 @@
 			<version>4.3.2</version>
 		</dependency>
 		<dependency>
+			<groupId>tech.tablesaw</groupId>
+			<artifactId>tablesaw-core</artifactId>
+			<version>0.42.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.eclipse.rdf4j</groupId>
 			<artifactId>rdf4j-model</artifactId>
 			<version>3.7.4</version>
