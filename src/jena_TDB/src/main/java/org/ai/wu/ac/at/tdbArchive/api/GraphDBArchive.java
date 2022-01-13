@@ -3,22 +3,23 @@
  */
 package org.ai.wu.ac.at.tdbArchive.api;
 
+import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
-
 /**
  * @author Javier D. Fernández
  *
  */
-public interface JenaTDBArchive extends Archive {
+public interface GraphDBArchive extends Archive {
+
 
 	/**
-	 * Load Jena TDB from directory 
+	 * Load Graph DB from directory
 	 * 
 	 * @param directory
 	 * @throws RuntimeException

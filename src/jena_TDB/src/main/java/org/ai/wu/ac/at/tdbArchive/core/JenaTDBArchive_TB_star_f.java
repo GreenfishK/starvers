@@ -1,6 +1,7 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
@@ -74,35 +75,19 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
 		String sparqlEndpoint = this.ts.getEndpoint();
-		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
-			RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
-			QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
-			ResultSet results = qExec.execSelect();
 
-			logger.info("Results from load query: " + results);
-			while (results.hasNext()) {
-				QuerySolution soln = results.next();
-				this.TOTALVERSIONS = soln.getLiteral("cnt_versions").getInt();
-				this.initialVersionTS = soln.getLiteral("initial_version_ts").getString();
-			}
-			conn.close();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
+		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
+		ResultSet results = qExec.execSelect();
+
+		logger.info("Results from load query: " + results);
+		while (results.hasNext()) {
+			QuerySolution soln = results.next();
+			this.TOTALVERSIONS = soln.getLiteral("cnt_versions").getInt();
+			this.initialVersionTS = soln.getLiteral("initial_version_ts").getString();
 		}
-		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
-			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, QueryUtils.getVersionInfos_f());
+		conn.close();
 
-				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
-				while (tupleQueryResult.hasNext()) {
-					BindingSet bindingSet = tupleQueryResult.next();
-					this.TOTALVERSIONS = Integer.parseInt(bindingSet.getBinding("cnt_versions").getValue().stringValue());
-					this.initialVersionTS = bindingSet.getBinding("initial_version_ts").getValue().stringValue();
-
-				}
-				tupleQueryResult.close();
-			}
-		} else {
-			logger.error("ts.tripleStore is not set to any of the available triple stores.");
-		}
 		logger.info("Number of distinct versions:" + this.TOTALVERSIONS);
 		logger.info("Initial version timestamp:" + this.initialVersionTS);
 
@@ -250,48 +235,20 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		Boolean higherVersion = false;
 		ArrayList<String> ret = new ArrayList<String>();
 
-		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
-			RDFConnection conn = ts.getJenaTDBConnection();
-			logger.info(String.format("Executing version %d", staticVersionQuery));
-			QueryExecution qExec = conn.query(query.toString());
-			logger.info(query.toString());
-			ResultSet results = qExec.execSelect();
+		RDFConnection conn = ts.getJenaTDBConnection();
+		logger.info(String.format("Executing version %d", staticVersionQuery));
+		QueryExecution qExec = conn.query(query.toString());
+		logger.info(query.toString());
+		ResultSet results = qExec.execSelect();
 
-			while (results.hasNext() && !higherVersion && limit-- > 0) {
-				QuerySolution soln = results.next();
-				String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
-				ret.add(rowResult);
-			}
-			qExec.close();
-			conn.close();
-			return ret;
+		while (results.hasNext() && !higherVersion && limit-- > 0) {
+			QuerySolution soln = results.next();
+			String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
+			ret.add(rowResult);
 		}
-		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
-			logger.info(String.format("Executing version %d", staticVersionQuery));
-			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-				// Preparing a SELECT query for later evaluation
-				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
-
-				// Evaluating a prepared query returns an iterator-like object
-				// that can be traversed with the methods hasNext() and next()
-				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
-				while (tupleQueryResult.hasNext()) {
-					// Each result is represented by a BindingSet, which corresponds to a result row
-					BindingSet bindingSet = tupleQueryResult.next();
-					String rowResult = QueryUtils.serializeSolution(bindingSet);
-					ret.add(rowResult);
-				}
-				tupleQueryResult.close();
-			}
-			return ret;
-
-			// TODO
-
-		} else {
-			logger.error("ts.TripleStore is not set none of the available triple stores.");
-			return null;
-		}
-
+		qExec.close();
+		conn.close();
+		return ret;
 	}
 
 	/**
@@ -371,41 +328,22 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		long startTime = 0;
 		long endTime = 0;
 		String sparqlEndpoint = this.ts.getEndpoint();
-		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
-			RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 
-			startTime = System.currentTimeMillis();
-			QueryExecution qExec = conn.query(createWarmupQuery());
-			ResultSet results = qExec.execSelect();
-			endTime = System.currentTimeMillis();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 
-			while (results.hasNext()) {
-				QuerySolution soln = results.next();
-				String rowResult = QueryUtils.serializeSolution(soln);
-				finalResults.add(rowResult);
-			}
-			qExec.close();
-			conn.close();
+		startTime = System.currentTimeMillis();
+		QueryExecution qExec = conn.query(createWarmupQuery());
+		ResultSet results = qExec.execSelect();
+		endTime = System.currentTimeMillis();
+
+		while (results.hasNext()) {
+			QuerySolution soln = results.next();
+			String rowResult = QueryUtils.serializeSolution(soln);
+			finalResults.add(rowResult);
 		}
-		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
-			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
+		qExec.close();
+		conn.close();
 
-				startTime = System.currentTimeMillis();
-				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
-				endTime = System.currentTimeMillis();
-
-				while (tupleQueryResult.hasNext()) {
-					BindingSet bindingSet = tupleQueryResult.next();
-					String rowResult = QueryUtils.serializeSolution(bindingSet);
-					finalResults.add(rowResult);
-				}
-				tupleQueryResult.close();
-			}
-
-		} else {
-			logger.error("ts.TripleStore is not set none of the available triple stores.");
-		}
 		logger.info("Warmup Time:" + (endTime - startTime));
 		logger.info(finalResults);
 

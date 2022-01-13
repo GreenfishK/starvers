@@ -1,6 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.utils;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive.TripleStore;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.ARQ;

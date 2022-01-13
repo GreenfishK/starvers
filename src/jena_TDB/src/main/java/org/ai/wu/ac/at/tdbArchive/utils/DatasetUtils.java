@@ -1,6 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.utils;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive.TripleStore;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +17,7 @@ public class DatasetUtils {
     public void logDatasetInfos(TripleStore tripleStore, Long ingestionTime, String tripleStoreLoc,
                                 String datasetLoc, String logFileLoc) throws FileNotFoundException {
         File datasetLogFileDir = new File(logFileLoc).getParentFile();
-        long tbdDirSize = FileUtils.sizeOfDirectory(new File(tripleStoreLoc));
+        long dirSize = FileUtils.sizeOfDirectory(new File(tripleStoreLoc));
         long rawDataFileSize = FileUtils.sizeOf(new File(datasetLoc));
 
         String datasetLogFile = datasetLogFileDir + "/dataset_infos.csv";
@@ -32,7 +32,7 @@ public class DatasetUtils {
         }
 
         pw.append(datasetLoc + "," + tripleStore.toString() + "," + rawDataFileSize/1000000+ ","
-                + tbdDirSize/1000000 + "," + ingestionTime +"\n");
+                + dirSize/1000000 + "," + ingestionTime +"\n");
         pw.close();
         logger.info(String.format("Writing dataset logs to directory: %s", datasetLogFile));
     }

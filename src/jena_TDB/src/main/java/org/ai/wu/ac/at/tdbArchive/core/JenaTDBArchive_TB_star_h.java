@@ -1,6 +1,7 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
