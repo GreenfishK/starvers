@@ -7,6 +7,9 @@ import java.util.Iterator;
 
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.Binding;
+import org.eclipse.rdf4j.query.BindingSet;
 
 /**
  * @author Javier Fernández
@@ -714,6 +717,15 @@ public final class QueryUtils {
 			}
 		}
 		return rowResult.trim();
+	}
+
+	public static final String serializeSolution(BindingSet bindingSet) {
+		StringBuilder resultRow = new StringBuilder();
+		for (Binding binding : bindingSet) {
+			// Each Binding contains the variable name and the value for this result row
+			resultRow.append(binding.getValue().stringValue()).append(" ");
+		}
+		return resultRow + ".";
 	}
 
 	/**
