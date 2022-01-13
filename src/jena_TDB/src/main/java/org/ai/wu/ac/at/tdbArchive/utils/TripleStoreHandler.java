@@ -67,8 +67,8 @@ public class TripleStoreHandler {
         if (tripleStore == TripleStore.JenaTDB) {
             Lang rdf_format = null;
             switch (format) {
-                case "nq": rdf_format = Lang.NQ;
-                case "ttl": rdf_format = Lang.TTL;
+                case "nq": rdf_format = Lang.NQ; break;
+                case "ttl": rdf_format = Lang.TTL; break;
             }
             logger.info("Initializing Jena Fuseki Server");
             this.tripleStore = TripleStore.JenaTDB;
