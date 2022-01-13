@@ -7,9 +7,14 @@ import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.*;
+import org.apache.jena.query.Query;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.query.*;
+import org.eclipse.rdf4j.repository.RepositoryConnection;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -46,7 +51,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 	/**
 	 * Load Jena TDB from directory
-	 * 
+	 *
 	 * @param directory The directory of multiple rdf files
 	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
@@ -68,24 +73,40 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		}
 
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
-		String sparqlEndpoint = this.ts.connectToRepo();
-		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
-		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
-		ResultSet results = qExec.execSelect();
+		String sparqlEndpoint = this.ts.getEndpoint();
+		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
+			RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
+			QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
+			ResultSet results = qExec.execSelect();
 
-		logger.info("Results from load query: " + results);
-		while (results.hasNext()) {
-			QuerySolution soln = results.next();
-			int cntVersions = soln.getLiteral("cnt_versions").getInt();
-			logger.info("Number of distinct versions:" + cntVersions); //INFO
-			String initVersionTS = soln.getLiteral("initial_version_ts").getString();
-			logger.info("Initial version timestamp:" + initVersionTS); //INFO
-
-			this.TOTALVERSIONS = cntVersions;
-			this.initialVersionTS = initVersionTS;
+			logger.info("Results from load query: " + results);
+			while (results.hasNext()) {
+				QuerySolution soln = results.next();
+				this.TOTALVERSIONS = soln.getLiteral("cnt_versions").getInt();
+				this.initialVersionTS = soln.getLiteral("initial_version_ts").getString();
+			}
+			conn.close();
 		}
-		conn.close();
-		this.ts.disconnectRepo();
+		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
+			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
+				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, QueryUtils.getVersionInfos_f());
+
+				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
+				while (tupleQueryResult.hasNext()) {
+					BindingSet bindingSet = tupleQueryResult.next();
+					this.TOTALVERSIONS = Integer.parseInt(bindingSet.getBinding("cnt_versions").getValue().stringValue());
+					this.initialVersionTS = bindingSet.getBinding("initial_version_ts").getValue().stringValue();
+
+				}
+				tupleQueryResult.close();
+			}
+		} else {
+			logger.error("ts.tripleStore is not set to any of the available triple stores.");
+		}
+		logger.info("Number of distinct versions:" + this.TOTALVERSIONS);
+		logger.info("Initial version timestamp:" + this.initialVersionTS);
+
+
 	}
 
 	/**
@@ -226,25 +247,51 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
 			throws InterruptedException, ExecutionException {
-
-		String sparqlEndpoint = this.ts.connectToRepo();
-		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
-		logger.info(String.format("Executing version %d", staticVersionQuery));
-		QueryExecution qExec = conn.query(query.toString());
-		logger.info(query.toString());
-		ResultSet results = qExec.execSelect();
 		Boolean higherVersion = false;
-
 		ArrayList<String> ret = new ArrayList<String>();
-		while (results.hasNext() && !higherVersion && limit-- > 0) {
-			QuerySolution soln = results.next();
-			String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
-			ret.add(rowResult);
+
+		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
+			RDFConnection conn = ts.getJenaTDBConnection();
+			logger.info(String.format("Executing version %d", staticVersionQuery));
+			QueryExecution qExec = conn.query(query.toString());
+			logger.info(query.toString());
+			ResultSet results = qExec.execSelect();
+
+			while (results.hasNext() && !higherVersion && limit-- > 0) {
+				QuerySolution soln = results.next();
+				String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
+				ret.add(rowResult);
+			}
+			qExec.close();
+			conn.close();
+			return ret;
 		}
-		qExec.close();
-		conn.close();
-		this.ts.disconnectRepo();
-		return ret;
+		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
+			logger.info(String.format("Executing version %d", staticVersionQuery));
+			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
+				// Preparing a SELECT query for later evaluation
+				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
+
+				// Evaluating a prepared query returns an iterator-like object
+				// that can be traversed with the methods hasNext() and next()
+				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
+				while (tupleQueryResult.hasNext()) {
+					// Each result is represented by a BindingSet, which corresponds to a result row
+					BindingSet bindingSet = tupleQueryResult.next();
+					String rowResult = QueryUtils.serializeSolution(bindingSet);
+					ret.add(rowResult);
+				}
+				tupleQueryResult.close();
+			}
+			return ret;
+
+			// TODO
+
+		} else {
+			logger.error("ts.TripleStore is not set none of the available triple stores.");
+			return null;
+		}
+
 	}
 
 	/**
@@ -319,25 +366,48 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 */
 	public void warmup() throws InterruptedException, ExecutionException {
 		logger.info("Running warmup query");
-		String sparqlEndpoint = this.ts.connectToRepo();
-		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
-
-		long startTime = System.currentTimeMillis();
-		QueryExecution qExec = conn.query(createWarmupQuery());
-		ResultSet results = qExec.execSelect();
-		long endTime = System.currentTimeMillis();
 
 		HashSet<String> finalResults = new HashSet<>();
-		while (results.hasNext()) {
-			QuerySolution soln = results.next();
-			String rowResult = QueryUtils.serializeSolution(soln);
-			finalResults.add(rowResult);
+		long startTime = 0;
+		long endTime = 0;
+		String sparqlEndpoint = this.ts.getEndpoint();
+		if (this.ts.getTripleStore() == TripleStore.JenaTDB) {
+			RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
+
+			startTime = System.currentTimeMillis();
+			QueryExecution qExec = conn.query(createWarmupQuery());
+			ResultSet results = qExec.execSelect();
+			endTime = System.currentTimeMillis();
+
+			while (results.hasNext()) {
+				QuerySolution soln = results.next();
+				String rowResult = QueryUtils.serializeSolution(soln);
+				finalResults.add(rowResult);
+			}
+			qExec.close();
+			conn.close();
+		}
+		else if (this.ts.getTripleStore() == TripleStore.GraphDB) {
+			try (RepositoryConnection conn = ts.getGraphDBConnection()) {
+				TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
+
+				startTime = System.currentTimeMillis();
+				TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
+				endTime = System.currentTimeMillis();
+
+				while (tupleQueryResult.hasNext()) {
+					BindingSet bindingSet = tupleQueryResult.next();
+					String rowResult = QueryUtils.serializeSolution(bindingSet);
+					finalResults.add(rowResult);
+				}
+				tupleQueryResult.close();
+			}
+
+		} else {
+			logger.error("ts.TripleStore is not set none of the available triple stores.");
 		}
 		logger.info("Warmup Time:" + (endTime - startTime));
 		logger.info(finalResults);
-		qExec.close();
-		conn.close();
-		this.ts.disconnectRepo();
 
 	}
 
