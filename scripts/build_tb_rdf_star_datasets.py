@@ -209,4 +209,5 @@ init_ts_2 = construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt
                                  destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                                  last_version=add_change_sets_until_vers,
                                  annotation_style=AnnotationStyle.FLAT)
+data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_ts_1)
 data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_ts_2)
