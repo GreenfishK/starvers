@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
  * @author Javier D. Fernández
  *
  */
-public interface Archive {
+public interface RDFArchive {
 
 
     /**
@@ -24,7 +24,7 @@ public interface Archive {
      * @param directory
      * @throws RuntimeException
      */
-    public void load (String directory, TripleStore tripleStore) throws RuntimeException;
+    public void load (String directory) throws RuntimeException;
 
     /**
      * close Triple Store and release resources

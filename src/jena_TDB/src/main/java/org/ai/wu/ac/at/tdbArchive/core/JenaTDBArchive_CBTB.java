@@ -21,7 +21,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
@@ -30,7 +30,7 @@ import org.apache.jena.query.*;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 
-public class JenaTDBArchive_CBTB implements JenaTDBArchive {
+public class JenaTDBArchive_CBTB implements RDFArchive {
 
 	private int TOTALVERSIONS = 0;
 	private static String prefixGraphsVersions = "http://example.org/version";
@@ -66,7 +66,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_CBTB() throws FileNotFoundException {
+	public JenaTDBArchive_CBTB() {
 		this.measureTime = false;
 	}
 
@@ -75,7 +75,7 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 	 * 
 	 * @param directory
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();
@@ -641,11 +641,6 @@ public class JenaTDBArchive_CBTB implements JenaTDBArchive {
 		finalResults.add(result.toString());
 		qexec.close();
 		return finalResults;
-	}
-
-	static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
 	}
 
 	private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {

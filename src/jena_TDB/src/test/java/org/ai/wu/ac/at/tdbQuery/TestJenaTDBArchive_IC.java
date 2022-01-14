@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
@@ -25,7 +25,7 @@ import org.junit.Test;
  */
 public class TestJenaTDBArchive_IC {
 
-	JenaTDBArchive jenaArchive;
+	RDFArchive jenaArchive;
 	int versions = 4;
 
 	public TestJenaTDBArchive_IC() throws FileNotFoundException, InterruptedException, ExecutionException {
@@ -33,7 +33,7 @@ public class TestJenaTDBArchive_IC {
 		// Start Archive
 		jenaArchive = new JenaTDBArchive_IC();
 		URL dataUrl = this.getClass().getResource(FileSystems.getDefault().getSeparator() + "testIC/tdbTest");
-		jenaArchive.load(dataUrl.getFile(), null);
+		jenaArchive.load(dataUrl.getFile());
 		
 		/*
 		 * TEST on creating the dataset from NT
