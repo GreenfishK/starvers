@@ -1,6 +1,7 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFStarAnnotationStyle;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
@@ -19,14 +20,15 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
-public class JenaTDBArchive_TB_star_f implements RDFArchive {
-	private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB_star_f.class);
+public class JenaTDBArchive_TB_star implements RDFArchive {
+	private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB_star.class);
 
 	private int TOTALVERSIONS = 0;
 	private String initialVersionTS;
 	private String outputTime = "timeApp.txt";
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
+	private RDFStarAnnotationStyle annotationStyle;
 
 	/**
 	 * @param outputTime
@@ -36,8 +38,9 @@ public class JenaTDBArchive_TB_star_f implements RDFArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_TB_star_f() {
+	public JenaTDBArchive_TB_star(RDFStarAnnotationStyle annotationStyle) {
 		this.measureTime = false;
+		this.annotationStyle = annotationStyle;
 	}
 
 	/**

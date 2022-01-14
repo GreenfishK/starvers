@@ -722,7 +722,6 @@ public final class QueryUtils {
 	public static final String serializeSolution(BindingSet bindingSet) {
 		StringBuilder resultRow = new StringBuilder();
 		for (Binding binding : bindingSet) {
-			// Each Binding contains the variable name and the value for this result row
 			resultRow.append(binding.getValue().stringValue()).append(" ");
 		}
 		return resultRow + ".";
@@ -749,6 +748,17 @@ public final class QueryUtils {
 			}
 		}
 		return rowResult.trim();
+	}
+
+	public static final String serializeSolutionFilterOutGraphs(BindingSet bindingSet) {
+		StringBuilder resultRow = new StringBuilder();
+		for (Binding binding : bindingSet) {
+			if (!binding.getName().equalsIgnoreCase("graph")
+					&& !binding.getName().equalsIgnoreCase("version")) {
+				resultRow.append(binding.getValue().stringValue()).append(" ");
+			}
+		}
+		return resultRow + ".";
 	}
 
     public static final int getLimit(String[] terms) {

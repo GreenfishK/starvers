@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFStarAnnotationStyle;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.core.*;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
@@ -197,9 +198,9 @@ public class JenaTDBArchive_query {
 			} else if (policy.equalsIgnoreCase("tb")) {
 				RDFArchive = new JenaTDBArchive_TB();
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				RDFArchive = new JenaTDBArchive_TB_star_f();
+				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				RDFArchive = new JenaTDBArchive_TB_star_h();
+				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);
 			} else if (policy.equalsIgnoreCase("cbtb")) {
 				RDFArchive = new JenaTDBArchive_CBTB();
 			} else if (policy.equalsIgnoreCase("hybrid")) {
@@ -210,9 +211,9 @@ public class JenaTDBArchive_query {
 			if (policy.equalsIgnoreCase("tb")) {
 				RDFArchive = null;
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				RDFArchive = new GraphDBArchive_TB_star_f();
+				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				RDFArchive = null;
+				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);;
 			}
 		}
 		if (!outputTime.equals("")) {
