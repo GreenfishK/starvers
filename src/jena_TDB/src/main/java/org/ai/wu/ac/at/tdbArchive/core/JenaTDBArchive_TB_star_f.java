@@ -8,15 +8,11 @@ import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.*;
-import org.apache.jena.query.Query;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -248,21 +244,6 @@ public class JenaTDBArchive_TB_star_f implements RDFArchive {
 	private ArrayList<String> materializeASKQuery(int staticVersionQuery, String queryString) throws InterruptedException, ExecutionException {
      	//TODO: implement, if necessary 
 		return null;
-	}
-
-	private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
-		List<QuerySolution> list = new ArrayList<QuerySolution>();
-
-		while (resultSet.hasNext()) {
-			list.add(resultSet.nextSolution());
-		}
-		Collections.sort(list, new Comparator<QuerySolution>() {
-			public int compare(QuerySolution a, QuerySolution b) {
-				return a.getResource(sortingVariableName).toString().compareTo(b.getResource(sortingVariableName).toString());
-
-			}
-		});
-		return list.iterator();
 	}
 
 	/**

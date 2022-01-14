@@ -3,15 +3,12 @@ package org.ai.wu.ac.at.tdbArchive.core;
 import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
-import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 
 import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
-import org.apache.jena.fuseki.main.FusekiServer;
 import org.apache.jena.query.*;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.logging.log4j.LogManager;
@@ -250,24 +247,6 @@ public class JenaTDBArchive_TB_star_h implements RDFArchive {
 	private ArrayList<String> materializeASKQuery(int staticVersionQuery, String queryString) throws InterruptedException, ExecutionException {
      	//TODO: implement, if necessary 
 		return null;
-	}
-
-	private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
-		List<QuerySolution> list = new ArrayList<QuerySolution>();
-
-		while (resultSet.hasNext()) {
-			list.add(resultSet.nextSolution());
-		}
-
-		Collections.sort(list, new Comparator<QuerySolution>() {
-
-			public int compare(QuerySolution a, QuerySolution b) {
-
-				return a.getResource(sortingVariableName).toString().compareTo(b.getResource(sortingVariableName).toString());
-
-			}
-		});
-		return list.iterator();
 	}
 
 	/**
