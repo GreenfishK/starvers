@@ -176,7 +176,7 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
         for (int i = 0; i < TOTALVERSIONS; i++) {
             vStats.put(i, new DescriptiveStatistics());
         }
-        Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
+        boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
         DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
         OffsetDateTime version_ts = OffsetDateTime.parse(this.initialVersionTS, DATE_TIME_FORMATTER);
 
@@ -204,8 +204,7 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
         br.close();
 
         if (measureTime) {
-            // PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynmat-" + inputFile.getName()));
-            PrintWriter pw = new PrintWriter(new File(outputTime));
+            PrintWriter pw = new PrintWriter(outputTime);
             pw.println("ver, min, mean, max, stddev, count, sum");
             for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
                 pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean()
