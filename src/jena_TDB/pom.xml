@@ -78,7 +78,7 @@
 			<artifactId>jena-fuseki-main</artifactId>
 			<version>4.3.2</version>
 		</dependency>
-		<!--<dependency>
+		<dependency>
 			<groupId>org.eclipse.rdf4j</groupId>
 			<artifactId>rdf4j-model</artifactId>
 			<version>3.7.4</version>
@@ -92,7 +92,7 @@
 			<groupId>org.eclipse.rdf4j</groupId>
 			<artifactId>rdf4j-queryparser-sparql</artifactId>
 			<version>3.7.4</version>
-		</dependency>-->
+		</dependency>
 		<dependency>
 			<groupId>com.ontotext.graphdb</groupId>
 			<artifactId>graphdb-free-runtime</artifactId>
