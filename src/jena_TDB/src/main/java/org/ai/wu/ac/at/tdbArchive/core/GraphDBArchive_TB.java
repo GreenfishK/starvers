@@ -478,16 +478,17 @@ public class GraphDBArchive_TB implements RDFArchive {
 		boolean higherVersion = false;
 		ArrayList<String> ret = new ArrayList<String>();
 
-		logger.info(String.format("Executing version %d", staticVersionQuery));
 		try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-			TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query);
-			TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
-			while (tupleQueryResult.hasNext() && !higherVersion && limit-- > 0) {
-				BindingSet bindingSet = tupleQueryResult.next();
+			logger.info(String.format("Executing version %d", staticVersionQuery));
+			TupleQuery qExec = conn.prepareTupleQuery(QueryLanguage.SPARQL, query);
+			TupleQueryResult results = qExec.evaluate();
+
+			while (results.hasNext() && !higherVersion && limit-- > 0) {
+				BindingSet bindingSet = results.next();
 				String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(bindingSet);
 				ret.add(rowResult);
 			}
-			tupleQueryResult.close();
+			results.close();
 		}
 		return ret;
 	}

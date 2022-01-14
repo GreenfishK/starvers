@@ -209,7 +209,7 @@ public class JenaTDBArchive_query {
 		}
 		else if (tripleStore == TripleStore.GraphDB) {
 			if (policy.equalsIgnoreCase("tb")) {
-				RDFArchive = null;
+				RDFArchive = new GraphDBArchive_TB();
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
 				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
