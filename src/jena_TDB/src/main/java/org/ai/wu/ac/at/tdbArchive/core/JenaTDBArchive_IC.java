@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
@@ -41,7 +41,7 @@ import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 import org.apache.jena.query.ARQ;
 
-public class JenaTDBArchive_IC implements JenaTDBArchive {
+public class JenaTDBArchive_IC implements RDFArchive {
 
 	private int TOTALVERSIONS = 0;
 	private String outputTime = "timeApp.txt";
@@ -70,7 +70,7 @@ public class JenaTDBArchive_IC implements JenaTDBArchive {
 	 * @param directory
 	 * @throws RuntimeException
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();

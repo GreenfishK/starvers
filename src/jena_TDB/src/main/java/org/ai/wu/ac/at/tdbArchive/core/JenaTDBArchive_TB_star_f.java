@@ -1,6 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
@@ -12,10 +12,6 @@ import org.apache.jena.query.Query;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Value;
-import org.eclipse.rdf4j.query.*;
-import org.eclipse.rdf4j.repository.RepositoryConnection;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -27,7 +23,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
-public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
+public class JenaTDBArchive_TB_star_f implements RDFArchive {
 	private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB_star_f.class);
 
 	private int TOTALVERSIONS = 0;
@@ -35,8 +31,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	private String outputTime = "timeApp.txt";
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
-
-	// private static String metadataVersions = "<http://example.org/isVersion>";
 
 	/**
 	 * @param outputTime
@@ -46,7 +40,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_TB_star_f() throws FileNotFoundException {
+	public JenaTDBArchive_TB_star_f() {
 		this.measureTime = false;
 	}
 
@@ -56,16 +50,16 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 * @param directory The directory of multiple rdf files
 	 * 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		this.ts = new TripleStoreHandler();
-		ts.load(directory, "ttl", tripleStore);
+		ts.load(directory, "ttl", TripleStore.JenaTDB);
 
 		if(!this.outputTime.equals("")) {
 			try {
 				// Write dataset info file if the location of file where the query performances will be stored is given
 				// Writes in the same directory as the query performance file
 				DatasetUtils dsUtils = new DatasetUtils();
-				dsUtils.logDatasetInfos(tripleStore, ts.getIngestionTime(), ts.getTripleStoreLoc(),
+				dsUtils.logDatasetInfos(TripleStore.JenaTDB, ts.getIngestionTime(), ts.getTripleStoreLoc(),
 						directory, this.outputTime);
 
 			} catch (Exception e) {
@@ -75,7 +69,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
 		String sparqlEndpoint = this.ts.getEndpoint();
-
 		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
 		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
 		ResultSet results = qExec.execSelect();
@@ -90,8 +83,6 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 		logger.info("Number of distinct versions:" + this.TOTALVERSIONS);
 		logger.info("Initial version timestamp:" + this.initialVersionTS);
-
-
 	}
 
 	/**
@@ -177,13 +168,13 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<Map<Integer, ArrayList<String>>>();
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
-		String line = "";
+		String line;
 
 		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
-		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
+		boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 		DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
 		OffsetDateTime version_ts = OffsetDateTime.parse(this.initialVersionTS, DATE_TIME_FORMATTER);
 
@@ -195,13 +186,12 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 			for (int i = 0; i < TOTALVERSIONS; i++) {
 				String queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
 				int limit = QueryUtils.getLimit(parts);
-				Query query = QueryFactory.create(queryString);
 
 				long startTime = System.currentTimeMillis();
 				if (true || !askQuery)
-					solutions.put(i, materializeQuery(i, query, limit));
+					solutions.put(i, materializeQuery(i, queryString, limit));
 				else
-					solutions.put(i, materializeASKQuery(i, query));
+					solutions.put(i, materializeASKQuery(i, queryString));
 				long endTime = System.currentTimeMillis();
 
 				vStats.get(i).addValue((endTime - startTime));
@@ -212,8 +202,7 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		br.close();
 
 		if (measureTime) {
-			// PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynmat-" + inputFile.getName()));
-			PrintWriter pw = new PrintWriter(new File(outputTime));
+			PrintWriter pw = new PrintWriter(outputTime);
 			pw.println("ver, min, mean, max, stddev, count, sum");
 			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
 				pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean()
@@ -230,15 +219,15 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 	 * @param query
 	 * @return
 	 */
-	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
+	private ArrayList<String> materializeQuery(int staticVersionQuery, String query, int limit)
 			throws InterruptedException, ExecutionException {
-		Boolean higherVersion = false;
+		boolean higherVersion = false;
 		ArrayList<String> ret = new ArrayList<String>();
 
 		RDFConnection conn = ts.getJenaTDBConnection();
 		logger.info(String.format("Executing version %d", staticVersionQuery));
-		QueryExecution qExec = conn.query(query.toString());
-		logger.info(query.toString());
+		QueryExecution qExec = conn.query(query);
+		logger.info(query);
 		ResultSet results = qExec.execSelect();
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
@@ -253,17 +242,12 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 
 	/**
 	 * @param staticVersionQuery
-	 * @param query
+	 * @param queryString
 	 * @return
 	 */
-	private ArrayList<String> materializeASKQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
+	private ArrayList<String> materializeASKQuery(int staticVersionQuery, String queryString) throws InterruptedException, ExecutionException {
      	//TODO: implement, if necessary 
 		return null;
-	}
-
-	static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
 	}
 
 	private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
@@ -272,11 +256,8 @@ public class JenaTDBArchive_TB_star_f implements JenaTDBArchive {
 		while (resultSet.hasNext()) {
 			list.add(resultSet.nextSolution());
 		}
-
 		Collections.sort(list, new Comparator<QuerySolution>() {
-
 			public int compare(QuerySolution a, QuerySolution b) {
-
 				return a.getResource(sortingVariableName).toString().compareTo(b.getResource(sortingVariableName).toString());
 
 			}

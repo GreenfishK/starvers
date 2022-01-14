@@ -21,10 +21,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.*;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.query.Query;
@@ -35,20 +35,17 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.jena.sparql.mgt.Explain;
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class JenaTDBArchive_TB implements JenaTDBArchive {
+public class JenaTDBArchive_TB implements RDFArchive {
 	private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB.class);
 
 	private int TOTALVERSIONS = 0;
 	private String outputTime = "timeApp.txt";
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
-	private static String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
-
-	// private static String metadataVersions = "<http://example.org/isVersion>";
+	private static final String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
 
 	/**
 	 * @param outputTime
@@ -58,7 +55,7 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_TB() throws FileNotFoundException {
+	public JenaTDBArchive_TB() {
 		this.measureTime = false;
 	}
 
@@ -68,16 +65,16 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @param directory The directory of multiple rdf files
 	 * or location of a single rdf file (e.g. ttl or nq).
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		this.ts = new TripleStoreHandler();
-		ts.load(directory, "nq", tripleStore);
+		ts.load(directory, "nq", TripleStore.JenaTDB);
 
 		if(!this.outputTime.equals("")) {
 			try {
 				// Write dataset info file if the location of file where the query performances will be stored is given
 				// Writes in the same directory as the query performance file
 				DatasetUtils dsUtils = new DatasetUtils();
-				dsUtils.logDatasetInfos(tripleStore, ts.getIngestionTime(), ts.getTripleStoreLoc(),
+				dsUtils.logDatasetInfos(TripleStore.JenaTDB, ts.getIngestionTime(), ts.getTripleStoreLoc(),
 						directory, this.outputTime);
 
 			} catch (Exception e) {
@@ -85,20 +82,20 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			}
 		}
 
-		//Get the number of versions in the dataset (number of named graphs)
-		String query_string = QueryUtils.getNumGraphVersions(metadataVersions);
-		//Query query = QueryFactory.create(queryGraphs);
-		RDFConnection conn = RDFConnection.connect(ts.getEndpoint());
-		QueryExecution qExec = conn.query(query_string);
+		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
+		String sparqlEndpoint = this.ts.getEndpoint();
+		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
+		QueryExecution qExec = conn.query(QueryUtils.getNumGraphVersions(metadataVersions));
 		ResultSet results = qExec.execSelect();
+
+		logger.info("Results from load query: " + results);
 		while (results.hasNext()) {
 			QuerySolution soln = results.next();
-			String numVersions = soln.getLiteral("numVersions").getLexicalForm();
-			TOTALVERSIONS = Integer.parseInt(numVersions);
-			logger.info("Totalversions: " + TOTALVERSIONS);
+			this.TOTALVERSIONS = Integer.parseInt(soln.getLiteral("numVersions").getLexicalForm());
 		}
-		qExec.close();
 		conn.close();
+
+		logger.info("Number of distinct versions:" + this.TOTALVERSIONS);
 	}
 
 	/**
@@ -355,16 +352,13 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @throws ExecutionException
 	 */
 	public ArrayList<String> matQuery(int version, String queryString) throws InterruptedException, ExecutionException {
-		Query query = QueryFactory.create(queryString);
 		long startTime = System.currentTimeMillis();
-
-		ArrayList<String> ret = materializeQuery(version, query, Integer.MAX_VALUE);
-
+		ArrayList<String> ret = materializeQuery(version, queryString, Integer.MAX_VALUE);
 		long endTime = System.currentTimeMillis();
 		if (measureTime) {
 			PrintWriter pw;
 			try {
-				pw = new PrintWriter(new File(outputTime));
+				pw = new PrintWriter(outputTime);
 				pw.println((endTime - startTime));
 				pw.close();
 			} catch (FileNotFoundException e) {
@@ -406,11 +400,8 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			// System.out.println("Query at version " + staticVersionQuery);
 			String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, element, staticVersionQuery, metadataVersions);
 
-			Query query = QueryFactory.create(queryString);
 			long startTime = System.currentTimeMillis();
-
-			ret.add(materializeQuery(staticVersionQuery, query, Integer.MAX_VALUE));
-
+			ret.add(materializeQuery(staticVersionQuery, queryString, Integer.MAX_VALUE));
 			long endTime = System.currentTimeMillis();
 			//System.out.println("bulkMatQuerying: Time:" + (endTime - startTime)); //DEBUG
 
@@ -464,17 +455,14 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			Map<Integer, ArrayList<String>> solutions = new HashMap<>();
 			System.out.printf("Query %x%n", lines+1);
 			for (int i = 0; i < TOTALVERSIONS; i++) {
-				//System.out.println("Query at version: " + i); //DEBUG
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
-				//System.out.println(queryString); //DEBUG
-				Query query = QueryFactory.create(queryString);
 
 				long startTime = System.currentTimeMillis();
 				if (true || !askQuery)
-					solutions.put(i, materializeQuery(i, query, limit));
+					solutions.put(i, materializeQuery(i, queryString, limit));
 				else
-					solutions.put(i, materializeASKQuery(i, query));
+					solutions.put(i, materializeASKQuery(i, queryString));
 				long endTime = System.currentTimeMillis();
 				vStats.get(i).addValue((endTime - startTime));
 
@@ -500,35 +488,35 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 	 * @param query
 	 * @return
 	 */
-	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit) throws InterruptedException, ExecutionException {
+	private ArrayList<String> materializeQuery(int staticVersionQuery, String query, int limit)
+			throws InterruptedException, ExecutionException {
+		boolean higherVersion = false;
+		ArrayList<String> ret = new ArrayList<String>();
 
-		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
+		RDFConnection conn = ts.getJenaTDBConnection();
 		logger.info(String.format("Executing version %d", staticVersionQuery));
-		QueryExecution qexec = conn.query(query.toString());
-		ArrayList<String> ret = new ArrayList<>();
-		ResultSet results = qexec.execSelect();
-		Boolean higherVersion = false;
+		QueryExecution qExec = conn.query(query);
+		logger.info(query);
+		ResultSet results = qExec.execSelect();
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
-			// numRows++;
 			QuerySolution soln = results.next();
 			String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
-			// System.out.println(rowResult);
 			ret.add(rowResult);
 		}
-		qexec.close();
+		qExec.close();
 		conn.close();
-
 		return ret;
 	}
 
 	/**
 	 * @param staticVersionQuery
-	 * @param query
+	 * @param queryString
 	 * @return
 	 */
-	private ArrayList<String> materializeASKQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
+	private ArrayList<String> materializeASKQuery(int staticVersionQuery, String queryString) throws InterruptedException, ExecutionException {
 		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
+		Query query = QueryFactory.create(queryString);
 		QueryExecution qexec = conn.query(query);
 		ArrayList<String> ret = new ArrayList<String>();
 		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
@@ -541,10 +529,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		return ret;
 	}
 
-	static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
-	}
 
 	private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
 		List<QuerySolution> list = new ArrayList<QuerySolution>();
@@ -603,7 +587,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 				QuerySolution soln = res.getSol().next();
 				String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
 				solutions.add(rowResult);
-				// rowResult is the final result for version res.version
 			}
 			ret.put(res.getVersion(), solutions);
 		}
@@ -655,15 +638,9 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 		while ((line = br.readLine()) != null) {
 			Map<Integer, ArrayList<String>> AllSolutions = new HashMap<Integer, ArrayList<String>>();
 
-			/*
-			 * warmup the system
-			 */
 			warmup();
 
 			String[] parts = line.split(" ");
-
-			// String element = parts[0];
-
 			String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, metadataVersions);
             int limit = QueryUtils.getLimit(parts);
 
@@ -695,9 +672,6 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 					AllSolutions.put(ver, newSol);
 				}
 				System.out.println("****** RowResult: " + rowResult);
-				// System.out.println("version " + ver);
-				// + numRows);
-
 			}
 
 			ret.add(AllSolutions);
@@ -708,14 +682,12 @@ public class JenaTDBArchive_TB implements JenaTDBArchive {
 			qexec.close();
 			conn.close();
 			total.addValue((endTime - startTime));
-
 			// vStats.get(versionQuery).addValue((endTime-startTime));
 		}
 
 		br.close();
 		if (measureTime) {
-			// PrintWriter pw = new PrintWriter(new File(outputDIR + "/res-dynver-" + inputFile.getName()));
-			PrintWriter pw = new PrintWriter(new File(outputTime));
+			PrintWriter pw = new PrintWriter(outputTime);
 			pw.println("name, min, mean, max, stddev, count, sum");
 			pw.println("tot," + total.getMin() + "," + total.getMean() + "," + total.getMax() + "," + total.getStandardDeviation() + ","
 					+ total.getN()+", "+total.getSum());

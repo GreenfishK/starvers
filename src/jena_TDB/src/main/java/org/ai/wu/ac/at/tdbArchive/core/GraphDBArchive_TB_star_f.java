@@ -1,7 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
-import org.ai.wu.ac.at.tdbArchive.api.GraphDBArchive;
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
@@ -10,11 +9,8 @@ import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.*;
 import org.apache.jena.query.Query;
-import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.rdf4j.model.IRI;
-import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.query.*;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
@@ -29,8 +25,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 
-public class GraphDBArchive_TB_star_f implements GraphDBArchive {
-    private static final Logger logger = LogManager.getLogger(JenaTDBArchive_TB_star_f.class);
+public class GraphDBArchive_TB_star_f implements RDFArchive {
+    private static final Logger logger = LogManager.getLogger(GraphDBArchive_TB_star_f.class);
 
     private int TOTALVERSIONS = 0;
     private String initialVersionTS;
@@ -48,26 +44,26 @@ public class GraphDBArchive_TB_star_f implements GraphDBArchive {
         this.measureTime = true;
     }
 
-    public GraphDBArchive_TB_star_f() throws FileNotFoundException {
+    public GraphDBArchive_TB_star_f() {
         this.measureTime = false;
     }
 
     /**
-     * Load Jena TDB from directory
+     * Load Graph DB from directory
      *
      * @param directory The directory of multiple rdf files
      * 	 * or location of a single rdf file (e.g. ttl or nq).
      */
-    public void load(String directory, TripleStore tripleStore) {
+    public void load(String directory) {
         this.ts = new TripleStoreHandler();
-        ts.load(directory, "ttl", tripleStore);
+        ts.load(directory, "ttl", TripleStore.GraphDB);
 
         if(!this.outputTime.equals("")) {
             try {
                 // Write dataset info file if the location of file where the query performances will be stored is given
                 // Writes in the same directory as the query performance file
                 DatasetUtils dsUtils = new DatasetUtils();
-                dsUtils.logDatasetInfos(tripleStore, ts.getIngestionTime(), ts.getTripleStoreLoc(),
+                dsUtils.logDatasetInfos(TripleStore.GraphDB, ts.getIngestionTime(), ts.getTripleStoreLoc(),
                         directory, this.outputTime);
 
             } catch (Exception e) {
@@ -93,8 +89,6 @@ public class GraphDBArchive_TB_star_f implements GraphDBArchive {
 
         logger.info("Number of distinct versions:" + this.TOTALVERSIONS);
         logger.info("Initial version timestamp:" + this.initialVersionTS);
-
-
     }
 
     /**
@@ -235,14 +229,14 @@ public class GraphDBArchive_TB_star_f implements GraphDBArchive {
      */
     private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
             throws InterruptedException, ExecutionException {
-        Boolean higherVersion = false;
+        boolean higherVersion = false;
         ArrayList<String> ret = new ArrayList<String>();
 
         logger.info(String.format("Executing version %d", staticVersionQuery));
         try (RepositoryConnection conn = ts.getGraphDBConnection()) {
             TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query.toString());
             TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
-            while (tupleQueryResult.hasNext()) {
+            while (tupleQueryResult.hasNext() && !higherVersion && limit-- > 0) {
                 BindingSet bindingSet = tupleQueryResult.next();
                 String rowResult = QueryUtils.serializeSolution(bindingSet);
                 ret.add(rowResult);
@@ -260,11 +254,6 @@ public class GraphDBArchive_TB_star_f implements GraphDBArchive {
     private ArrayList<String> materializeASKQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
         //TODO: implement, if necessary
         return null;
-    }
-
-    static String readFile(String path, Charset encoding) throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, encoding);
     }
 
     private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
@@ -356,7 +345,7 @@ public class GraphDBArchive_TB_star_f implements GraphDBArchive {
     }
 
     /**
-     * close Jena TDB and release resources
+     * close Graph DB and release resources
      *
      * @throws RuntimeException
      */

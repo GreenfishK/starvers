@@ -19,7 +19,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
@@ -30,7 +30,7 @@ import org.apache.jena.query.*;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 
-public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
+public class JenaTDBArchive_Hybrid implements RDFArchive {
 
 	private int TOTALVERSIONS = 0;
 	private String outputTime = "timeApp.txt";
@@ -49,7 +49,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_Hybrid() throws FileNotFoundException {
+	public JenaTDBArchive_Hybrid()  {
 		/*
 		 * Load all datasets
 		 */
@@ -66,7 +66,7 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 	 * @param directory
 	 * @throws RuntimeException
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();
@@ -762,11 +762,6 @@ public class JenaTDBArchive_Hybrid implements JenaTDBArchive {
 
 		return new ArrayList<String>(ret);
 
-	}
-
-	static String readFile(String path, Charset encoding) throws IOException {
-		byte[] encoded = Files.readAllBytes(Paths.get(path));
-		return new String(encoded, encoding);
 	}
 
 	/**

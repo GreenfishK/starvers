@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_TB;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
@@ -26,7 +26,7 @@ import org.junit.Test;
  */
 public class TestJenaTDBArchive_TB {
 
-	JenaTDBArchive jenaArchive;
+	RDFArchive jenaArchive;
 	String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
 
 	public TestJenaTDBArchive_TB() throws FileNotFoundException, InterruptedException, ExecutionException {
@@ -35,7 +35,7 @@ public class TestJenaTDBArchive_TB {
 		jenaArchive = new JenaTDBArchive_TB(); 
 		URL resourceUrl = this.getClass().getResource(FileSystems.getDefault().getSeparator() + "testTB/tdbTest");
 		assertNotNull(resourceUrl);
-		jenaArchive.load(resourceUrl.getFile(), JenaTDBArchive.TripleStore.JenaTDB);
+		jenaArchive.load(resourceUrl.getFile());
 		// ArrayList<String> solution = jenaArchive.matQuery(1, "<http://example.org/uri3>");
 	}
 

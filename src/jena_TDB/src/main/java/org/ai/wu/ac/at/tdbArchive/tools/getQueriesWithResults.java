@@ -11,8 +11,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive.TripleStore;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -91,8 +90,8 @@ public class getQueriesWithResults {
 			}
 			if (cmdLine.hasOption("T")) {
 				switch(cmdLine.getOptionValue("T")) {
-					case "JenaTDB": tripleStore = JenaTDBArchive.TripleStore.JenaTDB; break;
-					case "GraphDB": tripleStore = JenaTDBArchive.TripleStore.GraphDB; break;
+					case "JenaTDB": tripleStore = TripleStore.JenaTDB; break;
+					case "GraphDB": tripleStore = TripleStore.GraphDB; break;
 					default: throw new Exception("Please provide a valid triple store." +
 							" Currently supported triple stores are JenaTDB and GraphDB.");
 				}
@@ -111,7 +110,7 @@ public class getQueriesWithResults {
 
 		System.out.println("Loading archive IC...");
 		long startTime = System.currentTimeMillis();
-		jenaArchive.load(dirTDBs, tripleStore);
+		jenaArchive.load(dirTDBs);
 		long endTime = System.currentTimeMillis();
 		System.out.println("Loaded in " + (endTime - startTime) + " ms");
 

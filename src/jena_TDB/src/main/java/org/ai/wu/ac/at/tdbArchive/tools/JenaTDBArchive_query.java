@@ -11,9 +11,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import org.ai.wu.ac.at.tdbArchive.api.Archive;
-import org.ai.wu.ac.at.tdbArchive.api.GraphDBArchive;
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.core.*;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
@@ -190,41 +188,41 @@ public class JenaTDBArchive_query {
 		}
 
 		// Start Archive
-		Archive archive = new JenaTDBArchive_IC();
+		RDFArchive RDFArchive = new JenaTDBArchive_IC();
 		if (tripleStore == TripleStore.JenaTDB) {
 			if (policy.equalsIgnoreCase("ic")) {
-				archive = new JenaTDBArchive_IC();
+				RDFArchive = new JenaTDBArchive_IC();
 			} else if (policy.equalsIgnoreCase("cb")) {
-				archive = new JenaTDBArchive_CB();
+				RDFArchive = new JenaTDBArchive_CB();
 			} else if (policy.equalsIgnoreCase("tb")) {
-				archive = new JenaTDBArchive_TB();
+				RDFArchive = new JenaTDBArchive_TB();
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				archive = new JenaTDBArchive_TB_star_f();
+				RDFArchive = new JenaTDBArchive_TB_star_f();
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				archive = new JenaTDBArchive_TB_star_h();
+				RDFArchive = new JenaTDBArchive_TB_star_h();
 			} else if (policy.equalsIgnoreCase("cbtb")) {
-				archive = new JenaTDBArchive_CBTB();
+				RDFArchive = new JenaTDBArchive_CBTB();
 			} else if (policy.equalsIgnoreCase("hybrid")) {
-				archive = new JenaTDBArchive_Hybrid();
+				RDFArchive = new JenaTDBArchive_Hybrid();
 			}
 		}
 		else if (tripleStore == TripleStore.GraphDB) {
 			if (policy.equalsIgnoreCase("tb")) {
-				archive = null;
+				RDFArchive = null;
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				archive = new GraphDBArchive_TB_star_f();
+				RDFArchive = new GraphDBArchive_TB_star_f();
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				archive = null;
+				RDFArchive = null;
 			}
 		}
 		if (!outputTime.equals("")) {
-			assert archive != null;
-			archive.setOutputTime(outputTime);
+			assert RDFArchive != null;
+			RDFArchive.setOutputTime(outputTime);
 		}
 
 		logger.info("Loading archive "+policy.toUpperCase()+"...");
-		assert archive != null;
-		archive.load(dirTDBs, tripleStore);
+		assert RDFArchive != null;
+		RDFArchive.load(dirTDBs);
 
 		PrintStream os = System.out;
 		if (!outputResults.equals("")) {
@@ -243,7 +241,7 @@ public class JenaTDBArchive_query {
 				if (!bulkQueries) {
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
 					logger.info("The input query is '" + queryCategory + "' at version " + versionQuery);
-					ArrayList<String> solution = archive.matQuery(versionQuery, queryString);
+					ArrayList<String> solution = RDFArchive.matQuery(versionQuery, queryString);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
 						printSolution(os, solution);
@@ -255,7 +253,7 @@ public class JenaTDBArchive_query {
 				else {
 
 					if (queryFile != null) {
-						ArrayList<ArrayList<String>> solution = archive.bulkMatQuerying(queryFile, rol);
+						ArrayList<ArrayList<String>> solution = RDFArchive.bulkMatQuerying(queryFile, rol);
 						if (!silent) {
 							os.println("\n**** SOLUTIONS bulkMatQuerying:");
 							if (!splitResultsByVersion)
@@ -264,7 +262,7 @@ public class JenaTDBArchive_query {
 								printSolutionSeveralQueries(outputResults, solution);
 						}
 					} else {
-						ArrayList<Map<Integer, ArrayList<String>>> solution = archive.bulkAllMatQuerying(queryFileDynamic, rol);
+						ArrayList<Map<Integer, ArrayList<String>>> solution = RDFArchive.bulkAllMatQuerying(queryFileDynamic, rol);
 						if (!silent) {
 							os.println("\n**** SOLUTIONS bulkAllMatQuerying:");
 							if (!splitResultsByVersion)
@@ -280,7 +278,7 @@ public class JenaTDBArchive_query {
 					logger.info("Diff between version " + versionQuery + " and version " + endversionQuery);
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
 
-					DiffSolution solution = archive.diffQuerying(versionQuery, endversionQuery, queryString);
+					DiffSolution solution = RDFArchive.diffQuerying(versionQuery, endversionQuery, queryString);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
 						printSolutionDiff(os, solution);
@@ -289,7 +287,7 @@ public class JenaTDBArchive_query {
 					logger.info("Diff of all versions ");
 					if (jump > 0)
 						logger.info("     with jump " + jump);
-					ArrayList<Map<Integer, DiffSolution>> solution = archive.bulkAlldiffQuerying(queryFileDynamic, rol, jump);
+					ArrayList<Map<Integer, DiffSolution>> solution = RDFArchive.bulkAlldiffQuerying(queryFileDynamic, rol, jump);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
 						if (!splitResultsByVersion)
@@ -308,7 +306,7 @@ public class JenaTDBArchive_query {
 				if (!bulkQueries) {
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
 					logger.info(queryString);
-					Map<Integer, ArrayList<String>> solution = archive.verQuery(queryString);
+					Map<Integer, ArrayList<String>> solution = RDFArchive.verQuery(queryString);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
 						printSolutionVer(os, solution);
@@ -318,7 +316,7 @@ public class JenaTDBArchive_query {
 				 * FILE CONTAINS SEVERAL QUERIES
 				 */
 				else {
-					ArrayList<Map<Integer, ArrayList<String>>> solution = archive.bulkAllVerQuerying(queryFileDynamic, rol);
+					ArrayList<Map<Integer, ArrayList<String>>> solution = RDFArchive.bulkAllVerQuerying(queryFileDynamic, rol);
 					if (!silent) {
 						os.println("\n**** SOLUTIONS:");
 						if (!splitResultsByVersion)
@@ -339,7 +337,7 @@ public class JenaTDBArchive_query {
 			e.printStackTrace();
 		}
 		printStream.close();
-		archive.close();
+		RDFArchive.close();
 	}
 
 	private static void printSolutionDiffAll(PrintStream os, ArrayList<Map<Integer, DiffSolution>> sols) {

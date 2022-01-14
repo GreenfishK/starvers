@@ -21,7 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
@@ -33,7 +33,7 @@ import org.apache.jena.query.*;
 import org.apache.jena.tdb.TDBFactory;
 import org.apache.jena.util.FileManager;
 
-public class JenaTDBArchive_CB implements JenaTDBArchive {
+public class JenaTDBArchive_CB implements RDFArchive {
 
 	private int TOTALVERSIONS = 0;
 
@@ -50,7 +50,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 		this.measureTime = true;
 	}
 
-	public JenaTDBArchive_CB() throws FileNotFoundException {
+	public JenaTDBArchive_CB() {
 		/*
 		 * Load all datasets
 		 */
@@ -65,7 +65,7 @@ public class JenaTDBArchive_CB implements JenaTDBArchive {
 	 * @param directory
 	 * @throws RuntimeException
 	 */
-	public void load(String directory, TripleStore tripleStore) {
+	public void load(String directory) {
 		// Initialize Jena
 		ARQ.init();
 		FileManager fm = FileManager.get();

@@ -15,7 +15,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.zip.GZIPInputStream;
 
-import org.ai.wu.ac.at.tdbArchive.api.JenaTDBArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
 import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_IC;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.apache.commons.cli.BasicParser;
@@ -60,8 +60,8 @@ public class AnalyseRes {
 		if(!outDir.exists()) outDir.mkdirs();
 		
 		long start = System.currentTimeMillis();
-		JenaTDBArchive jenaArchive = new JenaTDBArchive_IC();
-		jenaArchive.load(tdbFolder, null);
+		RDFArchive jenaArchive = new JenaTDBArchive_IC();
+		jenaArchive.load(tdbFolder);
 		
 		System.out.println("Loaded "+tdbFolder+" in "+(System.currentTimeMillis()-start)+" ms");
 		

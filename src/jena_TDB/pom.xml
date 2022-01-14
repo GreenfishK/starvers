@@ -23,11 +23,11 @@
 						<descriptorRefs>
 							<descriptorRef>jar-with-dependencies</descriptorRef>
 						</descriptorRefs>
-						<archive>
+						<RDFArchive>
 							<manifest>
 								<mainClass>org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query</mainClass>
 							</manifest>
-						</archive>
+						</RDFArchive>
 					</configuration>
 					<executions>
 						<execution>
