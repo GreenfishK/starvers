@@ -7,17 +7,13 @@ import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryUtils;
 import org.ai.wu.ac.at.tdbArchive.utils.TripleStoreHandler;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.jena.query.*;
-import org.apache.jena.query.Query;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.query.*;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -192,13 +188,12 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
             for (int i = 0; i < TOTALVERSIONS; i++) {
                 String queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
                 int limit = QueryUtils.getLimit(parts);
-                Query query = QueryFactory.create(queryString);
 
                 long startTime = System.currentTimeMillis();
                 if (true || !askQuery)
-                    solutions.put(i, materializeQuery(i, query, limit));
+                    solutions.put(i, materializeQuery(i, queryString, limit));
                 else
-                    solutions.put(i, materializeASKQuery(i, query));
+                    solutions.put(i, materializeASKQuery(i, queryString));
                 long endTime = System.currentTimeMillis();
 
                 vStats.get(i).addValue((endTime - startTime));
@@ -227,14 +222,14 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
      * @param query
      * @return
      */
-    private ArrayList<String> materializeQuery(int staticVersionQuery, Query query, int limit)
+    private ArrayList<String> materializeQuery(int staticVersionQuery, String query, int limit)
             throws InterruptedException, ExecutionException {
         boolean higherVersion = false;
         ArrayList<String> ret = new ArrayList<String>();
 
         logger.info(String.format("Executing version %d", staticVersionQuery));
         try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-            TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query.toString());
+            TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query);
             TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
             while (tupleQueryResult.hasNext() && !higherVersion && limit-- > 0) {
                 BindingSet bindingSet = tupleQueryResult.next();
@@ -251,27 +246,9 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
      * @param query
      * @return
      */
-    private ArrayList<String> materializeASKQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
+    private ArrayList<String> materializeASKQuery(int staticVersionQuery, String query) throws InterruptedException, ExecutionException {
         //TODO: implement, if necessary
         return null;
-    }
-
-    private static Iterator<QuerySolution> orderedResultSet(ResultSet resultSet, final String sortingVariableName) {
-        List<QuerySolution> list = new ArrayList<QuerySolution>();
-
-        while (resultSet.hasNext()) {
-            list.add(resultSet.nextSolution());
-        }
-
-        Collections.sort(list, new Comparator<QuerySolution>() {
-
-            public int compare(QuerySolution a, QuerySolution b) {
-
-                return a.getResource(sortingVariableName).toString().compareTo(b.getResource(sortingVariableName).toString());
-
-            }
-        });
-        return list.iterator();
     }
 
     /**
