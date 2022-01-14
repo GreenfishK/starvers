@@ -1,5 +1,6 @@
 package org.ai.wu.ac.at.tdbArchive.tools;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -26,11 +27,16 @@ import org.apache.commons.cli.ParseException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
 
 public class JenaTDBArchive_query {
 
 	public static void main(String[] args) throws FileNotFoundException, InterruptedException, ExecutionException {
 		final Logger logger = LogManager.getLogger(JenaTDBArchive_query.class);
+
+		LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+		File file = new File("/log4j2.properties");
+		context.setConfigLocation(file.toURI());
 
 		String dirTDBs = null;
 		String queryFile = null;
@@ -211,9 +217,9 @@ public class JenaTDBArchive_query {
 			if (policy.equalsIgnoreCase("tb")) {
 				RDFArchive = new GraphDBArchive_TB();
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
+				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);;
+				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);;
 			}
 		}
 		if (!outputTime.equals("")) {
