@@ -1,6 +1,7 @@
 package org.ai.wu.ac.at.tdbArchive.core;
 
 import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
+import org.ai.wu.ac.at.tdbArchive.api.RDFStarAnnotationStyle;
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.utils.DatasetUtils;
@@ -21,14 +22,15 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 
-public class GraphDBArchive_TB_star_f implements RDFArchive {
-    private static final Logger logger = LogManager.getLogger(GraphDBArchive_TB_star_f.class);
+public class GraphDBArchive_TB_star implements RDFArchive {
+    private static final Logger logger = LogManager.getLogger(GraphDBArchive_TB_star.class);
 
     private int TOTALVERSIONS = 0;
     private String initialVersionTS;
     private String outputTime = "timeApp.txt";
     private TripleStoreHandler ts;
     private Boolean measureTime = false;
+    private RDFStarAnnotationStyle annotationStyle;
 
     // private static String metadataVersions = "<http://example.org/isVersion>";
 
@@ -40,8 +42,9 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
         this.measureTime = true;
     }
 
-    public GraphDBArchive_TB_star_f() {
+    public GraphDBArchive_TB_star(RDFStarAnnotationStyle annotationStyle) {
         this.measureTime = false;
+        this.annotationStyle = annotationStyle;
     }
 
     /**
@@ -72,7 +75,15 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
         // TODO use sparql Endpoint for connection to GraphDB
 
         try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-            TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, QueryUtils.getVersionInfos_f());
+            String query = null;
+            if (annotationStyle == RDFStarAnnotationStyle.FLAT) {
+                query = QueryUtils.getVersionInfos_f();
+            } else if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL) {
+                query = QueryUtils.getVersionInfos_h();
+            } else {
+                logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. Query is set to null");
+            }
+            TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL, query);
 
             TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
             while (tupleQueryResult.hasNext()) {
@@ -186,7 +197,14 @@ public class GraphDBArchive_TB_star_f implements RDFArchive {
             Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
             logger.info(String.format("Query %x%n", lines+1));
             for (int i = 0; i < TOTALVERSIONS; i++) {
-                String queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
+                String queryString = null;
+                if (annotationStyle == RDFStarAnnotationStyle.FLAT) {
+                    queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
+                } else if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL) {
+                    queryString = QueryUtils.createLookupQueryRDFStar_h(rol, parts, version_ts.toString());
+                } else {
+                    logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. queryString is set to null");
+                }
                 int limit = QueryUtils.getLimit(parts);
 
                 long startTime = System.currentTimeMillis();
