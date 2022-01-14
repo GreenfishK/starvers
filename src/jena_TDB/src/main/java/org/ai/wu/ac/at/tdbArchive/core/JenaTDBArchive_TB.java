@@ -495,7 +495,6 @@ public class JenaTDBArchive_TB implements RDFArchive {
 		RDFConnection conn = ts.getJenaTDBConnection();
 		logger.info(String.format("Executing version %d", staticVersionQuery));
 		QueryExecution qExec = conn.query(query);
-		logger.info(query);
 		ResultSet results = qExec.execSelect();
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
