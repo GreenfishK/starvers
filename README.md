@@ -17,7 +17,9 @@ Go to BEAR/src/Jena_TDB and build the java Jena-TDB project with docker. The doc
 ```
 docker build -t bear-jena .
 ```
-
+Go to the  built jar, which should be in `/var/lib/docker/overlay2/<latest_build_id>/diff/target/META-INF/services/org.eclipse.rdf4j.rio.RDFParserFactory` and add following line to the file:
+`org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory`
+The reason is that we have two dependencies - rdf4j-rio-turtle and rdf4j-rio-nquads - which are both implementations of the same interface. That is why the RDFParserFactory gets overriden with whichever is listed first in the dependencies in pom.xml (df4j-rio-turtle in our case). 
 ### Troubleshoot
 Error1: “Docker does not have a release file”
 
