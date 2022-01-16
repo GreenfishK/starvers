@@ -75,7 +75,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 			TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
 			while (tupleQueryResult.hasNext()) {
 				BindingSet bindingSet = tupleQueryResult.next();
-				this.TOTALVERSIONS = Integer.parseInt(bindingSet.getBinding("cnt_versions").getValue().stringValue());
+				this.TOTALVERSIONS = Integer.parseInt(bindingSet.getBinding("numVersions").getValue().stringValue());
 			}
 			tupleQueryResult.close();
 		}
