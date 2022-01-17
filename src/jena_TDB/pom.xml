@@ -49,13 +49,14 @@
 								<goal>shade</goal>
 							</goals>
 							<configuration>
-								<descriptorRefs>
-									<descriptorRef>jar-with-dependencies</descriptorRef>
-								</descriptorRefs>
-								<minimizeJar>true</minimizeJar>
 								<transformers>
 									<!--Merges META-INF/services resources-->
 									<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+									<!--Merge content of a specific resource. Can be used instead of ServiceResourceTransformer-->
+									<!--TODO: As of 17.01.2022, this does not work. The file given in <resource> below gets overriden during the build-->
+									<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+										<resource>META-INF/services/org.eclipse.rdf4j.rio.RDFParserFactory</resource>
+									</transformer>
 									<!--Sets entries in the MANIFEST-->
 									<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 										<manifestEntries>
