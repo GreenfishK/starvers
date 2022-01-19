@@ -20,6 +20,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
 import org.ai.wu.ac.at.tdbArchive.api.RDFArchive;
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
 import org.ai.wu.ac.at.tdbArchive.solutions.DiffSolution;
 import org.ai.wu.ac.at.tdbArchive.tools.JenaTDBArchive_query;
 import org.ai.wu.ac.at.tdbArchive.utils.QueryResult;
@@ -576,15 +577,8 @@ public class JenaTDBArchive_Hybrid implements RDFArchive {
 		}
 		br.close();
 
-		if (measureTime) {
-			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("##ver, min, mean, max, stddev, count,total");
-			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-				pw.println(ent.getKey() + " " + ent.getValue().getMin() + " " + ent.getValue().getMean() + " " + ent.getValue().getMax() + " "
-						+ ent.getValue().getStandardDeviation() + " " + ent.getValue().getN()+" "+ent.getValue().getSum());
-			}
-			pw.close();
-		}
+		if (measureTime)
+			QueryUtils.logQueryStatistics(TripleStore.JenaTDB, outputTime, vStats);
 		return ret;
 	}
 

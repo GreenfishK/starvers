@@ -470,15 +470,8 @@ public class JenaTDBArchive_TB implements RDFArchive {
 		}
 		br.close();
 
-		if (measureTime) {
-			PrintWriter pw = new PrintWriter(new File(outputTime));
-			pw.println("ver, min, mean, max, stddev, count, sum");
-			for (Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-				pw.println(ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
-						+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()+", "+ent.getValue().getSum());
-			}
-			pw.close();
-		}
+		if (measureTime)
+			QueryUtils.logQueryStatistics(TripleStore.JenaTDB, outputTime, vStats);
 		return ret;
 	}
 

@@ -3,8 +3,14 @@
  */
 package org.ai.wu.ac.at.tdbArchive.utils;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
+import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
 import org.eclipse.rdf4j.model.Value;
@@ -16,6 +22,17 @@ import org.eclipse.rdf4j.query.BindingSet;
  *
  */
 public final class QueryUtils {
+
+	public static void logQueryStatistics(TripleStore tripleStore, String filePath, TreeMap<Integer, DescriptiveStatistics> vStats)
+			throws FileNotFoundException {
+		PrintWriter pw = new PrintWriter(filePath);
+		pw.println("tripleStore, ver, min, mean, max, stddev, count, sum");
+		for (Map.Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
+			pw.println(tripleStore + ", " + ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
+					+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()+", "+ent.getValue().getSum());
+		}
+		pw.close();
+	}
 
 	public static final QueryRol getQueryRol(String rol){
 		if (rol.equalsIgnoreCase("subject") || rol.equalsIgnoreCase("s") || rol.equalsIgnoreCase("subjects")) {
