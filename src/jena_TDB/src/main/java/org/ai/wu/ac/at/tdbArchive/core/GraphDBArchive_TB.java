@@ -717,7 +717,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 	}
 
 	/**
-	 * close Jena TDB and release resources
+	 * close GraphDB and release resources
 	 * 
 	 * @throws RuntimeException
 	 */
