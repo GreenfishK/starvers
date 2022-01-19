@@ -28,6 +28,7 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
 	private final RDFStarAnnotationStyle annotationStyle;
+	TreeMap<Integer, DescriptiveStatistics> vStats;
 
 	/**
 	 * @param outputTime
@@ -176,7 +177,7 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line;
 
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
+		vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
@@ -200,14 +201,11 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 				}
 				int limit = QueryUtils.getLimit(parts);
 
-				long startTime = System.currentTimeMillis();
 				if (true || !askQuery)
 					solutions.put(i, materializeQuery(i, queryString, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, queryString));
-				long endTime = System.currentTimeMillis();
 
-				vStats.get(i).addValue((endTime - startTime));
 				version_ts = version_ts.plusSeconds(1);
 			}
 			ret.add(solutions);
@@ -231,8 +229,12 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 
 		RDFConnection conn = ts.getJenaTDBConnection();
 		logger.info(String.format("Executing version %d", staticVersionQuery));
+
+		long startTime = System.currentTimeMillis();
 		QueryExecution qExec = conn.query(query);
 		ResultSet results = qExec.execSelect();
+		long endTime = System.currentTimeMillis();
+		vStats.get(staticVersionQuery).addValue((endTime - startTime));
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
 			QuerySolution soln = results.next();

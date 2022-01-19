@@ -29,7 +29,7 @@ esac
 policies="tb" # tb tb_star_h tb_star_f ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
-tripleStores="JenaTDB" # JenaTDB GraphDB
+tripleStores="GraphDB JenaTDB" # JenaTDB GraphDB
 
 echo ${queries}
 # If building with maven-assembly-plugin use: java -cp target/tdbQuery-0.8-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
