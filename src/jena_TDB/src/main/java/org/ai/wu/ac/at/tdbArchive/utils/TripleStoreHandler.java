@@ -94,7 +94,7 @@ public class TripleStoreHandler {
             // http://localhost:3030/in_memory_server/sparql and connect to it.
             logger.info("Initializing Jena Fuseki Server");
             this.fusekiServer = FusekiServer.create()
-                    .add("/in_memory_server", dataset)
+                    .add("/evalJenaTDB", dataset)
                     .build();
             fusekiServer.start();
             this.endpoint = String.format("http://localhost:%d/evalJenaTDB/sparql", fusekiServer.getHttpPort());
