@@ -31,6 +31,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
 	private static final String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
+	TreeMap<Integer, DescriptiveStatistics> vStats;
 
 	/**
 	 * @param outputTime
@@ -205,7 +206,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
+		vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
@@ -213,14 +214,8 @@ public class GraphDBArchive_TB implements RDFArchive {
 		DescriptiveStatistics total = new DescriptiveStatistics();
 
 		while ((line = br.readLine()) != null) {
-			Map<Integer, DiffSolution> solutions = new HashMap<Integer, DiffSolution>();
-
+			Map<Integer, DiffSolution> solutions = new HashMap<>();
 			String[] parts = line.split(" ");
-			// String element = parts[0];
-
-			/*
-			 * warmup the system
-			 */
 			warmup();
 
 			int start = 0;
@@ -337,14 +332,13 @@ public class GraphDBArchive_TB implements RDFArchive {
 	 * @throws ExecutionException
 	 */
 	public ArrayList<String> matQuery(int version, String queryString) throws InterruptedException, ExecutionException {
-		long startTime = System.currentTimeMillis();
 		ArrayList<String> ret = materializeQuery(version, queryString, Integer.MAX_VALUE);
-		long endTime = System.currentTimeMillis();
+
 		if (measureTime) {
 			PrintWriter pw;
 			try {
 				pw = new PrintWriter(outputTime);
-				pw.println((endTime - startTime));
+				pw.println(vStats.get(version).getSum());
 				pw.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -367,12 +361,12 @@ public class GraphDBArchive_TB implements RDFArchive {
 	 */
 	public ArrayList<ArrayList<String>> bulkMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
-		ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
+		ArrayList<ArrayList<String>> ret = new ArrayList<>();
 
 		File inputFile = new File(queryFile);
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line = "";
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
+		vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
@@ -381,17 +375,9 @@ public class GraphDBArchive_TB implements RDFArchive {
 			String[] parts = line.split(",");
 			int staticVersionQuery = Integer.parseInt(parts[0]);
 			String element = parts[3];
-
-			// System.out.println("Query at version " + staticVersionQuery);
 			String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, element, staticVersionQuery, metadataVersions);
 
-			long startTime = System.currentTimeMillis();
 			ret.add(materializeQuery(staticVersionQuery, queryString, Integer.MAX_VALUE));
-			long endTime = System.currentTimeMillis();
-			//System.out.println("bulkMatQuerying: Time:" + (endTime - startTime)); //DEBUG
-
-			vStats.get(staticVersionQuery).addValue((endTime - startTime));
-
 		}
 		br.close();
 
@@ -428,7 +414,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 		BufferedReader br = new BufferedReader(new FileReader(inputFile));
 		String line = "";
 
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<>();
+		vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
@@ -443,13 +429,10 @@ public class GraphDBArchive_TB implements RDFArchive {
 				String queryString = QueryUtils.createLookupQueryAnnotatedGraph(rol, parts, i, metadataVersions);
                 int limit = QueryUtils.getLimit(parts);
 
-				long startTime = System.currentTimeMillis();
 				if (true || !askQuery)
 					solutions.put(i, materializeQuery(i, queryString, limit));
 				else
 					solutions.put(i, materializeASKQuery(i, queryString));
-				long endTime = System.currentTimeMillis();
-				vStats.get(i).addValue((endTime - startTime));
 
 			}
 			ret.add(solutions);
@@ -470,12 +453,16 @@ public class GraphDBArchive_TB implements RDFArchive {
 	private ArrayList<String> materializeQuery(int staticVersionQuery, String query, int limit)
 			throws InterruptedException, ExecutionException {
 		boolean higherVersion = false;
-		ArrayList<String> ret = new ArrayList<String>();
+		ArrayList<String> ret = new ArrayList<>();
 
 		try (RepositoryConnection conn = ts.getGraphDBConnection()) {
 			logger.info(String.format("Executing version %d", staticVersionQuery));
+
+			long startTime = System.currentTimeMillis();
 			TupleQuery qExec = conn.prepareTupleQuery(QueryLanguage.SPARQL, query);
 			TupleQueryResult results = qExec.evaluate();
+			long endTime = System.currentTimeMillis();
+			vStats.get(staticVersionQuery).addValue((endTime - startTime));
 
 			while (results.hasNext() && !higherVersion && limit-- > 0) {
 				BindingSet bindingSet = results.next();
@@ -495,12 +482,15 @@ public class GraphDBArchive_TB implements RDFArchive {
 	private ArrayList<String> materializeASKQuery(int staticVersionQuery, String queryString) throws InterruptedException, ExecutionException {
 		RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
 		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = conn.query(query);
-		ArrayList<String> ret = new ArrayList<String>();
-		qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
 
-		Boolean result = qexec.execAsk();
-		ret.add(result.toString());
+		long startTime = System.currentTimeMillis();
+		QueryExecution qexec = conn.query(query);
+		boolean result = qexec.execAsk();
+		long endTime = System.currentTimeMillis();
+		vStats.get(staticVersionQuery).addValue((endTime - startTime));
+		ArrayList<String> ret = new ArrayList<String>();
+
+		ret.add(String.valueOf(result));
 		qexec.close();
 		conn.close();
 
@@ -607,7 +597,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 
 		Boolean askQuery = rol.equalsIgnoreCase("SPO") && false;
 
-		TreeMap<Integer, DescriptiveStatistics> vStats = new TreeMap<Integer, DescriptiveStatistics>();
+		vStats = new TreeMap<>();
 		for (int i = 0; i < TOTALVERSIONS; i++) {
 			vStats.put(i, new DescriptiveStatistics());
 		}
@@ -627,9 +617,10 @@ public class GraphDBArchive_TB implements RDFArchive {
 			RDFConnection conn = RDFConnection.connect(this.ts.getEndpoint());
 			long startTime = System.currentTimeMillis();
 			QueryExecution qexec = conn.query(query);
-			qexec.getContext().set(ARQ.symLogExec, Explain.InfoLevel.NONE);
-
 			ResultSet results = qexec.execSelect();
+			long endTime = System.currentTimeMillis();
+			total.addValue((endTime - startTime));
+
 			while (results.hasNext() && limit-- > 0) {
 				System.out.println("SOLUTION");
 				QuerySolution soln = results.next();
@@ -653,14 +644,8 @@ public class GraphDBArchive_TB implements RDFArchive {
 			}
 
 			ret.add(AllSolutions);
-
-			long endTime = System.currentTimeMillis();
-			// System.out.println("Time:" + (endTime - startTime));
-			// printStreamTime.println(queryFile + "," + (endTime - startTime));
 			qexec.close();
 			conn.close();
-			total.addValue((endTime - startTime));
-			// vStats.get(versionQuery).addValue((endTime-startTime));
 		}
 
 		br.close();
@@ -690,9 +675,8 @@ public class GraphDBArchive_TB implements RDFArchive {
 		//TODO: use sparql endpoint to connect to graphDB
 
 		try (RepositoryConnection conn = ts.getGraphDBConnection()) {
-			TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
-
 			startTime = System.currentTimeMillis();
+			TupleQuery tupleQuery = conn.prepareTupleQuery(QueryLanguage.SPARQL,createWarmupQuery());
 			TupleQueryResult tupleQueryResult = tupleQuery.evaluate();
 			endTime = System.currentTimeMillis();
 

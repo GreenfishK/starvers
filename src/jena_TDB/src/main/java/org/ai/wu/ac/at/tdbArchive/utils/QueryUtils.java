@@ -30,24 +30,28 @@ public final class QueryUtils {
 	private static final Logger logger = LogManager.getLogger(QueryUtils.class);
 
 	public static void logQueryStatistics(TripleStore tripleStore, String filePath, TreeMap<Integer, DescriptiveStatistics> vStats)
-			throws FileNotFoundException {
+	{
 		File f = new File(filePath);
 		PrintWriter pw;
-		if ( f.exists() && !f.isDirectory() ) {
-			pw = new PrintWriter(new FileOutputStream(filePath, true));
-		}
-		else {
-			pw = new PrintWriter(filePath);
-			pw.append("tripleStore,ver,min,mean,max,stddev,count,sum\n");
-		}
+		try {
+			if (f.exists() && !f.isDirectory()) {
+				pw = new PrintWriter(new FileOutputStream(filePath, true));
+			} else {
+				pw = new PrintWriter(filePath);
+				pw.append("tripleStore,ver,min,mean,max,stddev,count,sum\n");
+			}
 
-		for (Map.Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-			pw.append(tripleStore + "," + ent.getKey() + "," + ent.getValue().getMin() + ","
-					+ ent.getValue().getMean() + "," + ent.getValue().getMax() + ","
-					+ ent.getValue().getStandardDeviation() + "," + ent.getValue().getN()
-					+ ","+ent.getValue().getSum() + "\n");
+			for (Map.Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
+				pw.append(tripleStore + "," + ent.getKey() + "," + ent.getValue().getMin() + ","
+						+ ent.getValue().getMean() + "," + ent.getValue().getMax() + ","
+						+ ent.getValue().getStandardDeviation() + "," + ent.getValue().getN()
+						+ "," + ent.getValue().getSum() + "\n");
+			}
+			pw.close();
+		} catch (FileNotFoundException e) {
+				 logger.error(e);
+				 logger.error("Query statistics will not be logged.");
 		}
-		pw.close();
 	}
 
 	public static QueryRol getQueryRol(String rol){
