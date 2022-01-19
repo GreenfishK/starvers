@@ -34,14 +34,14 @@ public final class QueryUtils {
 		}
 		else {
 			pw = new PrintWriter(filePath);
-			pw.append("tripleStore, ver, min, mean, max, stddev, count, sum\n");
+			pw.append("tripleStore,ver,min,mean,max,stddev,count,sum\n");
 		}
 
 		for (Map.Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-			pw.append(tripleStore + ", " + ent.getKey() + ", " + ent.getValue().getMin() + ", "
-					+ ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
-					+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()
-					+ ", "+ent.getValue().getSum());
+			pw.append(tripleStore + "," + ent.getKey() + "," + ent.getValue().getMin() + ","
+					+ ent.getValue().getMean() + "," + ent.getValue().getMax() + ","
+					+ ent.getValue().getStandardDeviation() + "," + ent.getValue().getN()
+					+ ","+ent.getValue().getSum() + "\n");
 		}
 		pw.close();
 	}
