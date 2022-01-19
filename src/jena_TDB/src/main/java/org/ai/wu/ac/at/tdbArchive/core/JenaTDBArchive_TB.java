@@ -710,8 +710,8 @@ public class JenaTDBArchive_TB implements RDFArchive {
 			String graphResponse = soln.getResource("graph").toString();
 			finalResults.add(graphResponse);
 		}
-		System.out.println("Warmup Time:" + (endTime - startTime));
-		System.out.println(finalResults);
+		logger.info("Warmup Time:" + (endTime - startTime));
+		logger.info("Query results: " + finalResults);
 
 		qexec.close();
 		conn.close();
