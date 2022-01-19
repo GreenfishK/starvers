@@ -91,7 +91,6 @@ public class TripleStoreHandler {
             // Create a dataset object from the persistent TDB dataset
             Dataset dataset = TDBFactory.createDataset(this.tripleStoreLoc);
             // Create a fuseki server, load the dataset into the repository
-            // http://localhost:3030/in_memory_server/sparql and connect to it.
             logger.info("Initializing Jena Fuseki Server");
             this.fusekiServer = FusekiServer.create()
                     .add("/evalJenaTDB", dataset)

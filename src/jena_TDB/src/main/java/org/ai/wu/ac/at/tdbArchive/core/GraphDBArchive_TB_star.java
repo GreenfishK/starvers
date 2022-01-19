@@ -30,7 +30,7 @@ public class GraphDBArchive_TB_star implements RDFArchive {
     private String outputTime = "timeApp.txt";
     private TripleStoreHandler ts;
     private Boolean measureTime = false;
-    private RDFStarAnnotationStyle annotationStyle;
+    private final RDFStarAnnotationStyle annotationStyle;
 
     // private static String metadataVersions = "<http://example.org/isVersion>";
 
@@ -323,15 +323,21 @@ public class GraphDBArchive_TB_star implements RDFArchive {
             tupleQueryResult.close();
         }
 
-    logger.info("Warmup Time:" + (endTime - startTime));
-    logger.info(finalResults);
+        logger.info("Warmup Time:" + (endTime - startTime));
+        logger.info("Query results: " + finalResults);
 
     }
 
-    private static String createWarmupQuery() {
-        return "select ?s ?p ?o where { <<?s ?p ?o>> ?x ?y . } limit 100";
+    private String createWarmupQuery() {
+        if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL)
+            return "select ?s ?p ?o where { <<<<?s ?p ?o>> ?x ?y>> ?a ?b . } limit 100";
+        else if (annotationStyle == RDFStarAnnotationStyle.FLAT)
+            return "select ?s ?p ?o where { <<?s ?p ?o>> ?x ?y . } limit 100";
+        else {
+            logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. Query is set to null");
+            return null;
+        }
     }
-
     /**
      * close Graph DB and release resources
      *

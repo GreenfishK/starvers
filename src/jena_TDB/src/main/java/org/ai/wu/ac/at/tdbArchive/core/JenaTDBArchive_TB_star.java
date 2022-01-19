@@ -17,7 +17,6 @@ import java.io.*;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 public class JenaTDBArchive_TB_star implements RDFArchive {
@@ -28,7 +27,7 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 	private String outputTime = "timeApp.txt";
 	private TripleStoreHandler ts;
 	private Boolean measureTime = false;
-	private RDFStarAnnotationStyle annotationStyle;
+	private final RDFStarAnnotationStyle annotationStyle;
 
 	/**
 	 * @param outputTime
@@ -191,7 +190,14 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			logger.info(String.format("Query %x%n", lines+1));
 			for (int i = 0; i < TOTALVERSIONS; i++) {
-				String queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
+				String queryString = null;
+				if (annotationStyle == RDFStarAnnotationStyle.FLAT) {
+					queryString = QueryUtils.createLookupQueryRDFStar_f(rol, parts, version_ts.toString());
+				} else if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL) {
+					queryString = QueryUtils.createLookupQueryRDFStar_h(rol, parts, version_ts.toString());
+				} else {
+					logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. queryString is set to null");
+				}
 				int limit = QueryUtils.getLimit(parts);
 
 				long startTime = System.currentTimeMillis();
@@ -230,7 +236,7 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 
 		while (results.hasNext() && !higherVersion && limit-- > 0) {
 			QuerySolution soln = results.next();
-			String rowResult = QueryUtils.serializeSolutionFilterOutGraphs(soln);
+			String rowResult = QueryUtils.serializeSolution(soln);
 			ret.add(rowResult);
 		}
 		qExec.close();
@@ -309,12 +315,19 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 		conn.close();
 
 		logger.info("Warmup Time:" + (endTime - startTime));
-		logger.info(finalResults);
+		logger.info("Query results: " + finalResults);
 
 	}
 
-	private static String createWarmupQuery() {
-		return "select ?s ?p ?o where { <<?s ?p ?o>> ?x ?y . } limit 100";
+	private String createWarmupQuery() {
+		if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL)
+			return "select ?s ?p ?o where { <<<<?s ?p ?o>> ?x ?y>> ?a ?b . } limit 100";
+		else if (annotationStyle == RDFStarAnnotationStyle.FLAT)
+			return "select ?s ?p ?o where { <<?s ?p ?o>> ?x ?y . } limit 100";
+		else {
+			logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. Query is set to null");
+			return null;
+		}
 	}
 
 	/**

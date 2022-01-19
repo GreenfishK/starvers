@@ -12,9 +12,12 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.ai.wu.ac.at.tdbArchive.api.TripleStore;
+import org.ai.wu.ac.at.tdbArchive.core.JenaTDBArchive_TB_star;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.rdf4j.model.Value;
 import org.eclipse.rdf4j.query.Binding;
 import org.eclipse.rdf4j.query.BindingSet;
@@ -24,6 +27,7 @@ import org.eclipse.rdf4j.query.BindingSet;
  *
  */
 public final class QueryUtils {
+	private static final Logger logger = LogManager.getLogger(QueryUtils.class);
 
 	public static void logQueryStatistics(TripleStore tripleStore, String filePath, TreeMap<Integer, DescriptiveStatistics> vStats)
 			throws FileNotFoundException {
@@ -46,7 +50,7 @@ public final class QueryUtils {
 		pw.close();
 	}
 
-	public static final QueryRol getQueryRol(String rol){
+	public static QueryRol getQueryRol(String rol){
 		if (rol.equalsIgnoreCase("subject") || rol.equalsIgnoreCase("s") || rol.equalsIgnoreCase("subjects")) {
 			return QueryRol.S;
 		}
@@ -71,11 +75,11 @@ public final class QueryUtils {
 		else return QueryRol.ALL;
 	}
 
-	public static final String createLookupQuery(String queryType, String term) {
+	public static String createLookupQuery(String queryType, String term) {
 		String[] terms={term};
 		return createLookupQuery(queryType,terms);
 	}
-	public static final String createLookupQuery(String queryType, String[] terms) {
+	public static String createLookupQuery(String queryType, String[] terms) {
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
 		String queryString="";
@@ -145,12 +149,12 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String createLookupQueryGraph(String queryType, String term) {
+	public static String createLookupQueryGraph(String queryType, String term) {
 		String[] terms={term};
 		return createLookupQueryGraph(queryType,terms);
 	}
 	
-	public static final String createLookupQueryGraph(final String queryType, String[] terms) {
+	public static String createLookupQueryGraph(final String queryType, String[] terms) {
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
 		String queryString="";
@@ -219,12 +223,12 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String createLookupQueryAnnotatedGraph(String queryType, String term, String metadataVersions) {
+	public static String createLookupQueryAnnotatedGraph(String queryType, String term, String metadataVersions) {
 		String[] terms={term};
 		return createLookupQueryAnnotatedGraph(queryType,terms,metadataVersions);
 	}
 	
-	public static final String createLookupQueryAnnotatedGraph(String queryType, String[] terms, String metadataVersions) {
+	public static String createLookupQueryAnnotatedGraph(String queryType, String[] terms, String metadataVersions) {
 		String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
@@ -325,12 +329,12 @@ public final class QueryUtils {
 		return queryString;
 	}*/
 
-	public static final String createLookupQueryAnnotatedGraph(final String queryType, String term, int staticVersionQuery, String metadataVersions) {
+	public static String createLookupQueryAnnotatedGraph(final String queryType, String term, int staticVersionQuery, String metadataVersions) {
 		String[] terms={term};
 		return createLookupQueryAnnotatedGraph(queryType,terms,staticVersionQuery,metadataVersions);
 	}
 	
-	public static final String createLookupQueryAnnotatedGraph(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions) {
+	public static String createLookupQueryAnnotatedGraph(final String queryType, String[] terms, int staticVersionQuery, String metadataVersions) {
 		String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
@@ -433,7 +437,7 @@ public final class QueryUtils {
 		 //System.out.println("Query is:"+queryString);
 		return queryString;
 	}*/
-	public static final String createLookupQueryAnnotatedGraph(String TP, int staticVersionQuery, String metadataVersions) {
+	public static String createLookupQueryAnnotatedGraph(String TP, int staticVersionQuery, String metadataVersions) {
 		String queryString = "";
 
 		queryString = "SELECT ?element1 ?element2 ?graph WHERE { " + "GRAPH <http://example.org/versions> {?graph " + metadataVersions + " "
@@ -448,12 +452,12 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-    public static final String createLookupQueryRDFStar_f(final String queryType, String term, String version_ts) {
+    public static String createLookupQueryRDFStar_f(final String queryType, String term, String version_ts) {
         String[] terms={term};
 		return createLookupQueryRDFStar_f(queryType,terms,version_ts);
     }
 
-    public static final String createLookupQueryRDFStar_f(final String queryType, String[] terms, String version_ts) {
+    public static String createLookupQueryRDFStar_f(final String queryType, String[] terms, String version_ts) {
         String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
@@ -573,12 +577,12 @@ public final class QueryUtils {
 		return queryString;
     }
 
-	public static final String createLookupQueryRDFStar_h(final String queryType, String term, String version_ts) {
+	public static String createLookupQueryRDFStar_h(final String queryType, String term, String version_ts) {
 		String[] terms={term};
 		return createLookupQueryRDFStar_h(queryType,terms,version_ts);
 	}
 
-	public static final String createLookupQueryRDFStar_h(final String queryType, String[] terms, String version_ts) {
+	public static String createLookupQueryRDFStar_h(final String queryType, String[] terms, String version_ts) {
 		String queryString = "";
 		QueryRol qtype = getQueryRol(queryType);
 		String subject, predicate, object;
@@ -690,7 +694,7 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String createTPLookupQuery(final String rol, String element) {
+	public static String createTPLookupQuery(final String rol, String element) {
 		String queryString = "";
 		if (rol.equalsIgnoreCase("subject") || rol.equalsIgnoreCase("s") || rol.equalsIgnoreCase("subjects")) {
 			if (element.startsWith("http"))
@@ -710,7 +714,7 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String getGraphs() {
+	public static String getGraphs() {
 		String queryString = "SELECT distinct ?graph WHERE { " + "GRAPH ?graph{";
 
 		queryString = queryString + " ?element1 ?element2 ?element3 .";
@@ -720,7 +724,7 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String getNumGraphVersions(String metadataVersions) {
+	public static String getNumGraphVersions(String metadataVersions) {
 		String queryString = "SELECT (count(distinct ?element1) as ?numVersions)  WHERE { " + "GRAPH <http://example.org/versions> {?graph "
 				+ metadataVersions + " ?element1 . }}";
 
@@ -732,7 +736,7 @@ public final class QueryUtils {
 	 * @return
 	 * @return
 	 */
-	public static final String serializeSolution(QuerySolution soln) {
+	public static String serializeSolution(QuerySolution soln) {
 		Iterator<String> vars = soln.varNames();
 		String rowResult = "";
 		while (vars.hasNext()) {
@@ -741,14 +745,13 @@ public final class QueryUtils {
 				Resource rs = (Resource) soln.get(var);
 				rowResult += "<" + rs.getURI() + "> ";
 			} else {
-				//rowResult += soln.getLiteral(var).asLiteral().getValue() + " ";
 				rowResult += soln.getLiteral(var).getString();
 			}
 		}
 		return rowResult.trim();
 	}
 
-	public static final String serializeSolution(BindingSet bindingSet) {
+	public static String serializeSolution(BindingSet bindingSet) {
 		StringBuilder resultRow = new StringBuilder();
 		for (Binding binding : bindingSet) {
 			resultRow.append(binding.getValue().stringValue()).append(" ");
@@ -761,7 +764,7 @@ public final class QueryUtils {
 	 * @return
 	 * @return
 	 */
-	public static final String serializeSolutionFilterOutGraphs(QuerySolution soln) {
+	public static String serializeSolutionFilterOutGraphs(QuerySolution soln) {
 		Iterator<String> vars = soln.varNames();
 		String rowResult = "";
 		while (vars.hasNext()) {
@@ -771,7 +774,6 @@ public final class QueryUtils {
 					Resource rs = (Resource) soln.get(var);
 					rowResult += "<" + rs.getURI() + "> ";
 				} else {
-					//rowResult += soln.getLiteral(var).asLiteral().getValue() + " ";
 					rowResult += soln.getLiteral(var).getString();
 				}
 			}
@@ -779,7 +781,7 @@ public final class QueryUtils {
 		return rowResult.trim();
 	}
 
-	public static final String serializeSolutionFilterOutGraphs(BindingSet bindingSet) {
+	public static String serializeSolutionFilterOutGraphs(BindingSet bindingSet) {
 		StringBuilder resultRow = new StringBuilder();
 		for (Binding binding : bindingSet) {
 			if (!binding.getName().equalsIgnoreCase("graph")
@@ -790,14 +792,14 @@ public final class QueryUtils {
 		return resultRow + ".";
 	}
 
-    public static final int getLimit(String[] terms) {
+    public static int getLimit(String[] terms) {
         if (terms.length > 4) {
             return Integer.parseInt(terms[3]) + Integer.parseInt(terms[4]);
         }
         return Integer.MAX_VALUE;
     }
 
-	public static final String getVersionInfos_f() {
+	public static String getVersionInfos_f() {
 		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions)\n" +
 				" (min(?ts) as ?initial_version_ts) where {\n" +
 				"    {\n" +
@@ -817,7 +819,7 @@ public final class QueryUtils {
 		return queryString;
 	}
 
-	public static final String getVersionInfos_h() {
+	public static String getVersionInfos_h() {
 		String queryString = "Select (count(distinct ?ts) -1 as ?cnt_versions)\n" +
 				" (min(?ts) as ?initial_version_ts) where {\n" +
 				"    {\n" +

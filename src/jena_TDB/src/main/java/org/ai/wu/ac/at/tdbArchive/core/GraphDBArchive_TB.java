@@ -705,7 +705,7 @@ public class GraphDBArchive_TB implements RDFArchive {
 		}
 
 		logger.info("Warmup Time:" + (endTime - startTime));
-		logger.info(finalResults);
+		logger.info("Query results: " + finalResults);
 	}
 
 	private static String createWarmupQuery() {
