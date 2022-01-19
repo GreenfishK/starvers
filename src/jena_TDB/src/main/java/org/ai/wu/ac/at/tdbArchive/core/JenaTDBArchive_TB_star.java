@@ -69,7 +69,15 @@ public class JenaTDBArchive_TB_star implements RDFArchive {
 		//Get the number of versions in the dataset (number of named graphs) and the initial version timestamp
 		String sparqlEndpoint = this.ts.getEndpoint();
 		RDFConnection conn = RDFConnection.connect(sparqlEndpoint);
-		QueryExecution qExec = conn.query(QueryUtils.getVersionInfos_f());
+		String query = null;
+		if (annotationStyle == RDFStarAnnotationStyle.FLAT) {
+			query = QueryUtils.getVersionInfos_f();
+		} else if (annotationStyle == RDFStarAnnotationStyle.HIERARCHICAL) {
+			query = QueryUtils.getVersionInfos_h();
+		} else {
+			logger.error("The Annotation Style must either be FLAT or HIERARCHICAL. Query is set to null");
+		}
+		QueryExecution qExec = conn.query(query);
 		ResultSet results = qExec.execSelect();
 
 		logger.info("Results from load query: " + results);
