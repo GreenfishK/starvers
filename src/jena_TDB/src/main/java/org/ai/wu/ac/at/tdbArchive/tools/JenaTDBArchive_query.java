@@ -198,9 +198,9 @@ public class JenaTDBArchive_query {
 			} else if (policy.equalsIgnoreCase("tb")) {
 				RDFArchive = new JenaTDBArchive_TB();
 			} else if (policy.equalsIgnoreCase("tb_star_f")) {
-				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
+				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.FLAT);
 			} else if (policy.equalsIgnoreCase("tb_star_h")) {
-				RDFArchive = new GraphDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);
+				RDFArchive = new JenaTDBArchive_TB_star(RDFStarAnnotationStyle.HIERARCHICAL);
 			} else if (policy.equalsIgnoreCase("cbtb")) {
 				RDFArchive = new JenaTDBArchive_CBTB();
 			} else if (policy.equalsIgnoreCase("hybrid")) {

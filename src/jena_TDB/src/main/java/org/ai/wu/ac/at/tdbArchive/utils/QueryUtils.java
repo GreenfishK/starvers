@@ -3,7 +3,9 @@
  */
 package org.ai.wu.ac.at.tdbArchive.utils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,11 +27,21 @@ public final class QueryUtils {
 
 	public static void logQueryStatistics(TripleStore tripleStore, String filePath, TreeMap<Integer, DescriptiveStatistics> vStats)
 			throws FileNotFoundException {
-		PrintWriter pw = new PrintWriter(filePath);
-		pw.println("tripleStore, ver, min, mean, max, stddev, count, sum");
+		File f = new File(filePath);
+		PrintWriter pw;
+		if ( f.exists() && !f.isDirectory() ) {
+			pw = new PrintWriter(new FileOutputStream(filePath, true));
+		}
+		else {
+			pw = new PrintWriter(filePath);
+			pw.append("tripleStore, ver, min, mean, max, stddev, count, sum\n");
+		}
+
 		for (Map.Entry<Integer, DescriptiveStatistics> ent : vStats.entrySet()) {
-			pw.println(tripleStore + ", " + ent.getKey() + ", " + ent.getValue().getMin() + ", " + ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
-					+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()+", "+ent.getValue().getSum());
+			pw.append(tripleStore + ", " + ent.getKey() + ", " + ent.getValue().getMin() + ", "
+					+ ent.getValue().getMean() + ", " + ent.getValue().getMax() + ", "
+					+ ent.getValue().getStandardDeviation() + ", " + ent.getValue().getN()
+					+ ", "+ent.getValue().getSum());
 		}
 		pw.close();
 	}

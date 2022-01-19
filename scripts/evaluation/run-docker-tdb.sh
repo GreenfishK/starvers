@@ -26,10 +26,10 @@ case "$1" in
 esac
 
 
-policies="tb tb_star_f tb_star_h" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="tb_star_f" # tb tb_star_h tb_star_f ic cb cbtb"
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
-tripleStores="GraphDB" # JenaTDB GraphDB
+tripleStores="JenaTDB GraphDB" # JenaTDB GraphDB
 
 echo ${queries}
 # If building with maven-assembly-plugin use: java -cp target/tdbQuery-0.8-jar-with-dependencies.jar org/ai/wu/ac/at/tdbArchive/tools/JenaTDBArchive_query \
