@@ -159,7 +159,7 @@ public class TripleStoreHandler {
                 return repositoryManager.getRepository("evalGraphDB").getConnection();
             } catch (RepositoryConfigException | RepositoryException e) {
                 logger.error(e.getMessage());
-                return null;
+                throw e;
             }
         } else {
             logger.error("To get a GraphDB connection the triple store must be GraphDB");
