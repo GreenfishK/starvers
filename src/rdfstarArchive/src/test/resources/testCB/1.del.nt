@@ -1,0 +1,2 @@
+<http://example.org/uri1> <http://example.org/predicate1> "literal4" .
+<http://example.org/uri2> <http://example.org/predicate1> "literal1" .
