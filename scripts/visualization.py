@@ -59,17 +59,17 @@ ts = datetime(2022, 1, 21, 10, 36, 39)
 
 # Jena
 # simple lookups, 49 queries
-plt1 = plot_mat_lookup_queries(ts, "JenaTDB", "p").savefig(fname=figures_out + "JenaTDB_p_lookup", format='png', dpi='figure')
+plt1 = plot_mat_lookup_queries(ts, "JenaTDB", "p").savefig(fname=figures_out + "JenaTDB_p_lookup.png", format='png', dpi='figure')
 plt.close(plt1)
 # other triple patterns, 13 queries
-plt2 = plot_mat_lookup_queries(ts, "JenaTDB", "po").savefig(fname=figures_out + "JenaTDB_po_lookup", format='png', dpi='figure')
+plt2 = plot_mat_lookup_queries(ts, "JenaTDB", "po").savefig(fname=figures_out + "JenaTDB_po_lookup.png", format='png', dpi='figure')
 plt.close(plt2)
 
 # GraphDB
 # simple lookups, 49 queries
-plt3 = plot_mat_lookup_queries(ts, "GraphDB", "p").savefig(fname=figures_out + "GraphDB_p_lookup", format='png', dpi='figure')
+plt3 = plot_mat_lookup_queries(ts, "GraphDB", "p").savefig(fname=figures_out + "GraphDB_p_lookup.png", format='png', dpi='figure')
 plt.close(plt3)
 
 # other triple patterns, 13 queries
-plt4 = plot_mat_lookup_queries(ts, "GraphDB", "po").savefig(fname=figures_out + "GraphDB_po_lookup", format='png', dpi='figure')
+plt4 = plot_mat_lookup_queries(ts, "GraphDB", "po").savefig(fname=figures_out + "GraphDB_po_lookup.png", format='png', dpi='figure')
 plt.close(plt4)
