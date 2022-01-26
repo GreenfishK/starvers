@@ -15,7 +15,7 @@ docker run hello-world
 ## Build docker images
 Go to BEAR/src/rdfstarArchive and build the java rdfstoreQuery project with docker. The docker file uses a maven image to build and package the project with dependencies: 
 ```
-docker build -t bear-jena .
+docker build -t bear-rdfstarstores .
 ```
 Go to the  built jar, which should be in `/var/lib/docker/overlay2/<latest_build_id>/diff/target/META-INF/services/org.eclipse.rdf4j.rio.RDFParserFactory` and add following line to the file:
 `org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory`
