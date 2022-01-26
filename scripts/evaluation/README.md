@@ -15,6 +15,7 @@ home/.BEAR/
         └── *tdb
 	    └──*bearb-hour
 	       └── <hostname><system-timestamp>
+	       	   └── dataset_infos.csv
 	       	   └── time-tb-mat-lookup_queries_p.txt.csv
 		   └── time-tb-mat-lookup_queries_po.txt.csv
 		   └── time-tb_star_h-mat-lookup_queries_p.txt.csv
