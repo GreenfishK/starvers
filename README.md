@@ -37,7 +37,7 @@ The raw RDF(*) datasets are taken from the location which is provided as paramet
 Note that we are not evaluating IC or CB policies as for [Data Citation](https://rd-alliance.org/system/files/documents/RDA-DC-Recommendations_151020.pdf), which is our main motivation for this project, timestamped-based versioning is recommended. This can, nevertheless, still be done with our script by passing the corresponding parameters. However, one needs to load the TDB datasets manually first and direct java invocation will be used for these policies, as in the original BEAR and OSTRICH framework.
 
 ## Plot performance measurements
-Use the [python script](https://github.com/GreenfishK/BEAR/blob/master/scripts/plot_tb_and_tb_star.py) to plot the performance across all versions for different timestamp-based archiving policies, query categories and query sets.
+Use the [python script](https://github.com/GreenfishK/BEAR/blob/master/scripts/visualization.py) to plot the performance across all versions for different timestamp-based archiving policies, query categories and query sets.
 
 Contact
 ==============
