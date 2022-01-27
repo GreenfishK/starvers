@@ -46,7 +46,7 @@ def plot_mat_lookup_queries(timestamp: datetime, triple_store: str, triple_patte
 
     fig, (ax1, ax2) = plt.subplots(2)
     fig.set_size_inches(24, 13.5, forward=True)
-    fig.text(0.08, 0.5, 'Total query time (in ms)', va='center', rotation='vertical', size=20)
+    fig.text(0.08, 0.5, 'Mean query time (in ms)', va='center', rotation='vertical', size=20)
     ax1.tick_params(axis='both', which='major', labelsize=14)
     ax2.tick_params(axis='both', which='major', labelsize=14)
     ax1.xaxis.label.set_size(20)
