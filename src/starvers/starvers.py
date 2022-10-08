@@ -273,87 +273,6 @@ class TripleStoreEngine:
         return df
 
 
-    def _resolve_paths(self, node: CompValue):
-        if isinstance(node, CompValue):
-            if node.name == "BGP":
-                resolved_triples = []
-
-                def resolve(path: Path, subj, obj):
-                    if isinstance(path, SequencePath):
-                        for i, ref in enumerate(path.args, start=1):
-                            if i == 1:
-                                s = subj
-                                p = ref
-                                o = Variable("?dummy{0}".format(str(i)))
-                            elif i == len(path.args):
-                                s = Variable("?dummy{0}".format(len(path.args) - 1))
-                                p = ref
-                                o = obj
-                            else:
-                                s = Variable("?dummy{0}".format(str(i - 1)))
-                                p = ref
-                                o = Variable("?dummy{0}".format(str(i)))
-                            if isinstance(ref, URIRef):
-                                t = (s, p, o)
-                                resolved_triples.append(t)
-                                continue
-                            if isinstance(ref, Path):
-                                resolve(p, s, o)
-                            else:
-                                raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
-                                                                    "{0}. This case has not been covered yet. "
-                                                                    "Path will not be resolved.".format(type(ref)))
-
-                    if isinstance(path, NegatedPath):
-                        raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
-                    if isinstance(path, AlternativePath):
-                        raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
-                                                            "Path will not be resolved. Instead of alternative paths "
-                                                            "try using the following expression: "
-                                                            "{ <triple statements> } "
-                                                            "UNION "
-                                                            "{ <triple statements> }")
-                    if isinstance(path, InvPath):
-                        if isinstance(path.arg, URIRef):
-                            t = (obj, path.arg, subj)
-                            resolved_triples.append(t)
-                            return
-                        else:
-                            raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
-                                                                "was given. This case is not implemented yet.")
-                    if isinstance(path, MulPath):
-                        if triple[1].mod == ZeroOrOne:
-                            raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
-                                                                "Path will not be resolved")
-                        if triple[1].mod == ZeroOrMore:
-                            raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
-                                                                "Path will not be resolved")
-                        if triple[1].mod == OneOrMore:
-                            raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
-                                                                "Path will not be resolved")
-
-                for k, triple in enumerate(node.triples):
-                    if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
-                        if isinstance(triple[1], Path):
-                            resolve(triple[1], triple[0], triple[2])
-                        else:
-                            if isinstance(triple[1], Identifier):
-                                resolved_triples.append(triple)
-                            else:
-                                raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
-                                                                    "This case has not been covered yet.".format(triple[1]))
-                    else:
-                        raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
-                                                            " This is not implemented yet.".format(triple[0], triple[2]))
-
-                node.triples.clear()
-                node.triples.extend(resolved_triples)
-                node.triples = algebra.reorderTriples(node.triples)
-
-            elif node.name == "TriplesBlock":
-                raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
-                                                    "If there are any paths they will not be resolved.")
-
     def _timestamp_query(self, query, version_timestamp: datetime = None) -> str:
         """
         Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
@@ -384,6 +303,7 @@ class TripleStoreEngine:
                 if node.name == "BGP":
                     bgp_id = "BGP_" + str(len(bgp_triples))
                     bgp_triples[bgp_id] = node.triples.copy()
+                    node.triples = []
                     node.triples.append((rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
                                          rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
                                          rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))))
@@ -391,11 +311,93 @@ class TripleStoreEngine:
                     raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
                                                         "No versioning extensions will be injected.")
 
+        def resolve_paths(node: CompValue):
+            if isinstance(node, CompValue):
+                if node.name == "BGP":
+                    resolved_triples = []
+
+                    def resolve(path: Path, subj, obj):
+                        if isinstance(path, SequencePath):
+                            for i, ref in enumerate(path.args, start=1):
+                                if i == 1:
+                                    s = subj
+                                    p = ref
+                                    o = Variable("?dummy{0}".format(str(i)))
+                                elif i == len(path.args):
+                                    s = Variable("?dummy{0}".format(len(path.args) - 1))
+                                    p = ref
+                                    o = obj
+                                else:
+                                    s = Variable("?dummy{0}".format(str(i - 1)))
+                                    p = ref
+                                    o = Variable("?dummy{0}".format(str(i)))
+                                if isinstance(ref, URIRef):
+                                    t = (s, p, o)
+                                    resolved_triples.append(t)
+                                    continue
+                                if isinstance(ref, Path):
+                                    resolve(p, s, o)
+                                else:
+                                    raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
+                                                                        "{0}. This case has not been covered yet. "
+                                                                        "Path will not be resolved.".format(type(ref)))
+
+                        if isinstance(path, NegatedPath):
+                            raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
+                        if isinstance(path, AlternativePath):
+                            raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
+                                                                "Path will not be resolved. Instead of alternative paths "
+                                                                "try using the following expression: "
+                                                                "{ <triple statements> } "
+                                                                "UNION "
+                                                                "{ <triple statements> }")
+                        if isinstance(path, InvPath):
+                            if isinstance(path.arg, URIRef):
+                                t = (obj, path.arg, subj)
+                                resolved_triples.append(t)
+                                return
+                            else:
+                                raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
+                                                                    "was given. This case is not implemented yet.")
+                        if isinstance(path, MulPath):
+                            if triple[1].mod == ZeroOrOne:
+                                raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
+                                                                    "Path will not be resolved")
+                            if triple[1].mod == ZeroOrMore:
+                                raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
+                                                                    "Path will not be resolved")
+                            if triple[1].mod == OneOrMore:
+                                raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
+                                                                    "Path will not be resolved")
+
+                    for k, triple in enumerate(node.triples):
+                        if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
+                            if isinstance(triple[1], Path):
+                                resolve(triple[1], triple[0], triple[2])
+                            else:
+                                if isinstance(triple[1], Identifier):
+                                    resolved_triples.append(triple)
+                                else:
+                                    raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
+                                                                        "This case has not been covered yet.".format(triple[1]))
+                        else:
+                            raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
+                                                                " This is not implemented yet.".format(triple[0], triple[2]))
+
+                    node.triples.clear()
+                    node.triples.extend(resolved_triples)
+                    node.triples = algebra.reorderTriples(node.triples)
+
+                elif node.name == "TriplesBlock":
+                    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
+                                                        "If there are any paths they will not be resolved.")
+
+                                                        
         query_tree = parser.parseQuery(query_vers)
         query_algebra = algebra.translateQuery(query_tree)
         algebra.translateAlgebra
         try:
-            algebra.traverse(query_algebra.algebra, visitPre=self._resolve_paths)
+            algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
             algebra.traverse(query_algebra.algebra, visitPre=inject_versioning_extensions)
         except ExpressionNotCoveredException as e:
             err = "Query will not be timestamped because of following error: {0}".format(e)
@@ -406,6 +408,7 @@ class TripleStoreEngine:
             ver_block_template = \
                 open(template_path("templates/query_utils/versioning_query_extensions.txt"), "r").read()
 
+            # Create the block of timestamped triple statements.
             ver_block = ""
             for i, triple in enumerate(triples):
                 templ = ver_block_template
@@ -415,6 +418,7 @@ class TripleStoreEngine:
                                           "?valid_until_{0}".format(str(i)),
                                           bgp_identifier)
 
+            # 
             dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
                            + rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_identifier)).n3() + " "\
                            + rdflib.term.Literal('__{0}dummy_object__'.format(bgp_identifier)).n3() + "."

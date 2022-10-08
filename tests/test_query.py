@@ -24,3 +24,12 @@ def test_select_all():
 
     assert len(df.index) == 46418
  
+
+def test_two_triple_stmts():
+    with open("tests/queries/two_triple_stmts.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+
+    assert len(df.index) == 46418
