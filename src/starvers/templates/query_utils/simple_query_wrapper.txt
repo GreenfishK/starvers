@@ -1,0 +1,6 @@
+Select {0} where {{
+    # original query comes here
+    {{
+        {1}
+    }}
+}}

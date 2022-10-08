@@ -14,4 +14,7 @@ class ExpressionNotCoveredException(Exception):
     pass
 
 class InputMissing(Exception):
-        pass
+    pass
+
+class ReservedPrefixError(Exception):
+    pass
