@@ -1,5 +1,5 @@
 from ._helper import template_path, versioning_timestamp_format
-from .prefixes import versioning_prefixes, split_prefixes_query
+from ._prefixes import versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
 
