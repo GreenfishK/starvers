@@ -1,0 +1,5 @@
+PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
+delete where
+{
+<http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil' .
+}

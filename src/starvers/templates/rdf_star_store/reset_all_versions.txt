@@ -1,0 +1,10 @@
+{0}
+# reset versions
+delete {{
+    ?s vers:valid_from ?o ;
+       vers:valid_until ?o
+}}
+where
+{{
+   ?s ?p ?o .
+}}

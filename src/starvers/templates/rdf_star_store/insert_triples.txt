@@ -1,0 +1,12 @@
+# Prefixes
+{0}
+
+# Insert statement
+insert {{
+    {1} {2} {3}.
+    <<{1} {2} {3}>>  vers:valid_from ?newVersion.
+    <<{1} {2} {3}>>  vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+}}
+where {{
+    BIND(xsd:dateTime(NOW()) AS ?newVersion).
+}}

@@ -1,0 +1,14 @@
+# Prefixes
+{0}
+Select {1} where {{
+# original query comes here
+{{
+    {2}
+}}
+# citation timestamp
+bind("{3}"^^xsd:dateTime as ?TimeOfExecution)
+
+# data versioning query extension
+{4}
+
+}} {5}

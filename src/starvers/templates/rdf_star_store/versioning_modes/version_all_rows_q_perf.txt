@@ -1,0 +1,11 @@
+{0}
+insert
+{{
+    <<?s ?p ?o>> vers:valid_from ?currentTimestamp
+               ; vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+}}
+where
+{{
+   ?s ?p ?o .
+   BIND(xsd:dateTime("{1}"^^xsd:dateTime) AS ?currentTimestamp).
+}}

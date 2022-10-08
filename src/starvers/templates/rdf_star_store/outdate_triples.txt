@@ -1,0 +1,19 @@
+# prefixes
+{0}
+
+# Delete and insert statements
+delete {{
+    <<?subjectToOutdate ?predicateToOutdate ?objectToOutdate>> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
+}}
+insert {{
+    # outdate old triples with date as of now()
+    <<?subjectToOutdate ?predicateToOutdate ?objectToOutdate>> vers:valid_until ?newVersion.
+}}
+where {{
+    bind({1} as ?subjectToOutdate)
+    bind({2} as ?predicateToOutdate)
+    bind({3} as ?objectToOutdate)
+    # versioning
+    <<?subjectToOutdate ?predicateToOutdate ?objectToOutdate>> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .
+    BIND(xsd:dateTime(NOW()) AS ?newVersion).
+}}

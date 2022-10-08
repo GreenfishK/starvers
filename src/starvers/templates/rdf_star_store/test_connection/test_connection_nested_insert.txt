@@ -1,0 +1,10 @@
+PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
+{0}
+insert
+{{
+<<<http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil'>> vers:valid_from ?newVersion.
+<<<http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil'>> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+}}
+where {{
+    BIND(xsd:dateTime(NOW()) AS ?newVersion).
+}}

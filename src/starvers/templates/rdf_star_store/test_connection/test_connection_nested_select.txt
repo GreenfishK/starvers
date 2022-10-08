@@ -1,0 +1,5 @@
+{0}
+select * where {{
+    <<?s ?p ?o>> vers:valid_from ?valid_from_date.
+    <<?s ?p ?o>> vers:valid_until ?valid_until_date.
+}}

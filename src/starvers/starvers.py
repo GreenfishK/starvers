@@ -354,7 +354,7 @@ class TripleStoreEngine:
                 raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
                                                     "If there are any paths they will not be resolved.")
 
-    def _timestamp_query(self, query, execution_timestamp: datetime = None) -> str:
+    def _timestamp_query(self, query, version_timestamp: datetime = None) -> str:
         """
         Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
         the query with a code snippet that ensures that a snapshot of the data as of q_handler
@@ -362,22 +362,20 @@ class TripleStoreEngine:
         is attached to the query to ensure a unique sort of the data.
 
         :param query:
-        :param execution_timestamp:
-        Use this parameter only for presentation purpose as the code for color encoding will make the SPARQL
-        query erroneous!
+        :param version_timestamp:
         :return: A query string extended with the given timestamp
         """
 
         prefixes, query = split_prefixes_query(query)
         query_vers = prefixes + "\n" + query
 
-        if execution_timestamp is None:
+        if version_timestamp is None:
             current_datetime = datetime.now()
             timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
             execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
             timestamp = versioning_timestamp_format(execution_datetime)
         else:
-            timestamp = versioning_timestamp_format(execution_timestamp)  # -> str
+            timestamp = versioning_timestamp_format(version_timestamp)  # -> str
 
         bgp_triples = {}
 
@@ -413,8 +411,8 @@ class TripleStoreEngine:
                 templ = ver_block_template
                 triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
                 ver_block += templ.format(triple_n3,
-                                          "?triple_statement_{0}_valid_from".format(str(i)),
-                                          "?triple_statement_{0}_valid_until".format(str(i)),
+                                          "?valid_from_{0}".format(str(i)),
+                                          "?valid_until_{0}".format(str(i)),
                                           bgp_identifier)
 
             dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
@@ -425,7 +423,7 @@ class TripleStoreEngine:
 
         query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
 
-        return query_vers_out
+        return query_vers_out, timestamp
 
     def query(self, select_statement, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
         """
@@ -443,18 +441,14 @@ class TripleStoreEngine:
         logging.info("Querying ...")
 
         if yn_timestamp_query:
-            if timestamp is None:
-                timestamped_query = self._timestamp_query(query=select_statement)
-            else:
-                timestamped_query = self._timestamp_query(query=select_statement, execution_timestamp=timestamp)
+            timestamped_query, version_timestamp = self._timestamp_query(query=select_statement, version_timestamp=timestamp)
 
             logging.info("Timestamped query with timestamp {0} being executed:"
-                         " \n {1}".format(versioning_timestamp_format(timestamp), timestamped_query))
+                         " \n {1}".format(version_timestamp, timestamped_query))
             self.sparql_get_with_post.setQuery(timestamped_query)
         else:
-            query = select_statement
-            logging.info("Query being executed: \n {0}".format(query))
-            self.sparql_get_with_post.setQuery(query)
+            logging.info("Query being executed: \n {0}".format(select_statement))
+            self.sparql_get_with_post.setQuery(select_statement)
         
         # The query sometimes gets recognized as LOAD even though it is a SELECT statement. this results into
         # a failed execution as we are using an get endpoint which is not allowed with LOAD
