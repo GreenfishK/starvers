@@ -18,20 +18,6 @@ def _prefixes_to_sparql(prefixes: dict) -> str:
     return sparql_prefixes
 
 
-def attach_prefixes(query: str, prefixes: dict) -> str:
-    """
-    Attaches the prologue in SPARQL syntax to the SPARQL query. The passed query should therefore have no prologue.
-
-    :param query: A query without prologue (Prefixes at the beginning of the query)
-    :param prefixes: Prologue that comes before the query.
-    :return: A full query including the prologue
-    """
-    template = open(template_path("templates/query_utils/prefixes_query_wrapper.txt"), "r").read()
-    sparql_prefixes = _prefixes_to_sparql(prefixes)
-    query_with_prefixes = template.format(sparql_prefixes, query)
-    return query_with_prefixes
-
-
 def versioning_prefixes(prefixes: dict or str) -> str:
     """
     Extends the given prefixes by citing: <http://ontology.ontotext.com/citing/>
