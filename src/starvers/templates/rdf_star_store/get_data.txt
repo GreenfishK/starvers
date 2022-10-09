@@ -1,9 +1,0 @@
-# prefixes
-{0}
-
-Select * where {{
-    # original query comes here
-    {{
-        {1}
-    }}
-}}
