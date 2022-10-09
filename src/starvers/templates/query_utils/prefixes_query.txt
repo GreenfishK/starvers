@@ -1,4 +1,0 @@
-# Prefixes
-{0}
-# Query
-{1}

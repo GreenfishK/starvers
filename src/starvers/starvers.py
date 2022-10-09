@@ -1,11 +1,11 @@
-from ._helper import template_path, versioning_timestamp_format
+from ._helper import template_path, versioning_timestamp_format, to_df, pprintAlgebra
 from ._prefixes import versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
 
 from urllib.error import URLError
 from enum import Enum
-from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON, Wrapper
+from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 import pandas as pd
 from datetime import datetime
 import logging
@@ -55,7 +55,7 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = template_path("templates/rdf_star_store")
+        self._template_location = template_path("templates")
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -199,8 +199,8 @@ class TripleStoreEngine:
         """
 
         final_prefixes = versioning_prefixes("")
-        versioning_mode_dir1 = self._template_location + "/../rdf_star_store/versioning_modes"
-        versioning_mode_dir2 = self._template_location + "/../query_utils/versioning_modes"
+        versioning_mode_dir1 = self._template_location + "/init_versioning_modes"
+        versioning_mode_dir2 = self._template_location + "/query_modes"
 
         if versioning_mode == VersioningMode.Q_PERF and initial_timestamp is not None:
             version_timestamp = versioning_timestamp_format(initial_timestamp)
@@ -221,56 +221,15 @@ class TripleStoreEngine:
             raise NoVersioningMode("Versioning mode is neither Q_PERF nor SAVE_MEM. Initial versioning will not be"
                                    "executed. Check also whether an initial timestamp was passed in case of Q_PERF.")
 
-        with open(self._template_location + "/../rdf_star_store/version_all_rows.txt", "w") as vers:
+        with open(self._template_location + "/version_all_rows.txt", "w") as vers:
             vers.write(versioning_mode_template1)
-        with open(self._template_location + "/../query_utils/versioning_query_extensions.txt", "w") as vers:
+        with open(self._template_location + "/versioning_query_extensions.txt", "w") as vers:
             vers.write(versioning_mode_template2)
 
         self.sparql_post.setQuery(update_statement)
         self.sparql_post.query()
 
         logging.info(message)
-
-
-    def _to_df(self, result: Wrapper.QueryResult) -> pd.DataFrame:
-        """
-
-        :param result:
-        :return: Dataframe
-        """
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_colwidth', None)
-
-        def format_value(res_value):
-            value = res_value["value"]
-            lang = res_value.get("xml:lang", None)
-            datatype = res_value.get("datatype", None)
-            if lang is not None:
-                value += "@" + lang
-            if datatype is not None:
-                value += " [" + datatype + "]"
-            return value
-
-        results = result.convert()
-
-        column_names = []
-        for var in results["head"]["vars"]:
-            column_names.append(var)
-        df = pd.DataFrame(columns=column_names)
-
-        values = []
-        for r in results["results"]["bindings"]:
-            row = []
-            for col in results["head"]["vars"]:
-                if col in r:
-                    result_value = format_value(r[col])
-                else:
-                    result_value = None
-                row.append(result_value)
-            values.append(row)
-        df = df.append(pd.DataFrame(values, columns=df.columns))
-
-        return df
 
 
     def _timestamp_query(self, query, version_timestamp: datetime = None) -> str:
@@ -284,7 +243,7 @@ class TripleStoreEngine:
         :param version_timestamp:
         :return: A query string extended with the given timestamp
         """
-
+        logging.info("Creating timestamped query ...")
         prefixes, query = split_prefixes_query(query)
         query_vers = prefixes + "\n" + query
 
@@ -300,20 +259,22 @@ class TripleStoreEngine:
 
         def inject_versioning_extensions(node):
             if isinstance(node, CompValue):
-                if node.name == "BGP":
+                if node.name == "BGP" or node.name == "TriplesBlock":
                     bgp_id = "BGP_" + str(len(bgp_triples))
                     bgp_triples[bgp_id] = node.triples.copy()
                     node.triples = []
                     node.triples.append((rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
                                          rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
                                          rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))))
-                elif node.name == "TriplesBlock":
-                    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
-                                                        "No versioning extensions will be injected.")
+
+                #elif node.name == "TriplesBlock":
+                #    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
+                #                                        "No versioning extensions will be injected.")
 
         def resolve_paths(node: CompValue):
+
             if isinstance(node, CompValue):
-                if node.name == "BGP":
+                if node.name == "BGP" or node.name == "TriplesBlock":
                     resolved_triples = []
 
                     def resolve(path: Path, subj, obj):
@@ -388,27 +349,31 @@ class TripleStoreEngine:
                     node.triples.extend(resolved_triples)
                     node.triples = algebra.reorderTriples(node.triples)
 
-                elif node.name == "TriplesBlock":
-                    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
-                                                        "If there are any paths they will not be resolved.")
+                #elif node.name == "TriplesBlock":
+                #    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
+                #                                        "If there are any paths they will not be resolved.")
 
                                                         
         query_tree = parser.parseQuery(query_vers)
         query_algebra = algebra.translateQuery(query_tree)
-        algebra.translateAlgebra
         try:
+            logging.info("Resolving SPARQL paths to normal triple statements ...")
             algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
+            logging.info("Injecting versioning extensions into query ...")
             algebra.traverse(query_algebra.algebra, visitPre=inject_versioning_extensions)
         except ExpressionNotCoveredException as e:
             err = "Query will not be timestamped because of following error: {0}".format(e)
             raise ExpressionNotCoveredException(err)
 
+        # Create the SPARQL representation from the query algebra tree.
         query_vers_out = algebra.translateAlgebra(query_algebra)
+
+        # Replace each block of triples (labeled as dummy block) 
+        # with their corresponding block of timestamped triple statements.
         for bgp_identifier, triples in bgp_triples.items():
             ver_block_template = \
-                open(template_path("templates/query_utils/versioning_query_extensions.txt"), "r").read()
+                open(template_path("templates/versioning_query_extensions.txt"), "r").read()
 
-            # Create the block of timestamped triple statements.
             ver_block = ""
             for i, triple in enumerate(triples):
                 templ = ver_block_template
@@ -442,7 +407,6 @@ class TripleStoreEngine:
 
         :return: a pandas dataframe of the RDF result set.
         """
-        logging.info("Querying ...")
 
         if yn_timestamp_query:
             timestamped_query, version_timestamp = self._timestamp_query(query=select_statement, version_timestamp=timestamp)
@@ -457,8 +421,10 @@ class TripleStoreEngine:
         # The query sometimes gets recognized as LOAD even though it is a SELECT statement. this results into
         # a failed execution as we are using an get endpoint which is not allowed with LOAD
         self.sparql_get_with_post.queryType = 'SELECT'
+        logging.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
-        df = self._to_df(result)
+        logging.info("Converting results ... ")
+        df = to_df(result)
 
         return df
 
