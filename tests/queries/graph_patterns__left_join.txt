@@ -1,14 +1,15 @@
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-PREFIX dc:   <http://purl.org/dc/elements/1.1/>
-PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
-SELECT ?givenName
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?type ?label ?comment
 WHERE {
-    ?x foaf:givenName  ?givenName .
+    <http://dbpedia.org/resource/Donald_Trump> rdf:type ?type .
     OPTIONAL {
-        ?x dc:date ?date
+        <http://dbpedia.org/resource/Donald_Trump> rdfs:label ?label .
     } .
     OPTIONAL {
-        ?x dc:datetime ?datetime
+        <http://dbpedia.org/resource/Donald_Trump> rdfs:comment ?comment .
     } .
-    FILTER ( bound(?date) )
+    FILTER ( bound(?label) )
 }
