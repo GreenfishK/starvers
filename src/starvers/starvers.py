@@ -422,7 +422,7 @@ class TripleStoreEngine:
             dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
                            + rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_identifier)).n3() + " "\
                            + rdflib.term.Literal('__{0}dummy_object__'.format(bgp_identifier)).n3() + "."
-            ver_block += 'bind("{0}"^^xsd:dateTime as ?TimeOfExecution{1})'.format(timestamp, bgp_identifier)
+            ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
             query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
         query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
