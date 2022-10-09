@@ -38,6 +38,8 @@ def test_functions__functional_forms():
     with open("tests/queries/functions__functional_forms.txt", "r") as file:
         query = file.read()
     file.close()
+    # TODO: fix bug with TriplesBlock
+    # TODO: create a proper test query
 
     df = engine.query(query)
     assert 1 == 1
@@ -47,9 +49,12 @@ def test_functions__functional_forms_not_exists():
     with open("tests/queries/functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
     file.close()
+    # TODO: fix bug with TriplesBlock
+    # Bug is actually in translateAlgebra in the block with node.name.endswith("Builtin_EXISTS")
+    # and node.name.endswith("Builtin_NOTEXISTS").
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 712
 
 
 def test_graph_patterns__aggregate_join():
@@ -115,13 +120,15 @@ def test_graph_patterns__left_join():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 8
+    assert len(df.columns) == 3
 
 def test_graph_patterns__minus():
     with open("tests/queries/graph_patterns__minus.txt", "r") as file:
         query = file.read()
     file.close()
-    # TODO: fix approach. Do not restart counting valid_from_x in every BGP but continue counting
+    # TODO: fix approach with counting valid_from_x in every BGP. 
+    # The suffix should be unique for every valid_from_x and valid_from_y in the whole query, not just on BGP or TriplesBlock level.
 
     df = engine.query(query)
     assert len(df.index) == 8

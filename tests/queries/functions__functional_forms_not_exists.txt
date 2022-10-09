@@ -1,7 +1,7 @@
-PREFIX citing: <https://github.com/GreenfishK/DataCitation/citing/>
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
 
-select ?s ?p ?o {
-	?s ?p ?o .
-    filter not exists {?s citing:valid_from ?valid_from} .
-    filter not exists {?s citing:valid_until ?valid_until} .
+select  ?p ?o {
+	<http://dbpedia.org/resource/Donald_Trump> ?p ?o .
+    filter not exists {<http://dbpedia.org/resource/Donald_Trump> rdf:type ?o} .
+    filter not exists {<http://dbpedia.org/resource/Donald_Trump> rdfs:label ?o} .
 }
