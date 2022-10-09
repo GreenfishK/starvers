@@ -15,8 +15,9 @@ post_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_f_hour/sta
 LOGGER = logging.getLogger(__name__)
 engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
-def test_select_all():
-    with open("tests/queries/select_all.txt", "r") as file:
+def test_most_basic():
+    logging.info("Start test")
+    with open("tests/queries/most_basic.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -30,6 +31,6 @@ def test_two_triple_stmts():
         query = file.read()
     file.close()
 
-    df = engine.query(query)
+    #df = engine.query(query)
 
-    assert len(df.index) == 46418
+    #assert len(df.index) == 46418
