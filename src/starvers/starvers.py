@@ -323,15 +323,16 @@ class TripleStoreEngine:
                                 return
                             else:
                                 raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
-                                                                    "was given. This case is not implemented yet.")
+                                                                    "was given. This case is not implemented yet.")  
+                        
                         if isinstance(path, MulPath):
-                            if triple[1].mod == ZeroOrOne:
+                            if path.mod == "?":
                                 raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
                                                                     "Path will not be resolved")
-                            if triple[1].mod == ZeroOrMore:
+                            if path.mod == "*": 
                                 raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
                                                                     "Path will not be resolved")
-                            if triple[1].mod == OneOrMore:
+                            if path.mod == "+":
                                 raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
                                                                     "Path will not be resolved")
 
