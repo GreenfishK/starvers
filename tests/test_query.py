@@ -43,6 +43,54 @@ def test_functions__functional_forms_not_exists():
     assert len(df.index) == 712
 
 
+def test_functions__functions_on_dates_and_time():
+    with open("tests/queries/functions__functions_on_dates_and_time.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 1
+    assert len(df.columns) == 9
+
+def test_functions__functions_on_numerics():
+    with open("tests/queries/functions__functions_on_numerics.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 1
+    assert len(df.columns) == 5
+
+def test_functions__functions_on_rdf_terms():
+    with open("tests/queries/functions__functions_on_rdf_terms.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 64
+    assert len(df.columns) == 9
+
+
+def test_functions__functions_on_strings():
+    with open("tests/queries/functions__functions_on_strings.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 1
+    assert len(df.columns) == 13
+
+
+def test_functions__hash_functions():
+    with open("tests/queries/functions__hash_functions.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 1
+    assert len(df.columns) == 5
+
+
 def test_graph_patterns__aggregate_join():
     with open("tests/queries/graph_patterns__aggregate_join.txt", "r") as file:
         query = file.read()
@@ -169,7 +217,7 @@ def test_complex_query_2():
     df = engine.query(query)
     assert len(df.index) == 720
 
-def test_complex_query_2():
+def test_complex_query_3():
     with open("tests/queries/complex_query_3.txt", "r") as file:
         query = file.read()
     file.close()
