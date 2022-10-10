@@ -10,8 +10,13 @@ TODO: Use a docker container for GraphDB : https://github.com/Ontotext-AD/graphd
 """
 
 # Test parameters 
-get_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour"
-post_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour/statements"
+#Home PC
+#get_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour"
+#post_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour/statements"
+
+#Office
+get_endpoint = "http://ThinkPad-T14s-FK:7200/repositories/BEAR-B_hourly_TB_star_h"
+post_endpoint = "http://ThinkPad-T14s-FK:7200/repositories/BEAR-B_hourly_TB_star_h/statements"
 
 LOGGER = logging.getLogger(__name__)
 engine = TripleStoreEngine(get_endpoint, post_endpoint)
