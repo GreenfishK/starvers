@@ -192,13 +192,35 @@ def test_graph_patterns__union():
     assert len(df.index) == 16
 
 
-def test_property_path__zero_or_more():
-    with open("tests/queries/property_path__zero_or_more.txt", "r") as file:
+def test_property_path__alternative_path():
+    with open("tests/queries/property_path__alternative_path.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 31
+    assert len(df.columns) == 4
+    # TODO: implement this
+
+
+def test_property_path__inverse_path():
+    with open("tests/queries/property_path__inverse_path.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 48
+    assert len(df.columns) == 2
+
+
+def test_property_path__negated_property_set():
+    with open("tests/queries/property_path__negated_property_set.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 87700
+    # TODO: implement this
 
 
 def test_property_path__one_or_more():
@@ -208,6 +230,28 @@ def test_property_path__one_or_more():
 
     df = engine.query(query)
     assert 1 == 1
+    # TODO: implement this
+
+
+def test_property_path__sequence_path():
+    with open("tests/queries/property_path__sequence_path.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 14
+    assert len(df.columns) == 2
+
+
+def test_property_path__zero_or_more():
+    with open("tests/queries/property_path__zero_or_more.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+    # TODO: implement this
+
 
 
 def test_property_path__zero_or_one():
