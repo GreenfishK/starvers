@@ -1,0 +1,11 @@
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX dc:   <http://purl.org/dc/elements/1.1/>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
+select ?buckets (count(?buckets) as ?cntBuckets) {
+    SELECT (COALESCE(
+            IF(?pageLength > 100000, "> 100000", IF(?pageLength >50000, "> 50000", 1/0)),
+            "< 50000") as ?buckets)
+    WHERE {
+        ?x <http://dbpedia.org/ontology/wikiPageLength> ?pageLength .
+    } 
+} group by ?buckets
