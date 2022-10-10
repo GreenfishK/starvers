@@ -15,24 +15,6 @@ post_endpoint = "http://ThinkPad-T14s-FK:7200/repositories/BEAR-B_hourly_TB_star
 LOGGER = logging.getLogger(__name__)
 engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
-def test_most_basic():
-    with open("tests/queries/most_basic.txt", "r") as file:
-        query = file.read()
-    file.close()
-
-    df = engine.query(query)
-
-    assert len(df.index) == 43907
- 
-
-def test_two_triple_stmts():
-    with open("tests/queries/two_triple_stmts.txt", "r") as file:
-        query = file.read()
-    file.close()
-
-    df = engine.query(query)
-    assert len(df.index) == 4964
-
 
 def test_functions__functional_forms_not_exists():
     with open("tests/queries/functions__functional_forms_not_exists.txt", "r") as file:
@@ -106,6 +88,16 @@ def test_graph_patterns__aggregate_join():
     assert min == 'http://dbpedia.org/resource/2015'
     assert max == 'http://dbpedia.org/resource/What_Do_You_Mean%3F'
     assert count == '63 [http://www.w3.org/2001/XMLSchema#integer]'
+
+
+def test_graph_patterns__bgp_single():
+    with open("tests/queries/graph_patterns__bgp_single.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+
+    assert len(df.index) == 43907
 
 
 def test_graph_patterns__bgp():
@@ -200,6 +192,33 @@ def test_graph_patterns__union():
     assert len(df.index) == 16
 
 
+def test_property_path__zero_or_more():
+    with open("tests/queries/property_path__zero_or_more.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+
+
+def test_property_path__one_or_more():
+    with open("tests/queries/property_path__one_or_more.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+
+
+def test_property_path__zero_or_one():
+    with open("tests/queries/property_path__zero_or_one.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+
+
 def test_complex_query_1():
     with open("tests/queries/complex_query_1.txt", "r") as file:
         query = file.read()
@@ -224,3 +243,12 @@ def test_complex_query_3():
 
     df = engine.query(query)
     assert len(df.index) == 16
+
+
+def test_complex_query_4():
+    with open("tests/queries/complex_query_4.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
