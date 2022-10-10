@@ -1,13 +1,9 @@
-PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
-PREFIX publishing: <http://ontology.ontotext.com/publishing#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT ?a (sum(?pageLength) as ?sumPageLength)
+WHERE {
+    ?a <http://dbpedia.org/ontology/wikiPageLength> ?pageLength .
+    filter((?a = <http://dbpedia.org/resource/2015_ATP_Challenger_Tour> || ?a = <http://dbpedia.org/resource/2015_Pacific_hurricane_season>) && ?pageLength < 50000)
 
-select ?personLabel ?party_label ?document ?mention where {
-    ?mention publishing:hasInstance ?person .
-    ?document publishing:containsMention ?mention .
-    ?person pub:memberOfPoliticalParty ?party .
-    ?person pub:preferredLabel ?personLabel .
-    ?party pub:hasValue ?value .
-    ?value pub:preferredLabel ?party_label .
-
-    filter((?personLabel = "Barack Obama"@en || ?personLabel = "Judy Chu"@en) && ?personLabel = "Michelle Obama"@en )
-} order by ?mention
+} group by ?a 

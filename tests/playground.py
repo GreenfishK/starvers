@@ -7,11 +7,6 @@ sys.path.append(parent_directory)
 import logging
 from src.starvers.starvers import TripleStoreEngine
 
-"""
-GraphDB 9.3 was used for this test. Below are the endpoints for a local repository. 
-The dataset in this repository is an RDF-star variant of the BEAR-B hourly dataset (https://doi.org/10.5281/zenodo.5877503 -> alldata.TB_star_hierarchical.ttl).
-
-"""
 
 # Test parameters 
 #Home PC

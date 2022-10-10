@@ -1,12 +1,10 @@
-PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
-PREFIX publishing: <http://ontology.ontotext.com/publishing#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT (?a as ?atp_tour) ?pLength
+WHERE {
+    ?a <http://dbpedia.org/ontology/wikiPageLength> ?pageLength .
+    filter(?a = <http://dbpedia.org/resource/2015_ATP_Challenger_Tour> || ?a = <http://dbpedia.org/resource/2015_Pacific_hurricane_season>)
+    bind(?pageLength as ?pLength)
 
-select ?personLabel ?party_name ?document (?mention as ?men) where {
-    ?mention publishing:hasInstance ?person .
-    ?document publishing:containsMention ?mention .
-    ?person pub:memberOfPoliticalParty ?party .
-    ?person pub:preferredLabel ?personLabel .
-    ?party pub:hasValue ?value .
-    ?value pub:preferredLabel ?party_label .
-    Bind(?party_label as ?party_name)
-} order by ?mention
+} 

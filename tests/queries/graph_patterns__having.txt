@@ -1,10 +1,10 @@
-PREFIX : <http://books.example/>
-SELECT (SUM(?lprice) AS ?totalPrice)
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT ?a (sum(?pageLength) as ?sumPageLength)
 WHERE {
-  ?org :affiliates ?auth .
-  ?auth :writesBook ?book .
-  ?book :price ?lprice .
-  filter(?lprice < 5)
-}
-GROUP BY ?org
-HAVING (SUM(?lprice) > 10)
+    ?a <http://dbpedia.org/ontology/wikiPageLength> ?pageLength .
+    filter(?a = <http://dbpedia.org/resource/2015_ATP_Challenger_Tour> || ?a = <http://dbpedia.org/resource/2015_Pacific_hurricane_season>)
+
+} group by ?a 
+having (sum(?pageLength) > 5000000)
