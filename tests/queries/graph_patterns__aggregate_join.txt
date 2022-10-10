@@ -9,5 +9,5 @@ select
 (GROUP_CONCAT(?s;SEPARATOR="|") AS ?group_concat)
 where {
 	?s ?p ?o .
-    filter(?s = rdf:type)
+    filter(?p = rdf:type)
 } limit 1

@@ -1,0 +1,20 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+SELECT ?type ?label
+WHERE  {
+    {
+        <http://dbpedia.org/resource/Donald_Trump> rdf:type ?type .
+        {
+            Select * where {
+                <http://dbpedia.org/resource/Donald_Trump> rdfs:label ?label .
+            }
+        }
+    }
+    UNION
+    {
+        <http://dbpedia.org/resource/Frank_Sinatra> rdf:type ?type .
+        <http://dbpedia.org/resource/Frank_Sinatra> rdfs:label ?label .
+    }
+}

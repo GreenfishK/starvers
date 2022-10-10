@@ -34,15 +34,6 @@ def test_two_triple_stmts():
     assert len(df.index) == 4964
 
 
-def test_functions__functional_forms():
-    with open("tests/queries/functions__functional_forms.txt", "r") as file:
-        query = file.read()
-    file.close()
-
-    df = engine.query(query)
-    assert 1 == 1
-
-
 def test_functions__functional_forms_not_exists():
     with open("tests/queries/functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
@@ -51,14 +42,6 @@ def test_functions__functional_forms_not_exists():
     df = engine.query(query)
     assert len(df.index) == 712
 
-def test_functions__functional_forms_not_exists_seq_path():
-    with open("tests/queries/functions__functional_forms_not_exists_seq_path.txt", "r") as file:
-        query = file.read()
-    file.close()
-
-    df = engine.query(query)
-    assert len(df.index) == 720
-
 
 def test_graph_patterns__aggregate_join():
     with open("tests/queries/graph_patterns__aggregate_join.txt", "r") as file:
@@ -66,7 +49,15 @@ def test_graph_patterns__aggregate_join():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    sum = df.iloc[0]['sum']
+    min = df.iloc[0]['min']
+    max = df.iloc[0]['max']
+    count = df.iloc[0]['count']
+
+    assert sum == None
+    assert min == 'http://dbpedia.org/resource/2015'
+    assert max == 'http://dbpedia.org/resource/What_Do_You_Mean%3F'
+    assert count == '63 [http://www.w3.org/2001/XMLSchema#integer]'
 
 
 def test_graph_patterns__bgp():
@@ -154,6 +145,32 @@ def test_graph_patterns__minus():
 
 def test_graph_patterns__union():
     with open("tests/queries/graph_patterns__union.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 16
+
+
+def test_complex_query_1():
+    with open("tests/queries/complex_query_1.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+
+
+def test_complex_query_2():
+    with open("tests/queries/complex_query_2.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 720
+
+def test_complex_query_2():
+    with open("tests/queries/complex_query_3.txt", "r") as file:
         query = file.read()
     file.close()
 
