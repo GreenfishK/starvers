@@ -255,34 +255,29 @@ class TripleStoreEngine:
         else:
             timestamp = versioning_timestamp_format(version_timestamp)  # -> str
 
-        bgp_triples = {}
+        query_tree = parser.parseQuery(query_vers)
+        query_algebra = algebra.translateQuery(query_tree)
+        algebra.pprintAlgebra(query_algebra) # debug
 
+        bgp_triples = {}
         def inject_versioning_extensions(node):
             if isinstance(node, CompValue):
                 if node.name == "BGP":
                     bgp_id = "BGP_" + str(len(bgp_triples))
                     bgp_triples[bgp_id] = node.triples.copy()
 
-                    bgp = CompValue(name="BGP", triples=
-                    [(rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
+                    dummy_block = [rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
                     rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
-                    rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id)))])
-                    return bgp
-                elif node.name == "TriplesBlock":
-                    bgp_id = "BGP_" + str(len(bgp_triples))
-                    bgp_triples[bgp_id] = node.triples.copy()
-
-                    triplesBlock = CompValue(name="TriplesBlock", triples=
-                    [[rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
-                    rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
-                    rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]])
-                    return triplesBlock
-                    #raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
-                    #                                   "No versioning extensions will be injected.")
+                    rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]
+                    node.triples = []
+                    node.triples.append(dummy_block)
+                    
+                elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+                    algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
 
         def resolve_paths(node: CompValue):
             if isinstance(node, CompValue):
-                if node.name == "BGP" or node.name == "TriplesBlock":
+                if node.name == "BGP":
                     resolved_triples = []
 
                     def resolve(path: Path, subj, obj):
@@ -357,12 +352,9 @@ class TripleStoreEngine:
                     node.triples.extend(resolved_triples)
                     node.triples = algebra.reorderTriples(node.triples)
 
-                #elif node.name == "TriplesBlock":
-                #    raise ExpressionNotCoveredException("TriplesBlock has not been covered yet. "
-                #                                        "If there are any paths they will not be resolved.")
+                elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+                    algebra.traverse(node.graph, visitPre=resolve_paths)
                 
-        query_tree = parser.parseQuery(query_vers)
-        query_algebra = algebra.translateQuery(query_tree)
         try:
             logging.info("Resolving SPARQL paths to normal triple statements ...")
             algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
@@ -373,7 +365,7 @@ class TripleStoreEngine:
             raise ExpressionNotCoveredException(err)
         
         # Create the SPARQL representation from the query algebra tree.
-        query_vers_out = algebra.translateAlgebra(query_algebra)
+        query_vers_out = algebra.translateAlgebra(query_algebra) 
 
         # Replace each block of triples (labeled as dummy block) 
         # with their corresponding block of timestamped triple statements.
@@ -398,7 +390,7 @@ class TripleStoreEngine:
             query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
         query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
-
+        
         return query_vers_out, timestamp
 
 
