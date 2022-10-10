@@ -1,0 +1,8 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+select ?p ?o {
+	<http://dbpedia.org/resource/Donald_Trump> ?p ?o .
+    filter not exists {<http://dbpedia.org/resource/Donald_Trump> rdf:type/rdfs:label ?o} .
+    filter not exists {<http://dbpedia.org/resource/Donald_Trump> rdfs:label ?o} .
+}

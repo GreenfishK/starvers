@@ -55,12 +55,17 @@ def test_functions__functional_forms_not_exists():
     with open("tests/queries/functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
     file.close()
-    # TODO: fix bug with TriplesBlock
-    # Bug is actually in translateAlgebra in the block with node.name.endswith("Builtin_EXISTS")
-    # and node.name.endswith("Builtin_NOTEXISTS").
 
     df = engine.query(query)
     assert len(df.index) == 712
+
+def test_functions__functional_forms_not_exists_seq_path():
+    with open("tests/queries/functions__functional_forms_not_exists_seq_path.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 720
 
 
 def test_graph_patterns__aggregate_join():
