@@ -2,12 +2,6 @@ import pytest
 import logging
 from starvers.starvers import TripleStoreEngine
 
-"""
-GraphDB 9.3 was used for this test. Below are the endpoints for a local repository. 
-The dataset in this repository is an RDF-star variant of the BEAR-B hourly dataset (https://doi.org/10.5281/zenodo.5877503 -> alldata.TB_star_hierarchical.ttl).
-
-TODO: Use a docker container for GraphDB : https://github.com/Ontotext-AD/graphdb-docker
-"""
 
 # Test parameters 
 #Home PC
@@ -44,8 +38,6 @@ def test_functions__functional_forms():
     with open("tests/queries/functions__functional_forms.txt", "r") as file:
         query = file.read()
     file.close()
-    # TODO: fix bug with TriplesBlock
-    # TODO: create a proper test query
 
     df = engine.query(query)
     assert 1 == 1
@@ -83,7 +75,8 @@ def test_graph_patterns__bgp():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 11390
+    assert len(df.columns) == 9
 
 def test_graph_patterns__extend():
     with open("tests/queries/graph_patterns__extend.txt", "r") as file:
@@ -91,7 +84,8 @@ def test_graph_patterns__extend():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 226
+    assert len(df.columns) == 2
 
 def test_graph_patterns__filter():
     with open("tests/queries/graph_patterns__filter.txt", "r") as file:
@@ -99,7 +93,8 @@ def test_graph_patterns__filter():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    sumPageLength = df.iloc[0]['sumPageLength']
+    assert sumPageLength=='3943456 [http://www.w3.org/2001/XMLSchema#integer]'
 
 def test_graph_patterns__graph():
     with open("tests/queries/graph_patterns__graph.txt", "r") as file:
@@ -107,7 +102,8 @@ def test_graph_patterns__graph():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 226
+    assert len(df.columns) == 2
 
 def test_graph_patterns__group():
     with open("tests/queries/graph_patterns__group.txt", "r") as file:
@@ -115,7 +111,8 @@ def test_graph_patterns__group():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 2
+    assert len(df.columns) == 6
 
 def test_graph_patterns__having():
     with open("tests/queries/graph_patterns__having.txt", "r") as file:
@@ -123,7 +120,17 @@ def test_graph_patterns__having():
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 1
+    assert len(df.columns) == 2
+
+def test_graph_patterns__join():
+    with open("tests/queries/graph_patterns__join.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 672
+    assert len(df.columns) == 4
 
 def test_graph_patterns__left_join():
     with open("tests/queries/graph_patterns__left_join.txt", "r") as file:

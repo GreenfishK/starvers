@@ -167,9 +167,10 @@ class TripleStoreEngine:
                 logging.error(e)
                 raise WrongInputFormatException(e)
 
-    def reset_all_versions(self):
+    def _reset_all_versions(self):
         """
-        Delete all triples with vers:valid_from and vers:valid_until as predicate.
+        Delete all triples with vers:valid_from and vers:valid_until as predicate. 
+        Should not be used in a normal situation but rather if something went wrong the the timestamps need to be reset.
 
         :return:
         """
@@ -257,9 +258,9 @@ class TripleStoreEngine:
 
         query_tree = parser.parseQuery(query_vers)
         query_algebra = algebra.translateQuery(query_tree)
-        algebra.pprintAlgebra(query_algebra) # debug
 
         bgp_triples = {}
+        # TODO: set type of node to CompValue in function head
         def inject_versioning_extensions(node):
             if isinstance(node, CompValue):
                 if node.name == "BGP":
@@ -369,17 +370,20 @@ class TripleStoreEngine:
 
         # Replace each block of triples (labeled as dummy block) 
         # with their corresponding block of timestamped triple statements.
+        triple_stmts_cnt = 0
         for bgp_identifier, triples in bgp_triples.items():
             ver_block_template = \
                 open(template_path("templates/versioning_query_extensions.txt"), "r").read()
 
             ver_block = ""
             for i, triple in enumerate(triples):
+                triple_stmts_cnt = triple_stmts_cnt + 1
+                logging.debug(triple_stmts_cnt)
                 templ = ver_block_template
                 triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
                 ver_block += templ.format(triple_n3,
-                                          "?valid_from_{0}".format(str(i)),
-                                          "?valid_until_{0}".format(str(i)),
+                                          "?valid_from_{0}".format(str(triple_stmts_cnt)),
+                                          "?valid_until_{0}".format(str(triple_stmts_cnt)),
                                           bgp_identifier)
 
             # 
