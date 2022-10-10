@@ -175,7 +175,7 @@ class TripleStoreEngine:
         :return:
         """
 
-        template = open(self._template_location + "/reset_all_versions.txt", "r").read()
+        template = open(self._template_location + "/_reset_all_versions.txt", "r").read()
         delete_statement = template.format(versioning_prefixes(""))
         self.sparql_post.setQuery(delete_statement)
         self.sparql_post.query()
