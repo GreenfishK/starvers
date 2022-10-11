@@ -1,5 +1,7 @@
+from tkinter import E
 import pytest
 import logging
+import SPARQLWrapper
 from starvers.starvers import TripleStoreEngine
 
 
@@ -241,6 +243,52 @@ def test_operators__unary():
     df = engine.query(query)
     test_arithmetics = df.iloc[0]['test_arithmetics']
     assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]' 
+
+
+def test_other__service_simple():
+    with open(sparql_specs_queries_path + "other__service_simple.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    try:
+        df = engine.query(query)
+    except Exception as e:
+        # Somehow the raised exception is not recognized as exception.
+        raise("Something went wrong in algebra.translateAlgebra. It did not produce a valid query.")
+     
+
+def test_other__service_nested():
+    with open(sparql_specs_queries_path + "other__service_nested.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    try:
+        df = engine.query(query)
+    except RecursionError as e:
+        raise Exception("Error in parser.parseQuery function: Maximum recursion reached.")
+    assert 1==1
+
+
+def test_other__service_and_triple():
+    with open(sparql_specs_queries_path + "other__service_and_triple.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 84
+    assert len(df.columns) == 4
+
+
+def test_other__service_empty():
+    with open(sparql_specs_queries_path + "other__service_empty.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    try:
+        df = engine.query(query)
+    except TypeError as e:
+        raise Exception("Error in algebra.translateAlgebra(query_algebra):" \
+            " As the SERVICE block is empty there is no pattern in node.part and iterations over NoneType throws an error")
 
 
 def test_property_path__alternative_path():
