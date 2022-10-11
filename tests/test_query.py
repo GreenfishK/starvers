@@ -4,20 +4,24 @@ from starvers.starvers import TripleStoreEngine
 
 
 # Test parameters 
-#Home PC
+# Endpoints - Home PC
 #get_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour"
 #post_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour/statements"
 
-#Office
+# Endpoints - Office
 get_endpoint = "http://ThinkPad-T14s-FK:7200/repositories/BEAR-B_hourly_TB_star_h"
 post_endpoint = "http://ThinkPad-T14s-FK:7200/repositories/BEAR-B_hourly_TB_star_h/statements"
+
+# Paths
+sparql_specs_queries_path = "tests/queries/SPARQL_specs/"
+wikidata_queries_path = "tests/queries/wikidata/"
 
 LOGGER = logging.getLogger(__name__)
 engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
 
 def test_functions__functional_forms_not_exists():
-    with open("tests/queries/functions__functional_forms_not_exists.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -26,7 +30,7 @@ def test_functions__functional_forms_not_exists():
 
 
 def test_functions__functions_on_dates_and_time():
-    with open("tests/queries/functions__functions_on_dates_and_time.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__functions_on_dates_and_time.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -35,7 +39,7 @@ def test_functions__functions_on_dates_and_time():
     assert len(df.columns) == 9
 
 def test_functions__functions_on_numerics():
-    with open("tests/queries/functions__functions_on_numerics.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__functions_on_numerics.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -44,7 +48,7 @@ def test_functions__functions_on_numerics():
     assert len(df.columns) == 5
 
 def test_functions__functions_on_rdf_terms():
-    with open("tests/queries/functions__functions_on_rdf_terms.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__functions_on_rdf_terms.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -54,7 +58,7 @@ def test_functions__functions_on_rdf_terms():
 
 
 def test_functions__functions_on_strings():
-    with open("tests/queries/functions__functions_on_strings.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__functions_on_strings.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -64,7 +68,7 @@ def test_functions__functions_on_strings():
 
 
 def test_functions__hash_functions():
-    with open("tests/queries/functions__hash_functions.txt", "r") as file:
+    with open(sparql_specs_queries_path + "functions__hash_functions.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -74,7 +78,7 @@ def test_functions__hash_functions():
 
 
 def test_graph_patterns__aggregate_join():
-    with open("tests/queries/graph_patterns__aggregate_join.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__aggregate_join.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -91,7 +95,7 @@ def test_graph_patterns__aggregate_join():
 
 
 def test_graph_patterns__bgp_single():
-    with open("tests/queries/graph_patterns__bgp_single.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__bgp_single.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -101,7 +105,7 @@ def test_graph_patterns__bgp_single():
 
 
 def test_graph_patterns__bgp():
-    with open("tests/queries/graph_patterns__bgp.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__bgp.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -110,7 +114,7 @@ def test_graph_patterns__bgp():
     assert len(df.columns) == 9
 
 def test_graph_patterns__extend():
-    with open("tests/queries/graph_patterns__extend.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__extend.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -119,7 +123,7 @@ def test_graph_patterns__extend():
     assert len(df.columns) == 2
 
 def test_graph_patterns__filter():
-    with open("tests/queries/graph_patterns__filter.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__filter.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -128,7 +132,7 @@ def test_graph_patterns__filter():
     assert sumPageLength=='3943456 [http://www.w3.org/2001/XMLSchema#integer]'
 
 def test_graph_patterns__graph():
-    with open("tests/queries/graph_patterns__graph.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__graph.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -137,7 +141,7 @@ def test_graph_patterns__graph():
     assert len(df.columns) == 2
 
 def test_graph_patterns__group():
-    with open("tests/queries/graph_patterns__group.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__group.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -146,7 +150,7 @@ def test_graph_patterns__group():
     assert len(df.columns) == 6
 
 def test_graph_patterns__having():
-    with open("tests/queries/graph_patterns__having.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__having.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -155,7 +159,7 @@ def test_graph_patterns__having():
     assert len(df.columns) == 2
 
 def test_graph_patterns__join():
-    with open("tests/queries/graph_patterns__join.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__join.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -164,7 +168,7 @@ def test_graph_patterns__join():
     assert len(df.columns) == 4
 
 def test_graph_patterns__left_join():
-    with open("tests/queries/graph_patterns__left_join.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__left_join.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -173,7 +177,7 @@ def test_graph_patterns__left_join():
     assert len(df.columns) == 3
 
 def test_graph_patterns__minus():
-    with open("tests/queries/graph_patterns__minus.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__minus.txt", "r") as file:
         query = file.read()
     file.close()
     # TODO: fix approach with counting valid_from_x in every BGP. 
@@ -184,7 +188,7 @@ def test_graph_patterns__minus():
 
 
 def test_graph_patterns__union():
-    with open("tests/queries/graph_patterns__union.txt", "r") as file:
+    with open(sparql_specs_queries_path + "graph_patterns__union.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -192,8 +196,55 @@ def test_graph_patterns__union():
     assert len(df.index) == 16
 
 
+def test_operators__arithmetics():
+    with open(sparql_specs_queries_path + "operators__arithmetics.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    test_arithmetics = df.iloc[0]['test_arithmetics']
+    assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]'
+
+def test_operators__conditional_and():
+    with open(sparql_specs_queries_path + "operators__conditional_and.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    test_arithmetics = df.iloc[0]['test_arithmetics']
+    assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]'
+
+def test_operators__conditional_or():
+    with open(sparql_specs_queries_path + "operators__conditional_or.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    test_arithmetics = df.iloc[0]['test_arithmetics']
+    assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]'
+
+def test_operators__relational():
+    with open(sparql_specs_queries_path + "operators__relational.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    test_arithmetics = df.iloc[0]['test_arithmetics']
+    assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]'           
+
+
+def test_operators__unary():
+    with open(sparql_specs_queries_path + "operators__unary.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    test_arithmetics = df.iloc[0]['test_arithmetics']
+    assert test_arithmetics=='6 [http://www.w3.org/2001/XMLSchema#integer]' 
+
+
 def test_property_path__alternative_path():
-    with open("tests/queries/property_path__alternative_path.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__alternative_path.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -204,7 +255,7 @@ def test_property_path__alternative_path():
 
 
 def test_property_path__inverse_path():
-    with open("tests/queries/property_path__inverse_path.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__inverse_path.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -214,7 +265,7 @@ def test_property_path__inverse_path():
 
 
 def test_property_path__negated_property_set():
-    with open("tests/queries/property_path__negated_property_set.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__negated_property_set.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -224,7 +275,7 @@ def test_property_path__negated_property_set():
 
 
 def test_property_path__one_or_more():
-    with open("tests/queries/property_path__one_or_more.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__one_or_more.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -234,7 +285,7 @@ def test_property_path__one_or_more():
 
 
 def test_property_path__sequence_path():
-    with open("tests/queries/property_path__sequence_path.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__sequence_path.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -244,7 +295,7 @@ def test_property_path__sequence_path():
 
 
 def test_property_path__zero_or_more():
-    with open("tests/queries/property_path__zero_or_more.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__zero_or_more.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -253,18 +304,18 @@ def test_property_path__zero_or_more():
     # TODO: implement this
 
 
-
 def test_property_path__zero_or_one():
-    with open("tests/queries/property_path__zero_or_one.txt", "r") as file:
+    with open(sparql_specs_queries_path + "property_path__zero_or_one.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
     assert 1 == 1
+    # TODO: implement this
 
 
 def test_complex_query_1():
-    with open("tests/queries/complex_query_1.txt", "r") as file:
+    with open(sparql_specs_queries_path + "complex_query_1.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -273,7 +324,7 @@ def test_complex_query_1():
 
 
 def test_complex_query_2():
-    with open("tests/queries/complex_query_2.txt", "r") as file:
+    with open(sparql_specs_queries_path + "complex_query_2.txt", "r") as file:
         query = file.read()
     file.close()
 
@@ -281,18 +332,9 @@ def test_complex_query_2():
     assert len(df.index) == 720
 
 def test_complex_query_3():
-    with open("tests/queries/complex_query_3.txt", "r") as file:
+    with open(sparql_specs_queries_path + "complex_query_3.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
     assert len(df.index) == 16
-
-
-def test_complex_query_4():
-    with open("tests/queries/complex_query_4.txt", "r") as file:
-        query = file.read()
-    file.close()
-
-    df = engine.query(query)
-    assert 1 == 1
