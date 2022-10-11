@@ -1,14 +1,11 @@
-PREFIX dc:   <http://purl.org/dc/elements/1.1/>
-PREFIX :     <http://example.org/book/>
-PREFIX ns:   <http://example.org/ns#>
-
-SELECT ?book ?title ?price
+PREFIX db: <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?tour ?a ?value
 {
-    ?book dc:title ?title ;
-          ns:price ?price .
-    VALUES (?book ?title)
+	?tour ?a ?value.
+    VALUES (?tour ?value)
     {
-        (UNDEF "SPARQL Tutorial")
-        (:book2 UNDEF)
+        (db:2015_ATP_Challenger_Tour UNDEF)
+        (db:2015_Pacific_typhoon_season UNDEF)
     }
 }
