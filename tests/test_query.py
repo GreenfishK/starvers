@@ -22,6 +22,33 @@ LOGGER = logging.getLogger(__name__)
 engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
 
+def test_complex_query_1():
+    with open(sparql_specs_queries_path + "complex_query_1.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert 1 == 1
+
+
+def test_complex_query_2():
+    with open(sparql_specs_queries_path + "complex_query_2.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 720
+
+
+def test_complex_query_3():
+    with open(sparql_specs_queries_path + "complex_query_3.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 16
+
+
 def test_functions__functional_forms_not_exists():
     with open(sparql_specs_queries_path + "functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
@@ -372,27 +399,47 @@ def test_property_path__zero_or_one():
     # TODO: implement this
 
 
-def test_complex_query_1():
-    with open(sparql_specs_queries_path + "complex_query_1.txt", "r") as file:
+def test_solution_modifiers__distinct():
+    with open(sparql_specs_queries_path + "solution_modifiers__distinct.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
-    assert 1 == 1
+    assert len(df.index) == 63
 
 
-def test_complex_query_2():
-    with open(sparql_specs_queries_path + "complex_query_2.txt", "r") as file:
+def test_solution_modifiers__order_by():
+    with open(sparql_specs_queries_path + "solution_modifiers__order_by.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
-    assert len(df.index) == 720
+    assert len(df.index) == 63
+    # TODO: fix the insertion of DESC and ASC in the order by clause
 
-def test_complex_query_3():
-    with open(sparql_specs_queries_path + "complex_query_3.txt", "r") as file:
+
+def test_solution_modifiers__reduced():
+    with open(sparql_specs_queries_path + "solution_modifiers__reduced.txt", "r") as file:
         query = file.read()
     file.close()
 
     df = engine.query(query)
-    assert len(df.index) == 16
+    assert len(df.index) == 63
+
+
+def test_solution_modifiers__slice():
+    with open(sparql_specs_queries_path + "solution_modifiers__slice.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 50 
+
+
+def test_solution_modifiers__to_multiset():
+    with open(sparql_specs_queries_path + "solution_modifiers__to_multiset.txt", "r") as file:
+        query = file.read()
+    file.close()
+
+    df = engine.query(query)
+    assert len(df.index) == 82
