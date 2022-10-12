@@ -59,7 +59,10 @@ new_triples=[['<http://example.com/Donald_Trump>', None, None],
 ```
 
 ## Delete (Outdate) triples
-
+To outdate triples we need to provide a list of valid triples which should be deleted. The valid_until timestamp of any matched triple will be replaced by the current system timestamp of python's datetime.now() function.
+```
+engine.outdate([['<http://example.com/Donald_Trump>', '<http://example.com/occupation>' ,'<http://example.com/President>']])
+```
 
 
 ## Query actual or historical data
@@ -85,7 +88,6 @@ Result set:
 | <http://example.com/Hamilton> | <http://example.com/Formel1Driver> |
 | <http://example.com/Brad_Pitt> | <http://example.com/Actor> |
 | <http://example.com/Frank_Sinatra> | <http://example.com/Singer> |
-| <http://example.com/Donald_Trump> | <http://example.com/President> |
 
 To query historical data we additionally need to pass a timestamp. Here we chose the initial timestamp when we versioned our dataset for the first time ([see above](#version-all-rows---initialize-dataset))
 ```
