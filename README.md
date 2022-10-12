@@ -63,7 +63,7 @@ new_triples=[['<http://example.com/Donald_Trump>', None, None],
 
 
 ## Query actual or historical data
-To query actual data we just need to pass the query as a string to the query function. 
+To query actual data we just need to pass the query as a string ... 
 
 ```
 query = """
@@ -73,9 +73,11 @@ SELECT ?person ?occupation {
     ?person <http://example.com/occupation> ?occupation .
 }
 """
-
-# For the latest snapshot
+```
+... to the query function. 
+```
 actual_snapshot = engine.query(query)
+print(actual_snapshot)
 ```
 Result set:
 | person       | occupation |
@@ -87,10 +89,9 @@ Result set:
 
 To query historical data we additionally need to pass a timestamp.
 ```
-# For a snapshot at a specific point in time
 snapshot_timestamp = initial_timestamp
 historical_snapshot = engine.query(query, snapshot_timestamp)
-
+print(historical_snapshot)
 ```
 Result set:
 | person       | occupation |
