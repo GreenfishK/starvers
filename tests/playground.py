@@ -8,7 +8,7 @@ import logging
 from src.starvers.starvers import TripleStoreEngine
 
 
-# Test parameters 
+# Test parameters       
 #Home PC
 #get_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour"
 #post_endpoint = "http://192.168.0.52:7200/repositories/BEAR-B_TB_star_h_hour/statements"
@@ -30,3 +30,13 @@ engine = TripleStoreEngine(get_endpoint, post_endpoint)
 # Insert
 engine.insert([['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates>'],
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver>']])
+
+
+
+# Update
+engine.update(
+old_triples=[['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates>'],
+             ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver>']],
+new_triples=[[None, None,'<http://example.com/Canada>'],
+             ['<http://example.com/Lewis_Hamilton>', None, None]])
+

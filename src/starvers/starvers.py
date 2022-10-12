@@ -440,23 +440,22 @@ class TripleStoreEngine:
         for each new triple labeling the newly inserted triple with a valid_from and valid_until date.
 
         :param triples: A list of list of triples in n3 syntax!
-        E.g. 
+        E.g.: 
         [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
         :param prefixes: Prefixes that are used within :param triples
         :return:
         """
 
-        statement = open(self._template_location + "/insert_triples.txt", "r").read()
+        if len(triples) == 0:
+            raise Exception ("List is empty. No triples will be inserted.")
 
         if prefixes:
             sparql_prefixes = versioning_prefixes(prefixes)
         else:
             sparql_prefixes = versioning_prefixes("")
 
-        if len(triples) == 0:
-            raise Exception ("List is empty. No triples will be inserted.")
-
+        statement = open(self._template_location + "/insert_triples.txt", "r").read()
         insert_block = ""
         for triple in triples:
             if isinstance(triple, list) and len(triple) == 3:
@@ -474,32 +473,60 @@ class TripleStoreEngine:
         insert_statement = statement.format(sparql_prefixes, insert_block)
         self.sparql_post.setQuery(insert_statement)
         self.sparql_post.query()
+        logging.info("Triples inserted.")
 
 
-    def update(self, triples: dict, prefixes: dict = None):
+    def update(self, old_triples: list, new_triples: list, prefixes: dict = None):
         """
-        Updates all triples' objects that are provided in :triples as key values with the corresponding
-        values from the same dictionary. the triples and the new value must be in n3 syntax.
-        Only the most recent triples (those that are annotated with
-        <<s p o >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime) will be updated.
+        Updates a list of triples by another list of triples. Both lists need to have the same dimensions. The first list 
+        should contain triples in n3 syntax that are also present in the triple store and currently valid. Each triple in the 
+        second list should contain a new value in n3 syntax for the corresponding element in the first list and None if this element should 
+        not be updated. 
+        E.g.:
+        old_triples = 
+        [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
+        ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
 
-        :param triples: A dictionary with triples as key values and strings as values. All triple elements
-        and corresponding new values must be provided as strings and may also contain SPARQL prefixes. E.g. foaf:name
-        :param prefixes: Prefixes that are used within :param triples
+        new_triples =
+        [[None, None,'<http://example.com/Canada'],
+        ['<http://example.com/Lewis_Hamilton>', None, None]]
+
+
+        :param old_triples: A list of valid triples in n3 syntax that should be updated.
+        :param new_triples: A list of new values for the list :old_triples. Values which should not be updated must be None.
+        :param prefixes: Prefixes that are used within :old_triples and :new_triples
         """
+
+        if len(old_triples) == 0:
+            raise Exception ("List is empty. No triples will be inserted.")
+
+        if len(old_triples) != len(new_triples):
+            raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
+
+        if prefixes:
+            sparql_prefixes = versioning_prefixes(prefixes)
+        else:
+            sparql_prefixes = versioning_prefixes("")
 
         template = open(self._template_location + "/update_triples.txt", "r").read()
-        for i, (triple, new_value) in enumerate(triples.items()):
-            if isinstance(triple, tuple) and isinstance(new_value, str):
-                sparql_prefixes = versioning_prefixes(prefixes)
-                update_statement = template.format(sparql_prefixes, triple[0], triple[1], triple[2], new_value)
-                self.sparql_post.setQuery(update_statement)
-                result = self.sparql_post.query()
-                logging.info("{0} rows updated".format(result))
+        update_block = ""
+        for i, old_triple in enumerate(old_triples):
+            new_triple = new_triples[i]
+            if isinstance(old_triple, list) and isinstance(new_triple, list) \
+            and len(old_triple) == 3 and len(new_triple) == 3:
+                newS = new_triple[0] if new_triple[0] != None else "UNDEF"
+                newP = new_triple[1] if new_triple[1] != None else "UNDEF"
+                newO = new_triple[2] if new_triple[2] != None else "UNDEF"
+
+                update_block = update_block + "({0} {1} {2} {3} {4} {5})\n".format(old_triple[0],old_triple[1],old_triple[2],
+                newS, newP, newO)
             else:
-                raise WrongInputFormatException("Wrong input format. The update statement will not be executed. "
-                                                "Please provide :triples.key() as a tuple (str, str, str) "
-                                                "and :triples.value() as a string.")
+                raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
+        update_statement = template.format(sparql_prefixes, update_block)
+        self.sparql_post.setQuery(update_statement)
+        self.sparql_post.query()
+        logging.info("Triples updated.")
+
 
 
     def outdate(self, triples: list, prefixes: dict = None):

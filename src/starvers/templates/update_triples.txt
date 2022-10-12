@@ -9,7 +9,7 @@ insert {{
     <<<<?newS ?newP ?newO>> vers:valid_from ?newVersion >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
 }}
 where {{
-    values (?s ?p ?o ?newS ?newP ?newO) {{
+    values (?s ?p ?o ?newSPre ?newPPre ?newOPre) {{
     	{1}
 	}}
     # versioning
@@ -17,9 +17,9 @@ where {{
     BIND(xsd:dateTime(NOW()) AS ?newVersion).
     
     # For UNDEF values in the new triple use the same value in the old triple
-    BIND(IF(BOUND(?newS), ?newS, ?s) as ?newS)
-    BIND(IF(BOUND(?newP), ?newP, ?p) as ?newP)
-    BIND(IF(BOUND(?newO), ?newO, ?o) as ?newO)
+    BIND(IF(BOUND(?newSPre), ?newSPre, ?s) as ?newS)
+    BIND(IF(BOUND(?newPPre), ?newPPre, ?p) as ?newP)
+    BIND(IF(BOUND(?newOPre), ?newOPre, ?o) as ?newO)
 
     # nothing should be changed if old and new value are the same
     filter(concat(str(?s), str(?p), str(?o)) != concat(str(?newS), str(?newP), str(?newO)))
