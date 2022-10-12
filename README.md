@@ -1,4 +1,4 @@
-# starvers
+# Starvers
 A repository for a timestamp-based versioning API for RDF data. The module starvers leverages sparql-star's and rdf-star's nested triples paradigm to automatically embedds timestamps into every SPARQL 1.1 update statement or query. This API enables to programatically create temporal RDF knowledge graphs or ontologies whereas the version timestamps are instrinsic porperties of these RDF datasets. Thus, no other versioning tools like Git are required and the datasets are portable to any triplestore that supports multilevel nesting with RDF-star and SPARQL-star. 
 Conceptually, the API transforms every read or write statement into a timestamped statement. This way it is possible to query arbitrary snapshots of the RDF data by sending the query + a timestamp via the API interface. In the following we will guide you through the installation process and provide give examples of how the offered functions should used to operate on an RDF dataset.
 
