@@ -31,7 +31,7 @@ engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
 # Version all rows
 initial_timestamp = datetime(2022, 10, 13, 14, 43, 21, 941000, timezone(timedelta(hours=2)))
-engine.version_all_rows()
+engine.version_all_rows(initial_timestamp)
 
 # Insert
 engine.insert([['<http://example.com/Brad_Pitt>', '<http://example.com/occupation>' ,'<http://example.com/Limo_Driver>'],
