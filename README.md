@@ -51,6 +51,13 @@ engine.query(query, snapshot_timestamp)
 ```
 
 ## Insert new triples
+To insert new triples we first need to prepare a list of triples and then pass them to the insert function. The triples must already be in n3 syntax, i.e. in case of an IRI, include the pointy brackets < > in the string.
+
+```
+new_triples = [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
+        ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
+engine.insert(new_triples)
+```
 
 ## Update triples
 
