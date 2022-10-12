@@ -184,7 +184,7 @@ class TripleStoreEngine:
 
 
     def version_all_rows(self, initial_timestamp: datetime = None,
-                         versioning_mode: VersioningMode = VersioningMode.SAVE_MEM):
+                         versioning_mode: VersioningMode = VersioningMode.Q_PERF):
         """
         Version all triples with an artificial end date. If the mode is Q_PERF then every triple is additionally
         annotated with a valid_from date where the date is the initial_timestamp provided by the caller.
@@ -439,9 +439,10 @@ class TripleStoreEngine:
         Inserts a list of triples (must be in n3 syntax!) into the RDF* store and two additional (nested) triples
         for each new triple labeling the newly inserted triple with a valid_from and valid_until date.
 
-        :param triples: A list with three elements - a subject, predicate and object. The triple elements must be
-        provided in n3 syntax!
-        Or: A list of lists with three elements.
+        :param triples: A list of list of triples in n3 syntax!
+        E.g. 
+        [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
+        ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
         :param prefixes: Prefixes that are used within :param triples
         :return:
         """
@@ -453,29 +454,26 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = versioning_prefixes("")
 
-        # Handling input format
-        trpls = []
-        if not isinstance(triples[0], list) and len(triples) == 3:
-            triple = triples
-            trpls.append(triple)
-        else:
-            trpls = triples
+        if len(triples) == 0:
+            raise Exception ("List is empty. No triples will be inserted.")
 
-        for triple in trpls:
+        insert_block = ""
+        for triple in triples:
             if isinstance(triple, list) and len(triple) == 3:
                 s = triple[0]
                 p = triple[1]
                 o = triple[2]
 
-                insert_statement = statement.format(sparql_prefixes, s, p, o)
-                self.sparql_post.setQuery(insert_statement)
-                self.sparql_post.query()
+                insert_block = insert_block + "(" + s + " " + p + " " + o + " )\n"
+
                 logging.info("Triple {0} successfully inserted: ".format(triple))
             else:
-                e = "Please provide either a list of lists with three elements - subject, predicate and object or a " \
-                    "single list with aforementioned three elements in n3 syntax. "
+                e = "The triple is either not of type list or the list does not have the length 3."
                 logging.error(e)
                 raise WrongInputFormatException(e)
+        insert_statement = statement.format(sparql_prefixes, insert_block)
+        self.sparql_post.setQuery(insert_statement)
+        self.sparql_post.query()
 
 
     def update(self, triples: dict, prefixes: dict = None):
