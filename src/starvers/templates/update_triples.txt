@@ -2,18 +2,18 @@
 {0}
 
 delete {{
-    <<<<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
 }}
 insert {{
-    <<<<?s ?p ?o>> vers:valid_from ?valid_from>> vers:valid_until ?newVersion. # outdate
-    <<<<?newS ?newP ?newO>> vers:valid_from ?newVersion >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until ?newVersion. # outdate
+    << <<?newS ?newP ?newO >> vers:valid_from ?newVersion >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
 }}
 where {{
     values (?s ?p ?o ?newSPre ?newPPre ?newOPre) {{
     	{1}
 	}}
     # versioning
-    <<<<?s ?p ?o>> vers:valid_from ?valid_from>> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
     BIND(xsd:dateTime(NOW()) AS ?newVersion).
     
     # For UNDEF values in the new triple use the same value in the old triple

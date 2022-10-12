@@ -39,19 +39,19 @@ class TripleStoreEngine:
     def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Credentials = None,
                  skip_connection_test=False):
         """
-        During initialization a few queries are executed against the RDF* store to test connection but also whether
-        the RDF* store in fact supports the 'star' extension. During the execution a side effect may occur and
-        additional triples may be added by the RDF* store. These triples are pure meta data triples and reflect
+        During initialization a few queries are executed against the RDF-star store to test connection but also whether
+        the RDF-star store in fact supports the 'star' extension. During the execution a side effect may occur and
+        additional triples may be added by the RDF-star store. These triples are pure meta data triples and reflect
         classes and properties (like rdf:type and rdfs:subPropertyOf) of RDF itself. This happens due to a new prefix,
         namely, vers: <https://github.com/GreenfishK/DataCitation/versioning/>' which is used in the write statements.
-        Upon execution, this prefix gets embedded into the RDF class hierarchy by the RDF store, thus, new triples
+        Upon execution, this prefix gets embedded into the RDF class hierarchy by the RDF-star store, thus, new triples
         are written to the store.
 
-        :param query_endpoint: URL for executing read/select statements on the RDF store. In GRAPHDB this URL can be
+        :param query_endpoint: URL for executing read/select statements on the RDF-star store. In GRAPHDB this URL can be
         looked up under "Setup --> Repositories --> Link icon"
-        :param update_endpoint: URL for executing write statements on the RDF store. Its URL is an extension of
+        :param update_endpoint: URL for executing write statements on the RDF-star store. Its URL is an extension of
         query_endpoint: "query_endpoint/statements"
-        :param credentials: The user name and password for the remote RDF store
+        :param credentials: The user name and password for the remote RDF-star store
         """
 
         self.credentials = credentials
@@ -92,8 +92,8 @@ class TripleStoreEngine:
                 self.sparql_post.query()
 
             except URLError:
-                raise NoConnectionToRDFStore("No connection to the RDF* store could be established. "
-                                             "Check whether your RDF* store is running.")
+                raise NoConnectionToRDFStore("No connection to the RDF-star store could be established. "
+                                             "Check whether your RDF-star store is running.")
 
             try:
                 test_prefixes = versioning_prefixes("")
@@ -116,10 +116,10 @@ class TripleStoreEngine:
                 self.sparql_post.query()
 
             except Exception:
-                raise RDFStarNotSupported("Your RDF store might not support the 'star' extension. "
+                raise RDFStarNotSupported("Your RDF-star store might not support the 'star' extension. "
                                           "Make sure that it is a RDF* store.")
 
-            logging.info("Connection to RDF query and update endpoints "
+            logging.info("Connection to RDF-star query and update endpoints "
                          "{0} and {1} established".format(query_endpoint, update_endpoint))
         else:
             logging.info("Connection test has been skipped")
@@ -183,54 +183,32 @@ class TripleStoreEngine:
         logging.info("All annotations have been removed.")
 
 
-    def version_all_rows(self, initial_timestamp: datetime = None,
-                         versioning_mode: VersioningMode = VersioningMode.Q_PERF):
+    def version_all_rows(self, initial_timestamp: datetime = None):
         """
-        Version all triples with an artificial end date. If the mode is Q_PERF then every triple is additionally
-        annotated with a valid_from date where the date is the initial_timestamp provided by the caller.
+        Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
+        and an end date that lies far in the future as valid_until date. 
 
-        :param versioning_mode: The mode to use for versioning your data in the RDF store. The Q_PERF mode takes up
-        more storage as for every triple in the RDF store two additional triples are added. In return, querying
-        timestamped data is faster. The SAVE_MEM mode only adds one additional metadata triple per data triple
-        to the RDF store. However, the queries are more time-consuming as additional filters are needed.
-        Make sure to choose the mode the better suits your need as the mode gets set only once at the beginning.
-        Every subsequent query that gets send to the RDF endpoint using query() will also operate in the chosen mode.
-        :param initial_timestamp: Timestamp which also must include the timezone. Only relevant for Q_PERF mode.
+        :param initial_timestamp: A timestamp which should be used as the valid_from timestamp. If this parameter is None,
+        the current system timestamp will be used.
         :return:
         """
 
         final_prefixes = versioning_prefixes("")
-        versioning_mode_dir1 = self._template_location + "/init_versioning_modes"
-        versioning_mode_dir2 = self._template_location + "/query_modes"
 
-        if versioning_mode == VersioningMode.Q_PERF and initial_timestamp is not None:
+        if initial_timestamp is not None:
             version_timestamp = versioning_timestamp_format(initial_timestamp)
-
-            versioning_mode_template1 = open(versioning_mode_dir1 + "/version_all_rows_q_perf.txt", "r").read()
-            versioning_mode_template2 = \
-                open(versioning_mode_dir2 + "/versioning_query_extensions_q_perf.txt", "r").read()
-            update_statement = versioning_mode_template1.format(final_prefixes, version_timestamp)
-            message = "All rows have been annotated with start date {0} " \
-                      "and an artificial end date".format(initial_timestamp)
-        elif versioning_mode == VersioningMode.SAVE_MEM:
-            versioning_mode_template1 = open(versioning_mode_dir1 + "/version_all_rows_save_mem.txt", "r").read()
-            versioning_mode_template2 = \
-                open(versioning_mode_dir2 + "/versioning_query_extensions_save_mem.txt", "r").read()
-            update_statement = versioning_mode_template1.format(final_prefixes)
-            message = "All rows have been annotated with an artificial end date."
         else:
-            raise NoVersioningMode("Versioning mode is neither Q_PERF nor SAVE_MEM. Initial versioning will not be"
-                                   "executed. Check also whether an initial timestamp was passed in case of Q_PERF.")
+            LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+            system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
+            version_timestamp = versioning_timestamp_format(system_timestamp)
 
-        with open(self._template_location + "/version_all_rows.txt", "w") as vers:
-            vers.write(versioning_mode_template1)
-        with open(self._template_location + "/versioning_query_extensions.txt", "w") as vers:
-            vers.write(versioning_mode_template2)
+        temp = open(self._template_location + "/version_all_rows.txt", "r").read()
+        update_statement = temp.format(final_prefixes, version_timestamp)
 
         self.sparql_post.setQuery(update_statement)
         self.sparql_post.query()
-
-        logging.info(message)
+        logging.info("All rows have been annotated with start date {0} " \
+                    "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
     def _timestamp_query(self, query, version_timestamp: datetime = None) -> str:
@@ -407,7 +385,7 @@ class TripleStoreEngine:
         :param select_statement: A SPARQL query that is a select statement.
         :param timestamp: The version/snapshot timestamp for which a snapshot of the data as of :timestamp should be retrieved.
         :param yn_timestamp_query: If true, the select statement will be transformed into a timestamped query. 
-        Otherwise, the select statement is executed as it is against the RDF store. 
+        Otherwise, the select statement is executed as it is against the RDF-star store. 
         Set this flag to 'False' and leave :timestamp blank if :select_statement is a timestamped query already.
 
         :return: a pandas dataframe of the RDF result set.
@@ -436,14 +414,15 @@ class TripleStoreEngine:
 
     def insert(self, triples: list, prefixes: dict = None):
         """
-        Inserts a list of triples (must be in n3 syntax!) into the RDF* store and two additional (nested) triples
-        for each new triple labeling the newly inserted triple with a valid_from and valid_until date.
-
-        :param triples: A list of list of triples in n3 syntax!
+        Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from and 
+        valid_until timestamp using the RDF-star paradigm. The triples must be provided in n3 syntax, 
+        i.e. IRIs must be surrounded with pointy brackets < >.
         E.g.: 
         [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
-        :param prefixes: Prefixes that are used within :param triples
+
+        :param triples: A list of list of triples in n3 syntax.
+        :param prefixes: Prefixes that are used within :param triples.
         :return:
         """
 
@@ -494,7 +473,7 @@ class TripleStoreEngine:
 
         :param old_triples: A list of valid triples in n3 syntax that should be updated.
         :param new_triples: A list of new values for the list :old_triples. Values which should not be updated must be None.
-        :param prefixes: Prefixes that are used within :old_triples and :new_triples
+        :param prefixes: Prefixes that are used within :old_triples and :new_triples.
         """
 
         if len(old_triples) == 0:
@@ -531,24 +510,36 @@ class TripleStoreEngine:
 
     def outdate(self, triples: list, prefixes: dict = None):
         """
-        Outdates all triples' that are provided in :triples by annotating them with a timestamp returned by
-        SPARQL's NOW() function. the triples provided must be in n3 syntax.
+        Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
+        and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function).
+        The provided triples in :triples must be in n3 syntax, i.e. IRIs must be surrounded with pointy brackets < >. 
+        E.g.:
+        old_triples = 
+        [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates']]
 
-        :param triples: A list of tuples where each tuple is a triple (s, p, o) -> (str, str, str).
-        All triple elements must be provided  as strings and may also contain SPARQL prefixes. E.g. foaf:name
-        :param prefixes: Prefixes that are used within :param triples
+
+        :param triples: A list of valid triples in n3 syntax that should be outdated.
+        :param prefixes: Prefixes that are used within :triples.
         """
 
+        if len(triples) == 0:
+            raise Exception ("List is empty. No triples will be outdated.")
+
+        if prefixes:
+            sparql_prefixes = versioning_prefixes(prefixes)
+        else:
+            sparql_prefixes = versioning_prefixes("")
+
         template = open(self._template_location + "/outdate_triples.txt", "r").read()
+        outdate_block = ""
         for triple in triples:
-            if isinstance(triple, tuple):
-                sparql_prefixes = versioning_prefixes(prefixes)
-                update_statement = template.format(sparql_prefixes, triple[0], triple[1], triple[2])
-                self.sparql_post.setQuery(update_statement)
-                result = self.sparql_post.query()
-                logging.info("{0} rows outdated".format(result))
+            if isinstance(triples, list) and len(triple) == 3:
+                outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
             else:
-                raise WrongInputFormatException("Wrong input format. The update statement will not be executed. "
-                                                "Please provide :triples as a list of tuples (str, str, str). ")
+                raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
+        outdate_statement = template.format(sparql_prefixes, outdate_block)
+        self.sparql_post.setQuery(outdate_statement)
+        self.sparql_post.query()
+        logging.info("Triples outdated.")
 
     
