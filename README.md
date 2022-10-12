@@ -25,9 +25,26 @@ First, we need to initialize our dataset and wrap every triple with a valid\_fro
 | <http://example.com/Obama> | <http://example.com/occupation> |<http://example.com/President> |
 | <http://example.com/Hamilton> | <http://example.com/occupation> | <http://example.com/Formel1Driver> |
 
+Now we can choose whether we want to timestamp the data with the execution timestamp or with a custom one. For this example, we chose a custom timestamp in order to make the example reproducible. By executing ...
 ```
-engine.version_all_rows()
+initial_timestamp = datetime(2022, 10, 12, 14, 43, 21, 941000, timezone(timedelta(hours=2)))
+engine.version_all_rows(initial_timestamp)
 ```
+... our dataset turns into:
+
+| Subject      | Predicate | Object |
+| ----------- | ----------- | ----------- |
+| <<
+<<
+http://example.com/Obama
+http://example.com/occupation
+http://example.com/President
+>>
+https://github.com/GreenfishK/DataCitation/versioning/valid_from
+"2022-10-12T14:43:21.941000+02:00"^^xsd:dateTime
+
+>>  | https://github.com/GreenfishK/DataCitation/versioning/valid_until | "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime |
+| <http://example.com/Hamilton> | <http://example.com/occupation> | <http://example.com/Formel1Driver> |
 
 ## Insert new triples
 To insert new triples we first need to prepare a list of triples and then pass them to the insert function. The triples must already be in n3 syntax, i.e. in case of an IRI, include the pointy brackets < > in the string.
@@ -73,7 +90,7 @@ actual_snapshot = engine.query(query)
 To query historical data we additionally need to pass a timestamp.
 ```
 # For a snapshot at a specific point in time
-snapshot_timestamp = datetime(2022, 10, 12, 14, 43, 21, 941000, timezone(timedelta(hours=2)))
+snapshot_timestamp = initial_timestamp
 historical_snapshot = engine.query(query, snapshot_timestamp)
 
 ```
