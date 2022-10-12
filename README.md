@@ -90,7 +90,7 @@ Result set:
 | <http://example.com/Brad_Pitt> | <http://example.com/Actor> |
 | <http://example.com/Frank_Sinatra> | <http://example.com/Singer> |
 
-To query historical data we additionally need to pass a timestamp. Here we chose the initial timestamp when we versioned our dataset for the first time ([see above](#version-all-rows---initialize-dataset))
+To query historical data we additionally need to pass a timestamp. Here we chose the initial timestamp when we versioned our dataset for the first time ([see above](#version-all-rows---initialize-dataset)).
 ```
 snapshot_timestamp = initial_timestamp
 historical_snapshot = engine.query(query, snapshot_timestamp)
