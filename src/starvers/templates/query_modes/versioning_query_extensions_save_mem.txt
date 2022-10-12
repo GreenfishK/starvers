@@ -1,4 +1,0 @@
-<<{0}>> vers:valid_until {2}.
-filter(?ts{3} < {2})
-optional {{<<{0}>> vers:valid_from {1}.}}
-filter (!bound({1}) || {1} <= ?ts{3})
