@@ -29,6 +29,7 @@ Now we can choose whether we want to timestamp the data with the execution times
 ```
 initial_timestamp = datetime(2022, 10, 12, 14, 43, 21, 941000, timezone(timedelta(hours=2)))
 engine.version_all_rows(initial_timestamp)
+# alternatively: engine.version_all_rows()
 ```
 ... our dataset turns into:
 
