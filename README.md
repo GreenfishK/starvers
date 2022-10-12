@@ -34,16 +34,13 @@ engine.version_all_rows(initial_timestamp)
 
 | Subject      | Predicate | Object |
 | ----------- | ----------- | ----------- |
-| <<
-<<
-http://example.com/Obama
-http://example.com/occupation
-http://example.com/President
->>
-https://github.com/GreenfishK/DataCitation/versioning/valid_from
-"2022-10-12T14:43:21.941000+02:00"^^xsd:dateTime
-
->>  | https://github.com/GreenfishK/DataCitation/versioning/valid_until | "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime |
+| << 
+    << <http://example.com/Obama> <http://example.com/occupation> <http://example.com/President> >>
+    https://github.com/GreenfishK/DataCitation/versioning/valid_from 
+    "2022-10-12T14:43:21.941000+02:00"^^xsd:dateTime
+    >>  
+    | https://github.com/GreenfishK/DataCitation/versioning/valid_until 
+    | "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime |
 | <http://example.com/Hamilton> | <http://example.com/occupation> | <http://example.com/Formel1Driver> |
 
 ## Insert new triples
