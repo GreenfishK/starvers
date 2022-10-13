@@ -145,6 +145,7 @@ public class RDFArchive_query {
 				outputTime = cmdLine.getOptionValue("t");
 			}
 			if (cmdLine.hasOption("q")) {
+
 				queryFile = cmdLine.getOptionValue("q");
 			}
 			if (cmdLine.hasOption("Q")) {
@@ -152,7 +153,6 @@ public class RDFArchive_query {
 				bulkQueries = true;
 			}
 			if (cmdLine.hasOption("a")) {
-				//Relevant for us
 				queryFileDynamic = cmdLine.getOptionValue("a");
 				bulkQueries = true;
 			}
