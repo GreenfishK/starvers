@@ -40,4 +40,4 @@ Contact
 filip.kovacevic@tuwien.ac.at
 
 # Original OSTRICH README
-see README_orig.txt
+see [https://github.com/rdfostrich/BEAR](https://github.com/rdfostrich/BEAR)
