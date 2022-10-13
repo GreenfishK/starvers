@@ -1,0 +1,9 @@
+(stats
+  (meta
+    (timestamp "2017-02-17T14:53:44.380+01:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>)
+    (run@ "2017/02/17 14:53:44 CET")
+    (count 4))
+  (<http://example.org/predicate1> 1)
+  (<http://example.org/predicate2> 2)
+  (<http://example.org/predicate4> 1)
+  (other 0))
