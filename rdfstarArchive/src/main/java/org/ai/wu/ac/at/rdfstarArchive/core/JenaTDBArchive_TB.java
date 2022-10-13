@@ -422,6 +422,7 @@ public class JenaTDBArchive_TB implements RDFArchive {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
+	// Relevant for us
 	public ArrayList<Map<Integer, ArrayList<String>>> bulkAllMatQuerying(String queryFile, String rol) throws FileNotFoundException, IOException,
 			InterruptedException, ExecutionException {
 		ArrayList<Map<Integer, ArrayList<String>>> ret = new ArrayList<>();
