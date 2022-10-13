@@ -2,7 +2,9 @@ package main.java.org.ai.wu.ac.at.rdfstarArchive.tools;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.PrintWriter;
+import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 import java.io.IOException;
@@ -13,7 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
-
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import org.ai.wu.ac.at.rdfstarArchive.utils.QueryUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -22,13 +25,11 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 public class GenerateQueries {
 
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, ParseException, IOException {
         /*
         * Raw query input formats
         * - triple statements
@@ -42,6 +43,7 @@ public class GenerateQueries {
         */
         final Logger logger = LogManager.getLogger(GenerateQueries.class);
 
+		Options options = new Options();
         String inputFilePath = null;
         String outputDirPath = null;
         String input = null;
@@ -56,7 +58,7 @@ public class GenerateQueries {
         outputDirOpt.setRequired(true);
         options.addOption(outputDirOpt);
 
-        Option inputFormatOpt = new Option("i", "input", true, "The representation of the raw query. Can be 'ts' or 'bgp'.");
+        Option inputFormatOpt = new Option("i", "input", true, "The representation of the raw query. Can be 'ts', 'bgp' or 'sparql'.");
         inputFormatOpt.setRequired(true);
         options.addOption(inputFormatOpt);
 
@@ -95,7 +97,7 @@ public class GenerateQueries {
 
         if(input.equalsIgnoreCase("ts")) {
             String query_type="spo";
-            String staticVersion = Integer.parseInt(versions);
+            int staticVersion = Integer.parseInt(versions);
 
             File inputFile = new File(inputFilePath);
             BufferedReader br = new BufferedReader(new FileReader(inputFile));
@@ -106,9 +108,9 @@ public class GenerateQueries {
                 String[] parts = line.split(" ");
 
                 if(output.equalsIgnoreCase("ic") || output.equalsIgnoreCase("cb")) {
-                    for(i=0; i<staticVersion; i++) {    
+                    for(int i=0; i<staticVersion; i++) {    
                         String queryString = QueryUtils.createLookupQuery(query_type, parts);
-                        String outputFile = new File(outputDirPath + "/" + inputFile.getName() + "_" + lines);
+                        File outputFile = new File(outputDirPath + "/" + inputFile.getName() + "_" + lines);
                         pw = new PrintWriter(new FileOutputStream(outputFile), true);
                         pw.append(queryString);
                         pw.close();
@@ -116,7 +118,7 @@ public class GenerateQueries {
                     }
                 } else if (output.equalsIgnoreCase("tb")) {
                     String metadataVersions = "<http://www.w3.org/2002/07/owl#versionInfo>";
-                    for(i=0; i<staticVersion; i++) {
+                    for(int i=0; i<staticVersion; i++) {
                         String queryString = QueryUtils.createLookupQueryAnnotatedGraph(query_type, parts, staticVersion, metadataVersions);
                     }
                 } else if (output.equalsIgnoreCase("tbsf")) {
@@ -124,7 +126,7 @@ public class GenerateQueries {
                     DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
                     OffsetDateTime version_ts = OffsetDateTime.parse(initialVersionTS, DATE_TIME_FORMATTER);
 
-                    for(i=0; i<staticVersion; i++) {
+                    for(int i=0; i<staticVersion; i++) {
                         String ueryString = QueryUtils.createLookupQueryRDFStar_f(query_type, parts, version_ts.toString());
                         version_ts = version_ts.plusSeconds(1);
                     }
@@ -134,7 +136,7 @@ public class GenerateQueries {
                     DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSXXXXX");
                     OffsetDateTime version_ts = OffsetDateTime.parse(initialVersionTS, DATE_TIME_FORMATTER);
 
-                    for(i=0; i<staticVersion; i++) {
+                    for(int i=0; i<staticVersion; i++) {
                         String queryString = QueryUtils.createLookupQueryRDFStar_h(query_type, parts, version_ts.toString());
                         version_ts = version_ts.plusSeconds(1);
                     }
@@ -148,12 +150,23 @@ public class GenerateQueries {
             } else if (output.equalsIgnoreCase("tb")) {
                 
             } else if (output.equalsIgnoreCase("tbsf")) {
+                //starvers needed
     
             } else if (output.equalsIgnoreCase("tbsh")) {
-    
+                //starvers needed
             }
-
-        }
+        } else if (input.equalsIgnoreCase("sparql")) {
+            if(output.equalsIgnoreCase("ic") || output.equalsIgnoreCase("cb")) {
+                //just copy
+            } else if (output.equalsIgnoreCase("tb")) {
+                
+            } else if (output.equalsIgnoreCase("tbsf")) {
+                //starvers needed
+    
+            } else if (output.equalsIgnoreCase("tbsh")) {
+                //starvers needed
+            }
+        } 
 
 
 
