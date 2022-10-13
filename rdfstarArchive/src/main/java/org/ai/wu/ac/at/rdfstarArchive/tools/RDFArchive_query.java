@@ -152,6 +152,7 @@ public class RDFArchive_query {
 				bulkQueries = true;
 			}
 			if (cmdLine.hasOption("a")) {
+				//Relevant for us
 				queryFileDynamic = cmdLine.getOptionValue("a");
 				bulkQueries = true;
 			}
@@ -237,7 +238,7 @@ public class RDFArchive_query {
 			if (queryCategory.equalsIgnoreCase("mat")) {
 
 				/*
-				 * ONE QUERY
+				 * FILE CONTAINS ONE QUERY
 				 */
 				if (!bulkQueries) {
 					String queryString = readFile(queryFile, StandardCharsets.UTF_8);
@@ -256,16 +257,17 @@ public class RDFArchive_query {
 					if (queryFile != null) {
 						ArrayList<ArrayList<String>> solution = RDFArchive.bulkMatQuerying(queryFile, rol);
 						if (!silent) {
-							os.println("\n**** SOLUTIONS bulkMatQuerying:");
+							logger.info("\n**** SOLUTIONS bulkMatQuerying:");
 							if (!splitResultsByVersion)
 								printSolutionSeveralQueries(os, solution);
 							else
 								printSolutionSeveralQueries(outputResults, solution);
 						}
 					} else {
+						//Relevant for us
 						ArrayList<Map<Integer, ArrayList<String>>> solution = RDFArchive.bulkAllMatQuerying(queryFileDynamic, rol);
 						if (!silent) {
-							os.println("\n**** SOLUTIONS bulkAllMatQuerying:");
+							logger.info("\n**** SOLUTIONS bulkAllMatQuerying:");
 							if (!splitResultsByVersion)
 								printSolutionSeveralQueriesAllVersions(os, solution);
 							else

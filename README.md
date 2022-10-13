@@ -63,7 +63,7 @@ Navigate to the directory BEAR/scripts/evaluation and run the following commands
 ./run-docker-rdf_star_triple_stores.sh bearc 2>&1 | tee bearc.log
 
 ```
-These scripts will execute queries for the timestamp-based policies (tb, tb_star_h, tb_star_f) and the materialization query type (mat). Upon execution following new directories and files are created (marked with *):
+Upon execution following new directories and files are created (marked with *):
 
 ```
 home/.BEAR/  
@@ -99,6 +99,7 @@ home/.BEAR/
 	       	   └── ... TODO: include output files
 
 ```
+
 
 # Plot performance measurements
 Use the [python script](https://github.com/GreenfishK/BEAR/blob/master/scripts/visualization.py) to plot the performance across all versions for different timestamp-based archiving policies, query categories and query sets.
