@@ -29,11 +29,11 @@ Create a directory .BEAR in your home directory and copy the content of the BEAR
 
 ## Download and prepare BEAR datasets
 * Download the BEAR datasets from the [BEAR webpage](https://aic.ai.wu.ac.at/qadlod/bear.html) and copy them into 
-** ~/home/.BEAR/rawdata/beara
-** ~/home/.BEAR/rawdata/bearb/instant
-** ~/home/.BEAR/rawdata/bearb/hour
-** ~/home/.BEAR/rawdata/bearb/day
-** ~/home/.BEAR/rawdata/bearc
+    - ~/home/.BEAR/rawdata/beara
+    - ~/home/.BEAR/rawdata/bearb/instant
+    - ~/home/.BEAR/rawdata/bearb/hour
+    - ~/home/.BEAR/rawdata/bearb/day
+    - ~/home/.BEAR/rawdata/bearc
 respectively.
 * Extract the datasets from their .gz packages. Also extract all sub .gz packages.
 * Rename allData.nq in ~/home/.BEAR/rawdata/bearb/hour to alldata.TB.nq.
