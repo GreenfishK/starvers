@@ -2,13 +2,13 @@
 
 case "$1" in
   beara)
-    datasetdir=~/.BEAR/rawdata/bearb/hour/ 
-    querydir=~/.BEAR/queries/queries_new/
+    datasetdir=~/.BEAR/rawdata/beara/ 
+    querydir=~/.BEAR/queries/queries_beara/
     outputdir=~/.BEAR/output/time/beara/
     limit=9
     ;;
   bearb-day)
-    datasetdir=~/.BEAR/rawdata/bearb/hour/ 
+    datasetdir=~/.BEAR/rawdata/bearb/day/ 
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/bearb-day/
     limit=88
@@ -18,6 +18,18 @@ case "$1" in
     querydir=~/.BEAR/queries/queries_bearb/
     outputdir=~/.BEAR/output/time/bearb-hour/
     limit=1298
+    ;;
+  bearb-instant)
+    datasetdir=~/.BEAR/rawdata/bearb/instant/ 
+    querydir=~/.BEAR/queries/queries_bearb/
+    outputdir=~/.BEAR/output/time/bearb-instant/
+    limit=21045
+    ;;
+  bearc)
+    datasetdir=~/.BEAR/rawdata/bearc/ 
+    querydir=~/.BEAR/queries/queries_bearc/
+    outputdir=~/.BEAR/output/time/bearc/
+    limit=31
     ;;
   *)
     echo "Usage: $0 {beara|bearb-day|bearb-hour}"

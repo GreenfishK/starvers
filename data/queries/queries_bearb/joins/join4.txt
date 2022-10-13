@@ -1,0 +1,4 @@
+{ 
+?s <http://dbpedia.org/ontology/spouse> ?o .
+?o <http://xmlns.com/foaf/0.1/name> ?y .
+}

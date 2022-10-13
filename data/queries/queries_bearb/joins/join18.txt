@@ -1,0 +1,4 @@
+{ 
+?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/Country> .
+?s <http://www.w3.org/2003/01/geo/wgs84_pos#lat> ?o .
+}
