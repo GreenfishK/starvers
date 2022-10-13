@@ -19,6 +19,3 @@ We use bash scripts to create the database repositories and import data. The ori
 
 ## Evaluation
 In the evaluation directory we provide scripts for bulk query execution and query execution time measuring. A prerequisite to this is that the repositories have been created and the data has been loaded. The parameters can be set directly in the scripts to include certain archiving policies (ic, cb, tb, tb_star_f, tb_star_h, cbtb), query categories (mat, diff, ver) and set of queries as found in the [queries directory](https://github.com/GreenfishK/BEAR/tree/master/data/queries). After a script terminates a file with descriptive statistics for each set of queries should be written to the time/\<vendor\>/\<dataset\>/\<hostname-timestamp\> subdirectory of the [output directory](https://github.com/GreenfishK/BEAR/tree/master/data/output) 
-
-# Original README
-Find the original BEAR Readme [here](https://github.com/GreenfishK/BEAR/blob/master/scripts/README).
