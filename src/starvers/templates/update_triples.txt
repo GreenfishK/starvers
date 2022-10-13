@@ -2,25 +2,25 @@
 {0}
 
 delete {{
-    <<?subjectToUpdate ?predicateToUpdate ?objectToUpdate>> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
 }}
 insert {{
-    # outdate old triple with date as of now()
-    <<?subjectToUpdate ?predicateToUpdate ?objectToUpdate>> vers:valid_until ?newVersion.
-    # update new row with value and timestamp as of now()
-    ?subjectToUpdate ?predicateToUpdate ?newValue. # new value
-    # assign new version. if variable is used, multiple ?newVersion are retrieved leading to multiple updates. TODO: fix this
-    <<?subjectToUpdate ?predicateToUpdate ?newValue>> vers:valid_from ?newVersion ;
-                                                      vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until ?newVersion. # outdate
+    << <<?newS ?newP ?newO >> vers:valid_from ?newVersion >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
 }}
 where {{
-    bind({1} as ?subjectToUpdate)
-    bind({2} as ?predicateToUpdate)
-    bind({3} as ?objectToUpdate)
-    bind({4} as ?newValue). #new Value
+    values (?s ?p ?o ?newSPre ?newPPre ?newOPre) {{
+    	{1}
+	}}
     # versioning
-    <<?subjectToUpdate ?predicateToUpdate ?objectToUpdate>> vers:valid_until ?valid_until .
+    << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
     BIND(xsd:dateTime(NOW()) AS ?newVersion).
-    filter(?valid_until = "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime)
-    filter(?newValue != ?objectToUpdate) # nothing should be changed if old and new value are the same
+    
+    # For UNDEF values in the new triple use the same value in the old triple
+    BIND(IF(BOUND(?newSPre), ?newSPre, ?s) as ?newS)
+    BIND(IF(BOUND(?newPPre), ?newPPre, ?p) as ?newP)
+    BIND(IF(BOUND(?newOPre), ?newOPre, ?o) as ?newO)
+
+    # nothing should be changed if old and new value are the same
+    filter(concat(str(?s), str(?p), str(?o)) != concat(str(?newS), str(?newP), str(?newO)))
 }}

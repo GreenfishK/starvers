@@ -1,0 +1,11 @@
+PREFIX db: <http://dbpedia.org/resource/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT ?tour ?a ?value
+{
+	?tour ?a ?value.
+    VALUES (?tour ?value)
+    {
+        (db:2015_ATP_Challenger_Tour UNDEF)
+        (db:2015_Pacific_typhoon_season UNDEF)
+    }
+}

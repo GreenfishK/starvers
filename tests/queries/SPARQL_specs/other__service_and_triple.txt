@@ -1,0 +1,15 @@
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX bd: <http://www.bigdata.com/rdf#>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?item ?pic ?a ?pageLength
+WHERE 
+{
+    ?a <http://dbpedia.org/ontology/wikiPageLength> ?pageLength .
+    SERVICE <https://query.wikidata.org/sparql> {
+        ?item wdt:P31 wd:Q146 .
+		?item wdt:P18 ?pic .
+    }
+    filter(?pageLength < 8)
+}
