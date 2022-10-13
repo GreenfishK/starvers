@@ -1,0 +1,4 @@
+{ 
+?s <http://www.w3.org/2000/01/rdf-schema#label> ?o .
+?o <http://dbpedia.org/ontology/Work/runtime> ?y .
+}
