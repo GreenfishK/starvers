@@ -1,4 +1,4 @@
-from ._helper import template_path, versioning_timestamp_format, to_df, pprintAlgebra
+from ._helper import template_path, versioning_timestamp_format, to_df
 from ._prefixes import versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
