@@ -5,6 +5,7 @@ import os
 import pandas as pd
 from rdflib import Graph
 from enum import Enum
+from typing import Union
 
 import data_corrections
 
@@ -18,7 +19,7 @@ class AnnotationStyle(Enum):
     FLAT = 2
 
 
-def diff_set(dataset_dir: str, version1: int, version2: int, format: str) -> [Graph, Graph]:
+def diff_set(dataset_dir: str, version1: int, version2: int, format: str) -> Union[Graph, Graph]:
     print("Calculating changeset between version {0} and {1}".format(version1, version2))
     ic1_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version1).zfill(4))
     ic2_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version2).zfill(4))
