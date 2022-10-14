@@ -1,9 +1,8 @@
-SELECT * {{ 
-    GRAPH <http://example.org/versions> {{
-        ?graph <http://www.w3.org/2002/07/owl#versionInfo> {0}
-    }}
+SELECT * {{
+     GRAPH <http://example.org/versions> {{
+        ?graph  <http://www.w3.org/2002/07/owl#versionInfo>  {0}  . 
+    }} 
+    GRAPH ?graph 
+    {1}
     
-    ?graph GRAPH ?graph 
-    {1} 
-        
 }}

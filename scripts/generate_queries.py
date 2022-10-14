@@ -8,48 +8,54 @@ raw_queries_dir=str(Path.home()) + "/.BEAR/queries/raw_queries/"
 output_queries_dir=str(Path.home()) + "/.BEAR/queries/final_queries/"
 queries={
     "ic":{
-        "beara/high":[1, "ic/ts"],
-        "beara/low": [1, "ic/ts"],
-        "beara": [1, "ic/ts"],
-        "bearb/join": [1, "ic/bgp"],
-        "bearb/lookup": [1, "ic/ts"],
-        "bearc":[1, None]},
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ic/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ic/ts"},
+        "beara": {'output_dirs':{ "beara": 1}, 'template': "ic/ts"},
+        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ic/ts"},
+        "bearc": {'output_dirs':{ "bearc": 1}, 'template': "ic/sparql"},
+    },
     "cb":{
-        "beara/high":[1, "cb/ts"],
-        "beara/low": [1, "cb/ts"],
-        "beara": [1, "ic/ts"],
-        "bearb/join": [1, "cb/bgp"],
-        "bearb/lookup": [1, "cb/ts"],
-        "bearc":[1, None]},
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cb/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cb/ts"},
+        "beara": {'output_dirs':{ "beara": 1}, 'template': "cb/ts"},
+        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cb/bgp"},
+        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cb/ts"},
+        "bearc": {'output_dirs':{"bearc": 1}, 'template': "cb/sparql"},
+    },
     "tb":{
-        "beara/high":[58, "tb/ts"],
-        "beara/low": [58, "tb/ts"],
-        "beara": [58, "tb/ts"],
-        "bearb/join": [1299, "tb/bgp"],
-        "bearb/lookup": [1299, "tb/ts"],
-        "bearc":[32, None]},
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
+        "beara": {'output_dirs':{"beara": 58}, 'template': "tb/ts"},
+        "bearb/join": {'output_dirs':{"bearb-day/join": 89, "bearb-hour/join": 1299}, 'template': "tb/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb-day/lookup": 89, "bearb-hour/lookup": 1299}, 'template': "tb/ts"},
+        "bearc": {'output_dirs':{"bearc": 32}, 'template': "tb/sparql"},
+    },
     "tbsf":{
-        "beara/high":[58, "ic/ts"],
-        "beara/low": [58, "ic/ts"],
-        "beara": [58, "ic/ts"],
-        "bearb/join": [1299, "ic/bgp"],
-        "bearb/lookup": [1299, "ic/ts"],
-        "bearc":[32, None]},
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
+        "beara": {'output_dirs':{"beara": 58}, 'template': "ic/ts"},
+        "bearb/join": {'output_dirs':{"bearb-day/join": 89, "bearb-hour/join": 1299}, 'template': "ic/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb-day/lookup": 89, "bearb-hour/lookup": 1299}, 'template': "ic/ts"},
+        "bearc": {'output_dirs':{"bearc": 32}, 'template': "ic/sparql"},
+    },
     "tbsh":{
-        "beara/high":[58, "ic/ts"],
-        "beara/low": [58, "ic/ts"],
-        "beara": [58, "ic/ts"],
-        "bearb/join": [1299, "ic/bgp"],
-        "bearb/lookup": [1299, "ic/ts"],
-        "bearc":[32, None]},
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
+        "beara": {'output_dirs':{"beara": 58}, 'template': "ic/ts"},
+        "bearb/join": {'output_dirs':{"bearb-day/join": 89, "bearb-hour/join": 1299}, 'template': "ic/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb-day/lookup": 89, "bearb-hour/lookup": 1299}, 'template': "ic/ts"},
+        "bearc": {'output_dirs':{"bearc": 32}, 'template': "ic/sparql"},
     }
+}
 policies=["ic", "cb", "tb", "tbsf", "tbsh"]
-input_representations=["ts", "bgp", "sparql"]
 
 # Create directories
 for policy in policies:
     for querySet in queries[policy].keys():
-        Path(output_queries_dir + str.upper(policy) + "/queries_" + querySet).mkdir(parents=True, exist_ok=True)
+        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+            for query_version in range(query_versions):
+                Path(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version)).mkdir(parents=True, exist_ok=True)
 
 
 # Create queries
@@ -59,16 +65,23 @@ for policy in policies:
         for queriesFile in os.listdir(raw_queries_dir + "queries_" + querySet):
             if os.path.isfile(pathToQueries + "/" + queriesFile):
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
+                    relativeTempLoc = queries[policy][querySet]['template']
+                    print("Create queries for {0} and {1}".format(policy, querySet))
                     lines = file.readlines()
                     for i, tripleStatment in enumerate(lines):
                         output_query = ""
-                        with open(os.path.join(sys.path[0]) +"/templates/" + queries[policy][querySet][1] + ".txt", 'r') as templateFile:
-                            template = templateFile.read()
-                            output_query = template.format(tripleStatment)
-                            templateFile.close()
-                        with open(output_queries_dir + str.upper(policy) + "/queries_" + querySet + "/" + str(i) + "_" + queriesFile, 'w') as output_file:
-                            output_file.write(output_query)
-                            output_file.close()
+                        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+                            for query_version in range(query_versions):
+                                with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
+                                    template = templateFile.read()
+                                    output_query = template.format(str(query_version), tripleStatment)
+                                    templateFile.close()
+                                with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + str(i) + "_" + queriesFile, 'w') as output_file:
+                                    output_file.write(output_query)
+                                    output_file.close()
+
                 file.close()
+
+# Create SPARQL-star queries from SPARQL queries for the tbsf and tbsh policies
 
 
