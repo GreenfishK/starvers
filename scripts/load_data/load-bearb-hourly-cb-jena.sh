@@ -9,11 +9,11 @@ for v in $(seq 0 1 1298); do
         fileadd="/var/data/in/alldata.IC.nt/000001.nt"
         filedel="/var/data/in/empty.nt"
     else
-        fileadd="/var/data/in/alldata.CB.nt/data-added_$v-$ve.nt"
-        filedel="/var/data/in/alldata.CB.nt/data-deleted_$v-$ve.nt"
+        fileadd="/var/data/in/alldata.CB_computed.nt/data-added_$v-$ve.nt"
+        filedel="/var/data/in/alldata.CB_computed.nt/data-deleted_$v-$ve.nt"
     fi
 
-    mkdir $data_dir/tdb-bearb-hour/cb/$v
+    # mkdir $data_dir/tdb-bearb-hour/cb/$v
     time docker run \
         -it \
         --rm \

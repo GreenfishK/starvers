@@ -71,18 +71,20 @@ public class JenaTDBArchive_CB implements RDFArchive {
 		ARQ.init();
 		FileManager fm = FileManager.get();
 		fm.addLocatorClassLoader(RDFArchive_query.class.getClassLoader());
-		/*
-		 * Load all datasets
-		 */
 
+		// Load all datasets
 		File folder = new File(directory);
 		if (!folder.isDirectory())
 			throw new RuntimeException("tdbfolder " + folder + " is not a directory");
 		for (File fileEntry : folder.listFiles()) {
 			int fileVersion = Integer.parseInt(fileEntry.getName());
 			// System.out.println("... Loading TDB version" + fileVersion + " as ADD");
+			// Creates the directories in TDB
+			// Prerequisite: Data are loaded with load-bearb-hourly-cb-jena.sh
 			dataset_adds.put(fileVersion, TDBFactory.createDataset(directory + "/" + fileVersion + "/add/"));
 			// System.out.println("... Loading TDB version" + fileVersion + " as DEL");
+			// Creates the directories in TDB
+			// Prerequisite: Data are loaded with load-bearb-hourly-cb-jena.sh
 			dataset_dels.put(fileVersion, TDBFactory.createDataset(directory + "/" + fileVersion + "/del/"));
 			TOTALVERSIONS++;
 		}
@@ -471,24 +473,12 @@ public class JenaTDBArchive_CB implements RDFArchive {
 
 		while ((line = br.readLine()) != null) {
 			String[] parts = line.split(" ");
-			// String element = parts[0]; //we take all parts in order to process all TP patterns
-
-			/*
-			 * warmup the system
-			 */
 			warmup();
 
 			String queryString = QueryUtils.createLookupQuery(rol, parts);
 			Map<Integer, ArrayList<String>> solutions = new HashMap<Integer, ArrayList<String>>();
 			for (int i = 0; i < TOTALVERSIONS; i++) {
-				// System.out.println("Query at version " + i);
-				// System.out.println(queryString);
-
 				Query query = QueryFactory.create(queryString);
-				// FIXME TEST cold scenario
-				// String[] commands = {"/bin/sh", "-c" , "sync && echo 3 > /proc/sys/vm/drop_caches"};
-				// Process pr = Runtime.getRuntime().exec(commands);
-				// pr.waitFor();
 
 				long startTime = System.currentTimeMillis();
 				if (!askQuery)
@@ -496,7 +486,6 @@ public class JenaTDBArchive_CB implements RDFArchive {
 				else
 					solutions.put(i, materializeASKQuery(i, query));
 				long endTime = System.currentTimeMillis();
-				// System.out.println("Time:" + (endTime - startTime));
 				vStats.get(i).addValue((endTime - startTime));
 			}
 			ret.add(solutions);
@@ -510,14 +499,14 @@ public class JenaTDBArchive_CB implements RDFArchive {
 	}
 
 	/**
+	 * Executes the query against all add- and del- changesets up until staticVersion.
+	 * Iterates through all results of the add-change set and adds the results to the final result.
+	 * Iterates through all results of the del-change set and removes the results to the final result.
 	 * @param staticVersionQuery
 	 * @param query
 	 * @return
 	 */
 	private ArrayList<String> materializeQuery(int staticVersionQuery, Query query) throws InterruptedException, ExecutionException {
-
-		// ArrayList<String> ret = new ArrayList<String>();
-
 		/**
 		 * START PARALELL
 		 */
@@ -529,8 +518,12 @@ public class JenaTDBArchive_CB implements RDFArchive {
 		for (int i = 0; i <= staticVersionQuery; i++) {
 			TaskThread task_add = new TaskThread(query, dataset_adds.get(i), i, true, results_adds);
 			TaskThread task_del = new TaskThread(query, dataset_dels.get(i), i, false, results_dels);
+			
+			// Executes query against add-changeset i
 			task_add.start();
 			a.add(task_add);
+			
+			// Executes query against del-changeset i
 			task_del.start();
 			a.add(task_del);
 		}
@@ -548,19 +541,20 @@ public class JenaTDBArchive_CB implements RDFArchive {
 
 		HashSet<String> finalResults = new HashSet<String>();
 
+		// At every version we retrieve the query results for the changesets add and del.
+		// We first add the results from add to the final solution and 
+		// then we remove the results in from del from the final solution.
 		for (int i = 0; i <= staticVersionQuery; i++) {
 			// System.out.println("Iterating results " + i);
 			while (results_adds.get(i).getSol().hasNext()) {
 				QuerySolution soln = results_adds.get(i).getSol().next();
 				String rowResult = QueryUtils.serializeSolution(soln);
 				finalResults.add(rowResult);
-				// System.out.println("****** RowResult: " + rowResult);
 			}
+			// System.out.println("Iterating results " + i);
 			while (results_dels.get(i).getSol().hasNext()) {
 				QuerySolution soln = results_dels.get(i).getSol().next();
 				String rowResult = QueryUtils.serializeSolution(soln);
-
-				// System.out.println("****** RowResult: " + rowResult);
 				finalResults.remove(rowResult);
 			}
 		}

@@ -60,7 +60,6 @@ public class TripleStoreHandler {
 
     public void load(String directory, String format, TripleStore tripleStore) {
 
-
         if (tripleStore == TripleStore.JenaTDB) {
             this.tripleStoreLoc = "target/TDB";
             this.tripleStore = TripleStore.JenaTDB;
@@ -83,14 +82,15 @@ public class TripleStoreHandler {
             InputStream in = fm.open(directory);
 
             long startTime = System.currentTimeMillis();
-            TDBLoader.load(dsg, in, rdf_format,false, true);
+            TDBLoader.load(dsg, in, rdf_format, false, true);
             long endTime = System.currentTimeMillis();
             logger.info("Loaded in "+(endTime - startTime)/1000 +" seconds");
             this.ingestionTime = (endTime - startTime)/1000;
 
             // Create a dataset object from the persistent TDB dataset
             Dataset dataset = TDBFactory.createDataset(this.tripleStoreLoc);
-            // Create a fuseki server, load the dataset into the repository
+            
+            // Create a fuseki server, load the dataset object into the repository
             logger.info("Initializing Jena Fuseki Server");
             this.fusekiServer = FusekiServer.create()
                     .add("/evalJenaTDB", dataset)
@@ -150,7 +150,6 @@ public class TripleStoreHandler {
             }
 
         }
-
     }
 
     public RepositoryConnection getGraphDBConnection() {
