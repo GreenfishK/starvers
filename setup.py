@@ -10,7 +10,7 @@ setup(
     author='Filip Kovacevic',
     author_email='filip.kovacevic@tuwien.ac.at',
     license='Apache License 2.0',
-    install_requires=['pandas==1.3.4','pytest==7.1.3','rdflib==6.2.0',
+    install_requires=['pandas==1.3.4','pytest==7.1.3','rdflib==6.2.0', 'setuptools==65.4.0',
     'SPARQLWrapper==2.0.0','tzlocal==4.2'],
 
     classifiers=[
