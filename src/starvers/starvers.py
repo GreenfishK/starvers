@@ -11,7 +11,7 @@ from datetime import datetime
 import logging
 import tzlocal
 from datetime import datetime, timedelta, timezone
-
+from typing import Union
 from rdflib.term import Variable, Identifier, URIRef
 from rdflib.plugins.sparql.parserutils import CompValue
 import rdflib.plugins.sparql.parser as parser
@@ -23,6 +23,172 @@ from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPa
 class VersioningMode(Enum):
     Q_PERF = 1
     SAVE_MEM = 2
+
+
+def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str]:
+    """
+    Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
+    the query with a code snippet that ensures that a snapshot of the data as of q_handler
+    time gets returned when the query is executed. Optionally, but recommended, the order by clause
+    is attached to the query to ensure a unique sort of the data.
+
+    :param query:
+    :param version_timestamp:
+    :return: A query string extended with the given timestamp
+    """
+    logging.info("Creating timestamped query ...")
+    prefixes, query = split_prefixes_query(query)
+    query_vers = prefixes + "\n" + query
+
+    if version_timestamp is None:
+        current_datetime = datetime.now()
+        timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
+        execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
+        timestamp = versioning_timestamp_format(execution_datetime)
+    else:
+        timestamp = versioning_timestamp_format(version_timestamp)  # -> str
+
+    query_tree = parser.parseQuery(query_vers)
+    query_algebra = algebra.translateQuery(query_tree)
+
+    bgp_triples = {}
+    # TODO: set type of node to CompValue in function head
+    def inject_versioning_extensions(node):
+        if isinstance(node, CompValue):
+            if node.name == "BGP":
+                bgp_id = "BGP_" + str(len(bgp_triples))
+                bgp_triples[bgp_id] = node.triples.copy()
+
+                dummy_block = [rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
+                rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
+                rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]
+                node.triples = []
+                node.triples.append(dummy_block)
+                
+            elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+                algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
+
+    def resolve_paths(node: CompValue):
+        if isinstance(node, CompValue):
+            if node.name == "BGP":
+                resolved_triples = []
+
+                def resolve(path: Path, subj, obj):
+                    if isinstance(path, SequencePath):
+                        for i, ref in enumerate(path.args, start=1):
+                            if i == 1:
+                                s = subj
+                                p = ref
+                                o = Variable("?dummy{0}".format(str(i)))
+                            elif i == len(path.args):
+                                s = Variable("?dummy{0}".format(len(path.args) - 1))
+                                p = ref
+                                o = obj
+                            else:
+                                s = Variable("?dummy{0}".format(str(i - 1)))
+                                p = ref
+                                o = Variable("?dummy{0}".format(str(i)))
+                            if isinstance(ref, URIRef):
+                                t = (s, p, o)
+                                resolved_triples.append(t)
+                                continue
+                            if isinstance(ref, Path):
+                                resolve(p, s, o)
+                            else:
+                                raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
+                                                                    "{0}. This case has not been covered yet. "
+                                                                    "Path will not be resolved.".format(type(ref)))
+
+                    if isinstance(path, NegatedPath):
+                        raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
+                    if isinstance(path, AlternativePath):
+                        raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
+                                                            "Path will not be resolved. Instead of alternative paths "
+                                                            "try using the following expression: "
+                                                            "{ <triple statements> } "
+                                                            "UNION "
+                                                            "{ <triple statements> }")
+                    if isinstance(path, InvPath):
+                        if isinstance(path.arg, URIRef):
+                            t = (obj, path.arg, subj)
+                            resolved_triples.append(t)
+                            return
+                        else:
+                            raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
+                                                                "was given. This case is not implemented yet.")  
+                    
+                    if isinstance(path, MulPath):
+                        if path.mod == "?":
+                            raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
+                                                                "Path will not be resolved")
+                        if path.mod == "*": 
+                            raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
+                                                                "Path will not be resolved")
+                        if path.mod == "+":
+                            raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
+                                                                "Path will not be resolved")
+
+                for k, triple in enumerate(node.triples):
+                    if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
+                        if isinstance(triple[1], Path):
+                            resolve(triple[1], triple[0], triple[2])
+                        else:
+                            if isinstance(triple[1], Identifier):
+                                resolved_triples.append(triple)
+                            else:
+                                raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
+                                                                    "This case has not been covered yet.".format(triple[1]))
+                    else:
+                        raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
+                                                            " This is not implemented yet.".format(triple[0], triple[2]))
+
+                node.triples.clear()
+                node.triples.extend(resolved_triples)
+                node.triples = algebra.reorderTriples(node.triples)
+
+            elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+                algebra.traverse(node.graph, visitPre=resolve_paths)
+            
+    try:
+        logging.info("Resolving SPARQL paths to normal triple statements ...")
+        algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
+        logging.info("Injecting versioning extensions into query ...")
+        algebra.traverse(query_algebra.algebra, visitPre=inject_versioning_extensions)
+    except ExpressionNotCoveredException as e:
+        err = "Query will not be timestamped because of following error: {0}".format(e)
+        raise ExpressionNotCoveredException(err)
+    
+    # Create the SPARQL representation from the query algebra tree.
+    query_vers_out = algebra.translateAlgebra(query_algebra) 
+
+    # Replace each block of triples (labeled as dummy block) 
+    # with their corresponding block of timestamped triple statements.
+    triple_stmts_cnt = 0
+    for bgp_identifier, triples in bgp_triples.items():
+        ver_block_template = \
+            open(template_path("templates/versioning_query_extensions.txt"), "r").read()
+
+        ver_block = ""
+        for i, triple in enumerate(triples):
+            triple_stmts_cnt = triple_stmts_cnt + 1
+            logging.debug(triple_stmts_cnt)
+            templ = ver_block_template
+            triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
+            ver_block += templ.format(triple_n3,
+                                        "?valid_from_{0}".format(str(triple_stmts_cnt)),
+                                        "?valid_until_{0}".format(str(triple_stmts_cnt)),
+                                        bgp_identifier)
+
+        # 
+        dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
+                        + rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_identifier)).n3() + " "\
+                        + rdflib.term.Literal('__{0}dummy_object__'.format(bgp_identifier)).n3() + "."
+        ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
+        query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
+
+    query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
+    
+    return query_vers_out, timestamp
 
 
 class TripleStoreEngine:
@@ -211,172 +377,6 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def _timestamp_query(self, query, version_timestamp: datetime = None) -> str:
-        """
-        Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
-        the query with a code snippet that ensures that a snapshot of the data as of q_handler
-        time gets returned when the query is executed. Optionally, but recommended, the order by clause
-        is attached to the query to ensure a unique sort of the data.
-
-        :param query:
-        :param version_timestamp:
-        :return: A query string extended with the given timestamp
-        """
-        logging.info("Creating timestamped query ...")
-        prefixes, query = split_prefixes_query(query)
-        query_vers = prefixes + "\n" + query
-
-        if version_timestamp is None:
-            current_datetime = datetime.now()
-            timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
-            execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
-            timestamp = versioning_timestamp_format(execution_datetime)
-        else:
-            timestamp = versioning_timestamp_format(version_timestamp)  # -> str
-
-        query_tree = parser.parseQuery(query_vers)
-        query_algebra = algebra.translateQuery(query_tree)
-
-        bgp_triples = {}
-        # TODO: set type of node to CompValue in function head
-        def inject_versioning_extensions(node):
-            if isinstance(node, CompValue):
-                if node.name == "BGP":
-                    bgp_id = "BGP_" + str(len(bgp_triples))
-                    bgp_triples[bgp_id] = node.triples.copy()
-
-                    dummy_block = [rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
-                    rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
-                    rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]
-                    node.triples = []
-                    node.triples.append(dummy_block)
-                    
-                elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
-                    algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
-
-        def resolve_paths(node: CompValue):
-            if isinstance(node, CompValue):
-                if node.name == "BGP":
-                    resolved_triples = []
-
-                    def resolve(path: Path, subj, obj):
-                        if isinstance(path, SequencePath):
-                            for i, ref in enumerate(path.args, start=1):
-                                if i == 1:
-                                    s = subj
-                                    p = ref
-                                    o = Variable("?dummy{0}".format(str(i)))
-                                elif i == len(path.args):
-                                    s = Variable("?dummy{0}".format(len(path.args) - 1))
-                                    p = ref
-                                    o = obj
-                                else:
-                                    s = Variable("?dummy{0}".format(str(i - 1)))
-                                    p = ref
-                                    o = Variable("?dummy{0}".format(str(i)))
-                                if isinstance(ref, URIRef):
-                                    t = (s, p, o)
-                                    resolved_triples.append(t)
-                                    continue
-                                if isinstance(ref, Path):
-                                    resolve(p, s, o)
-                                else:
-                                    raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
-                                                                        "{0}. This case has not been covered yet. "
-                                                                        "Path will not be resolved.".format(type(ref)))
-
-                        if isinstance(path, NegatedPath):
-                            raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
-                        if isinstance(path, AlternativePath):
-                            raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
-                                                                "Path will not be resolved. Instead of alternative paths "
-                                                                "try using the following expression: "
-                                                                "{ <triple statements> } "
-                                                                "UNION "
-                                                                "{ <triple statements> }")
-                        if isinstance(path, InvPath):
-                            if isinstance(path.arg, URIRef):
-                                t = (obj, path.arg, subj)
-                                resolved_triples.append(t)
-                                return
-                            else:
-                                raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
-                                                                    "was given. This case is not implemented yet.")  
-                        
-                        if isinstance(path, MulPath):
-                            if path.mod == "?":
-                                raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
-                                                                    "Path will not be resolved")
-                            if path.mod == "*": 
-                                raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
-                                                                    "Path will not be resolved")
-                            if path.mod == "+":
-                                raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
-                                                                    "Path will not be resolved")
-
-                    for k, triple in enumerate(node.triples):
-                        if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
-                            if isinstance(triple[1], Path):
-                                resolve(triple[1], triple[0], triple[2])
-                            else:
-                                if isinstance(triple[1], Identifier):
-                                    resolved_triples.append(triple)
-                                else:
-                                    raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
-                                                                        "This case has not been covered yet.".format(triple[1]))
-                        else:
-                            raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
-                                                                " This is not implemented yet.".format(triple[0], triple[2]))
-
-                    node.triples.clear()
-                    node.triples.extend(resolved_triples)
-                    node.triples = algebra.reorderTriples(node.triples)
-
-                elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
-                    algebra.traverse(node.graph, visitPre=resolve_paths)
-                
-        try:
-            logging.info("Resolving SPARQL paths to normal triple statements ...")
-            algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
-            logging.info("Injecting versioning extensions into query ...")
-            algebra.traverse(query_algebra.algebra, visitPre=inject_versioning_extensions)
-        except ExpressionNotCoveredException as e:
-            err = "Query will not be timestamped because of following error: {0}".format(e)
-            raise ExpressionNotCoveredException(err)
-        
-        # Create the SPARQL representation from the query algebra tree.
-        query_vers_out = algebra.translateAlgebra(query_algebra) 
-
-        # Replace each block of triples (labeled as dummy block) 
-        # with their corresponding block of timestamped triple statements.
-        triple_stmts_cnt = 0
-        for bgp_identifier, triples in bgp_triples.items():
-            ver_block_template = \
-                open(template_path("templates/versioning_query_extensions.txt"), "r").read()
-
-            ver_block = ""
-            for i, triple in enumerate(triples):
-                triple_stmts_cnt = triple_stmts_cnt + 1
-                logging.debug(triple_stmts_cnt)
-                templ = ver_block_template
-                triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
-                ver_block += templ.format(triple_n3,
-                                          "?valid_from_{0}".format(str(triple_stmts_cnt)),
-                                          "?valid_until_{0}".format(str(triple_stmts_cnt)),
-                                          bgp_identifier)
-
-            # 
-            dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
-                           + rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_identifier)).n3() + " "\
-                           + rdflib.term.Literal('__{0}dummy_object__'.format(bgp_identifier)).n3() + "."
-            ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
-            query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
-
-        query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
-        
-        return query_vers_out, timestamp
-
-
     def query(self, select_statement, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
@@ -392,7 +392,7 @@ class TripleStoreEngine:
         """
 
         if yn_timestamp_query:
-            timestamped_query, version_timestamp = self._timestamp_query(query=select_statement, version_timestamp=timestamp)
+            timestamped_query, version_timestamp = timestamp_query(query=select_statement, version_timestamp=timestamp)
 
             logging.info("Timestamped query with timestamp {0} being executed:"
                          " \n {1}".format(version_timestamp, timestamped_query))
