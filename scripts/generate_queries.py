@@ -1,5 +1,5 @@
 from genericpath import isfile
-import starvers.starvers
+from starvers.starvers import timestamp_query
 from pathlib import Path
 import os
 import sys
@@ -62,13 +62,17 @@ for policy in policies:
 for policy in policies:
     for querySet in queries[policy].keys():
         pathToQueries = raw_queries_dir + "queries_" + querySet
-        for queriesFile in os.listdir(raw_queries_dir + "queries_" + querySet):
+        for k, queriesFile in enumerate(os.listdir(raw_queries_dir + "queries_" + querySet)):
             if os.path.isfile(pathToQueries + "/" + queriesFile):
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
                     relativeTempLoc = queries[policy][querySet]['template']
                     print("Create queries for {0} and {1}".format(policy, querySet))
-                    lines = file.readlines()
-                    for i, tripleStatment in enumerate(lines):
+                    if relativeTempLoc.split('/')[1] == 'ts':
+                        raw_queries = file.readlines()
+                    else:
+                        raw_queries = [file.read()]
+                    for i, tripleStatment in enumerate(raw_queries):
+                        queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
                         output_query = ""
                         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
                             for query_version in range(query_versions):
@@ -76,12 +80,12 @@ for policy in policies:
                                     template = templateFile.read()
                                     output_query = template.format(str(query_version), tripleStatment)
                                     templateFile.close()
-                                with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + str(i) + "_" + queriesFile, 'w') as output_file:
+                                with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     output_file.write(output_query)
                                     output_file.close()
 
                 file.close()
 
+# TODO: fix SPARQL queries prologue/prefixes 
 # Create SPARQL-star queries from SPARQL queries for the tbsf and tbsh policies
-
 

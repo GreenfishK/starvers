@@ -38,10 +38,10 @@ case "$1" in
 esac
 
 
-policies="tb_star_h tb_star_f tb" # tb tb_star_h tb_star_f ic cb cbtb"
+policies="cb" # tb tb_star_h tb_star_f ic cb cbtb
 categories="mat" # mat diff ver
 queries=$(cd ${querydir} && ls -v)
-tripleStores="GraphDB JenaTDB" # JenaTDB GraphDB
+tripleStores="JenaTDB" # JenaTDB GraphDB
 
 echo ${queries}
 # If building with maven-assembly-plugin use: java -cp target/tdbQuery-0.8-jar-with-dependencies.jar org/ai/wu/ac/at/rdfArchive/tools/RDFArchive_query \
@@ -49,6 +49,7 @@ for tripleStore in ${tripleStores[@]}; do
     for policy in ${policies[@]}; do
 
         case $policy in 
+            cb) ds_name="alldata.CB_computed.nt" ;;
             tb) ds_name="alldata.TB.nq" ;;
             tb_star_f) ds_name="alldata.TB_star_flat.ttl" ;;
             tb_star_h) ds_name="alldata.TB_star_hierarchical.ttl" ;;
