@@ -2,8 +2,6 @@ from setuptools import setup
 
 setup(
     name='starvers',
-    packages=['starvers'],
-    package_dir={'':'src'},
     version='0.8.0',    
     description='Starvers is a python module for timestamp-based versioning of RDF data.',
     url='https://github.com/GreenfishK/starvers',
@@ -20,4 +18,9 @@ setup(
         'Operating System :: OS Independent',      
         'Programming Language :: Python :: 3.8',
     ],
+
+    packages=['starvers'],
+    package_dir={'':'src'},
+    package_data={'starvers': ['templates/*.txt',
+                               'templates/test_connection/*.txt']}
 )
