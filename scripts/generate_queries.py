@@ -71,14 +71,15 @@ for policy in policies:
                         raw_queries = file.readlines()
                     else:
                         raw_queries = [file.read()]
-                    for i, tripleStatment in enumerate(raw_queries):
+                    for i, raw_query in enumerate(raw_queries):
+                        prefixes, raw_query = split_prefixes_query(raw_query)
                         queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
                         output_query = ""
                         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
                             for query_version in range(query_versions):
                                 with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
                                     template = templateFile.read()
-                                    output_query = template.format(str(query_version), tripleStatment)
+                                    output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
                                 with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     output_file.write(output_query)
