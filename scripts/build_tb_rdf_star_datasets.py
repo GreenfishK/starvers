@@ -193,25 +193,29 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
 
 """ Parameters and function calls """
-data_dir = str(Path.home()) + "/.BEAR/rawdata/bearb/hour"
-add_change_sets_until_vers = 1299
 in_frm = "nt"
 out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-construct_change_sets(dataset_dir=data_dir, end_vers=add_change_sets_until_vers, format=out_frm)
-construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                     destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
-                     last_version=add_change_sets_until_vers,
-                     init_timestamp=init_version_timestamp,
-                     annotation_style=AnnotationStyle.HIERARCHICAL)
-construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
-                     source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                     destination=data_dir + "/alldata.TB_star_flat." + out_frm,
-                     last_version=add_change_sets_until_vers,
-                     init_timestamp=init_version_timestamp,
-                     annotation_style=AnnotationStyle.FLAT)
-data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
-data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+datasets = {'beara':58, 'bearb/day':89, 'bearb/hour':1299, 'bearc': 32}
+
+for dataset, totalVersions in datasets.items():
+    data_dir = str(Path.home()) + "/.BEAR/rawdata/" + datasets
+
+    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm)
+    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                        destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
+                        last_version=totalVersions,
+                        init_timestamp=init_version_timestamp,
+                        annotation_style=AnnotationStyle.HIERARCHICAL)
+    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                        destination=data_dir + "/alldata.TB_star_flat." + out_frm,
+                        last_version=totalVersions,
+                        init_timestamp=init_version_timestamp,
+                        annotation_style=AnnotationStyle.FLAT)
+    data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+    data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+
