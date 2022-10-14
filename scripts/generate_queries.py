@@ -3,6 +3,7 @@ from starvers.starvers import timestamp_query, split_prefixes_query
 from pathlib import Path
 import os
 import sys
+from datetime import datetime, timezone, timedelta
 
 raw_queries_dir=str(Path.home()) + "/.BEAR/queries/raw_queries/"
 output_queries_dir=str(Path.home()) + "/.BEAR/queries/final_queries/"
@@ -49,6 +50,9 @@ queries={
     }
 }
 policies=["ic", "cb", "tb", "tbsf", "tbsh"]
+LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
+vers_ts = init_version_timestamp
 
 # Create directories
 for policy in policies:
@@ -82,7 +86,15 @@ for policy in policies:
                                     output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
                                 with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
-                                    output_file.write(output_query)
+                                    if policy in ["tbsf", "tbsh"]:
+                                        timestamped_output_query = timestamp_query(output_query, vers_ts)
+                                        if querySet == 'beara':
+                                            print(output_query)
+                                            print(timestamped_output_query[0])
+                                        output_file.write(timestamped_output_query[0])
+                                        vers_ts = vers_ts + timedelta(seconds=1)
+                                    else:
+                                        output_file.write(output_query)
                                     output_file.close()
 
                 file.close()
