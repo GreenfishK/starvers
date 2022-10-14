@@ -12,3 +12,16 @@ src/starvers.egg-info/SOURCES.txt
 src/starvers.egg-info/dependency_links.txt
 src/starvers.egg-info/requires.txt
 src/starvers.egg-info/top_level.txt
+src/starvers/templates/_delete_triples.txt
+src/starvers/templates/_reset_all_versions.txt
+src/starvers/templates/insert_triples.txt
+src/starvers/templates/outdate_triples.txt
+src/starvers/templates/update_triples.txt
+src/starvers/templates/version_all_rows.txt
+src/starvers/templates/versioning_query_extensions.txt
+src/starvers/templates/test_connection/test_connection_delete.txt
+src/starvers/templates/test_connection/test_connection_insert.txt
+src/starvers/templates/test_connection/test_connection_nested_delete.txt
+src/starvers/templates/test_connection/test_connection_nested_insert.txt
+src/starvers/templates/test_connection/test_connection_nested_select.txt
+src/starvers/templates/test_connection/test_connection_select.txt
