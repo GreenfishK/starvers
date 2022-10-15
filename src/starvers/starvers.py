@@ -160,7 +160,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
     
     # Create the SPARQL representation from the query algebra tree.
     query_vers_out = algebra.translateAlgebra(query_algebra) 
-
+    
     # Replace each block of triples (labeled as dummy block) 
     # with their corresponding block of timestamped triple statements.
     triple_stmts_cnt = 0
