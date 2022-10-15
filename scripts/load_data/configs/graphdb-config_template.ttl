@@ -8,8 +8,8 @@
 @prefix owlim: <http://www.ontotext.com/trree/owlim#>.
 
 [] a rep:Repository ;
-    rep:repositoryID "starvers" ;
-    rdfs:label "Repository for evaluating starvers - an RDF-star-based versioning API." ;
+    rep:repositoryID "{{repositoryID}}" ;
+    rdfs:label "Repository for evaluating different RDF archiving policies." ;
     rep:repositoryImpl [
         rep:repositoryType "graphdb:FreeSailRepository" ;
         sr:sailImpl [
