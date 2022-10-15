@@ -209,11 +209,20 @@ def test_graph_patterns__minus():
     with open(sparql_specs_queries_path + "graph_patterns__minus.txt", "r") as file:
         query = file.read()
     file.close()
-    # TODO: fix approach with counting valid_from_x in every BGP. 
-    # The suffix should be unique for every valid_from_x and valid_from_y in the whole query, not just on BGP or TriplesBlock level.
-
+    
     df = engine.query(query)
     assert len(df.index) == 8
+
+
+def test_graph_patterns__no_vars():
+    with open(sparql_specs_queries_path + "graph_patterns__no_vars.txt", "r") as file:
+        query = file.read()
+    file.close()
+    # TODO: Implement ask queries in algebra.translateAlgebra
+    # TODO: Implement this test.
+
+    df = engine.query(query)
+    assert 1 == 1
 
 
 def test_graph_patterns__union():
