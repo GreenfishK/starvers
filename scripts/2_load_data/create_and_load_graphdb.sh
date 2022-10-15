@@ -31,23 +31,45 @@ for policy in ${policies[@]}; do
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             # Load data
             docker run --name starvers_graphdb_${policy}_${dataset} \
-                    -it \
-                    --rm \
-                    -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
-                    -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                    starvers_eval:latest \
-                    /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force
+                       -it \
+                       --rm \
+                       -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
+                       -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
+                       starvers_eval:latest \
+                       /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force
 
-            # Run the graphdb database instance
-            #docker run --name starvers_graphdb_${policy}_${dataset} \
-            #        -it \
-            #        --rm \
-            #        -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
-            #        -p 127.0.0.1:7200:7200 \
-            #        starvers_eval:latest \
-            #        /opt/graphdb/dist/bin/graphdb    
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
+            case $dataset in 
+                beara) versions=58;;
+                bearb-hour) versions=1299;;
+                bearb-day) versions=89;;
+                bearc) versions=32;;
+                *)
+                    echo "Dataset must be in beara bearb-hour bearb-day bearc"
+                    exit 2
+                ;;
+            esac
+
+            for ((c=1; c<=$versions; c++))
+            do
+                # Replace repositoryID in config template
+                repositoryID=${policy}_${dataset}_${c}
+                cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
+
+                # Build GraphDB image and copy config file and license
+                docker build --build-arg configFile=${configFile} -t starvers_eval . 
+
+                docker run --name starvers_graphdb_${policy}_${dataset} \
+                           -it \
+                           --rm \
+                           -v ~/.BEAR/databases/graphdb_${policy}_${dataset} :/opt/graphdb/home \
+                           -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
+                           starvers_eval:latest \
+                           /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/00000${c}.nt --force
+
+            done
         elif [ "$policy" == "cb" ]; then
             echo "Policy is cb"
         fi
