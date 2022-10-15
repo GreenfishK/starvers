@@ -2,8 +2,8 @@
 
 # Variables
 configFile=graphdb-config.ttl
-policies="ic cb tb tbsf tbsh"
-datasets="bearb-hour"
+policies="ic cb tbsf tbsh tb"
+datasets="bearb-hour" # bearb-day beara bearc
 
 for policy in ${policies[@]}; do
     case $policy in 
@@ -28,7 +28,7 @@ for policy in ${policies[@]}; do
         # Build GraphDB image and copy config file and license
         docker build --build-arg configFile=${configFile} -t starvers_eval . 
 
-        if [ "$policy" == "tbsh" || "$policy" == "tbsh" || "$policy" == "tb" ]; then
+        if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             # Load data
             docker run --name starvers_graphdb_${policy}_${dataset} \
                     -it \
@@ -36,22 +36,23 @@ for policy in ${policies[@]}; do
                     -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
                     -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
                     starvers_eval:latest \
-                    /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}--force
+                    /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force
 
             # Run the graphdb database instance
-            docker run --name starvers_graphdb_${policy}_${dataset} \
-                    -it \
-                    --rm \
-                    -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
-                    -p 127.0.0.1:7200:7200 \
-                    starvers_eval:latest \
-                    /opt/graphdb/dist/bin/graphdb    
+            #docker run --name starvers_graphdb_${policy}_${dataset} \
+            #        -it \
+            #        --rm \
+            #        -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
+            #        -p 127.0.0.1:7200:7200 \
+            #        starvers_eval:latest \
+            #        /opt/graphdb/dist/bin/graphdb    
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
         elif [ "$policy" == "cb" ]; then
             echo "Policy is cb"
         fi
-
+    done
+done
 
 
 # Remove dangling images
