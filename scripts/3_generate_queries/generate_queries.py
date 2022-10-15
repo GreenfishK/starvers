@@ -89,6 +89,7 @@ for policy in policies:
                                     if policy in ["tbsf", "tbsh"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
                                         if querySet == 'beara':
+                                            # TODO fix queries in beara directory. They don't have any projection variables
                                             print(output_query)
                                             print(timestamped_output_query[0])
                                         output_file.write(timestamped_output_query[0])
@@ -98,7 +99,4 @@ for policy in policies:
                                     output_file.close()
 
                 file.close()
-
-# TODO: fix SPARQL queries prologue/prefixes 
-# Create SPARQL-star queries from SPARQL queries for the tbsf and tbsh policies
 
