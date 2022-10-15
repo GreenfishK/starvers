@@ -2,7 +2,7 @@
 
 # Variables
 configFile=graphdb-config.ttl
-policies="ic cb tbsf tbsh tb"
+policies="ic" # cb tbsf tbsh tb
 datasets="bearb-hour" # bearb-day beara bearc
 
 for policy in ${policies[@]}; do
