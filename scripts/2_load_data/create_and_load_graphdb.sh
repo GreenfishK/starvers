@@ -38,7 +38,7 @@ for policy in ${policies[@]}; do
                             -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
                             starvers_eval:latest \
                             /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force \
-                            > $baseDir/outputs/logs/${policy}/${dataset}/ingestion.txt
+                            > $baseDir/output/logs/${policy}/${dataset}/ingestion.txt
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
@@ -53,7 +53,8 @@ for policy in ${policies[@]}; do
                 ;;
             esac
 
-            for c in $(seq -f "%06g" 1 ${versions})
+            total_ingestion_time=0
+            for c in $(seq -f "%06g" 1 2) # ${versions}
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
@@ -63,14 +64,16 @@ for policy in ${policies[@]}; do
                 # Build GraphDB image and copy config file and license
                 docker build --build-arg configFile=${configFile} -t starvers_eval . 
 
-                time docker run --name starvers_graphdb_${policy}_${dataset} \
+                (time docker run --name starvers_graphdb_${policy}_${dataset} \
                                 -it \
                                 --rm \
                                 -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
                                 -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
                                 starvers_eval:latest \
-                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force \
-                                > $baseDir/outputs/logs/${policy}/${dataset}/ingestion.txt
+                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force) \
+                                2>&1 | grep "real" | tee -a $baseDir/output/logs/${policy}/${dataset}/ingestion.txt 
+                                # tee -a $baseDir/output/logs/${policy}/${dataset}/ingestion.txt 
+            #a=$(echo $( TIMEFORMAT="%3U + %3S"; { time your_command; } 2>&1) "*1000" | bc -l)
 
             done
         elif [ "$policy" == "cb" ]; then
