@@ -8,7 +8,7 @@
 @prefix owlim: <http://www.ontotext.com/trree/owlim#>.
 
 [] a rep:Repository ;
-    rep:repositoryID "ic_bearb-hour_5" ;
+    rep:repositoryID "ic_bearb-hour_10" ;
     rdfs:label "Repository for evaluating different RDF archiving policies." ;
     rep:repositoryImpl [
         rep:repositoryType "graphdb:FreeSailRepository" ;

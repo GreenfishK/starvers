@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Variables
+baseDir=~/.BEAR
 configFile=graphdb-config.ttl
 policies="ic" # cb tbsf tbsh tb
 datasets="bearb-hour" # bearb-day beara bearc
@@ -30,13 +31,14 @@ for policy in ${policies[@]}; do
 
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             # Load data
-            docker run --name starvers_graphdb_${policy}_${dataset} \
-                       -it \
-                       --rm \
-                       -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
-                       -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                       starvers_eval:latest \
-                       /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force
+            time docker run --name starvers_graphdb_${policy}_${dataset} \
+                            -it \
+                            --rm \
+                            -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
+                            -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
+                            starvers_eval:latest \
+                            /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force \
+                            > $baseDir/outputs/logs/${policy}/${dataset}/ingestion.txt
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
@@ -61,13 +63,14 @@ for policy in ${policies[@]}; do
                 # Build GraphDB image and copy config file and license
                 docker build --build-arg configFile=${configFile} -t starvers_eval . 
 
-                docker run --name starvers_graphdb_${policy}_${dataset} \
-                           -it \
-                           --rm \
-                           -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
-                           -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                           starvers_eval:latest \
-                           /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force
+                time docker run --name starvers_graphdb_${policy}_${dataset} \
+                                -it \
+                                --rm \
+                                -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
+                                -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
+                                starvers_eval:latest \
+                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force \
+                                > $baseDir/outputs/logs/${policy}/${dataset}/ingestion.txt
 
             done
         elif [ "$policy" == "cb" ]; then
