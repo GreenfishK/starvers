@@ -51,10 +51,10 @@ for policy in ${policies[@]}; do
                 ;;
             esac
 
-            for ((c=1; c<=$versions; c++))
+            for c in $(seq -f "%06g" 1 ${versions})
             do
                 # Replace repositoryID in config template
-                repositoryID=${policy}_${dataset}_${c}
+                repositoryID=${policy}_${dataset}_$((10#$c))
                 cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
 
@@ -64,10 +64,10 @@ for policy in ${policies[@]}; do
                 docker run --name starvers_graphdb_${policy}_${dataset} \
                            -it \
                            --rm \
-                           -v ~/.BEAR/databases/graphdb_${policy}_${dataset} :/opt/graphdb/home \
+                           -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
                            -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
                            starvers_eval:latest \
-                           /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/00000${c}.nt --force
+                           /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force
 
             done
         elif [ "$policy" == "cb" ]; then
