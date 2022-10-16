@@ -54,7 +54,7 @@ for policy in ${policies[@]}; do
             esac
 
             total_ingestion_time=0
-            for c in $(seq -f "%06g" 1 2) # ${versions}
+            for c in $(seq -f "%06g" 1 ${versions}) 
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
@@ -64,18 +64,18 @@ for policy in ${policies[@]}; do
                 # Build GraphDB image and copy config file and license
                 docker build --build-arg configFile=${configFile} -t starvers_eval . 
 
-                (time docker run --name starvers_graphdb_${policy}_${dataset} \
+                ingestion_time=`(time -p docker run --name starvers_graphdb_${policy}_${dataset} \
                                 -it \
                                 --rm \
                                 -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
                                 -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
                                 starvers_eval:latest \
                                 /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force) \
-                                2>&1 | grep "real" | tee -a $baseDir/output/logs/${policy}/${dataset}/ingestion.txt 
-                                # tee -a $baseDir/output/logs/${policy}/${dataset}/ingestion.txt 
-            #a=$(echo $( TIMEFORMAT="%3U + %3S"; { time your_command; } 2>&1) "*1000" | bc -l)
-
+                                2>&1 | grep -oP "real \K.*" | sed "s/,/./g" `
+                total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             done
+            echo "GraphDB;${policy};${dataset};${total_ingestion_time}" >> $baseDir/output/logs/ingestion.txt 
+
         elif [ "$policy" == "cb" ]; then
             echo "Policy is cb"
         fi
