@@ -97,7 +97,7 @@ for policy in ${policies[@]}; do
                     fileadd="alldata.CB_computed.nt/data-added_$v-$ve.nt"
                     filedel="alldata.CB_computed.nt/data-deleted_$v-$ve.nt"
                     repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
-                    repositoryIDDel=${policy}_${dataset}_add_$v-$ve
+                    repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
 
                 # GRAPHDB ######################################################################
