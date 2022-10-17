@@ -40,7 +40,7 @@ for policy in ${policies[@]}; do
             sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
 
             # Build GraphDB image and copy config file and license
-            docker build --build-arg configFile=${configFile} -t starvers_eval .
+            docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval .
 
             # Load data into GraphDB
             ingestion_time=`(time -p docker run \
@@ -66,7 +66,7 @@ for policy in ${policies[@]}; do
                 sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -t starvers_eval . 
+                docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -107,7 +107,7 @@ for policy in ${policies[@]}; do
                 sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --target=graphdb --build-arg configFile=${configFile} -t starvers_eval . 
+                docker build --target=graphdb --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -128,7 +128,7 @@ for policy in ${policies[@]}; do
                 sed -i "s/{{repositoryID}}/$repositoryIDDel/g" configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -t starvers_eval . 
+                docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \

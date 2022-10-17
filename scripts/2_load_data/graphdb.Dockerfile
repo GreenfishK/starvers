@@ -15,6 +15,3 @@ COPY configs/$configFile /opt/graphdb/dist/conf/
 COPY configs/graphdb.license /opt/graphdb/dist/conf/
 
 ENTRYPOINT []
-
-FROM stain/jena-fuseki:4.0.0 as jena
-ENTRYPOINT []
