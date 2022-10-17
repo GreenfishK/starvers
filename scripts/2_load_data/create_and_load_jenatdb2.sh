@@ -2,9 +2,12 @@
 
 # Variables
 baseDir=~/.BEAR
-policies="cb ic" # cb tbsf tbsh tb
+policies="cb" # cb tbsf tbsh tb
 datasets="bearb-hour" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
+
+# Build Jena image
+docker build -f jenatdb2.Dockerfile -t starvers_eval . 
 
 for policy in ${policies[@]}; do
     case $policy in 
@@ -33,43 +36,40 @@ for policy in ${policies[@]}; do
 
         total_ingestion_time=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
-            # Build GraphDB image and copy config file and license
-            docker build --build-arg configFile=${configFile} -t starvers_eval .
+            repositoryID=${policy}_${dataset}
 
-            # Load data into GraphDB
+            # Load data into Jena
             ingestion_time=`(time -p docker run \
-                            --name starvers_graphdb_${policy}_${dataset} \
+                            --name starvers_jenatdb2_${policy}_${dataset} \
                             -it \
                             --rm \
-                            -v ~/.BEAR/databases/graphdb_${repositoryID}:/opt/graphdb/home \
-                            -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                            starvers_eval:latest \
-                            /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile} --force) \
-                            2>&1 1>> $baseDir/output/logs/graphDB_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                            -v ~/.BEAR/databases/jenatdb2_${repositoryID}:/var/data/out/ \
+                            -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
+                            stain/jena \
+                            /jena/bin/tdbloader2 --loc /var/data/out/${repositoryID} /var/data/in/${datasetDirOrFile}) \
+                            2>&1 1>> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-            echo "\n\n" >> $baseDir/output/logs/graphDB_logs_${current_time}.txt
+            echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
 
             for c in $(seq -f "%06g" 1 1) # ${versions}
             do
+                repositoryID=${policy}_${dataset}_$((10#$c))
 
-                # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -t starvers_eval . 
-
-                # Load data into GraphDB
+                # Load data into Jena
                 ingestion_time=`(time -p docker run \
-                                --name starvers_graphdb_${policy}_${dataset} \
+                                --name starvers_jenatdb2_${policy}_${dataset} \
                                 -it \
                                 --rm \
-                                -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
-                                -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                                starvers_eval:latest \
-                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force) \
-                                2>&1 1>> $baseDir/output/logs/graphDB_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
+                                -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
+                                stain/jena \
+                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryID} /var/data/in/${datasetDirOrFile}/${c}.nt) \
+                                2>&1 1>> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/graphDB_logs_${current_time}.txt
+                echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt
 
                 # Load data into Jena TDB
             done
@@ -87,12 +87,10 @@ for policy in ${policies[@]}; do
                     fileadd="alldata.CB_computed.nt/data-added_$v-$ve.nt"
                     filedel="alldata.CB_computed.nt/data-deleted_$v-$ve.nt"
                     repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
-                    repositoryIDDel=${policy}_${dataset}_add_$v-$ve
+                    repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
 
                 # Jena #########################################################################
-                # Build Jena image
-                docker build --target=jena -t starvers_eval . 
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time docker run \
@@ -102,7 +100,7 @@ for policy in ${policies[@]}; do
                                 -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
                                 -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
                                 stain/jena \
-                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDAdd} /var/data/in/${fileadd}) \`
+                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDAdd} /var/data/in/${fileadd}) \
                                 2>&1 1>> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt
@@ -115,17 +113,19 @@ for policy in ${policies[@]}; do
                                 -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
                                 -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
                                 stain/jena \
-                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDDel} /var/data/in/${filedel}) \`
+                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDDel} /var/data/in/${filedel}) \
                                 2>&1 1>> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs_${current_time}.txt                
             done
         fi
+        echo "JenaTDB2;${policy};${dataset};${total_ingestion_time}" >> $baseDir/output/logs/ingestion_${current_time}.txt 
     done
 done
 
-# TODO: same process for Jena TDB
 # TODO: log raw filesize and database filesize
+# TODO: Delete non-empty repositories to be able to rerun jena
+# TODO: fix bug which leads to not logging the ingestion time
 
 # Remove dangling images
 docker rmi -f $(docker images -f "dangling=true" -q).
