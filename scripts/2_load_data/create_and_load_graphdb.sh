@@ -80,6 +80,8 @@ for policy in ${policies[@]}; do
                                 2>&1 1>> $baseDir/output/logs/graphDB_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/graphDB_logs_${current_time}.txt
+
+                # Load data into Jena TDB
             done
         
         elif [ "$policy" == "cb" ]; then
@@ -98,13 +100,14 @@ for policy in ${policies[@]}; do
                     repositoryIDDel=${policy}_${dataset}_add_$v-$ve
                 fi
 
+                # GRAPHDB ######################################################################
                 # Add
                 # Replace repositoryID in config template
                 cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -t starvers_eval . 
+                docker build --target=graphdb --build-arg configFile=${configFile} -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -138,14 +141,13 @@ for policy in ${policies[@]}; do
                                 /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${filedel} --force) \
                                 2>&1 1>> $baseDir/output/logs/graphDB_logs_${current_time}.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/graphDB_logs_${current_time}.txt
+                echo "\n\n" >> $baseDir/output/logs/graphDB_logs_${current_time}.txt              
             done
         fi
         echo "GraphDB;${policy};${dataset};${total_ingestion_time}" >> $baseDir/output/logs/ingestion_${current_time}.txt 
     done
 done
 
-# TODO: same process for Jena TDB
 # TODO: log raw filesize and database filesize
 
 # Remove dangling images

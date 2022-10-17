@@ -1,4 +1,4 @@
-FROM ontotext/graphdb:9.11.2-se
+FROM ontotext/graphdb:9.11.2-se as graphdb
 ENV GDB_JAVA_OPTS='\
 -Xmx2g -Xms2g \
 -Dgraphdb.home.data=/opt/graphdb/home/data \
@@ -14,4 +14,7 @@ ARG configFile
 COPY configs/$configFile /opt/graphdb/dist/conf/
 COPY configs/graphdb.license /opt/graphdb/dist/conf/
 
+ENTRYPOINT []
+
+FROM stain/jena-fuseki:4.0.0 as jena
 ENTRYPOINT []
