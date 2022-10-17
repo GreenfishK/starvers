@@ -145,6 +145,8 @@ for policy in ${policies[@]}; do
     done
 done
 
+# TODO: same process for Jena TDB
+# TODO: log raw filesize and database filesize
 
 # Remove dangling images
 docker rmi -f $(docker images -f "dangling=true" -q).
