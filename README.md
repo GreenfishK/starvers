@@ -5,8 +5,7 @@ The module leverages sparql-star's and rdf-star's nested triples paradigm to aut
 In the following we will guide you through the installation process and give examples of how the offered functions should used to operate on an RDF dataset.
 
 # Installation
-TODO: Explain how to install the python package. Ask Max Moser for help on rapid python API publishing.
-
+Clone the repository and run `pip install .` 
 # Example usage
 For every operation we need to create a constructor and setup a connection to a triple store that supports multilevel nesting with RDF-star and SPARQL-star, such as GraphDB. 
 
