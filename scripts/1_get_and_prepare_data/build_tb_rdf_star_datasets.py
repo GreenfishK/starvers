@@ -70,7 +70,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
-    but only the relative path to "/.BEAR/rawdata-bearb/hour/
+    but only the relative path to "/.BEAR/rawdata/bearb-hour/
 
     :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
     from which one can get to the desired version timestamp.
@@ -199,10 +199,10 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'beara':58, 'bearb/day':89, 'bearb/hour':1299, 'bearc': 32}
+datasets = {'beara':58, 'bearb-day':89, 'bearb-hour':1299, 'bearc': 32}
 
 for dataset, totalVersions in datasets.items():
-    data_dir = str(Path.home()) + "/.BEAR/rawdata/" + datasets
+    data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
 
     construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm)
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
