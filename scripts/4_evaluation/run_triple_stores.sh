@@ -1,4 +1,4 @@
-policy=tb
+policy=tbsf
 dataset=bearb-hour
 repositoryID=${policy}_${dataset}
 
