@@ -70,7 +70,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
-    but only the relative path to "/.BEAR/rawdata/bearb-hour/
+    but only the relative path to "/.BEAR/rawdata/<dataset>/
 
     :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
     from which one can get to the desired version timestamp.
@@ -194,12 +194,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
 
 """ Parameters and function calls """
-in_frm = "nt"
+in_frm = "ttl"
 out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'beara':58, 'bearb-day':89, 'bearb-hour':1299, 'bearc': 32}
+datasets = {'bearb-day':89, 'bearb-hour':1299, 'bearc': 32} #'beara':58, 
 
 for dataset, totalVersions in datasets.items():
     data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
@@ -217,7 +217,7 @@ for dataset, totalVersions in datasets.items():
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
-    if dataset == 'bearb-hour':
-        data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
-        data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+    #if dataset == 'bearb-hour':
+    #    data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+    #    data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
 
