@@ -3,3 +3,5 @@
 .DS_Store
 **/*.log
 src/rdfstarArchive/target/*
+scripts/.idea
+scripts/.ipynb_checkpoints/
