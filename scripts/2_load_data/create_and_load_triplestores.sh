@@ -4,7 +4,7 @@
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
 policies="cb" # cb tbsf tbsh tb
-datasets="bearb-hour" # bearb-day beara bearc
+datasets="beara" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 
 mkdir -p $baseDir/output/measurements/${current_time}
