@@ -3,13 +3,14 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="cb" # cb tbsf tbsh tb
-datasets="beara" # bearb-day beara bearc
+policies="ic" # cb tbsf tbsh tb
+datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 mkdir -p $baseDir/output/measurements/${current_time}
 mkdir -p $baseDir/output/logs/${current_time}
-echo "triple_store;policy;dataset;ingestion_time;raw_file_size;loaded_dataset_disk_usage" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
+echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
 
 
 ### GraphDB ##################################################################
@@ -44,11 +45,11 @@ for policy in ${policies[@]}; do
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             # Replace repositoryID in config template
             repositoryID=${policy}_${dataset}
-            cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
-            sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
+            cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
+            sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
             # Build GraphDB image and copy config file and license
-            docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval .
+            docker build --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval .
 
             # Load data into GraphDB
             ingestion_time=`(time -p docker run \
@@ -71,11 +72,11 @@ for policy in ${policies[@]}; do
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
-                cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryID/g" configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
+                docker build --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -112,11 +113,11 @@ for policy in ${policies[@]}; do
                 # GRAPHDB ######################################################################
                 # Add
                 # Replace repositoryID in config template
-                cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --target=graphdb --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
+                docker build --target=graphdb --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -135,11 +136,11 @@ for policy in ${policies[@]}; do
 
                 # Delete
                 # Replace repositoryID in config template
-                cp configs/graphdb-config_template.ttl configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryIDDel/g" configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
                 # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -f graphdb.Dockerfile -t starvers_eval . 
+                docker build --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p docker run \
@@ -157,7 +158,7 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         fi
-        disk_usage=`du --block-size=M ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+        disk_usage=`du -s --block-size=M ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
         echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
     done
 done
@@ -165,7 +166,7 @@ done
 
 ### JenaTDB2 #################################################################
 # Build Jena image
-docker build -f jenatdb2.Dockerfile -t starvers_eval . 
+docker build -f ${SCRIPT_DIR}/jenatdb2.Dockerfile -t starvers_eval . 
 
 for policy in ${policies[@]}; do
     case $policy in 
@@ -282,7 +283,7 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
             done
         fi
-        disk_usage=`du --block-size=M ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
+        disk_usage=`du -s --block-size=M ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
         echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt 
     done
 done
