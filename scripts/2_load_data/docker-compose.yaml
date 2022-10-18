@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  graphdb_load: 
+    container_name: starvers_graphdb_${policy}_${dataset}
+    build: 
+      context: .
+      dockerfile: graphdb.Dockerfile
+      args:
+        configFile: ${configFile}
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx2g -Xms2g
+        -Dgraphdb.home.data=/opt/graphdb/home/data
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dreuse.vars.in.subselects=true
+    volumes:
+      - ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home
+      - ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import
+    entrypoint: ["/opt/graphdb/dist/bin/preload", "-c", "/opt/graphdb/dist/conf/${configFile}", "/opt/graphdb/home/graphdb-import/${rel_path_import_file}", "--force"]
+
+  # graphdb_run:
+
+  jenatdb2_load:
+    container_name: starvers_jenatdb2_${policy}_${dataset}
+    build:
+      context: .
+      dockerfile: jenatdb2.Dockerfile
+    volumes: 
+      - ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/
+      - ~/.BEAR/rawdata/${dataset}:/var/data/in/
+    entrypoint: ["/jena/bin/tdbloader2", "--loc", "/var/data/out/${repositoryID}", "/var/data/in/${rel_path_import_file}"]
+
+
+
+  # jenatdb2_run:
