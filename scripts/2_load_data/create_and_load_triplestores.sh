@@ -9,6 +9,7 @@ current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 
 mkdir -p $baseDir/output/measurements/${current_time}
 mkdir -p $baseDir/output/logs/${current_time}
+echo "triple_store;policy;dataset;ingestion_time;raw_file_size;loaded_dataset_disk_usage" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
 
 
 ### GraphDB ##################################################################
@@ -61,6 +62,7 @@ for policy in ${policies[@]}; do
                             2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
+            total_file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
@@ -87,8 +89,8 @@ for policy in ${policies[@]}; do
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
-
-                # Load data into Jena TDB
+                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
+                total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         
         elif [ "$policy" == "cb" ]; then
@@ -155,7 +157,8 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         fi
-        echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
+        disk_usage=`du --block-size=M ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+        echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
     done
 done
 
@@ -190,6 +193,7 @@ for policy in ${policies[@]}; do
         esac
 
         total_ingestion_time=0
+        total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             repositoryID=${policy}_${dataset}
 
@@ -205,6 +209,8 @@ for policy in ${policies[@]}; do
                             2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
+            file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+            total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
@@ -225,6 +231,8 @@ for policy in ${policies[@]}; do
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
+                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
+                total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
             done
         
         elif [ "$policy" == "cb" ]; then
@@ -255,6 +263,8 @@ for policy in ${policies[@]}; do
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
+                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
+                total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time -p docker run \
@@ -267,10 +277,13 @@ for policy in ${policies[@]}; do
                                 /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDDel} /var/data/in/${filedel}) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt                
+                echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt 
+                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
+                total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
             done
         fi
-        echo "JenaTDB2;${policy};${dataset};${total_ingestion_time}" >> $baseDir/output/measurements/${current_time}/ingestion.txt 
+        disk_usage=`du --block-size=M ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
+        echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt 
     done
 done
 
