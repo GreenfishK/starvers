@@ -158,7 +158,6 @@ done
 
 
 ### JenaTDB2 #################################################################
-# Build Jena image
 
 for policy in ${policies[@]}; do
     case $policy in 
