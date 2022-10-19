@@ -3,7 +3,7 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="ic" # cb tbsf tbsh tb
+policies="cb" # cb tbsf tbsh tb
 datasets="bearb-hour" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -31,7 +31,7 @@ for policy in ${policies[@]}; do
     for dataset in ${datasets[@]}; do
         case $dataset in 
             beara) versions=58;;
-            bearb-hour) versions=1299;;
+            bearb-hour) versions=1299;; 
             bearb-day) versions=89;;
             bearc) versions=32;;
             *)
@@ -59,7 +59,7 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
         elif [ "$policy" == "ic" ]; then
-            for c in $(seq -f "%06g" 1 1) # ${versions}
+            for c in $(seq -f "%06g" 1 ${versions}) # ${versions}
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
@@ -77,7 +77,7 @@ for policy in ${policies[@]}; do
             done
         
         elif [ "$policy" == "cb" ]; then
-            for v in $(seq 0 1 2); do #${versions} -1
+            for v in $(seq 0 1 $((${versions}-1))); do 
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
                     fileadd="alldata.IC.nt/000001.nt"
@@ -145,7 +145,7 @@ for policy in ${policies[@]}; do
     for dataset in ${datasets[@]}; do
         case $dataset in 
             beara) versions=58;;
-            bearb-hour) versions=1299;;
+            bearb-hour) versions=1299;; 
             bearb-day) versions=89;;
             bearc) versions=32;;
             *)
@@ -169,7 +169,7 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
-            for c in $(seq -f "%06g" 1 1) # ${versions}
+            for c in $(seq -f "%06g" 1 ${versions})
             do
                 repositoryID=${policy}_${dataset}_$((10#$c))
 
@@ -184,7 +184,7 @@ for policy in ${policies[@]}; do
             done
         
         elif [ "$policy" == "cb" ]; then
-            for v in $(seq 0 1 2); do #versions -1
+            for v in $(seq 0 1 $((${versions}-1))); do 
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
                     fileadd="alldata.IC.nt/000001.nt"
