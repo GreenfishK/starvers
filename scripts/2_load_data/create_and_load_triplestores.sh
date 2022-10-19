@@ -3,7 +3,7 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="cb" # cb tbsf tbsh tb
+policies="ic" # cb tbsf tbsh tb
 datasets="bearb-hour" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -39,12 +39,11 @@ for policy in ${policies[@]}; do
                 exit 2
             ;;
         esac
-
+        
+        echo "Process is $policy, $dataset for GraphDB"
         total_ingestion_time=0
         total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
-            echo "Policy is $policy"
-
             # Replace repositoryID in config template
             repositoryID=${policy}_${dataset}
             cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
@@ -60,8 +59,6 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
         elif [ "$policy" == "ic" ]; then
-            echo "Policy is ic"
-
             for c in $(seq -f "%06g" 1 1) # ${versions}
             do
                 # Replace repositoryID in config template
@@ -80,7 +77,6 @@ for policy in ${policies[@]}; do
             done
         
         elif [ "$policy" == "cb" ]; then
-            echo "Policy is cb"
             for v in $(seq 0 1 2); do #${versions} -1
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
@@ -124,7 +120,8 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         fi
-        disk_usage=`du -s --block-size=M ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+        cat $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -v "\[.*\] DEBUG"
+        disk_usage=`du -s --block-size=M --apparent-size ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
         echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
     done
 done
@@ -157,11 +154,10 @@ for policy in ${policies[@]}; do
             ;;
         esac
 
+        echo "Process is $policy, $dataset for JenaTDB2"
         total_ingestion_time=0
         total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
-            echo "Policy is $policy"
-
             repositoryID=${policy}_${dataset}
             # Load data into Jena
             ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile} \
@@ -173,8 +169,6 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
-            echo "Policy is ic"
-
             for c in $(seq -f "%06g" 1 1) # ${versions}
             do
                 repositoryID=${policy}_${dataset}_$((10#$c))
@@ -190,7 +184,6 @@ for policy in ${policies[@]}; do
             done
         
         elif [ "$policy" == "cb" ]; then
-            echo "Policy is cb"
             for v in $(seq 0 1 2); do #versions -1
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
@@ -224,7 +217,8 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
             done
         fi
-        disk_usage=`du -s --block-size=M ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
+        cat $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -v "\[.*\] DEBUG"
+        disk_usage=`du -s --block-size=M --apparent-size ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
         echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt 
     done
 done
@@ -232,7 +226,7 @@ done
 # TODO: log raw filesize and database filesize
 
 # Remove dangling images
-docker rmi -f $(docker images -f "dangling=true" -q).
+#docker rmi -f $(docker images -f "dangling=true" -q).
 
 # DOCKER knowledge
 # Dockerfile defines the build process for an image
