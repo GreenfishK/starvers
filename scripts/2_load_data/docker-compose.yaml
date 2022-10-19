@@ -3,6 +3,8 @@ version: "3"
 services:
 ### GraphDB ##################################################################
   graphdb_load: 
+    logging:
+      driver: none
     container_name: starvers_graphdb_${policy}_${dataset}
     build: 
       context: .
