@@ -3,7 +3,7 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="tbsh" # cb tbsf tbsh tb
+policies="tbsh tbsf" # cb tbsf tbsh tb
 datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -51,12 +51,13 @@ for policy in ${policies[@]}; do
             # Build GraphDB image and copy config file and license
 
             # Load data into GraphDB
-            ingestion_time=`(policy=${policy} dataset=${dataset} configFile=${configFile} rel_path_import_file=${datasetDirOrFile} \
-                            time -p docker-compose up graphdb_load) \
+            ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${datasetDirOrFile} \
+                            time -p docker-compose run --rm graphdb_load) \
                             2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
-            total_file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+            file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+            total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
         elif [ "$policy" == "ic" ]; then
             echo "Policy is ic"
@@ -103,7 +104,6 @@ for policy in ${policies[@]}; do
                     repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
 
-                # GRAPHDB ######################################################################
                 # Add
                 # Replace repositoryID in config template
                 cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
@@ -191,8 +191,8 @@ for policy in ${policies[@]}; do
             repositoryID=${policy}_${dataset}
 
             # Load data into Jena
-            ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} \
-                            time -p docker-compose up jenatdb2_load) \
+            ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile} \
+                            time -p docker-compose run --rm jenatdb2_load) \
                             2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
@@ -280,6 +280,7 @@ done
 docker rmi -f $(docker images -f "dangling=true" -q).
 
 # DOCKER knowledge
+# Dockerfile defines the build process for an image
 # Parameters that are passed after the image (starvers_eval:latest) will be added after the ENTRYPOINT in the Dockerfile
 # -it means interavtive + ttyp
 # --rm will clean up the container ones docker shutsdown

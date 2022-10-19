@@ -1,1 +1,0 @@
-FROM stain/jena:4.0.0 as jenatdb2

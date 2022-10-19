@@ -6,36 +6,32 @@ services:
     build: 
       context: .
       dockerfile: graphdb.Dockerfile
-      args:
-        configFile: ${configFile}
-    environment: 
-      GDB_JAVA_OPTS: >-
-        -Xmx2g -Xms2g
-        -Dgraphdb.home.data=/opt/graphdb/home/data
-        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
-        -Dgraphdb.workbench.cors.enable=true
-        -Denable-context-index=true
-        -Dentity-pool-implementation=transactional
-        -Dhealth.max.query.time.seconds=60
-        -Dgraphdb.append.request.id.headers=true
-        -Dreuse.vars.in.subselects=true
+    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
     volumes:
-      - ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home
+      - ./configs/graphdb-config.ttl:/opt/graphdb/home/conf/graphdb-config.ttl
+      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
       - ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import
-    entrypoint: ["/opt/graphdb/dist/bin/preload", "-c", "/opt/graphdb/dist/conf/${configFile}", "/opt/graphdb/home/graphdb-import/${rel_path_import_file}", "--force"]
+    entrypoint: ["/opt/graphdb/dist/bin/preload", "-c", "/opt/graphdb/home/conf/graphdb-config.ttl", "/opt/graphdb/home/graphdb-import/${rel_path_import_file}", "--force"]
 
-  # graphdb_run:
+  graphdb_run:
+    container_name: starvers_graphdb_${policy}_${dataset}
+    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
+    volumes:
+      # don't map to /opt/graphdb/home/ !! The license file will not be found 
+      # this way because the directory /opt/graphdb/home/conf/ where it was 
+      # copied in the graphdb.Dockerfile will get overriden
+      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
+    ports:
+      - ${host_port}:7200
+    restart: unless-stopped
 
   jenatdb2_load:
     container_name: starvers_jenatdb2_${policy}_${dataset}
-    build:
-      context: .
-      dockerfile: jenatdb2.Dockerfile
+    image: stain/jena-fuseki:4.0.0
     volumes: 
       - ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/
       - ~/.BEAR/rawdata/${dataset}:/var/data/in/
-    entrypoint: ["/jena/bin/tdbloader2", "--loc", "/var/data/out/${repositoryID}", "/var/data/in/${rel_path_import_file}"]
+    entrypoint: ["/jena-fuseki/tdbloader2", "--loc", "/var/data/out/${repositoryID}", "/var/data/in/${rel_path_import_file}"]
 
-
-
+  
   # jenatdb2_run:
