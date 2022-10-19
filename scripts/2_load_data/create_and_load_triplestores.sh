@@ -3,8 +3,8 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="tbsh tbsf" # cb tbsf tbsh tb
-datasets="bearb-day" # bearb-day beara bearc
+policies="cb" # cb tbsf tbsh tb
+datasets="bearb-hour" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -43,12 +43,12 @@ for policy in ${policies[@]}; do
         total_ingestion_time=0
         total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
+            echo "Policy is $policy"
+
             # Replace repositoryID in config template
             repositoryID=${policy}_${dataset}
             cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
             sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
-
-            # Build GraphDB image and copy config file and license
 
             # Load data into GraphDB
             ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${datasetDirOrFile} \
@@ -69,18 +69,9 @@ for policy in ${policies[@]}; do
                 cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
-                # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
-
                 # Load data into GraphDB
-                ingestion_time=`(time -p docker run \
-                                --name starvers_graphdb_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
-                                -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                                starvers_eval:latest \
-                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${datasetDirOrFile}/${c}.nt --force) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${datasetDirOrFile}/${c}.nt \
+                                time -p docker-compose run --rm graphdb_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
@@ -90,7 +81,7 @@ for policy in ${policies[@]}; do
         
         elif [ "$policy" == "cb" ]; then
             echo "Policy is cb"
-            for v in $(seq 0 1 2); do #versions -1
+            for v in $(seq 0 1 2); do #${versions} -1
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
                     fileadd="alldata.IC.nt/000001.nt"
@@ -109,18 +100,9 @@ for policy in ${policies[@]}; do
                 cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
-                # Build GraphDB image and copy config file and license
-                docker build --target=graphdb --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
-
                 # Load data into GraphDB
-                ingestion_time=`(time -p docker run \
-                                --name starvers_graphdb_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
-                                -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                                starvers_eval:latest \
-                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${fileadd} --force) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${fileadd} \
+                                time -p docker-compose run --rm graphdb_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
@@ -132,18 +114,9 @@ for policy in ${policies[@]}; do
                 cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
 
-                # Build GraphDB image and copy config file and license
-                docker build --build-arg configFile=${configFile} -f ${SCRIPT_DIR}/graphdb.Dockerfile -t starvers_eval . 
-
                 # Load data into GraphDB
-                ingestion_time=`(time -p docker run \
-                                --name starvers_graphdb_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/graphdb_${policy}_${dataset}:/opt/graphdb/home \
-                                -v ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import \
-                                starvers_eval:latest \
-                                /opt/graphdb/dist/bin/preload -c /opt/graphdb/dist/conf/${configFile} /opt/graphdb/home/graphdb-import/${filedel} --force) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${filedel} \
+                                time -p docker-compose run --rm graphdb_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt     
@@ -187,8 +160,9 @@ for policy in ${policies[@]}; do
         total_ingestion_time=0
         total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
-            repositoryID=${policy}_${dataset}
+            echo "Policy is $policy"
 
+            repositoryID=${policy}_${dataset}
             # Load data into Jena
             ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile} \
                             time -p docker-compose run --rm jenatdb2_load) \
@@ -206,14 +180,8 @@ for policy in ${policies[@]}; do
                 repositoryID=${policy}_${dataset}_$((10#$c))
 
                 # Load data into Jena
-                ingestion_time=`(time -p docker run \
-                                --name starvers_jenatdb2_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
-                                -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
-                                stain/jena \
-                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryID} /var/data/in/${datasetDirOrFile}/${c}.nt) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile}/${c}.nt \
+                                time -p docker-compose run --rm jenatdb2_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
@@ -238,14 +206,8 @@ for policy in ${policies[@]}; do
                 fi
 
                 # Load data into Jena TDB2
-                ingestion_time=`(time -p docker run \
-                                --name starvers_jenatdb2_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
-                                -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
-                                stain/jena \
-                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDAdd} /var/data/in/${fileadd}) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDAdd} rel_path_import_file=${fileadd} \
+                                time -p docker-compose run --rm jenatdb2_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
@@ -253,14 +215,8 @@ for policy in ${policies[@]}; do
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
                 # Load data into Jena TDB2
-                ingestion_time=`(time -p docker run \
-                                --name starvers_jenatdb2_${policy}_${dataset} \
-                                -it \
-                                --rm \
-                                -v ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/ \
-                                -v ~/.BEAR/rawdata/${dataset}:/var/data/in/ \
-                                stain/jena \
-                                /jena/bin/tdbloader2 --loc /var/data/out/${repositoryIDDel} /var/data/in/${filedel}) \
+                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDDel} rel_path_import_file=${filedel} \
+                                time -p docker-compose run --rm jenatdb2_load) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt 
