@@ -19,10 +19,10 @@ class AnnotationStyle(Enum):
     FLAT = 2
 
 
-def diff_set(dataset_dir: str, version1: int, version2: int, format: str) -> Union[Graph, Graph]:
+def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: int) -> Union[Graph, Graph]:
     print("Calculating changeset between version {0} and {1}".format(version1, version2))
-    ic1_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version1).zfill(4))
-    ic2_ds_path = "{0}/alldata.IC.nt/00{1}.nt".format(dataset_dir, str(version2).zfill(4))
+    ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version1).zfill(zf))
+    ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version2).zfill(zf))
 
     ic1 = Graph()
     ic1.parse(ic1_ds_path, format=format)
@@ -40,7 +40,7 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str) -> Uni
     return cs_add, cs_del
 
 
-def construct_change_sets(dataset_dir: str, end_vers: int, format: str):
+def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
     in the dataset_dir.
@@ -52,7 +52,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str):
         os.makedirs(cb_comp_dir)
 
     for i in range(1, end_vers):
-        output = diff_set(dataset_dir, i, i + 1, format)
+        output = diff_set(dataset_dir, i, i + 1, format, zf)
         cs_added = output[0]
         assert isinstance(cs_added, Graph)
         cs_deleted = output[1]
@@ -199,25 +199,26 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearb-day':89, 'bearb-hour':1299, 'bearc': 32} #'beara':58, 
+datasets = {'bearc': 32} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 
+ic_zfills = {'beara': 1, 'bearb-hour': 6, 'bearb-day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
 
-    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm)
-    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
-    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/000001.nt",
+    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
-    #if dataset == 'bearb-hour':
-    #    data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
-    #    data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+    if dataset == 'bearb-hour':
+        data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+        data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
 

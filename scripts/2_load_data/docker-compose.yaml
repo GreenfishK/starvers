@@ -1,7 +1,6 @@
 version: "3"
 
 services:
-### GraphDB ##################################################################
   graphdb_load: 
     logging:
       driver: none
@@ -16,56 +15,6 @@ services:
       - ~/.BEAR/rawdata/${dataset}:/opt/graphdb/home/graphdb-import
     entrypoint: ["/opt/graphdb/dist/bin/preload", "-c", "/opt/graphdb/home/conf/graphdb-config.ttl", "/opt/graphdb/home/graphdb-import/${rel_path_import_file}", "--force"]
 
-# For parallel procesisng
-  graphdb_run_1:
-    container_name: starvers_graphdb_${policy}_${dataset}
-    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
-    volumes:
-      # don't map to /opt/graphdb/home/ !! The license file will not be found 
-      # this way because the directory /opt/graphdb/home/conf/ where it was 
-      # copied in the graphdb.Dockerfile will get overriden
-      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
-    ports:
-      - 7200:7200
-    restart: unless-stopped
-
-  graphdb_run_2:
-    container_name: starvers_graphdb_${policy}_${dataset}
-    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
-    volumes:
-      # don't map to /opt/graphdb/home/ !! The license file will not be found 
-      # this way because the directory /opt/graphdb/home/conf/ where it was 
-      # copied in the graphdb.Dockerfile will get overriden
-      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
-    ports:
-      - 7300:7200
-    restart: unless-stopped
-
-  graphdb_run_3:
-    container_name: starvers_graphdb_${policy}_${dataset}
-    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
-    volumes:
-      # don't map to /opt/graphdb/home/ !! The license file will not be found 
-      # this way because the directory /opt/graphdb/home/conf/ where it was 
-      # copied in the graphdb.Dockerfile will get overriden
-      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
-    ports:
-      - 7400:7200
-    restart: unless-stopped
-
-  graphdb_run_4:
-    container_name: starvers_graphdb_${policy}_${dataset}
-    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
-    volumes:
-      # don't map to /opt/graphdb/home/ !! The license file will not be found 
-      # this way because the directory /opt/graphdb/home/conf/ where it was 
-      # copied in the graphdb.Dockerfile will get overriden
-      - ~/.BEAR/databases/graphdb_${policy}_${dataset}/data:/opt/graphdb/home/data
-    ports:
-      - 7500:7200
-    restart: unless-stopped
-
-### JenaTDB2 #################################################################
   jenatdb2_load:
     container_name: starvers_jenatdb2_${policy}_${dataset}
     image: stain/jena-fuseki:4.0.0
@@ -73,13 +22,3 @@ services:
       - ~/.BEAR/databases/jenatdb2_${policy}_${dataset}:/var/data/out/
       - ~/.BEAR/rawdata/${dataset}:/var/data/in/
     entrypoint: ["/jena-fuseki/tdbloader2", "--loc", "/var/data/out/${repositoryID}", "/var/data/in/${rel_path_import_file}"]
-
-  
-  # jenatdb2_run_1:
-  # jenatdb2_run_1:
-  # jenatdb2_run_1:
-  # jenatdb2_run_1:
-  
-# Commands for testing
-# policy=tbsh dataset=bearb-day docker-compose up graphdb_run_1
-# policy=tbsf dataset=bearb-day docker-compose up graphdb_run_2
