@@ -1,4 +1,3 @@
-import re
 from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 import multiprocessing
 from pathlib import Path
@@ -83,15 +82,13 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
     query_versions = ds_queries_map[policy][ds]['query_versions']
     repositories = ds_queries_map[policy][ds]['repositories']
 
-    if triple_store == "graphdb":
-        # TODO:  Run docker-compose
-        
+    if triple_store == "graphdb":      
         for query_version in range(query_versions):
             for query in queries_to_execute:
                 query_dir = final_queries + "/" + query  +  "/" + str(query_version)
                 for query_file_name in os.listdir(query_dir):
                     if policy == "ic":
-                        for repository in range(repositories):
+                        for repository in range(1, repositories):
                             repository_name = "{triple_store}_{policy}_{dataset}_{snapshot}".format(triple_store=triple_store, policy=policy, dataset=ds, snapshot=repository)
                             getEndpoint = "http://{hostname}:{port}/repositories/{repository_name}".format(hostname="Starvers", port=port, repository_name=repository_name)
                             postEndpoint = getEndpoint + "/statements"

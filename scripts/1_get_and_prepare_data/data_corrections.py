@@ -4,7 +4,7 @@ from rdflib import Graph
 import shutil
 
 
-def correct(dataset: str, file: str, init_ts: datetime):
+def correct_bearb_hour(policy: str, file: str, init_ts: datetime):
     """
     Bug 1: If either the alldata.TB_star_flat.ttl or alldata.TB_star_hierarchical.ttl dataset was constructed
     from computed .nt change sets there might be occurrences of faulty escapes, such as \\b, \\f and \\r in
@@ -18,7 +18,7 @@ def correct(dataset: str, file: str, init_ts: datetime):
     tz_offset = "+02:00"
     rdf_version_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset,
                                                                    datetimeref=xsd_datetime)
-    if dataset == "rdf_star_flat":
+    if policy == "tbsf":
 
         new_line1 = r'<<<http://dbpedia.org/resource/Rodeo_(Travis_Scott_album)> <http://dbpedia.org/property/cover> ' \
                     r'"{\\rtf1\\ansi\\ansicpg1252{\\fonttbl}\n{\\colortbl;\\red255\\green255\\blue255;"@en >> ' \
@@ -43,7 +43,7 @@ def correct(dataset: str, file: str, init_ts: datetime):
         fout.close()
         shutil.move("tmp_out.ttl", file)
 
-    if dataset == "rdf_star_hierarchical":
+    if policy == "tbsf":
         new_line1 = r'<<<<<http://dbpedia.org/resource/Rodeo_(Travis_Scott_album)> <http://dbpedia.org/property/cover> ' \
                     r'"{\\rtf1\\ansi\\ansicpg1252{\\fonttbl}\n{\\colortbl;\\red255\\green255\\blue255;"@en >> ' \
                     r'<https://github.com/GreenfishK/DataCitation/versioning/valid_from> ' \
@@ -61,6 +61,31 @@ def correct(dataset: str, file: str, init_ts: datetime):
                     line = ""
                     print(line)
                 fout.write(line)
+        fin.close()
+        fout.close()
+        shutil.move("tmp_out.ttl", file)
+
+
+def correct_bearc(policy: str, file: str):
+    """
+    Bad IRI found in BEARC dataset which prevents the Jena TDB2 loader to load it.
+    Bad IRI: http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip
+    Looking for other bad IRIs:
+        select * where { 
+        ?s ?p ?o.
+        filter (regex (str(?o), "http:/(?!/).*"))
+        } 
+    None found.
+    """
+
+    if policy == "ic":
+        bad_IRI = r'<http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip>' 
+        correct_IRI = r'<http://cordis.europa.eu/data/cordis-fp7projects-xml.zip>' 
+
+        snapshot = file
+        with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
+            for line in fin:
+                fout.write(line.replace(bad_IRI, correct_IRI))
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)

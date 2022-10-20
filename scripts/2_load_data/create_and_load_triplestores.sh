@@ -3,7 +3,7 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="ic cb tbsf tbsh tb" # cb tbsf tbsh tb
+policies="ic" # cb tbsf tbsh tb
 datasets="bearc" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )

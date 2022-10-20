@@ -219,6 +219,11 @@ for dataset, totalVersions in datasets.items():
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
     if dataset == 'bearb-hour':
-        data_corrections.correct("rdf_star_hierarchical", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
-        data_corrections.correct("rdf_star_flat", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+        data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+        data_corrections.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+    
+    if dataset == 'bearc':
+        for i in range(1, datasets['bearc']):
+            data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
+        # TODO: correct bearc dataset
 
