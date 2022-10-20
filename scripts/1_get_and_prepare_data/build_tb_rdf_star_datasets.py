@@ -225,5 +225,3 @@ for dataset, totalVersions in datasets.items():
     if dataset == 'bearc':
         for i in range(1, datasets['bearc']):
             data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-        # TODO: correct bearc dataset
-
