@@ -3,8 +3,8 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="cb" # cb tbsf tbsh tb
-datasets="bearb-hour" # bearb-day beara bearc
+policies="ic cb tbsf tbsh tb" # cb tbsf tbsh tb
+datasets="bearc" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -18,7 +18,7 @@ echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk
 for policy in ${policies[@]}; do
     case $policy in 
         ic) datasetDirOrFile=alldata.IC.nt;;
-        cb) datasetDirOrFile=alldata.CB_computed.nt;;
+        cb) datasetDirOrFile=alldata.CB_computed.ttl;;
         tb) datasetDirOrFile=alldata.TB.nq;;
         tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
         tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
@@ -30,10 +30,10 @@ for policy in ${policies[@]}; do
 
     for dataset in ${datasets[@]}; do
         case $dataset in 
-            beara) versions=58;;
-            bearb-hour) versions=1299;; 
-            bearb-day) versions=89;;
-            bearc) versions=32;;
+            beara) versions=58 file_name_struc="%01g";;
+            bearb-hour) versions=1299 file_name_struc="%06g";; 
+            bearb-day) versions=89 file_name_struc="%06g";;
+            bearc) versions=32 file_name_struc="%01g";;
             *)
                 echo "Dataset must be in beara bearb-hour bearb-day bearc"
                 exit 2
@@ -59,7 +59,7 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
         elif [ "$policy" == "ic" ]; then
-            for c in $(seq -f "%06g" 1 ${versions}) # ${versions}
+            for c in $(seq -f $file_name_struc 1 ${versions}) # ${versions}
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
@@ -80,13 +80,14 @@ for policy in ${policies[@]}; do
             for v in $(seq 0 1 $((${versions}-1))); do 
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
-                    fileadd="alldata.IC.nt/000001.nt"
+                    file_name=`printf "$file_name_struc" +1`.nt
+                    fileadd="alldata.IC.nt/$file_name"
                     filedel="empty.nt"
                     repositoryIDAdd=${policy}_${dataset}_ic1
                     repositoryIDDel=${policy}_${dataset}_empty
                 else
-                    fileadd="${datasetDirOrFile}/data-added_$v-$ve.nt"
-                    filedel="${datasetDirOrFile}/data-deleted_$v-$ve.nt"
+                    fileadd="${datasetDirOrFile}/data-added_$v-$ve.ttl"
+                    filedel="${datasetDirOrFile}/data-deleted_$v-$ve.ttl"
                     repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
                     repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
@@ -132,7 +133,7 @@ done
 for policy in ${policies[@]}; do
     case $policy in 
         ic) datasetDirOrFile=alldata.IC.nt;;
-        cb) datasetDirOrFile=alldata.CB_computed.nt;;
+        cb) datasetDirOrFile=alldata.CB_computed.ttl;;
         tb) datasetDirOrFile=alldata.TB.nq;;
         tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
         tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
@@ -144,10 +145,10 @@ for policy in ${policies[@]}; do
 
     for dataset in ${datasets[@]}; do
         case $dataset in 
-            beara) versions=58;;
-            bearb-hour) versions=1299;; 
-            bearb-day) versions=89;;
-            bearc) versions=32;;
+            beara) versions=58 file_name_struc="%01g";;
+            bearb-hour) versions=1299 file_name_struc="%06g";; 
+            bearb-day) versions=89 file_name_struc="%06g";;
+            bearc) versions=32 file_name_struc="%01g";;
             *)
                 echo "Dataset must be in beara bearb-hour bearb-day bearc"
                 exit 2
@@ -169,7 +170,7 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
-            for c in $(seq -f "%06g" 1 ${versions})
+            for c in $(seq -f $file_name_struc 1 ${versions})
             do
                 repositoryID=${policy}_${dataset}_$((10#$c))
 
@@ -187,13 +188,14 @@ for policy in ${policies[@]}; do
             for v in $(seq 0 1 $((${versions}-1))); do 
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
-                    fileadd="alldata.IC.nt/000001.nt"
+                    file_name=`printf "$file_name_struc" +1`.nt
+                    fileadd="alldata.IC.nt/$file_name"
                     filedel="empty.nt"
                     repositoryIDAdd=${policy}_${dataset}_ic1
                     repositoryIDDel=${policy}_${dataset}_empty
                 else
-                    fileadd="alldata.CB_computed.nt/data-added_$v-$ve.nt"
-                    filedel="alldata.CB_computed.nt/data-deleted_$v-$ve.nt"
+                    fileadd="${datasetDirOrFile}/data-added_$v-$ve.ttl"
+                    filedel="${datasetDirOrFile}/data-deleted_$v-$ve.ttl"
                     repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
                     repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
