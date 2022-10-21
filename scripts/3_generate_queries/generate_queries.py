@@ -83,15 +83,12 @@ for policy in policies:
                                 with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     if policy in ["tbsf", "tbsh"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
-                                        if querySet == 'beara':
-                                            # TODO fix queries in beara directory. They don't have any projection variables
-                                            print(output_query)
-                                            print(timestamped_output_query[0])
                                         output_file.write(timestamped_output_query[0])
                                         vers_ts = vers_ts + timedelta(seconds=1)
                                     else:
                                         output_file.write(output_query)
                                     output_file.close()
+                            vers_ts = init_version_timestamp
 
                 file.close()
 

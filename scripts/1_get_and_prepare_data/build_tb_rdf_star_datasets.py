@@ -204,8 +204,8 @@ ic_zfills = {'beara': 1, 'bearb-hour': 6, 'bearb-day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
-
-    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    
+    """construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -219,9 +219,12 @@ for dataset, totalVersions in datasets.items():
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
     if dataset == 'bearb-hour':
+        print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
         data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+        print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
         data_corrections.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
-    
+    """
     if dataset == 'bearc':
-        for i in range(1, datasets['bearc']):
+        for i in range(1, datasets['bearc']+1):
+            print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
             data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")

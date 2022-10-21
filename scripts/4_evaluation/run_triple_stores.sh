@@ -6,7 +6,7 @@ host_port_graphdb=7200
 host_port_jenatdb2=3030
 
 ### GraphDB ##################################################################
-
+# Start 20 docker containers
 for policy in ${policies[@]}; do
     for dataset in ${datasets[@]}; do
         dataset=$dataset policy=$policy host_port=$host_port_graphdb \
@@ -15,3 +15,9 @@ for policy in ${policies[@]}; do
 
 ### JenaTDB2 #################################################################
 # TODO: write procedure for jenatdb2
+# Start 20 docker containers
+# docker-compose up jenatdb2_run
+
+### Evaluate ################################################################
+# Run queries against each triplestore x dataset x policy, each stored in an own container (40 containers)
+# docker-compose up evaluate

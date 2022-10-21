@@ -17,6 +17,14 @@ services:
   
   # jenatdb2_run
 
+  evaluate:
+    container_name: starvers_eval
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["python3", "evaluate.py"]
+    
+
 
 # Commands for testing
 # policy=tbsh dataset=bearb-day docker-compose up graphdb_run_1
