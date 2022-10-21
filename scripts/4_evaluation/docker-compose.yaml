@@ -4,7 +4,7 @@ services:
 # For parallel procesisng
   graphdb_run:
     container_name: starvers_graphdb_${policy}_${dataset}
-    image: starvers/ontotext/graphdb:9.11.2-se # serves only as a label
+    image: starvers/ontotext/graphdb:9.11.2-se 
     volumes:
       # don't map to /opt/graphdb/home/ !! The license file will not be found 
       # this way because the directory /opt/graphdb/home/conf/ where it was 
@@ -13,18 +13,25 @@ services:
     hostname: Starvers
     ports:
       - ${host_port}:7200
+
     restart: unless-stopped
   
   # jenatdb2_run
 
   evaluate:
-    container_name: starvers_eval
+    container_name: starvers_eval_container
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ["python3", "evaluate.py"]
+    image: starvers_eval
+    volumes:
+      - ~/.BEAR/queries/final_queries:/opt/starvers/eval/queries
+    entrypoint: ["python", "evaluate.py"]
     
-
+networks:
+  default:
+    external:
+      name: 4_evaluation_default
 
 # Commands for testing
 # policy=tbsh dataset=bearb-day docker-compose up graphdb_run_1
