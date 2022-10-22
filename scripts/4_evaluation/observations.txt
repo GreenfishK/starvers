@@ -1,0 +1,13 @@
+# Observations
+## Network errors
+If I run the command with the -d flag: docker-compose up -d graphdb_run_${policy}_${dataset} 
+The error "network 4_evaluation_default is ambiguous (2 matches found on name)" 
+does not occur
+
+## Heap space
+GraphDB is stacking up the heap with every "activated" repository
+A repository becomes activated as soon as it is queried
+If there is not enough free memory, the cache/buffer is used up (see top command in linux)
+
+### Test run 1
+Default graphdb configurations

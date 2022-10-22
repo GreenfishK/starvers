@@ -1,2 +1,2 @@
-[36mstarvers_graphdb_ic_bearb-day |[0m [INFO ] 2022-10-21 15:25:44,207 [main | c.o.g.s.GraphDB] Started GraphDB in workbench mode at port 7200.
-[33mstarvers_graphdb_ic_bearc |[0m [INFO ] 2022-10-21 15:25:43,826 [main | c.o.g.s.GraphDB] Started GraphDB in workbench mode at port 7200.
+[36mstarvers_graphdb_cb_bearb-day |[0m [INFO ] 2022-10-22 11:12:10,840 [main | c.o.g.s.GraphDB] Started GraphDB in workbench mode at port 7200.
+[33mstarvers_graphdb_ic_bearb-day |[0m [INFO ] 2022-10-22 11:12:10,591 [main | c.o.g.s.GraphDB] Started GraphDB in workbench mode at port 7200.

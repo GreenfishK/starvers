@@ -10,3 +10,8 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 COPY configs/graphdb.license /opt/graphdb/home/conf/
+
+# -XMx: maximal on heap memory
+# -Xms: Initial memory
+# -Dgraphdb.page.cache.size=0m # default 50% of Xmx -> 1g
+# -Dpool.buffer.size=50000 # default is 200.000
