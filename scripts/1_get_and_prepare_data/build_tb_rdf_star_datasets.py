@@ -199,13 +199,13 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearc': 32} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 
+datasets = {'bearb-day':89} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 
 ic_zfills = {'beara': 1, 'bearb-hour': 6, 'bearb-day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
     
-    """construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -218,12 +218,13 @@ for dataset, totalVersions in datasets.items():
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
+    # Corrections
     if dataset == 'bearb-hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
         data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
         print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
         data_corrections.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
-    """
+    
     if dataset == 'bearc':
         for i in range(1, datasets['bearc']+1):
             print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")

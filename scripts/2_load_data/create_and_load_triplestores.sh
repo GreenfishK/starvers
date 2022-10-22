@@ -3,8 +3,8 @@
 # Variables
 baseDir=~/.BEAR
 configFile=graphdb-config.ttl
-policies="ic" # cb tbsf tbsh tb
-datasets="bearc" # bearb-day beara bearc
+policies="ic cb" # cb tbsf tbsh tb
+datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -160,6 +160,11 @@ for policy in ${policies[@]}; do
         total_file_size=0
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             repositoryID=${policy}_${dataset}
+            # Replace repositoryID in config template
+            mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
+            cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/${repositoryID}.ttl
+            sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+            
             # Load data into Jena
             ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile} \
                             time -p docker-compose run --rm jenatdb2_load) \
@@ -170,10 +175,13 @@ for policy in ${policies[@]}; do
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
+            mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
             for c in $(seq -f $file_name_struc 1 ${versions})
             do
                 repositoryID=${policy}_${dataset}_$((10#$c))
-
+                # Replace repositoryID in config template
+                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 # Load data into Jena
                 ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile}/${c}.nt \
                                 time -p docker-compose run --rm jenatdb2_load) \
@@ -185,6 +193,7 @@ for policy in ${policies[@]}; do
             done
         
         elif [ "$policy" == "cb" ]; then
+            mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
             for v in $(seq 0 1 $((${versions}-1))); do 
                 ve=$(echo $v+1 | bc)
                 if [ $v -eq 0 ]; then
@@ -200,6 +209,10 @@ for policy in ${policies[@]}; do
                     repositoryIDDel=${policy}_${dataset}_del_$v-$ve
                 fi
 
+                # Replace repositoryID in config template
+                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
+
                 # Load data into Jena TDB2
                 ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDAdd} rel_path_import_file=${fileadd} \
                                 time -p docker-compose run --rm jenatdb2_load) \
@@ -208,6 +221,10 @@ for policy in ${policies[@]}; do
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
                 file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
+
+                # Replace repositoryID in config template
+                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
 
                 # Load data into Jena TDB2
                 ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDDel} rel_path_import_file=${filedel} \
@@ -225,10 +242,9 @@ for policy in ${policies[@]}; do
     done
 done
 
-# TODO: log raw filesize and database filesize
 
 # Remove dangling images
-#docker rmi -f $(docker images -f "dangling=true" -q).
+# docker rmi -f $(docker images -f "dangling=true" -q).
 
 # DOCKER knowledge
 # Dockerfile defines the build process for an image
