@@ -16,6 +16,8 @@ services:
 #
 #    restart: unless-stopped
 
+# Graphdb ##################################################################
+
   graphdb_run_ic_bearb-day:
     container_name: starvers_graphdb_ic_bearb-day
     image: starvers/ontotext/graphdb:9.11.2-se 
@@ -26,7 +28,7 @@ services:
       - ~/.BEAR/databases/graphdb_ic_bearb-day/data:/opt/graphdb/home/data
     hostname: Starvers
     ports:
-      - 7200:7200
+      - ${graphdb_ic_bearb_day_port}:7200
 
     restart: unless-stopped
 
@@ -40,10 +42,10 @@ services:
       - ~/.BEAR/databases/graphdb_cb_bearb-day/data:/opt/graphdb/home/data
     hostname: Starvers
     ports:
-      - 7210:7200
+      - ${graphdb_cb_bearb_day_port}:7200
     restart: unless-stopped  
   
-  # jenatdb2
+# JenaTDB2 #################################################################
 
   jenatdb2_run_ic_bearb-day:
     container_name: starvers_jenatdb2_ic_bearb-day
@@ -53,7 +55,7 @@ services:
       - ~/.BEAR/configs/jenatdb2_ic_bearb-day:/fuseki/configuration
     hostname: Starvers
     ports:
-      - 3030:3030
+      - ${jenatdb2_ic_bearb_day_port}:3030
     environment:
       - JAVA_OPTIONS="-Xmx5g -Xms5g"
     restart: unless-stopped
@@ -67,7 +69,7 @@ services:
 
     hostname: Starvers
     ports:
-      - 3040:3030
+      - ${jenatdb2_cb_bearb_day_port}:3030
     environment:
       - JAVA_OPTIONS="-Xmx5g -Xms5g"
     restart: unless-stopped

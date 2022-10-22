@@ -82,6 +82,13 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
                         'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
             'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
                         'post': 'http://{hostname}:{port}/{repository_name}/update'}}
+ports = {}
+with open(".env") as myfile:
+    for line in myfile:
+        name, var = line.partition("=")[::2]
+        if name.endswith("_port"):
+            ports[name.strip()] = int(var.strip())
+###################################### Evaluation ######################################
 
 df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'version', 'query_set', 'query', 'execution_time'])
 
@@ -113,14 +120,14 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     print("Not yet implemented")
 
 
-
 def bulk_query():
     pass
     for triple_store in triple_stores:
         for policy in policies:
             for dataset in datasets:
                 print(triple_store + " " + policy + " " + dataset)
-                query_dataset(triple_store, policy, dataset, 3030)
+                port = ports[triple_store + "_" + policy.lower() + "_" + "_".join(dataset.split('-')) + "_port"]
+                query_dataset(triple_store, policy, dataset, port)
                 print("Done!")
 
 bulk_query()
