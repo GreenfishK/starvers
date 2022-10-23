@@ -1,0 +1,10 @@
+version: "3.0"
+
+services:
+  run_experiment:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: starvers_eval
+    volumes:
+      - ~/.starvers_eval:/starvers_eval
