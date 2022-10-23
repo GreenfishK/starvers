@@ -55,10 +55,12 @@ services:
       - ~/.BEAR/configs/jenatdb2_ic_bearb-day:/fuseki/configuration
     hostname: Starvers
     ports:
-      - ${jenatdb2_ic_bearb_day_port}:3030
+      - ${jenatdb2_ic_bearb_day_port}:${jenatdb2_ic_bearb_day_port}
     environment:
       - JAVA_OPTIONS="-Xmx5g -Xms5g"
+      - ADMIN_PASSWORD=starvers
     restart: unless-stopped
+    entrypoint: ["/jena-fuseki/fuseki-server", "--port=${jenatdb2_ic_bearb_day_port}"]
 
   jenatdb2_run_cb_bearb-day:
     container_name: starvers_jenatdb2_cb_bearb-day
@@ -69,10 +71,13 @@ services:
 
     hostname: Starvers
     ports:
-      - ${jenatdb2_cb_bearb_day_port}:3030
+      - ${jenatdb2_cb_bearb_day_port}:${jenatdb2_cb_bearb_day_port}
     environment:
       - JAVA_OPTIONS="-Xmx5g -Xms5g"
+      - ADMIN_PASSWORD=starvers
     restart: unless-stopped
+    entrypoint: ["/jena-fuseki/fuseki-server", "--port=${jenatdb2_cb_bearb_day_port}"]
+
 
   evaluate:
     container_name: starvers_eval_container
@@ -82,7 +87,7 @@ services:
     image: starvers_eval
     volumes:
       - ~/.BEAR/queries/final_queries:/opt/starvers/eval/queries
-    entrypoint: ["python", "evaluate.py"]
+    entrypoint: ["python", "evaluate.py", "${triple_store}", "${policy}", "${dataset}"]
     
 #networks:
 #  default:

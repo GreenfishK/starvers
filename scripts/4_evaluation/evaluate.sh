@@ -1,11 +1,8 @@
 #!/bin/bash
 
-policies=("ic") # cb tbsf tbsh tb
+policies=("ic cb") # cb tbsf tbsh tb
 datasets=("bearb-day") # bearb-day beara bearc
 triple_stores=("jenatdb2") # jenatdb2
-host_port_graphdb=7200
-host_port_jenatdb2=3030
-command=""
 
 #docker network create 4_evaluation_default
 # Start containers with their respective policy, dataset and triple store
@@ -24,8 +21,8 @@ for triple_store in ${triple_stores[@]}; do
             done
             rm tmp_log.txt
             # TODO: save the file to the timestamped experiment directory
-            docker-compose up --build evaluate >> ~/.BEAR/output/logs/starvers_eval.txt
-            docker-compose down
+            triple_store=${triple_store} policy=${policy} dataset=${dataset} docker-compose up --build evaluate >> ~/.BEAR/output/logs/queries.txt
+            docker-compose down 
         done
     done
 done

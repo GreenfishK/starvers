@@ -54,7 +54,7 @@ for policy in policies:
     for querySet in queries[policy].keys():
         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
             for query_version in range(query_versions):
-                Path(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version)).mkdir(parents=True, exist_ok=True)
+                Path(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version)).mkdir(parents=True, exist_ok=True)
 
 
 # Create queries
@@ -80,7 +80,7 @@ for policy in policies:
                                     template = templateFile.read()
                                     output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
-                                with open(output_queries_dir + str.upper(policy) + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
+                                with open(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     if policy in ["tbsf", "tbsh"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
                                         output_file.write(timestamped_output_query[0])

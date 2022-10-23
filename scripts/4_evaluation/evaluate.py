@@ -2,9 +2,8 @@ from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 import multiprocessing
 from pathlib import Path
 import os
-import logging
 import pandas as pd
-import pexpect
+import sys
 
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
@@ -24,7 +23,7 @@ import pexpect
 # save dataset
 
 ###################################### Parameters ######################################
-policies=['IC'] # ["IC", "CB", "TB", "TBSF", "TBSH"]
+policies=['ic', 'cb'] # ["IC", "CB", "TB", "TBSF", "TBSH"]
 datasets=['bearb-day'] # ['beara', 'bearb-hour', 'bearb-day', 'bearc']
 triple_stores=['jenatdb2'] # ['graphdb', 'jenatdb2']
 # On host machine
@@ -103,7 +102,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
             for query_file_name in os.listdir(query_set_version_dir):
                 if policy == "IC":
                     for repository in range(1, repositories+1):
-                        repository_name = "{policy}_{dataset}_{snapshot}".format(triple_store=triple_store, policy=policy.lower(), dataset=ds, snapshot=repository)
+                        repository_name = "{policy}_{dataset}_{snapshot}".format(triple_store=triple_store, policy=policy, dataset=ds, snapshot=repository)
                         getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                         postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
                         engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
@@ -121,19 +120,29 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
 
 
 def bulk_query():
-    pass
     for triple_store in triple_stores:
         for policy in policies:
             for dataset in datasets:
                 print(triple_store + " " + policy + " " + dataset)
-                port = ports[triple_store + "_" + policy.lower() + "_" + "_".join(dataset.split('-')) + "_port"]
+                port = ports[triple_store + "_" + policy + "_" + "_".join(dataset.split('-')) + "_port"]
                 query_dataset(triple_store, policy, dataset, port)
                 print("Done!")
 
-bulk_query()
 
+def query():
+    triple_store = sys.argv[1]
+    policy = sys.argv[2]
+    dataset = sys.argv[3]
 
-# If you want to add parallel processing:
+    print(triple_store + " " + policy + " " + dataset)
+    port = ports[triple_store + "_" + policy + "_" + "_".join(dataset.split('-')) + "_port"]
+    query_dataset(triple_store, policy, dataset, port)
+    print("Done!")
+
+#bulk_query()
+query()
+
+# For parallel processing:
 #t1 = multiprocessing.Process(target=query_dataset, args=(triple_store, policy, datasets[0], 7200)) # 3030 for jenatdb2
 #t2 = multiprocessing.Process(target=query_dataset, args=(triple_store, policy, datasets[1], 7210)) # 3040 for jenatdb2
 #t3 = multiprocessing.Process(target=query_dataset, args=(triple_store, policy, datasets[2], 7220)) # 3050 for jenatdb2
