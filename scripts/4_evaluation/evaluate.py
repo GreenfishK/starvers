@@ -23,57 +23,57 @@ import sys
 # save dataset
 
 ###################################### Parameters ######################################
-policies=['ic', 'cb'] # ["IC", "CB", "TB", "TBSF", "TBSH"]
+policies=['ic', 'cb'] # ["ic", "cb", "tb", "tbsf", "tbsh"]
 datasets=['bearb-day'] # ['beara', 'bearb-hour', 'bearb-day', 'bearc']
 triple_stores=['jenatdb2'] # ['graphdb', 'jenatdb2']
 # On host machine
 # final_queries=str(Path.home()) + "/.BEAR/queries/final_queries" 
 # In docker container
 final_queries= "/opt/starvers/eval/queries"
-ds_queries_map={'IC': {
-                    'beara': {'query_versions': 1, 'repositories': 58, 'queries': ['IC/queries_beara/high',
-                                                            'IC/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 1,'repositories': 89, 'queries': ['IC/queries_bearb/lookup',
-                                                                'IC/queries_bearb/join']}, 
-                    'bearb-hour': {'query_versions': 1, 'repositories': 1299, 'queries': ['IC/queries_bearb/lookup',
-                                                                'IC/queries_bearb/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 32, 'queries': ['IC/queries_bearc']}       
+ds_queries_map={'ic': {
+                    'beara': {'query_versions': 1, 'repositories': 58, 'queries': ['ic/queries_beara/high',
+                                                            'ic/queries_beara/low']}, 
+                    'bearb-day': {'query_versions': 1,'repositories': 89, 'queries': ['ic/queries_bearb/lookup',
+                                                                'ic/queries_bearb/join']}, 
+                    'bearb-hour': {'query_versions': 1, 'repositories': 1299, 'queries': ['ic/queries_bearb/lookup',
+                                                                'ic/queries_bearb/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 32, 'queries': ['ic/queries_bearc']}       
                 },    
-                'CB': {
-                    'beara': {'query_versions': 1, 'repositories': 116, 'queries': ['CB/queries_beara/high',
-                                                            'CB/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 1, 'repositories': 178, 'queries': ['CB/queries_bearb/lookup',
-                                                                'CB/queries_bearb/join']}, 
-                    'bearb-hour': {'query_versions': 1, 'repositories': 2598, 'queries': ['CB/queries_bearb/lookup',
-                                                                'CB/queries_bearb/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 64, 'queries': ['CB/queries_bearc']}       
+                'cb': {
+                    'beara': {'query_versions': 1, 'repositories': 116, 'queries': ['cb/queries_beara/high',
+                                                            'cb/queries_beara/low']}, 
+                    'bearb-day': {'query_versions': 1, 'repositories': 178, 'queries': ['cb/queries_bearb/lookup',
+                                                                'cb/queries_bearb/join']}, 
+                    'bearb-hour': {'query_versions': 1, 'repositories': 2598, 'queries': ['cb/queries_bearb/lookup',
+                                                                'cb/queries_bearb/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 64, 'queries': ['cb/queries_bearc']}       
                 },        
-                'TB':{
-                    'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['TB/queries_beara/high',
-                                                            'TB/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['TB/queries_bearb-day/lookup',
-                                                                'TB/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['TB/queries_bearb-hour/lookup',
-                                                                'TB/queries_bearb-hour/join']},
-                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['TB/queries_bearc']}       
+                'tb':{
+                    'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['tb/queries_beara/high',
+                                                            'tb/queries_beara/low']}, 
+                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tb/queries_bearb-day/lookup',
+                                                                'tb/queries_bearb-day/join']}, 
+                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tb/queries_bearb-hour/lookup',
+                                                                'tb/queries_bearb-hour/join']},
+                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tb/queries_bearc']}       
                 },
-                'TBSF': {
-                    'beara': {'query_versions': 58, 'repositories': 1,'queries': ['TBSF/queries_beara/high',
-                                                            'TBSF/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['TBSF/queries_bearb-day/lookup',
-                                                                'TBSF/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['TBSF/queries_bearb-hour/lookup',
-                                                                'TBSF/queries_bearb-hour/join']},
-                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['TBSF/queries_bearc']}       
+                'tbsf': {
+                    'beara': {'query_versions': 58, 'repositories': 1,'queries': ['tbsf/queries_beara/high',
+                                                            'tbsf/queries_beara/low']}, 
+                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsf/queries_bearb-day/lookup',
+                                                                'tbsf/queries_bearb-day/join']}, 
+                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsf/queries_bearb-hour/lookup',
+                                                                'tbsf/queries_bearb-hour/join']},
+                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tbsf/queries_bearc']}       
                 },
-                'TBSH': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['TBSH/queries_beara/high',
-                                                            'TBSH/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['TBSH/queries_bearb-day/lookup',
-                                                                'TBSH/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['TBSH/queries_bearb-day/lookup',
-                                                                'TBSH/queries_bearb-day/join']},
-                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['TBSH/queries_bearc']}       
+                'tbsh': {
+                    'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['tbsh/queries_beara/high',
+                                                            'tbsh/queries_beara/low']}, 
+                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsh/queries_bearb-day/lookup',
+                                                                'tbsh/queries_bearb-day/join']}, 
+                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsh/queries_bearb-day/lookup',
+                                                                'tbsh/queries_bearb-day/join']},
+                    'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tbsh/queries_bearc']}       
                 }
 }
 
@@ -100,7 +100,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
         for query in query_sets:
             query_set_version_dir = final_queries + "/" + query  +  "/" + str(query_version)
             for query_file_name in os.listdir(query_set_version_dir):
-                if policy == "IC":
+                if policy == "ic":
                     for repository in range(1, repositories+1):
                         repository_name = "{policy}_{dataset}_{snapshot}".format(triple_store=triple_store, policy=policy, dataset=ds, snapshot=repository)
                         getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -113,9 +113,9 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             result = engine.query()
                             print(result)
                             file.close()
-                elif policy == "CB":
+                elif policy == "cb":
                     print("Not yet implemented")
-                elif policy in ["TBSH", "TBSF", "TB"]:
+                elif policy in ["tbsh", "tbsf", "tb"]:
                     print("Not yet implemented")
 
 

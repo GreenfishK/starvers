@@ -2,7 +2,6 @@
 
 # Variables
 baseDir=~/.BEAR
-configFile=graphdb-config.ttl
 policies="ic cb" # cb tbsf tbsh tb
 datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
