@@ -29,7 +29,6 @@ services:
     hostname: Starvers
     ports:
       - ${graphdb_ic_bearb_day_port}:7200
-
     restart: unless-stopped
 
   graphdb_run_cb_bearb-day:

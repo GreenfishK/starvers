@@ -9,3 +9,35 @@ services:
     volumes:
       - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
+  
+  build_rdf_star_datasets:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: starvers_eval
+    volumes:
+      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/1_get_and_prepare_data/build_tb_rdf_star_datasets.py"]
+
+  load_data:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: starvers_eval
+    volumes:
+      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
+      - ~/.starvers_eval/databases:/starvers_eval/databases
+      - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
+      - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
+      - ~/.starvers_eval/configs:/starvers_eval/configs
+    entrypoint: ["/starvers_eval/scripts/2_load_data/create_and_load_triplestores.sh"]
+  
+  generate_queries:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: starvers_eval
+    volumes:
+      - ~/.starvers_eval/queries:/starvers_eval/queries
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/2_generate_queries/generate_queries.py"]
+

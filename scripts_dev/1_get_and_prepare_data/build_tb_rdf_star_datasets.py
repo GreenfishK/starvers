@@ -47,6 +47,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     format: ttl or nt.
 
     """
+    print("Constructing changesets")
     cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
         os.makedirs(cb_comp_dir)
@@ -70,11 +71,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
-    but only the relative path to "/.BEAR/rawdata/<dataset>/
+    but only the relative path to "/starvers/rawdata/<dataset>/
 
     :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
     from which one can get to the desired version timestamp.
     """
+    print("Constructing RDF-star dataset from ICs and changesets")
 
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
@@ -199,11 +201,11 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearb-day':89} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 
+datasets = {'bearc':32} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 'bearc':32
 ic_zfills = {'beara': 1, 'bearb-hour': 6, 'bearb-day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
-    data_dir = str(Path.home()) + "/.BEAR/rawdata/" + dataset
+    data_dir = "/starvers_eval/rawdata/" + dataset
     
     construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
