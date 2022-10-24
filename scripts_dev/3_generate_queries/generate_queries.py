@@ -5,8 +5,8 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 
-raw_queries_dir=str(Path.home()) + "/starvers_eval/queries/raw_queries/"
-output_queries_dir=str(Path.home()) + "/starvers_eval/queries/final_queries/"
+raw_queries_dir="/starvers_eval/queries/raw_queries/"
+output_queries_dir="/starvers_eval/queries/final_queries/"
 queries={
     "ic":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ic/ts"},
