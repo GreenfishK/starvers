@@ -1,10 +1,11 @@
 version: "3.0"
 
 services:
-  run_experiment:
+  download_data:
     build: 
       context: .
       dockerfile: Dockerfile
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval:/starvers_eval
+      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
+    entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]

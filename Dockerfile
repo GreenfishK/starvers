@@ -23,7 +23,7 @@ COPY scripts_dev/1_get_and_prepare_data/build_tb_rdf_star_datasets.py /starvers_
 COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
 COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
 
-# Install python modules from starvers 
+# Install starvers (build) and modules from requirements.txt
 FROM python:3.8.15-slim as install_dependencies
 COPY --from=base /starvers /starvers
 COPY --from=base /starvers_eval /starvers_eval
@@ -35,22 +35,23 @@ COPY scripts_dev/requirements.txt /starvers_eval
 WORKDIR /starvers_eval
 RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
 
-#FROM ontotext/graphdb:9.11.2-se as graphdb
-#ENV GDB_JAVA_OPTS='\
-#-Xmx2g -Xms2g \
-#-Dgraphdb.home=/opt/graphdb/home \
-#-Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
-#-Dgraphdb.workbench.cors.enable=true \
-#-Denable-context-index=true \
-#-Dentity-pool-implementation=transactional \
-#-Dhealth.max.query.time.seconds=60 \
-#-Dgraphdb.append.request.id.headers=true \
-#-Dreuse.vars.in.subselects=true'
-#COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+FROM ontotext/graphdb:9.11.2-se as install_graphdb
+COPY --from=install_dependencies /starvers_eval /starvers_eval
+COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+ENV GDB_JAVA_OPTS='\
+-Xmx5g -Xms5g \
+-Dgraphdb.home=/opt/graphdb/home \
+-Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
+-Dgraphdb.workbench.cors.enable=true \
+-Denable-context-index=true \
+-Dentity-pool-implementation=transactional \
+-Dhealth.max.query.time.seconds=60 \
+-Dgraphdb.append.request.id.headers=true \
+-Dreuse.vars.in.subselects=true'
 
-#FROM stain/jena-fuseki:4.0.0
-#COPY --from=base /starvers_eval /starvers_eval
-#COPY --from=base /starvers /starvers
+FROM stain/jena-fuseki:4.0.0
+COPY --from=install_graphdb /starvers_eval /starvers_eval
+COPY --from=install_graphdb /opt/graphdb /opt/graphdb
 
 
 
