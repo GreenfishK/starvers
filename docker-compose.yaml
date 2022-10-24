@@ -38,6 +38,22 @@ services:
       dockerfile: Dockerfile
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/queries:/starvers_eval/queries
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/2_generate_queries/generate_queries.py"]
+      - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_generate_queries/generate_queries.py"]
+
+  evaluate:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: starvers_eval
+    volumes:
+      - ~/.starvers_eval/databases:/starvers_eval/databases
+      - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
+      - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
+      - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
+    ports:
+      - 7200:7200
+      - 3030:3030
+    entrypoint: ["/starvers_eval/scripts/4_evaluation/evaluate.sh"]
+
 

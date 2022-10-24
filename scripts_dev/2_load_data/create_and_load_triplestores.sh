@@ -3,7 +3,7 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
-policies="tbsh ic cb" # cb tbsf tbsh tb
+policies="tbsh" # cb tbsf tbsh tb ic
 datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 
@@ -12,7 +12,6 @@ mkdir -p $baseDir/output/logs/${current_time}
 echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
 
 ### GraphDB ##################################################################
-: << 'END'
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 graphdb_evns=$GDB_JAVA_OPTS
@@ -124,7 +123,6 @@ for policy in ${policies[@]}; do
         echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
     done
 done
-END
 
 ### JenaTDB2 #################################################################
 export JAVA_HOME=/usr/local/openjdk-11
