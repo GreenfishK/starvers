@@ -1,19 +1,21 @@
 #!/bin/bash
 
 # Variables
-baseDir=~/.BEAR
-policies="ic cb" # cb tbsf tbsh tb
+baseDir=/starvers_eval
+SCRIPT_DIR=/starvers_eval/scripts
+policies="tbsh ic cb" # cb tbsf tbsh tb
 datasets="bearb-day" # bearb-day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 mkdir -p $baseDir/output/measurements/${current_time}
 mkdir -p $baseDir/output/logs/${current_time}
 echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
 
-
 ### GraphDB ##################################################################
-
+: << 'END'
+export JAVA_HOME=/opt/java/openjdk
+export PATH=/opt/java/openjdk/bin:$PATH
+graphdb_evns=$GDB_JAVA_OPTS
 for policy in ${policies[@]}; do
     case $policy in 
         ic) datasetDirOrFile=alldata.IC.nt;;
@@ -38,6 +40,7 @@ for policy in ${policies[@]}; do
                 exit 2
             ;;
         esac
+        export GDB_JAVA_OPTS="$graphdb_evns -Dgraphdb.home.data=${baseDir}/databases/graphdb_${policy}_${dataset}/data"
         
         echo "Process is $policy, $dataset for GraphDB"
         total_ingestion_time=0
@@ -45,16 +48,15 @@ for policy in ${policies[@]}; do
         if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
             # Replace repositoryID in config template
             repositoryID=${policy}_${dataset}
-            cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
-            sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
+            cp ${SCRIPT_DIR}/2_load_data/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
+            sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
 
             # Load data into GraphDB
-            ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${datasetDirOrFile} \
-                            time -p docker-compose run --rm graphdb_load) \
+            ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force) \
                             2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
-            file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+            file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
         elif [ "$policy" == "ic" ]; then
@@ -62,16 +64,15 @@ for policy in ${policies[@]}; do
             do
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}_$((10#$c))
-                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${datasetDirOrFile}/${c}.nt \
-                                time -p docker-compose run --rm graphdb_load) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt --force) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         
@@ -93,42 +94,42 @@ for policy in ${policies[@]}; do
 
                 # Add
                 # Replace repositoryID in config template
-                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${fileadd} \
-                                time -p docker-compose run --rm graphdb_load) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${fileadd} --force) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
 
                 # Delete
                 # Replace repositoryID in config template
-                cp ${SCRIPT_DIR}/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${SCRIPT_DIR}/configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
+                sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(policy=${policy} dataset=${dataset} rel_path_import_file=${filedel} \
-                                time -p docker-compose run --rm graphdb_load) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${filedel} --force) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/graphDB_logs.txt     
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         fi
         cat $baseDir/output/logs/${current_time}/graphDB_logs.txt | grep -v "\[.*\] DEBUG"
-        disk_usage=`du -s --block-size=M --apparent-size ~/.BEAR/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+        disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
         echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
     done
 done
-
+END
 
 ### JenaTDB2 #################################################################
-
+export JAVA_HOME=/usr/local/openjdk-11
+export PATH=/usr/local/openjdk-11/bin:$PATH
+export FUSEKI_HOME=/jena-fuseki
 for policy in ${policies[@]}; do
     case $policy in 
         ic) datasetDirOrFile=alldata.IC.nt;;
@@ -161,16 +162,15 @@ for policy in ${policies[@]}; do
             repositoryID=${policy}_${dataset}
             # Replace repositoryID in config template
             mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
-            cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/${repositoryID}.ttl
+            cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             
             # Load data into Jena
-            ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile} \
-                            time -p docker-compose run --rm jenatdb2_load) \
+            ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}) \
                             2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
             echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
-            file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+            file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
         elif [ "$policy" == "ic" ]; then
@@ -179,15 +179,15 @@ for policy in ${policies[@]}; do
             do
                 repositoryID=${policy}_${dataset}_$((10#$c))
                 # Replace repositoryID in config template
-                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                
                 # Load data into Jena
-                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryID} rel_path_import_file=${datasetDirOrFile}/${c}.nt \
-                                time -p docker-compose run --rm jenatdb2_load) \
+                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
             done
         
@@ -209,34 +209,32 @@ for policy in ${policies[@]}; do
                 fi
 
                 # Replace repositoryID in config template
-                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
 
                 # Load data into Jena TDB2
-                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDAdd} rel_path_import_file=${fileadd} \
-                                time -p docker-compose run --rm jenatdb2_load) \
+                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDAdd} ${baseDir}/rawdata/${dataset}/${fileadd}) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
                 # Replace repositoryID in config template
-                cp ${SCRIPT_DIR}/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
+                cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
 
                 # Load data into Jena TDB2
-                ingestion_time=`(policy=${policy} dataset=${dataset} repositoryID=${repositoryIDDel} rel_path_import_file=${filedel} \
-                                time -p docker-compose run --rm jenatdb2_load) \
+                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDDel} ${baseDir}/rawdata/${dataset}/${filedel}) \
                                 2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt 
-                file_size=`ls -l --block-size=k ~/.BEAR/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
+                file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
             done
         fi
         cat $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -v "\[.*\] DEBUG"
-        disk_usage=`du -s --block-size=M --apparent-size ~/.BEAR/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
+        disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
         echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/${current_time}/ingestion.txt 
     done
 done

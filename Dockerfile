@@ -1,5 +1,5 @@
 # Clone starvers from Github
-FROM alpine/git:2.36.3 as base
+FROM alpine/git:2.36.3 as clone_starvers
 WORKDIR /
 RUN git clone https://github.com/GreenfishK/starvers.git
 
@@ -23,10 +23,32 @@ COPY scripts_dev/1_get_and_prepare_data/build_tb_rdf_star_datasets.py /starvers_
 COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
 COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
 
+COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
+COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data
+
+COPY scripts_dev/3_generate_queries /starvers_eval/scripts/3_generate_queries
+# TODO: add other scripts
+
+FROM stain/jena-fuseki:4.0.0 as install_jena
+COPY --from=clone_starvers /starvers_eval /starvers_eval
+COPY --from=clone_starvers /starvers /starvers
+
+FROM ontotext/graphdb:9.11.2-se as install_graphdb
+COPY --from=install_jena /starvers_eval /starvers_eval
+COPY --from=install_jena /starvers /starvers
+COPY --from=install_jena /jena-fuseki /jena-fuseki
+COPY --from=install_jena /usr/local/openjdk-11 /usr/local/openjdk-11
+
+COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+
 # Install starvers (build) and modules from requirements.txt
-FROM python:3.8.15-slim as install_dependencies
-COPY --from=base /starvers /starvers
-COPY --from=base /starvers_eval /starvers_eval
+FROM python:3.8.15-slim as install_python
+COPY --from=install_graphdb /starvers /starvers
+COPY --from=install_graphdb /starvers_eval /starvers_eval
+COPY --from=install_graphdb /jena-fuseki /jena-fuseki
+COPY --from=install_graphdb /usr/local/openjdk-11 /usr/local/openjdk-11
+COPY --from=install_graphdb /opt /opt
+
 RUN python3 -m venv /starvers_eval/python_venv
 RUN . /starvers_eval/python_venv/bin/activate
 WORKDIR /starvers
@@ -35,9 +57,18 @@ COPY scripts_dev/requirements.txt /starvers_eval
 WORKDIR /starvers_eval
 RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
 
-FROM ontotext/graphdb:9.11.2-se as install_graphdb
-COPY --from=install_dependencies /starvers_eval /starvers_eval
-COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+FROM python:3.8.15-slim as final_stage
+# copy only necessary directories
+COPY --from=install_python /starvers_eval /starvers_eval
+COPY --from=install_python /jena-fuseki /jena-fuseki
+COPY --from=install_python /usr/local/openjdk-11 /usr/local/openjdk-11
+COPY --from=install_python /opt /opt
+
+# Install GNU basic calculator
+RUN apt-get update
+RUN apt-get install bc -y
+
+## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
 -Xmx5g -Xms5g \
 -Dgraphdb.home=/opt/graphdb/home \
@@ -49,14 +80,12 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 
-FROM stain/jena-fuseki:4.0.0
-COPY --from=install_graphdb /starvers_eval /starvers_eval
-COPY --from=install_graphdb /opt/graphdb /opt/graphdb
 
-
-
+# Docker knowledge
 # RUN RUN is an image build step, the state of the container after a RUN command will be committed to the container image. 
 # A Dockerfile can have many RUN steps that layer on top of one another to build the image. 
 # CMD is the command the container executes by default when you launch the built image. CMD is similar to entrypoint
 # ENTRYPOINT parameters cannot be overriden ny command-line parameters in the `docker run` while with CMD this is possible.
-# The last FROM command in the dockerfile creates the actual final image.
+# RUN you will usually find in Dockerfiles while CMD and ENTRYPOINT you will find in docker compose
+# The last FROM command in the dockerfile creates the actual final image. 
+# Images can be copied from previous stages with COPY --from=<path>
