@@ -27,18 +27,22 @@ COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
 COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data
 
 COPY scripts_dev/3_generate_queries /starvers_eval/scripts/3_generate_queries
-# TODO: add other scripts
+
 COPY scripts_dev/4_evaluation/evaluate.py /starvers_eval/scripts/4_evaluation
 COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
 
+# TODO: add visualization
+
 FROM stain/jena-fuseki:4.0.0 as install_jena
+WORKDIR /
 COPY --from=clone_starvers /starvers_eval /starvers_eval
 COPY --from=clone_starvers /starvers /starvers
 
 FROM ontotext/graphdb:9.11.2-se as install_graphdb
+WORKDIR /
 COPY --from=install_jena /starvers_eval /starvers_eval
 COPY --from=install_jena /starvers /starvers
-# COPY --from=install_jena /fuseki /fuseki
+COPY --from=install_jena /fuseki/. /fuseki
 COPY --from=install_jena /jena-fuseki /jena-fuseki
 COPY --from=install_jena /usr/local/openjdk-11 /usr/local/openjdk-11
 

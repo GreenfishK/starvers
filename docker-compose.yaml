@@ -44,16 +44,17 @@ services:
   evaluate:
     build: 
       context: .
-      dockerfile: Dockerfile
+      dockerfile: test.Dockerfile
     image: starvers_eval
-    volumes:
-      - ~/.starvers_eval/databases:/starvers_eval/databases
-      - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
-      - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
-      - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
+    #volumes:
+    #  - ~/.starvers_eval/databases:/starvers_eval/databases
+    #  - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
+    #  - ~/.starvers_eval/configs:/starvers_eval/configs
+    #  - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
+    #  - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
     ports:
       - 7200:7200
       - 3030:3030
-    entrypoint: ["/starvers_eval/scripts/4_evaluation/evaluate.sh"]
+    #entrypoint: ["/starvers_eval/scripts/4_evaluation/evaluate.sh"]
 
 
