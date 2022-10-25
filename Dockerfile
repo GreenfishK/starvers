@@ -1,9 +1,9 @@
 # Clone starvers from Github
-FROM alpine/git:2.36.3 as clone_starvers
+FROM alpine/git:2.36.3 as base
 WORKDIR /
 RUN git clone https://github.com/GreenfishK/starvers.git
 
-# Create directories
+# Create /starvers_eval directories
 RUN mkdir -p /starvers_eval/databases
 RUN mkdir -p /starvers_eval/output/logs
 RUN mkdir -p /starvers_eval/output/measurements
@@ -17,7 +17,7 @@ RUN mkdir -p /starvers_eval/scripts/3_generate_queries
 RUN mkdir -p /starvers_eval/scripts/4_evaluation
 RUN mkdir -p /starvers_eval/scripts/5_visualization
 
-# Copy raw queries and scripts
+# Copy raw queries and scripts to /starvers_eval 
 COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
 COPY scripts_dev/1_get_and_prepare_data/build_tb_rdf_star_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
 COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
@@ -33,29 +33,10 @@ COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
 
 # TODO: add visualization
 
-FROM stain/jena-fuseki:4.0.0 as install_jena
-WORKDIR /
-COPY --from=clone_starvers /starvers_eval /starvers_eval
-COPY --from=clone_starvers /starvers /starvers
-
-FROM ontotext/graphdb:9.11.2-se as install_graphdb
-WORKDIR /
-COPY --from=install_jena /starvers_eval /starvers_eval
-COPY --from=install_jena /starvers /starvers
-COPY --from=install_jena /fuseki/. /fuseki
-COPY --from=install_jena /jena-fuseki /jena-fuseki
-COPY --from=install_jena /usr/local/openjdk-11 /usr/local/openjdk-11
-
-COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
-
 # Install starvers (build) and modules from requirements.txt
-FROM python:3.8.15-slim as install_python
-COPY --from=install_graphdb /starvers /starvers
-COPY --from=install_graphdb /starvers_eval /starvers_eval
-# COPY --from=install_graphdb /fuseki /fuseki
-COPY --from=install_graphdb /jena-fuseki /jena-fuseki
-COPY --from=install_graphdb /usr/local/openjdk-11 /usr/local/openjdk-11
-COPY --from=install_graphdb /opt /opt
+FROM python:3.8.15-slim as install_python_modules
+COPY --from=base /starvers /starvers
+COPY --from=base /starvers_eval /starvers_eval
 
 RUN python3 -m venv /starvers_eval/python_venv
 RUN . /starvers_eval/python_venv/bin/activate
@@ -67,11 +48,11 @@ RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
 
 FROM python:3.8.15-slim as final_stage
 # copy only necessary directories
-COPY --from=install_python /starvers_eval /starvers_eval
-# COPY --from=install_python /fuseki /fuseki
-COPY --from=install_python /jena-fuseki /jena-fuseki
-COPY --from=install_python /usr/local/openjdk-11 /usr/local/openjdk-11
-COPY --from=install_python /opt /opt
+COPY --from=install_python_modules /starvers_eval /starvers_eval
+COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
+COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
+COPY --from=ontotext/graphdb:9.11.2-se /opt /opt
+COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
 
 # Install GNU basic calculator
 RUN apt-get update

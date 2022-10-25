@@ -11,6 +11,7 @@ jenatdb2_port=$((3030))
 for triple_store in ${triple_stores[@]}; do
 
     if [ ${triple_store} == "jenatdb2" ]; then
+    mkdir -p /run/configuration
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
                 # Export variables
@@ -21,15 +22,14 @@ for triple_store in ${triple_stores[@]}; do
                 export ADMIN_PASSWORD=starvers
 
                 # Start database server
-                # copy or link: /starvers_eval/databases/jenatdb2_ic_bearb-day:/fuseki/databases
-                # copy or link: /starvers_eval/configs/jenatdb2_ic_bearb-day:/fuseki/configuration
-                
-                /jena-fuseki/fuseki-server --config=/starvers_eval/configs/jenatdb2_${policy}_${dataset} --port=3030 --tdb2
+                cp /starvers_eval/configs/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
+                /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up
                 while [[ $(curl -I http://localhost:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
                     sleep 1s
                 done
+                echo "Fuseki server is up"
 
                 # Evaluate
                 # /starvers_eval/python_venv/bin/python3 -u ${triple_store} ${policy} ${dataset} 3030 evaluate >> /starvers_eval/output/logs/queries.txt
