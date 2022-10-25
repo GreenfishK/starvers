@@ -26,11 +26,10 @@ for triple_store in ${triple_stores[@]}; do
                 
                 /jena-fuseki/fuseki-server --config=/starvers_eval/configs/jenatdb2_${policy}_${dataset} --port=3030 --tdb2
 
-                # Wait until it is started
-                # > /starvers_eval/output/logs/tmp_log.txt
-                # while [ $((`sed -n '$=' /starvers_eval/output/logs/tmp_log.txt`)) -ne $((1)) ]; do
-                # <path_to_logs> | grep -e "Started .* UTC on port" > /starvers_eval/output/logs/tmp_log.txt
-                # done
+                # Wait until server is up
+                while [[ $(curl -I http://localhost:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                    sleep 1s
+                done
 
                 # Evaluate
                 # /starvers_eval/python_venv/bin/python3 -u ${triple_store} ${policy} ${dataset} 3030 evaluate >> /starvers_eval/output/logs/queries.txt
