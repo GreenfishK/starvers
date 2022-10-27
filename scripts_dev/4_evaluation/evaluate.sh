@@ -37,6 +37,8 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
+                echo "Shutting down fuseki server"
+                pkill -f '/jena-fuseki/fuseki-server.jar'
             done
         done
 
