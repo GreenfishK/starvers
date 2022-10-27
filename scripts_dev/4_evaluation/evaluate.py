@@ -6,10 +6,7 @@ import sys
 
 
 ###################################### Parameters ######################################
-policies=['ic', 'cb'] # ["ic", "cb", "tb", "tbsf", "tbsh"]
-datasets=['bearb-day'] # ['beara', 'bearb-hour', 'bearb-day', 'bearc']
-triple_stores=['jenatdb2'] # ['graphdb', 'jenatdb2']
-final_queries= "/opt/starvers/eval/queries"
+final_queries= "/starvers_eval/queries/final_queries"
 ds_queries_map={'ic': {
                     'beara': {'query_versions': 1, 'repositories': 58, 'queries': ['ic/queries_beara/high',
                                                             'ic/queries_beara/low']}, 
@@ -85,7 +82,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
             for query_set in query_sets:
                 query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
                 for query_file_name in os.listdir(query_set_version):
-                    if policy == "ic":
+                    if policy in ["ic", "tbsh", "tbsf", "tb"]:
                         with open(query_set_version + "/" + query_file_name, "r") as file:
                             query_text = file.read()
                             engine.setQuery(query_text)
@@ -100,8 +97,6 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         # Initialize final result set
                         # Iterate over all changeset results until version v
                         # Add add_result_sets to final set and then remove del_result_sets from final set
-                    elif policy in ["tbsh", "tbsf", "tb"]:
-                        print("Not yet implemented")
 
 def query():
     triple_store = sys.argv[1]
@@ -109,7 +104,7 @@ def query():
     dataset = sys.argv[3]
     port = sys.argv[4]
 
-    print("Query " + triple_store + " " + policy + " " + dataset + "on port" + port)
+    print("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
     query_dataset(triple_store, policy, dataset, port)
 
 query()

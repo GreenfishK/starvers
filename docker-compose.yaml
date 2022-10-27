@@ -1,10 +1,11 @@
-version: "3.0"
+version: "3.4"
 
 services:
   download_data:
     build: 
       context: .
       dockerfile: Dockerfile
+      target: final_stage
     image: starvers_eval
     volumes:
       - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
@@ -14,6 +15,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      target: final_stage
     image: starvers_eval
     volumes:
       - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
@@ -23,6 +25,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      target: final_stage
     image: starvers_eval
     volumes:
       - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
@@ -36,6 +39,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      target: final_stage
     image: starvers_eval
     volumes:
       - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
@@ -45,6 +49,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      target: final_stage
     image: starvers_eval
     volumes:
       - ~/.starvers_eval/configs:/starvers_eval/configs
@@ -52,6 +57,7 @@ services:
       - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
       - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
       - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
+    hostname: Starvers
     ports:
       - 7200:7200
       - 3030:3030

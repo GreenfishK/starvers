@@ -17,8 +17,30 @@ RUN mkdir -p /starvers_eval/scripts/3_generate_queries
 RUN mkdir -p /starvers_eval/scripts/4_evaluation
 RUN mkdir -p /starvers_eval/scripts/5_visualization
 
+# Install starvers based on setup.py and modules based on requirements.txt
+FROM python:3.8.15-slim as install_python_modules
+COPY --from=base /starvers /starvers
+COPY --from=base /starvers_eval /starvers_eval
+
+RUN python3 -m venv /starvers_eval/python_venv
+RUN . /starvers_eval/python_venv/bin/activate
+WORKDIR /starvers
+RUN /starvers_eval/python_venv/bin/python3 -m pip install .
+COPY scripts_dev/requirements.txt /starvers_eval
+WORKDIR /starvers_eval
+RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
+
+FROM python:3.8.15-slim as final_stage
+# copy from other images
+COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
+COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
+COPY --from=ontotext/graphdb:9.11.2-se /opt /opt
+COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+COPY --from=install_python_modules /starvers_eval /starvers_eval 
+
 # Copy raw queries and scripts to /starvers_eval 
 COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
+
 COPY scripts_dev/1_get_and_prepare_data/build_tb_rdf_star_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
 COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
 COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
@@ -33,30 +55,10 @@ COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
 
 # TODO: add visualization
 
-# Install starvers (build) and modules from requirements.txt
-FROM python:3.8.15-slim as install_python_modules
-COPY --from=base /starvers /starvers
-COPY --from=base /starvers_eval /starvers_eval
-
-RUN python3 -m venv /starvers_eval/python_venv
-RUN . /starvers_eval/python_venv/bin/activate
-WORKDIR /starvers
-RUN /starvers_eval/python_venv/bin/python3 -m pip install .
-COPY scripts_dev/requirements.txt /starvers_eval
-WORKDIR /starvers_eval
-RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
-
-FROM python:3.8.15-slim as final_stage
-# copy only necessary directories
-COPY --from=install_python_modules /starvers_eval /starvers_eval
-COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
-COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
-COPY --from=ontotext/graphdb:9.11.2-se /opt /opt
-COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
-
 # Install GNU basic calculator
 RUN apt-get update
-RUN apt-get install bc -y
+RUN apt-get install bc=1.07.1-2+b2 -y
+RUN apt-get install curl=7.74.0-1.3+deb11u3 -y
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
@@ -69,6 +71,23 @@ ENV GDB_JAVA_OPTS='\
 -Dhealth.max.query.time.seconds=60 \
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
+
+# FROM python:3.8.15-slim as debug_jena_evaluation
+# RUN mkdir -p /starvers_eval/databases
+# RUN mkdir -p /starvers_eval/output/logs
+# #RUN mkdir -p /starvers_eval/output/measurements
+# RUN mkdir -p /starvers_eval/rawdata
+# RUN mkdir -p /starvers_eval/configs
+
+# RUN mkdir -p /starvers_eval/scripts/4_evaluation
+#  # copy from other images
+# COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
+# COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
+# COPY --from=install_python_modules /starvers_eval /starvers_eval 
+# COPY scripts_dev/4_evaluation/evaluate.py /starvers_eval/scripts/4_evaluation
+# COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
+
+
 
 
 # Docker knowledge
