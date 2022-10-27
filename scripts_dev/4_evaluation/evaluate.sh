@@ -1,13 +1,14 @@
 #!/bin/bash
 
-policies=("tbsh") # cb tbsf tbsh tb
-datasets=("bearb-day") # bearb-day beara bearc
-triple_stores=("jenatdb2") # jenatdb2
+policies=("${policies}") # cb tbsf tbsh tb
+datasets=("${datasets}") # bearb_day beara bearc
+triple_stores=("${triple_stores}") # jenatdb2
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
 
 #docker network create 4_evaluation_default
 # Start containers with their respective policy, dataset and triple store
+> /starvers_eval/output/logs/queries.txt
 for triple_store in ${triple_stores[@]}; do
 
     if [ ${triple_store} == "jenatdb2" ]; then
@@ -33,7 +34,7 @@ for triple_store in ${triple_stores[@]}; do
                 echo "Fuseki server is up"
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} # > /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
             done

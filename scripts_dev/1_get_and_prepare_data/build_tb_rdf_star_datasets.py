@@ -201,8 +201,8 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearc':32} #'beara':58, 'bearb-day':89, 'bearb-hour':1299, 'bearc':32
-ic_zfills = {'beara': 1, 'bearb-hour': 6, 'bearb-day': 6, 'bearc': 1}
+datasets = {'bearc':32} #'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32
+ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
@@ -221,7 +221,7 @@ for dataset, totalVersions in datasets.items():
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
     # Corrections
-    if dataset == 'bearb-hour':
+    if dataset == 'bearb_hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
         data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
         print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
