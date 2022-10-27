@@ -6,7 +6,7 @@ SCRIPT_DIR=/starvers_eval/scripts
 policies=("${policies}") # cb tbsf tbsh tb
 datasets=("${datasets}") # bearb_day beara bearc
 
-echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $baseDir/output/measurements/ingestion.txt  
+echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $baseDir/output/measurements/ingestion.csv
 
 ### GraphDB ##################################################################
 export JAVA_HOME=/opt/java/openjdk
@@ -120,7 +120,7 @@ for policy in ${policies[@]}; do
         fi
         cat $baseDir/output/logs/graphDB_logs.txt | grep -v "\[.*\] DEBUG"
         disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
-        echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.txt  
+        echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.csv  
     done
 done
 
@@ -244,7 +244,7 @@ for policy in ${policies[@]}; do
         fi
         cat $baseDir/output/logs/jenaTDB2_logs.txt | grep -v "\[.*\] DEBUG"
         disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
-        echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.txt 
+        echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.csv 
     done
 done
 
