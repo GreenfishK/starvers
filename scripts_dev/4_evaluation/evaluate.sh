@@ -1,6 +1,6 @@
 #!/bin/bash
 
-policies=("ic") # cb tbsf tbsh tb
+policies=("tbsh") # cb tbsf tbsh tb
 datasets=("bearb-day") # bearb-day beara bearc
 triple_stores=("jenatdb2") # jenatdb2
 graphdb_port=$((7200))
@@ -21,18 +21,19 @@ for triple_store in ${triple_stores[@]}; do
                 export JAVA_OPTIONS="-Xmx5g -Xms5g"
                 export ADMIN_PASSWORD=starvers
 
-                # Start database server
+                # Start database server and run in background
                 cp /starvers_eval/configs/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
-                /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+                nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up
+                echo "Waiting..."
                 while [[ $(curl -I http://localhost:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
                     sleep 1s
                 done
                 echo "Fuseki server is up"
 
                 # Evaluate
-                # /starvers_eval/python_venv/bin/python3 -u ${triple_store} ${policy} ${dataset} 3030 evaluate >> /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} # > /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
             done
