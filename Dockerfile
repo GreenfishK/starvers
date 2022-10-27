@@ -59,6 +59,7 @@ COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
 RUN apt-get update
 RUN apt-get install bc=1.07.1-2+b2 -y
 RUN apt-get install curl=7.74.0-1.3+deb11u3 -y
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\

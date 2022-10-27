@@ -13,35 +13,35 @@ queries={
         "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ic/ts"},
         "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ic/ts"},
-        "bearc": {'output_dirs':{ "bearc": 1}, 'template': "ic/sparql"},
+        "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
     },
     "cb":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cb/ts"},
         "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cb/ts"},
         "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cb/bgp"},
         "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cb/ts"},
-        "bearc": {'output_dirs':{"bearc": 1}, 'template': "cb/sparql"},
+        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cb/sparql"},
     },
     "tb":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
         "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tb/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tb/ts"},
-        "bearc": {'output_dirs':{"bearc": 32}, 'template': "tb/sparql"},
+        "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "tb/sparql"},
     },
     "tbsf":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
         "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ic/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ic/ts"},
-        "bearc": {'output_dirs':{"bearc": 32}, 'template': "ic/sparql"},
+        "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "ic/sparql"},
     },
     "tbsh":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
         "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ic/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ic/ts"},
-        "bearc": {'output_dirs':{"bearc": 32}, 'template': "ic/sparql"},
+        "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "ic/sparql"},
     }
 }
 policies=["ic", "cb", "tb", "tbsf", "tbsh"]
