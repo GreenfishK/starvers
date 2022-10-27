@@ -89,7 +89,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             engine.setQuery(query_text)
                             print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
                             start = time.time()
-                            result = engine.query()
+                            engine.query()
                             end = time.time()
                             execution_time = end - start
                             df.add([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time])
@@ -102,7 +102,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         # Iterate over all changeset results until version v
                         # Add add_result_sets to final set and then remove del_result_sets from final set
     
-    print(df)
+    df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";")
 
 
 def query():
