@@ -102,7 +102,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         # Iterate over all changeset results until version v
                         # Add add_result_sets to final set and then remove del_result_sets from final set
     
-    df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";")
+    df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
 
 
 def query():

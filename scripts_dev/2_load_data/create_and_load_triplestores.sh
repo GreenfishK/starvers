@@ -12,7 +12,7 @@ echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 graphdb_evns=$GDB_JAVA_OPTS
-> $baseDir/output/logs/graphDB_logs.txt
+> $baseDir/output/logs/ingestion_graphDB_logs.txt
 
 for policy in ${policies[@]}; do
     case $policy in 
@@ -52,9 +52,9 @@ for policy in ${policies[@]}; do
 
             # Load data into GraphDB
             ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force) \
-                            2>&1 1>> $baseDir/output/logs/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                            2>&1 1>> $baseDir/output/logs/ingestion_graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-            echo "\n\n" >> $baseDir/output/logs/graphDB_logs.txt
+            echo "\n\n" >> $baseDir/output/logs/ingestion_graphDB_logs.txt
             file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
@@ -68,9 +68,9 @@ for policy in ${policies[@]}; do
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt --force) \
-                                2>&1 1>> $baseDir/output/logs/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/graphDB_logs.txt
+                echo "\n\n" >> $baseDir/output/logs/ingestion_graphdb_logs.txt
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
@@ -98,9 +98,9 @@ for policy in ${policies[@]}; do
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${fileadd} --force) \
-                                2>&1 1>> $baseDir/output/logs/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/graphDB_logs.txt
+                echo "\n\n" >> $baseDir/output/logs/ingestion_graphdb_logs.txt
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
 
@@ -111,14 +111,14 @@ for policy in ${policies[@]}; do
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${filedel} --force) \
-                                2>&1 1>> $baseDir/output/logs/graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/graphDB_logs.txt     
+                echo "\n\n" >> $baseDir/output/logs/ingestion_graphdb_logs.txt     
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
             done
         fi
-        cat $baseDir/output/logs/graphDB_logs.txt | grep -v "\[.*\] DEBUG"
+        cat $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -v "\[.*\] DEBUG"
         disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
         echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.csv  
     done
@@ -128,7 +128,7 @@ done
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 export FUSEKI_HOME=/jena-fuseki
-> $baseDir/output/logs/jenaTDB2_logs.txt
+> $baseDir/output/logs/ingestion_jenatdb2_logs.txt
 
 for policy in ${policies[@]}; do
     case $policy in 
@@ -170,9 +170,9 @@ for policy in ${policies[@]}; do
 
             # Load data into Jena
             ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}) \
-                            2>&1 1>> $baseDir/output/logs/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                            2>&1 1>> $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
             total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-            echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs.txt
+            echo "\n\n" >> $baseDir/output/logs/ingestion_jenatdb2_logs.txt
             file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
             total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
@@ -189,9 +189,9 @@ for policy in ${policies[@]}; do
                 
                 # Load data into Jena
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
-                                2>&1 1>> $baseDir/output/logs/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs.txt
+                echo "\n\n" >> $baseDir/output/logs/ingestion_jenatdb2_logs.txt
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
             done
@@ -221,9 +221,9 @@ for policy in ${policies[@]}; do
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDAdd} ${baseDir}/rawdata/${dataset}/${fileadd}) \
-                                2>&1 1>> $baseDir/output/logs/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs.txt
+                echo "\n\n" >> $baseDir/output/logs/ingestion_jenatdb2_logs.txt
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
@@ -235,14 +235,14 @@ for policy in ${policies[@]}; do
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDDel} ${baseDir}/rawdata/${dataset}/${filedel}) \
-                                2>&1 1>> $baseDir/output/logs/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/jenaTDB2_logs.txt 
+                echo "\n\n" >> $baseDir/output/logs/ingestion_jenatdb2_logs.txt 
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
             done
         fi
-        cat $baseDir/output/logs/jenaTDB2_logs.txt | grep -v "\[.*\] DEBUG"
+        cat $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -v "\[.*\] DEBUG"
         disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
         echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $baseDir/output/measurements/ingestion.csv 
     done
