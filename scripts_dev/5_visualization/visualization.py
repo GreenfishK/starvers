@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 
-work_dir = str(Path.home()) + "/.BEAR"
+work_dir = str(Path.home()) + "/starvers_eval"
 figures_out = work_dir + "/output/figures/"
 
 if not os.path.exists(figures_out):
@@ -31,7 +31,7 @@ def plot_mat_lookup_queries(timestamp: datetime, triple_store: str, triple_patte
     policies = ['tb', 'tb_star_f', 'tb_star_h']
     df = pd.DataFrame(columns=['policy', 'tripleStore', 'triple_pattern', 'ver', 'min', 'mean', 'max', 'stddev', 'count', 'sum'])
     for policy in policies:
-        output_dir = work_dir + "/output/time/bearb-hour/{hostname}-{timestamp}".format(hostname=hostname,
+        output_dir = work_dir + "/output/time/bearb_hour/{hostname}-{timestamp}".format(hostname=hostname,
                                                                                     timestamp=ts_formatted)
 
         for pattern in triple_patterns:

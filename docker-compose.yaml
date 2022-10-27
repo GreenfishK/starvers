@@ -33,6 +33,9 @@ services:
       - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
       - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
       - ~/.starvers_eval/configs:/starvers_eval/configs
+    environment:
+      - policies=${policies}
+      - datasets=${datasets}
     entrypoint: ["/starvers_eval/scripts/2_load_data/create_and_load_triplestores.sh"]
   
   generate_queries:
@@ -61,6 +64,12 @@ services:
     ports:
       - 7200:7200
       - 3030:3030
+    environment:
+      - policies=${policies}
+      - datasets=${datasets}
+      - triple_stores=${triple_stores}
+      - graphdb_port=${graphdb_port}
+      - jenatdb2_port=${jenatdb2_port}
     entrypoint: ["/starvers_eval/scripts/4_evaluation/evaluate.sh"]
 
 

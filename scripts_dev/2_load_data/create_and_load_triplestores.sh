@@ -3,13 +3,13 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
-policies="tbsh" # cb tbsf tbsh tb ic
-datasets="bearb-day" # bearb-day beara bearc
+policies=("${policies}") # cb tbsf tbsh tb
+datasets=("${datasets}") # bearb_day beara bearc
 current_time=`date "+%Y-%m-%dT%H:%M:%S"`
 
 mkdir -p $baseDir/output/measurements/${current_time}
 mkdir -p $baseDir/output/logs/${current_time}
-echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" >> $baseDir/output/measurements/${current_time}/ingestion.txt  
+echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $baseDir/output/measurements/${current_time}/ingestion.txt  
 
 ### GraphDB ##################################################################
 export JAVA_HOME=/opt/java/openjdk
@@ -31,11 +31,11 @@ for policy in ${policies[@]}; do
     for dataset in ${datasets[@]}; do
         case $dataset in 
             beara) versions=58 file_name_struc="%01g";;
-            bearb-hour) versions=1299 file_name_struc="%06g";; 
-            bearb-day) versions=89 file_name_struc="%06g";;
+            bearb_hour) versions=1299 file_name_struc="%06g";; 
+            bearb_day) versions=89 file_name_struc="%06g";;
             bearc) versions=32 file_name_struc="%01g";;
             *)
-                echo "Dataset must be in beara bearb-hour bearb-day bearc"
+                echo "Dataset must be in beara bearb_hour bearb_day bearc"
                 exit 2
             ;;
         esac
@@ -144,11 +144,11 @@ for policy in ${policies[@]}; do
     for dataset in ${datasets[@]}; do
         case $dataset in 
             beara) versions=58 file_name_struc="%01g";;
-            bearb-hour) versions=1299 file_name_struc="%06g";; 
-            bearb-day) versions=89 file_name_struc="%06g";;
+            bearb_hour) versions=1299 file_name_struc="%06g";; 
+            bearb_day) versions=89 file_name_struc="%06g";;
             bearc) versions=32 file_name_struc="%01g";;
             *)
-                echo "Dataset must be in beara bearb-hour bearb-day bearc"
+                echo "Dataset must be in beara bearb_hour bearb_day bearc"
                 exit 2
             ;;
         esac
@@ -162,7 +162,9 @@ for policy in ${policies[@]}; do
             mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
             cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-            
+            sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+            sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+
             # Load data into Jena
             ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}) \
                             2>&1 1>> $baseDir/output/logs/${current_time}/jenaTDB2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
@@ -179,6 +181,8 @@ for policy in ${policies[@]}; do
                 # Replace repositoryID in config template
                 cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 
                 # Load data into Jena
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
@@ -209,6 +213,8 @@ for policy in ${policies[@]}; do
                 # Replace repositoryID in config template
                 cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDAdd} ${baseDir}/rawdata/${dataset}/${fileadd}) \
@@ -221,6 +227,8 @@ for policy in ${policies[@]}; do
                 # Replace repositoryID in config template
                 cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
+                sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 
                 # Load data into Jena TDB2
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryIDDel} ${baseDir}/rawdata/${dataset}/${filedel}) \

@@ -10,46 +10,46 @@ final_queries= "/starvers_eval/queries/final_queries"
 ds_queries_map={'ic': {
                     'beara': {'query_versions': 1, 'repositories': 58, 'queries': ['ic/queries_beara/high',
                                                             'ic/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 1,'repositories': 89, 'queries': ['ic/queries_bearb/lookup',
+                    'bearb_day': {'query_versions': 1,'repositories': 89, 'queries': ['ic/queries_bearb/lookup',
                                                                 'ic/queries_bearb/join']}, 
-                    'bearb-hour': {'query_versions': 1, 'repositories': 1299, 'queries': ['ic/queries_bearb/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'queries': ['ic/queries_bearb/lookup',
                                                                 'ic/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 32, 'queries': ['ic/queries_bearc']}       
                 },    
                 'cb': {
                     'beara': {'query_versions': 1, 'repositories': 116, 'queries': ['cb/queries_beara/high',
                                                             'cb/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 1, 'repositories': 178, 'queries': ['cb/queries_bearb/lookup',
+                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'queries': ['cb/queries_bearb/lookup',
                                                                 'cb/queries_bearb/join']}, 
-                    'bearb-hour': {'query_versions': 1, 'repositories': 2598, 'queries': ['cb/queries_bearb/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'queries': ['cb/queries_bearb/lookup',
                                                                 'cb/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 64, 'queries': ['cb/queries_bearc']}       
                 },        
                 'tb':{
                     'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['tb/queries_beara/high',
                                                             'tb/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tb/queries_bearb-day/lookup',
-                                                                'tb/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tb/queries_bearb-hour/lookup',
-                                                                'tb/queries_bearb-hour/join']},
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'queries': ['tb/queries_bearb_day/lookup',
+                                                                'tb/queries_bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tb/queries_bearb_hour/lookup',
+                                                                'tb/queries_bearb_hour/join']},
                     'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tb/queries_bearc']}       
                 },
                 'tbsf': {
                     'beara': {'query_versions': 58, 'repositories': 1,'queries': ['tbsf/queries_beara/high',
                                                             'tbsf/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsf/queries_bearb-day/lookup',
-                                                                'tbsf/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsf/queries_bearb-hour/lookup',
-                                                                'tbsf/queries_bearb-hour/join']},
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsf/queries_bearb_day/lookup',
+                                                                'tbsf/queries_bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsf/queries_bearb_hour/lookup',
+                                                                'tbsf/queries_bearb_hour/join']},
                     'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tbsf/queries_bearc']}       
                 },
                 'tbsh': {
                     'beara': {'query_versions': 58, 'repositories': 1, 'queries': ['tbsh/queries_beara/high',
                                                             'tbsh/queries_beara/low']}, 
-                    'bearb-day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsh/queries_bearb-day/lookup',
-                                                                'tbsh/queries_bearb-day/join']}, 
-                    'bearb-hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsh/queries_bearb-day/lookup',
-                                                                'tbsh/queries_bearb-day/join']},
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'queries': ['tbsh/queries_bearb_day/lookup',
+                                                                'tbsh/queries_bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'queries': ['tbsh/queries_bearb_day/lookup',
+                                                                'tbsh/queries_bearb_day/join']},
                     'bearc': {'query_versions': 32, 'repositories': 1, 'queries': ['tbsh/queries_bearc']}       
                 }
 }
