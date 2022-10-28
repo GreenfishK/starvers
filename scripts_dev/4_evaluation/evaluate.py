@@ -1,5 +1,4 @@
-from audioop import mul
-from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
+from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON
 from pathlib import Path
 import os
 import pandas as pd
@@ -10,6 +9,7 @@ from rdflib import Graph
 
 ###################################### Parameters ######################################
 final_queries= "/starvers_eval/queries/final_queries"
+result_sets_dir = "/starvers_eval/output/result_sets"
 ds_queries_map={'ic': {
                     'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic/queries_beara/high',
                                                             'ic/queries_beara/low']}, 
@@ -65,9 +65,52 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
-df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'query_version', 'query', 'execution_time', 'result_set_creation_time'])
 
+
+
+def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
+    """
+
+    :param result:
+    :return: Dataframe
+    """
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+
+    def format_value(res_value):
+        value = res_value["value"]
+        lang = res_value.get("xml:lang", None)
+        datatype = res_value.get("datatype", None)
+        if lang is not None:
+            value += "@" + lang
+        if datatype is not None:
+            value += " [" + datatype + "]"
+        return value
+
+    results = result.convert()
+
+    column_names = []
+    for var in results["head"]["vars"]:
+        column_names.append(var)
+    df = pd.DataFrame(columns=column_names)
+
+    values = []
+    for r in results["results"]["bindings"]:
+        row = []
+        for col in results["head"]["vars"]:
+            if col in r:
+                result_value = format_value(r[col])
+            else:
+                result_value = None
+            row.append(result_value)
+        values.append(row)
+    df = df.append(pd.DataFrame(values, columns=df.columns))
+
+    return df
+    
 def query_dataset(triple_store: str, policy: str, ds: str, port: int):
+    df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'query_version', 'query', 'execution_time', 'result_set_creation_time'])
+
     query_sets = ds_queries_map[policy][ds]['query_sets']
     query_versions = ds_queries_map[policy][ds]['query_versions']
     repositories = ds_queries_map[policy][ds]['repositories']
@@ -79,6 +122,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                 print("Processing query {0}".format(query_file_name))
                 execution_time = 0
                 result_set_creation_time = 0
+                result_set = Graph()
+
                 if policy in ["tbsh", "tbsf", "tb"]:
                     repository_name = "{policy}_{dataset}".format(policy=policy, dataset=ds)
                     getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -88,34 +133,66 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     with open(query_set_version + "/" + query_file_name, "r") as file:
                         query_text = file.read()
                         engine.setQuery(query_text)
-                        engine.setReturnFormat("JSONLD")
+                        engine.setReturnFormat(JSON)
+                        engine.setOnlyConneg(True)
                         print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
                         start = time.time()
                         result = engine.query()
                         end = time.time()
                         execution_time = end - start
 
-                        # TODO: parse results and measure time
-                        start = time.time()
-                        graph = result.convert()
-                        assert isinstance(graph, Graph)
-                        result_set.add(graph)
-                        end = time.time()
-                        result_set_creation_time = end - start
+                        # TODO: parse results and measure result set construction time
+                        #start = time.time()
+                        #graph = Graph()
+                        #graph.parse(result.convert(), format="csv")
+                        #result_set.add(graph)
+                        #end = time.time()
+                        #result_set_creation_time = end - start
+                        
                         file.close()
+
+                    # Create output directory and save result set
+                    result_set_dir = result_sets_dir + "/" + query_set + "/" + str(query_version)
+                    Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                    to_df(result).to_csv(result_set_dir + "/" + query_file_name)
+
                 elif policy == "ic":
-                    print("Not yet implemented")
-                elif policy == "cb":
-                    print("Not yet implemented")
                     with open(query_set_version + "/" + query_file_name, "r") as file:
                         query_text = file.read()
-                        for repository in range(0, repositories/2):
+                        for repository in range(1, int(repositories)+1):
+                            repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=ds, repository=repository)
+                            getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                            postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                            engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
+                            engine.setQuery(query_text)
+                            engine.setReturnFormat(JSON)
+                            engine.setOnlyConneg(True)
+                            
+                            print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                            start = time.time()
+                            result = engine.query()
+                            end = time.time()
+                            execution_time = end - start
+
+                            # TODO: parse results and measure result set construction time
+
+                            # Create output directory and save result set
+                            result_set_dir = result_sets_dir + "/" + query_set + "/" + str(query_version) + "/" + repository_name
+                            Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                            to_df(result).to_csv(result_set_dir + "/" + query_file_name)
+
+                        file.close()
+                    
+
+                elif policy == "cb":
+                    with open(query_set_version + "/" + query_file_name, "r") as file:
+                        query_text = file.read()
+                        for repository in range(0, int(repositories/2)):
                             print(repository)
                             execution_time_add = 0
                             execution_time_del = 0
                             result_set_creation_time_add = 0
                             result_set_creation_time_del = 0
-                            result_set = Graph()
                             for cs in range(0, repository+1):
                                 print(cs)
                                 if cs == 0:
@@ -130,19 +207,22 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                                     postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
                                     engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
                                     engine.setQuery(query_text)
-                                    engine.setReturnFormat("JSONLD")
+                                    engine.setReturnFormat(JSON)
+                                    engine.setOnlyConneg(True)
+                                    
                                     print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
                                     start = time.time()
                                     result = engine.query()
                                     end = time.time()
                                     execution_time_total = execution_time_total + (end - start)
 
-                                    start = time.time()
-                                    graph_add = result.convert()
-                                    assert isinstance(graph_add, Graph)
-                                    result_set.add(graph_add)
-                                    end = time.time()
-                                    result_set_creation_time_total = result_set_creation_time_total + (end - start)
+                                    # TODO: parse results and measure result set construction time
+                                    #start = time.time()
+                                    #graph_add = Graph()
+                                    #graph_add.parse(result.convert(), format="application/xml")
+                                    #result_set.add(graph_add)
+                                    #end = time.time()
+                                    #result_set_creation_time_total = result_set_creation_time_total + (end - start)
 
 
                                 def query_del(execution_time_total: float, result_set_creation_time_total: float, result_set: Graph):
@@ -150,23 +230,26 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                                     postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
                                     engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
                                     engine.setQuery(query_text)
-                                    engine.setReturnFormat("JSONLD")
+                                    engine.setReturnFormat(JSON)
+                                    engine.setOnlyConneg(True)
+                                    
                                     print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
                                     start = time.time()
                                     result = engine.query()
                                     end = time.time()
                                     execution_time_total = execution_time_total + (end - start)
 
-                                    start = time.time()
-                                    graph_del = result.convert()
-                                    assert isinstance(graph_del, Graph)
-                                    result_set.remove(graph_del)
-                                    end = time.time()
-                                    result_set_creation_time_total = result_set_creation_time_total + (end - start)
+                                    # TODO: parse results and measure result set construction time
+                                    #start = time.time()
+                                    #graph_del = Graph()
+                                    #graph_del.parse(result.convert(), format="application/xml")
+                                    #result_set.remove(graph_del)
+                                    #end = time.time()
+                                    #result_set_creation_time_total = result_set_creation_time_total + (end - start)
 
                                 
-                                p1 = multiprocessing.Process(query_add, args=[execution_time_add, result_set_creation_time_add, result_set])
-                                p2 = multiprocessing.Process(query_del, args=[execution_time_del, result_set_creation_time_del, result_set])
+                                p1 = multiprocessing.Process(target=query_add, args=[execution_time_add, result_set_creation_time_add, result_set])
+                                p2 = multiprocessing.Process(target=query_del, args=[execution_time_del, result_set_creation_time_del, result_set])
 
                                 p1.start()
                                 p2.start()
@@ -174,11 +257,14 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                                 p2.join()
 
                         execution_time = execution_time_add + execution_time_del
-                        result_set_creation_time = result_set_creation_time_add + result_set_creation_time_del
+                        #result_set_creation_time = result_set_creation_time_add + result_set_creation_time_del
+
+                        #TODO: Create output directory and save result set
+
                         file.close()
                 
-                df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
-    
+                df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, None], index=df.columns), ignore_index=True)
+                #result_set.print()
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
 
 
