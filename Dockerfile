@@ -7,6 +7,7 @@ RUN git clone https://github.com/GreenfishK/starvers.git
 RUN mkdir -p /starvers_eval/databases
 RUN mkdir -p /starvers_eval/output/logs
 RUN mkdir -p /starvers_eval/output/measurements
+RUN mkdir -p /starvers_eval/output/result_sets
 RUN mkdir -p /starvers_eval/output/figures
 RUN mkdir -p /starvers_eval/rawdata
 RUN mkdir -p /starvers_eval/configs
