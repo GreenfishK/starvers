@@ -39,6 +39,7 @@ for triple_store in ${triple_stores[@]}; do
                 # Stop database server
                 echo "Shutting down fuseki server"
                 pkill -f '/jena-fuseki/fuseki-server.jar'
+                
             done
         done
 

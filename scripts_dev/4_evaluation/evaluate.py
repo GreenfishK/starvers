@@ -1,9 +1,12 @@
+from audioop import mul
 from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 from pathlib import Path
 import os
 import pandas as pd
 import sys
 import time
+import multiprocessing
+from rdflib import Graph
 
 ###################################### Parameters ######################################
 final_queries= "/starvers_eval/queries/final_queries"
@@ -62,45 +65,119 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
-df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'query_version', 'query', 'execution_time'])
+df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'query_version', 'query', 'execution_time', 'result_set_creation_time'])
 
 def query_dataset(triple_store: str, policy: str, ds: str, port: int):
     query_sets = ds_queries_map[policy][ds]['query_sets']
     query_versions = ds_queries_map[policy][ds]['query_versions']
     repositories = ds_queries_map[policy][ds]['repositories']
 
-    for repository in range(1, repositories+1):
-        if repositories==1:
-            repository_name = "{policy}_{dataset}".format(triple_store=triple_store, policy=policy, dataset=ds)
-        else:
-            repository_name = "{policy}_{dataset}_{snapshot}".format(triple_store=triple_store, policy=policy, dataset=ds, snapshot=repository)
-        getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-        postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-        engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
-
+    for query_set in query_sets:
         for query_version in range(query_versions):
-            for query_set in query_sets:
-                query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
-                for query_file_name in os.listdir(query_set_version):
-                    print("Processing query {0}".format(query_file_name))
-                    if policy in ["ic", "tbsh", "tbsf", "tb"]:
-                        with open(query_set_version + "/" + query_file_name, "r") as file:
-                            query_text = file.read()
-                            engine.setQuery(query_text)
-                            print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
-                            start = time.time()
-                            engine.query()
-                            end = time.time()
-                            execution_time = end - start
-                            df.add([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time])
-                            file.close()
-                    elif policy == "cb":
-                        print("Not yet implemented")
-                        # Execute queries against repositories starting from v0 (initial snapshot) up until version v x
-                        # Save result sets for every add and del repository
-                        # Initialize final result set
-                        # Iterate over all changeset results until version v
-                        # Add add_result_sets to final set and then remove del_result_sets from final set
+            query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
+            for query_file_name in os.listdir(query_set_version):
+                print("Processing query {0}".format(query_file_name))
+                execution_time = 0
+                result_set_creation_time = 0
+                if policy in ["tbsh", "tbsf", "tb"]:
+                    repository_name = "{policy}_{dataset}".format(policy=policy, dataset=ds)
+                    getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                    postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                    engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
+
+                    with open(query_set_version + "/" + query_file_name, "r") as file:
+                        query_text = file.read()
+                        engine.setQuery(query_text)
+                        engine.setReturnFormat("JSONLD")
+                        print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                        start = time.time()
+                        result = engine.query()
+                        end = time.time()
+                        execution_time = end - start
+
+                        # TODO: parse results and measure time
+                        start = time.time()
+                        graph = result.convert()
+                        assert isinstance(graph, Graph)
+                        result_set.add(graph)
+                        end = time.time()
+                        result_set_creation_time = end - start
+                        file.close()
+                elif policy == "ic":
+                    print("Not yet implemented")
+                elif policy == "cb":
+                    print("Not yet implemented")
+                    with open(query_set_version + "/" + query_file_name, "r") as file:
+                        query_text = file.read()
+                        for repository in range(0, repositories/2):
+                            print(repository)
+                            execution_time_add = 0
+                            execution_time_del = 0
+                            result_set_creation_time_add = 0
+                            result_set_creation_time_del = 0
+                            result_set = Graph()
+                            for cs in range(0, repository+1):
+                                print(cs)
+                                if cs == 0:
+                                    repository_name_add = "{policy}_{dataset}_ic1".format(policy=policy, dataset=ds)
+                                    repository_name_del = "{policy}_{dataset}_empty".format(policy=policy, dataset=ds)
+                                else:
+                                    repository_name_add = "{policy}_{dataset}_add_{v}-{ve}".format(policy=policy, dataset=ds, v=cs, ve=cs+1)
+                                    repository_name_del = "{policy}_{dataset}_del_{v}-{ve}".format(policy=policy, dataset=ds, v=cs, ve=cs+1)
+                                
+                                def query_add(execution_time_total: float, result_set_creation_time_total: float, result_set: Graph):
+                                    getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
+                                    postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
+                                    engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
+                                    engine.setQuery(query_text)
+                                    engine.setReturnFormat("JSONLD")
+                                    print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                                    start = time.time()
+                                    result = engine.query()
+                                    end = time.time()
+                                    execution_time_total = execution_time_total + (end - start)
+
+                                    start = time.time()
+                                    graph_add = result.convert()
+                                    assert isinstance(graph_add, Graph)
+                                    result_set.add(graph_add)
+                                    end = time.time()
+                                    result_set_creation_time_total = result_set_creation_time_total + (end - start)
+
+
+                                def query_del(execution_time_total: float, result_set_creation_time_total: float, result_set: Graph):
+                                    getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
+                                    postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
+                                    engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
+                                    engine.setQuery(query_text)
+                                    engine.setReturnFormat("JSONLD")
+                                    print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                                    start = time.time()
+                                    result = engine.query()
+                                    end = time.time()
+                                    execution_time_total = execution_time_total + (end - start)
+
+                                    start = time.time()
+                                    graph_del = result.convert()
+                                    assert isinstance(graph_del, Graph)
+                                    result_set.remove(graph_del)
+                                    end = time.time()
+                                    result_set_creation_time_total = result_set_creation_time_total + (end - start)
+
+                                
+                                p1 = multiprocessing.Process(query_add, args=[execution_time_add, result_set_creation_time_add, result_set])
+                                p2 = multiprocessing.Process(query_del, args=[execution_time_del, result_set_creation_time_del, result_set])
+
+                                p1.start()
+                                p2.start()
+                                p1.join()
+                                p2.join()
+
+                        execution_time = execution_time_add + execution_time_del
+                        result_set_creation_time = result_set_creation_time_add + result_set_creation_time_del
+                        file.close()
+                
+                df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
     
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
 
