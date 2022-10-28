@@ -60,7 +60,7 @@ services:
       - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
       - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
       - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
-      - ~/.starvers_eval/output/measurements:/starvers_eval/output/result_sets
+      - ~/.starvers_eval/output/result_sets:/starvers_eval/output/result_sets
     hostname: Starvers
     ports:
       - 7200:7200
