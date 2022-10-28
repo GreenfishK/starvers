@@ -182,7 +182,6 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             to_df(result).to_csv(result_set_dir + "/" + query_file_name)
 
                         file.close()
-                    
 
                 elif policy == "cb":
                     with open(query_set_version + "/" + query_file_name, "r") as file:
