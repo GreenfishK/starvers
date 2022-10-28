@@ -6,6 +6,7 @@ import sys
 import time
 import multiprocessing
 from rdflib import Graph
+import shutil
 
 ###################################### Parameters ######################################
 final_queries= "/starvers_eval/queries/final_queries"
@@ -109,7 +110,7 @@ def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     return df
     
 def query_dataset(triple_store: str, policy: str, ds: str, port: int):
-    df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'query_version', 'query', 'execution_time', 'result_set_creation_time'])
+    df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'query', 'execution_time', 'result_set_creation_time'])
 
     query_sets = ds_queries_map[policy][ds]['query_sets']
     query_versions = ds_queries_map[policy][ds]['query_versions']
@@ -140,6 +141,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         result = engine.query()
                         end = time.time()
                         execution_time = end - start
+                        df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, None], index=df.columns), ignore_index=True)
 
                         # TODO: parse results and measure result set construction time
                         #start = time.time()
@@ -152,9 +154,9 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         file.close()
 
                     # Create output directory and save result set
-                    result_set_dir = result_sets_dir + "/" + query_set + "/" + str(query_version)
+                    result_set_dir = result_sets_dir + "/" + query_set + "/" + str(query_version + 1)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                    to_df(result).to_csv(result_set_dir + "/" + query_file_name)
+                    to_df(result).to_csv(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", index=False)
 
                 elif policy == "ic":
                     with open(query_set_version + "/" + query_file_name, "r") as file:
@@ -173,13 +175,13 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             result = engine.query()
                             end = time.time()
                             execution_time = end - start
-
+                            df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, None], index=df.columns), ignore_index=True)
+                            
                             # TODO: parse results and measure result set construction time
-
                             # Create output directory and save result set
-                            result_set_dir = result_sets_dir + "/" + query_set + "/" + str(query_version) + "/" + repository_name
+                            result_set_dir = result_sets_dir + "/" + query_set + "/" + str(repository)
                             Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                            to_df(result).to_csv(result_set_dir + "/" + query_file_name)
+                            to_df(result).to_csv(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", index=False)
 
                         file.close()
 
@@ -257,13 +259,12 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
 
                         execution_time = execution_time_add + execution_time_del
                         #result_set_creation_time = result_set_creation_time_add + result_set_creation_time_del
+                        # df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
 
                         #TODO: Create output directory and save result set
 
                         file.close()
                 
-                df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, None], index=df.columns), ignore_index=True)
-                #result_set.print()
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
 
 
@@ -276,6 +277,9 @@ def query():
     print("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
     query_dataset(triple_store, policy, dataset, port)
 
+# Clean outputs
+shutil.rmtree(result_sets_dir, ignore_errors=True)
+# Start evaluation
 query()
 
 
