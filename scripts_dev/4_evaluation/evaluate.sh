@@ -32,6 +32,9 @@ for triple_store in ${triple_stores[@]}; do
                 done
                 echo "Fuseki server is up"
 
+                # Clean output directory
+                rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}/queries_${dataset}
+
                 # Evaluate
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
