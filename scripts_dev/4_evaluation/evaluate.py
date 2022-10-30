@@ -11,7 +11,7 @@ import csv
 import numpy as np
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("evaluate")
 handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s [%(name)-12s] %(levelname)-8s %(message)s')
 handler.setFormatter(formatter)
@@ -100,18 +100,17 @@ def to_list(result: Wrapper.QueryResult) -> list:
             value += " [" + datatype + "]"
         return value
 
-    results_list = []
+    header = []
+    values = []
 
     if not "head" in results or not "vars" in results["head"]:
-        return results_list
+        return header
 
     if not "results" in results or not "bindings" in results["results"]:
-        return results_list
+        return values
 
     for var in results["head"]["vars"]:
-        results_list.append(var)
-
-    logger.info(results_list)
+        header.append(var)
 
     for r in results["results"]["bindings"]:
         row = []
@@ -121,10 +120,9 @@ def to_list(result: Wrapper.QueryResult) -> list:
             else:
                 result_value = None
             row.append(result_value)
-        results_list.append(row)
-    logger.info(results_list)
-
-    return results_list
+        values.append(row)
+    
+    return [header] + values
     
 def query_dataset(triple_store: str, policy: str, ds: str, port: int):
     df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'query', 'execution_time', 'result_set_creation_time'])
@@ -211,7 +209,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     for repository in range(0, int(repositories/2)):
                         print(repository)
                         list_result = []
-
+                        
+                        logger.info("Recreating snapshot: " + str(repository))
                         for cs in range(0, repository+1):
                             print(cs)
                             if cs == 0:
@@ -281,23 +280,25 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             list_result.extend(list(cs_add))
                             cum_result = np.array(list_result)
                             cs_del_arr = np.array(list(cs_del))
-                            logger.info(list_result)
-                            logger.info(cs_del_arr)
 
-                            a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) if list_result else [[()]]
-                            a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) if list(cs_del) else [[()]]
+                            logger.info(cum_result)
+                            logger.info(cs_del_arr)
+                            logger.info(len(list_result))
+                            logger.info(len(list(cs_del)))
+
+                            a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) if len(list_result)>1 else [[()]]
+                            a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) if len(list(cs_del))>1 else [[()]]
                             list_result = np.setdiff1d(a1_rows, a2_rows).view(cum_result.dtype).reshape(-1, cum_result.shape[1]).tolist()
                             end = time.time()
 
                             execution_time = execution_time + execution_time_add.value + execution_time_del.value
                             result_set_creation_time = result_set_creation_time + result_set_creation_time_add.value + result_set_creation_time_del.value + (end - start)
                     
-
                         # Create output directory and save result set
                         result_set_dir = result_sets_dir + "/" + query_set + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                        write = csv.writer(f)
+                        write = csv.writer(file)
                         write.writerow(list_result)
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
                 
