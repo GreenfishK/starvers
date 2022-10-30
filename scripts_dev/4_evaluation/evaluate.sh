@@ -6,7 +6,6 @@ triple_stores=("${triple_stores}") # jenatdb2
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
 
-#docker network create 4_evaluation_default
 # Start containers with their respective policy, dataset and triple store
 > /starvers_eval/output/logs/queries.txt
 for triple_store in ${triple_stores[@]}; do
@@ -28,17 +27,17 @@ for triple_store in ${triple_stores[@]}; do
 
                 # Wait until server is up
                 echo "Waiting..."
-                while [[ $(curl -I http://localhost:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-                    sleep 1200s
+                while [[ $(curl -I http://Starvers:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                    sleep 1s
                 done
                 echo "Fuseki server is up"
 
                 # Evaluate
-                #/starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
-                #echo "Shutting down fuseki server"
-                #pkill -f '/jena-fuseki/fuseki-server.jar'
+                echo "Shutting down fuseki server"
+                pkill -f '/jena-fuseki/fuseki-server.jar'
                 
             done
         done
