@@ -33,7 +33,9 @@ services:
       - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
       - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
       - ~/.starvers_eval/configs:/starvers_eval/configs
+      - ./scripts_dev/2_load_data:/starvers_eval/scripts/2_load_data # move to image after development has finished
     environment:
+      - triple_stores=${triple_stores}
       - policies=${policies}
       - datasets=${datasets}
     entrypoint: ["/starvers_eval/scripts/2_load_data/create_and_load_triplestores.sh"]
@@ -61,6 +63,7 @@ services:
       - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
       - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
       - ~/.starvers_eval/output/result_sets:/starvers_eval/output/result_sets
+      - ./scripts_dev/4_evaluation:/starvers_eval/scripts/4_evaluation # move to image after development has finished
     hostname: Starvers
     ports:
       - 7200:7200
