@@ -9,6 +9,14 @@ from rdflib import Graph
 import shutil
 import csv
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s [%(name)-12s] %(levelname)-8s %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 ###################################### Parameters ######################################
 final_queries= "/starvers_eval/queries/final_queries"
@@ -63,7 +71,7 @@ ds_queries_map={'ic': {
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
                         'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
             'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
-                        'post': 'http://{hostname}:{port}/{repository_name}/update'}}
+                        'post': 'http://{hostname}:{port}/{repository_name}/update'}}                        
 
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
@@ -103,6 +111,8 @@ def to_list(result: Wrapper.QueryResult) -> list:
     for var in results["head"]["vars"]:
         results_list.append(var)
 
+    logger.info(results_list)
+
     for r in results["results"]["bindings"]:
         row = []
         for col in results["head"]["vars"]:
@@ -112,6 +122,7 @@ def to_list(result: Wrapper.QueryResult) -> list:
                 result_value = None
             row.append(result_value)
         results_list.append(row)
+    logger.info(results_list)
 
     return results_list
     
@@ -245,7 +256,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                                 execution_time_del.value = end - start
 
                                 start = time.time()
-                                cs_del.extend(result)
+                                cs_del.extend(to_list(result))
                                 end = time.time()
                                 result_set_creation_time_del.value = end - start
 
@@ -270,6 +281,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             list_result.extend(list(cs_add))
                             cum_result = np.array(list_result)
                             cs_del_arr = np.array(list(cs_del))
+                            logger.info(list_result)
+                            logger.info(cs_del_arr)
 
                             a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) if list_result else [[()]]
                             a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) if list(cs_del) else [[()]]
