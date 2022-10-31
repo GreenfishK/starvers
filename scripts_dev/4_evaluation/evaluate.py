@@ -166,8 +166,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     result_set_dir = result_sets_dir + "/" + triple_store + "/" + query_set + "/" + str(query_version + 1)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                    write = csv.writer(file)
-                    write.writerow(list_result)
+                    write = csv.writer(file, delimiter=";")
+                    write.writerows(list_result)
 
                     df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
 
@@ -199,8 +199,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         result_set_dir = result_sets_dir + "/"  + triple_store + "/" + query_set + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                        write = csv.writer(file)
-                        write.writerow(list_result)
+                        write = csv.writer(file, delimiter=";")
+                        write.writerows(list_result)
 
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
                     
@@ -285,11 +285,6 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             cum_result = np.array(list_result)
                             cs_del_arr = np.array(list(cs_del))
 
-                            logger.info(cum_result)
-                            logger.info(cs_del_arr)
-                            logger.info(len(list_result))
-                            logger.info(len(list(cs_del)))
-
                             a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) if len(list_result)>1 else [[()]]
                             a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) if len(list(cs_del))>1 else [[()]]
                             list_result = np.setdiff1d(a1_rows, a2_rows).view(cum_result.dtype).reshape(-1, cum_result.shape[1]).tolist()
@@ -303,8 +298,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         result_set_dir = result_sets_dir + "/" + triple_store + "/" + query_set + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                        write = csv.writer(file)
-                        write.writerow(list_result)
+                        write = csv.writer(file, delimiter=";")
+                        write.writerows(list_result)
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
                 
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
