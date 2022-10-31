@@ -56,11 +56,12 @@ COPY scripts_dev/3_generate_queries /starvers_eval/scripts/3_generate_queries
 
 # TODO: add visualization
 
-# Install GNU basic calculator
+# Install basic unix/linux tools for debian
 RUN apt-get update
 RUN apt-get install bc=1.07.1-2+b2 -y
 RUN apt-get install curl=7.74.0-1.3+deb11u3 -y
-RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+RUN apt-get install wget=1.21-1+deb11u1 -y
+RUN apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
