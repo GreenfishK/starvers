@@ -24,18 +24,18 @@ result_sets_dir = "/starvers_eval/output/result_sets"
 ds_queries_map={'ic': {
                     'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic/queries_beara/high',
                                                             'ic/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic/queries_bearb/lookup',
+                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic/queries_bearb_day/lookup',
                                                                 'ic/queries_bearb/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic/queries_bearb/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic/queries_bearb_hour/lookup',
                                                                 'ic/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 32, 'query_sets': ['ic/queries_bearc/complex']}       
                 },    
                 'cb': {
                     'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb/queries_beara/high',
                                                             'cb/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb/queries_bearb/lookup',
+                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb/queries_bearb_day/lookup',
                                                                 'cb/queries_bearb/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb/queries_bearb/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb/queries_bearb_hour/lookup',
                                                                 'cb/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 64, 'query_sets': ['cb/queries_bearc/complex']}       
                 },        
@@ -206,14 +206,14 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     
 
                 elif policy == "cb":
-                    with open(query_set_version + "/" + query_file_name, "r") as file:
-                        query_text = file.read()
-                        file.close()
+                    file = open(query_set_version + "/" + query_file_name, "r")
+                    query_text = file.read()
+                    file.close()
+                    manager = multiprocessing.Manager()
 
                     for repository in range(0, int(repositories/2)):
-                        print(repository)
-                        list_result = []
-                        
+                        list_result = []     
+                        result_set_creation_time = 0
                         logger.info("Recreating snapshot: " + str(repository))
                         for cs in range(0, repository+1):
                             print(cs)
@@ -268,7 +268,6 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             execution_time_del = multiprocessing.Value("f", 0, lock=False)
                             result_set_creation_time_add = multiprocessing.Value("f", 0, lock=False)
                             result_set_creation_time_del = multiprocessing.Value("f", 0, lock=False)
-                            manager = multiprocessing.Manager()
                             cs_add = manager.list()
                             cs_del = manager.list()
 
