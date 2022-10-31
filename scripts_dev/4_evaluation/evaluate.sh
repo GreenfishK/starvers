@@ -33,14 +33,15 @@ for triple_store in ${triple_stores[@]}; do
                 echo "Fuseki server is up"
 
                 # Clean output directory
+                ls /starvers_eval/output/result_sets/${triple_store}/${policy}/queries_${dataset}
                 rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}/queries_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
+                #/starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
-                echo "Shutting down fuseki server"
-                pkill -f '/jena-fuseki/fuseki-server.jar'
+                #echo "Shutting down fuseki server"
+                #pkill -f '/jena-fuseki/fuseki-server.jar'
                 
             done
         done
