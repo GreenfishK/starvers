@@ -300,9 +300,9 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     
                         # Create output directory and save result set
                         # TODO: format output
-                        result_set_dir = result_sets_dir + "/" + query_set + "/" + str(repository)
+                        result_set_dir = result_sets_dir + "/" + triple_store + "/" + query_set + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                        file = open(result_set_dir + "/" + triple_store + "/" + query_file_name.split('.')[0], 'w')
+                        file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                         write = csv.writer(file)
                         write.writerow(list_result)
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
