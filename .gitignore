@@ -3,5 +3,6 @@
 .DS_Store
 **/*.log
 src/rdfstarArchive/target/*
-scripts/.idea
-scripts/.ipynb_checkpoints/
+scripts_dev/.idea
+scripts_dev/.ipynb_checkpoints/
+scripts_dev/4_evaluation/graphdb/target
