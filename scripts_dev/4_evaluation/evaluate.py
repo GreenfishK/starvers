@@ -131,27 +131,29 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
     query_versions = ds_queries_map[policy][ds]['query_versions']
     repositories = ds_queries_map[policy][ds]['repositories']
 
+    engine = SPARQLWrapper(endpoint="dummy")
+    engine.setReturnFormat(JSON)
+    engine.setOnlyConneg(True)
+
     for query_set in query_sets:
         for query_version in range(query_versions):
             query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
             for query_file_name in os.listdir(query_set_version):
-                print("Processing query {0}".format(query_file_name))
+                logger.info("Processing query {0}".format(query_file_name))
                 execution_time = 0
                 result_set_creation_time = 0
 
+                file = open(query_set_version + "/" + query_file_name, "r")
+                query_text = file.read()
+                engine.setQuery(query_text)
+                file.close()
+
                 if policy in ["tbsh", "tbsf", "tb"]:
                     repository_name = "{policy}_{dataset}".format(policy=policy, dataset=ds)
-                    getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                    postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                    engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
+                    engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                    engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
-                    with open(query_set_version + "/" + query_file_name, "r") as file:
-                        query_text = file.read()
-                        file.close()
-                    engine.setQuery(query_text)
-                    engine.setReturnFormat(JSON)
-                    engine.setOnlyConneg(True)
-                    print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                    logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                     start = time.time()
                     result = engine.query()
                     end = time.time()
@@ -172,19 +174,12 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
 
                 elif policy == "ic":
-                    with open(query_set_version + "/" + query_file_name, "r") as file:
-                        query_text = file.read()
-                        file.close()
                     for repository in range(1, int(repositories)+1):
                         repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=ds, repository=repository)
-                        getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                        postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                        engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
-                        engine.setQuery(query_text)
-                        engine.setReturnFormat(JSON)
-                        engine.setOnlyConneg(True)
+                        engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                        engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
                         
-                        print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                        logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                         start = time.time()
                         result = engine.query()
                         end = time.time()
@@ -206,17 +201,13 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     
 
                 elif policy == "cb":
-                    file = open(query_set_version + "/" + query_file_name, "r")
-                    query_text = file.read()
-                    file.close()
                     manager = multiprocessing.Manager()
-
                     for repository in range(0, int(repositories/2)):
                         list_result = []     
                         result_set_creation_time = 0
+                        execution_time = 0
                         logger.info("Recreating snapshot: " + str(repository))
                         for cs in range(0, repository+1):
-                            print(cs)
                             if cs == 0:
                                 repository_name_add = "{policy}_{dataset}_ic1".format(policy=policy, dataset=ds)
                                 repository_name_del = "{policy}_{dataset}_empty".format(policy=policy, dataset=ds)
@@ -225,14 +216,9 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                                 repository_name_del = "{policy}_{dataset}_del_{v}-{ve}".format(policy=policy, dataset=ds, v=cs, ve=cs+1)
                             
                             def query_add(execution_time_add: float, result_set_creation_time_add: float, cs_add: list):
-                                getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
-                                postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
-                                engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
-                                engine.setQuery(query_text)
-                                engine.setReturnFormat(JSON)
-                                engine.setOnlyConneg(True)
-                                
-                                print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                                engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
+                                engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
+                                logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                                 start = time.time()
                                 result = engine.query()
                                 end = time.time()
@@ -245,14 +231,10 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
 
 
                             def query_del(execution_time_del: float, result_set_creation_time_del: float, cs_del: list):
-                                getEndpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
-                                postEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
-                                engine = SPARQLWrapper(endpoint=getEndpoint, updateEndpoint=postEndpoint)
-                                engine.setQuery(query_text)
-                                engine.setReturnFormat(JSON)
-                                engine.setOnlyConneg(True)
+                                engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
+                                engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
                                 
-                                print("Querying SPARQL endpoint {0} with query {1}". format(getEndpoint, query_file_name))
+                                logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                                 start = time.time()
                                 result = engine.query()
                                 end = time.time()
@@ -299,6 +281,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                         write = csv.writer(file, delimiter=";")
                         write.writerows(list_result)
+                        file.close()
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
                 
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
@@ -310,7 +293,7 @@ def query():
     dataset = sys.argv[3]
     port = sys.argv[4]
 
-    print("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
+    logger.info("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
     query_dataset(triple_store, policy, dataset, port)
 
 # Clean outputs
