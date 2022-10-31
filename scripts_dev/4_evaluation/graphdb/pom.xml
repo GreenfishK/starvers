@@ -50,23 +50,15 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.3.0</version>
                 <executions>
-                    <execution>
-                        <id>copy</id>
+                                        <execution>
+                        <id>copy-dependencies</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>copy</goal>
+                            <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>com.ontotext.graphdb</groupId>
-                                    <artifactId>graphdb</artifactId>
-                                    <version>${graphdb.version}</version>
-                                    <type>zip</type>
-                                    <classifier>dist</classifier>
-                                    <outputDirectory>target/graphdb-dist</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/lib/</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
