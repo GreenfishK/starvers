@@ -58,8 +58,9 @@ for triple_store in ${triple_stores[@]}; do
                 /opt/graphdb/dist/bin/graphdb -d -s
                 
                 # Wait until server is up
+                # GraphDB doesn't deliver HTTP code 200 for some reason ...
                 echo "Waiting..."
-                while [[ $(curl -I http://Starvers:${graphdb_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                while [[ $(curl -I http://Starvers:${graphdb_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
                     sleep 1s
                 done
                 echo "GraphDB server is up"
@@ -68,7 +69,7 @@ for triple_store in ${triple_stores[@]}; do
                 rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${graphdb_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
                 echo "Shutting down GraphDB server"
