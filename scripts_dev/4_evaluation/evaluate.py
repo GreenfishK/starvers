@@ -24,18 +24,18 @@ result_sets_dir = "/starvers_eval/output/result_sets"
 ds_queries_map={'ic': {
                     'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic/queries_beara/high',
                                                             'ic/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic/queries_bearb_day/lookup',
+                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic/queries_bearb/lookup',
                                                                 'ic/queries_bearb/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic/queries_bearb_hour/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic/queries_bearb/lookup',
                                                                 'ic/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 32, 'query_sets': ['ic/queries_bearc/complex']}       
                 },    
                 'cb': {
                     'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb/queries_beara/high',
                                                             'cb/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb/queries_bearb_day/lookup',
+                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb/queries_bearb/lookup',
                                                                 'cb/queries_bearb/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb/queries_bearb_hour/lookup',
+                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb/queries_bearb/lookup',
                                                                 'cb/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 64, 'query_sets': ['cb/queries_bearc/complex']}       
                 },        
@@ -163,7 +163,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     result_set_creation_time = end - start
 
                     # Create output directory and save result set
-                    result_set_dir = result_sets_dir + "/" + triple_store + "/" + query_set + "/" + str(query_version + 1)
+                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version + 1)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                     write = csv.writer(file, delimiter=";")
@@ -196,7 +196,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         result_set_creation_time = end - start
 
                         # Create output directory and save result set
-                        result_set_dir = result_sets_dir + "/"  + triple_store + "/" + query_set + "/" + str(repository)
+                        result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                         write = csv.writer(file, delimiter=";")
@@ -294,7 +294,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     
                         # Create output directory and save result set
                         # TODO: format output
-                        result_set_dir = result_sets_dir + "/" + triple_store + "/" + query_set + "/" + str(repository)
+                        result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(repository)
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                         write = csv.writer(file, delimiter=";")
