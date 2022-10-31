@@ -8,6 +8,7 @@ jenatdb2_port=$((3030))
 
 # Start containers with their respective policy, dataset and triple store
 > /starvers_eval/output/logs/queries.txt
+> /starvers_eval/output/measurements/time.csv
 for triple_store in ${triple_stores[@]}; do
 
     if [ ${triple_store} == "jenatdb2" ]; then
@@ -27,7 +28,7 @@ for triple_store in ${triple_stores[@]}; do
 
                 # Wait until server is up
                 echo "Waiting..."
-                while [[ $(curl -I http://Starvers:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                while [[ $(curl -I http://Starvers:${jenatdb2_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
                     sleep 1s
                 done
                 echo "Fuseki server is up"
@@ -48,7 +49,30 @@ for triple_store in ${triple_stores[@]}; do
     elif [ ${triple_store} == "graphdb" ]; then
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
-                echo "to be implemented"
+                # Export variables
+                export JAVA_HOME=/opt/java/openjdk
+                export PATH=/opt/java/openjdk/bin:$PATH
+                export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/graphdb_${policy}_${dataset}/data"
+
+                # Start database server and run in background
+                /opt/graphdb/dist/bin/graphdb -d -s
+                
+                # Wait until server is up
+                echo "Waiting..."
+                while [[ $(curl -I http://Starvers:${graphdb_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                    sleep 1s
+                done
+                echo "GraphDB server is up"
+
+                # Clean output directory
+                rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
+
+                # Evaluate
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
+
+                # Stop database server
+                echo "Shutting down GraphDB server"
+                pkill -f '/opt/java/openjdk/bin/java'
 
             done
         done

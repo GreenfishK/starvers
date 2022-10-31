@@ -290,8 +290,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         write.writerows(list_result)
                         file.close()
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
-                
-    df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False)
+    logger.info("Writing performance measurements to disk ...")            
+    df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False, mode='a')
 
 
 def query():
@@ -303,8 +303,6 @@ def query():
     logger.info("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
     query_dataset(triple_store, policy, dataset, port)
 
-# Clean outputs
-# shutil.rmtree(result_sets_dir, ignore_errors=True)
 # Start evaluation
 query()
 

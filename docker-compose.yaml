@@ -8,7 +8,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
   
   build_rdf_star_datasets:
@@ -18,7 +18,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/1_get_and_prepare_data/build_tb_rdf_star_datasets.py"]
 
   load_data:
@@ -28,11 +28,11 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/rawdata:/starvers_eval/rawdata
-      - ~/.starvers_eval/databases:/starvers_eval/databases
-      - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
-      - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
-      - ~/.starvers_eval/configs:/starvers_eval/configs
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/databases:/starvers_eval/databases
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
+      - ${base_host_dir}/configs:/starvers_eval/configs
       - ./scripts_dev/2_load_data:/starvers_eval/scripts/2_load_data # move to image after development has finished
     environment:
       - triple_stores=${triple_stores}
@@ -47,7 +47,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
+      - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_generate_queries/generate_queries.py"]
 
   evaluate:
@@ -57,12 +57,12 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
-      - ~/.starvers_eval/configs:/starvers_eval/configs
-      - ~/.starvers_eval/databases:/starvers_eval/databases
-      - ~/.starvers_eval/queries/final_queries:/starvers_eval/queries/final_queries
-      - ~/.starvers_eval/output/logs:/starvers_eval/output/logs
-      - ~/.starvers_eval/output/measurements:/starvers_eval/output/measurements
-      - ~/.starvers_eval/output/result_sets:/starvers_eval/output/result_sets
+      - ${base_host_dir}/configs:/starvers_eval/configs
+      - ${base_host_dir}/databases:/starvers_eval/databases
+      - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
+      - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
       - ./scripts_dev/4_evaluation:/starvers_eval/scripts/4_evaluation # move to image after development has finished
     hostname: Starvers
     ports:
