@@ -204,6 +204,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     manager = multiprocessing.Manager()
                     for repository in range(0, int(repositories/2)):
                         list_result = []     
+                        header = []
                         result_set_creation_time = 0
                         execution_time = 0
                         logger.info("Recreating snapshot: " + str(repository))
@@ -211,6 +212,11 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             if cs == 0:
                                 repository_name_add = "{policy}_{dataset}_ic1".format(policy=policy, dataset=ds)
                                 repository_name_del = "{policy}_{dataset}_empty".format(policy=policy, dataset=ds)
+
+                                # Query empty repository just to get header                 
+                                engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
+                                result = engine.query()
+                                header = to_list(result)[0:1]
                             else:
                                 repository_name_add = "{policy}_{dataset}_add_{v}-{ve}".format(policy=policy, dataset=ds, v=cs, ve=cs+1)
                                 repository_name_del = "{policy}_{dataset}_del_{v}-{ve}".format(policy=policy, dataset=ds, v=cs, ve=cs+1)
@@ -218,6 +224,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             def query_add(execution_time_add: float, result_set_creation_time_add: float, cs_add: list):
                                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
                                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
+                                
                                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                                 start = time.time()
                                 result = engine.query()
@@ -265,9 +272,8 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                             list_result.extend(list(cs_add))
                             cum_result = np.array(list_result)
                             cs_del_arr = np.array(list(cs_del))
-
-                            a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) if len(list_result)>1 else [[()]]
-                            a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) if len(list(cs_del))>1 else [[()]]
+                            a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) # if len(list_result)>1 else [[()]]
+                            a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) # if len(list(cs_del))>1 else [[()]]
                             list_result = np.setdiff1d(a1_rows, a2_rows).view(cum_result.dtype).reshape(-1, cum_result.shape[1]).tolist()
                             end = time.time()
 
@@ -280,6 +286,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                         write = csv.writer(file, delimiter=";")
+                        write.writerows(header)
                         write.writerows(list_result)
                         file.close()
                         df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
