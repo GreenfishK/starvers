@@ -9,9 +9,10 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
   
-  build_rdf_star_datasets:
+  construct_datasets:
     build: 
       context: .
       dockerfile: Dockerfile
@@ -19,6 +20,7 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/1_get_and_prepare_data/construct_datasets.py"]
 
   load_data:
