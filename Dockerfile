@@ -42,9 +42,9 @@ COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/pyt
 # Copy raw queries and scripts to /starvers_eval 
 COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
 
-COPY scripts_dev/1_get_and_prepare_data/construct_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
-COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
-COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
+#COPY scripts_dev/1_get_and_prepare_data/construct_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
+#COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
+#COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
 
 #COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
 #COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data

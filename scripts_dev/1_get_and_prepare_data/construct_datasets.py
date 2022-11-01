@@ -6,7 +6,7 @@ import pandas as pd
 from rdflib import Graph
 from enum import Enum
 from typing import Union
-
+import re
 import data_corrections
 
 desired_width = 320
@@ -194,6 +194,67 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         output_tb_ds.close()
         return init_timestamp
 
+def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
+    def split_prefixes_dataset(dataset: str) -> list:
+        """
+        Separates the prologue (prefixes at the beginning of the query) from the dataset. 
+        If there is no prolog, the prefixes variable will be an empty string.
+
+        :param query: A dataset as string with or without prologue.
+        :return: A list with the prefixes as the first element and the actual query string as the second element.
+        """
+        pattern = "@prefix\\s*[a-zA-Z0-9_-]*:\\s*<.*>\\s*\."
+
+        prefixes_list = re.findall(pattern, dataset, re.MULTILINE)
+        prefixes = ''.join(prefixes_list)
+        dataset_without_prefixes = re.sub(pattern, "", dataset, re.MULTILINE)
+
+        return [prefixes, dataset_without_prefixes]
+
+
+    print("Building version {0}. ".format(str(1)))
+    cbng_dataset = ""
+    ic0_raw = open(source_ic0, "r").read()
+    prefixes, ic0 = split_prefixes_dataset(ic0_raw)
+    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+    cbng_dataset = cbng_dataset + template.format(str(1), ic0, "")
+
+    # build list (version, filename_added, filename_deleted)
+    new_triples = {}
+    deleted_triples = {}
+    change_sets = []
+
+    if not os.path.exists(source_cs):
+        os.makedirs(source_cs)
+
+    for filename in os.listdir(source_cs):
+        version = filename.split('-')[2].split('.')[0].zfill(4)
+        if filename.startswith("data-added"):
+            new_triples[version] = filename
+        if filename.startswith("data-deleted"):
+            deleted_triples[version] = filename
+    print("{0} change sets are in directory {1}".format(len(new_triples), source_cs))
+
+    for vers, new_trpls in sorted(new_triples.items()):
+        change_sets.append((vers, new_trpls, deleted_triples[vers]))
+
+    assert last_version - 1 <= len(change_sets)
+    for i, t in enumerate(change_sets[0:last_version-1]):
+        print("Building version {0}. ".format(int(t[0])))
+        cs_add_raw = open(source_cs + "/" + t[1], "r").read()
+        cs_del_raw = open(source_cs + "/" + t[2], "r").read()
+
+        prefixes_add, cs_add = split_prefixes_dataset(cs_add_raw)
+        prefixes_del, cs_del = split_prefixes_dataset(cs_del_raw)
+
+        cbng_dataset = cbng_dataset + template.format(str(i+2), cs_add, cs_del)
+
+    
+    print("Export data set.")
+    f = open(destination, "w")
+    f.write(cbng_dataset)
+    f.close()
+
 
 """ Parameters and function calls """
 in_frm = "ttl"
@@ -207,7 +268,7 @@ ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
     
-    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    """construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -219,7 +280,11 @@ for dataset, totalVersions in datasets.items():
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
-                        annotation_style=AnnotationStyle.FLAT)
+                        annotation_style=AnnotationStyle.FLAT)"""
+    construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
+                      source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                      destination=data_dir + "/alldata.TBNG.trig",
+                      last_version=totalVersions)
     # Corrections
     if dataset == 'bearb_hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
