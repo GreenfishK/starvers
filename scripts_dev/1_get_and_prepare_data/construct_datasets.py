@@ -201,7 +201,7 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearc':32} #'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32
+datasets = {'bearb_day':89} #'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32
 ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
