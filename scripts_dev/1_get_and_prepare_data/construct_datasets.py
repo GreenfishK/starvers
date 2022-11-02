@@ -282,6 +282,25 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     f.close()
 
 
+def construct_icng_ds(source: str, destination: str):
+    icng_dataset = ""
+    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
+
+    if not os.path.exists(source):
+        os.makedirs(source)
+
+    for i, filename in enumerate(os.listdir(source)):
+        print("Building version {0}. ".format(str(i)))
+        ic = open(source + "/" + filename, "r").read()
+        icng_dataset = icng_dataset + template.format(str(i+1), ic)
+    
+    print("Export data set.")
+    f = open(destination, "w")
+    f.write(icng_dataset)
+    f.close()
+
+
+
 """ Parameters and function calls """
 in_frm = "ttl"
 out_frm = "ttl"
@@ -293,8 +312,14 @@ ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
+
+    # Corrections
+    if dataset == 'bearc':
+        for i in range(1, datasets['bearc']+1):
+            print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
+            data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
     
-    """construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -306,11 +331,14 @@ for dataset, totalVersions in datasets.items():
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
-                        annotation_style=AnnotationStyle.FLAT)"""
+                        annotation_style=AnnotationStyle.FLAT)
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.TBNG.trig",
                       last_version=totalVersions)
+    construct_icng_ds(source=data_dir + "/alldata.IC.nt",
+                      destination=data_dir + "/alldata.ICNG.trig")
+
     # Corrections
     if dataset == 'bearb_hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
@@ -318,7 +346,3 @@ for dataset, totalVersions in datasets.items():
         print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
         data_corrections.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
     
-    if dataset == 'bearc':
-        for i in range(1, datasets['bearc']+1):
-            print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-            data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")

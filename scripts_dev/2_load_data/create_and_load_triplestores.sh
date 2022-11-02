@@ -75,6 +75,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done
+            elif [ "$policy" == "icng" ]; then
+                # TODO
             
             elif [ "$policy" == "cb" ]; then
                 for v in $(seq 0 1 $((${versions}-1))); do 
@@ -118,6 +120,9 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done
+            
+            elif [ "$policy" == "cbng" ]; then
+                # TODO
             fi
             cat $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
@@ -198,6 +203,9 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
                 done
+
+            elif [ "$policy" == "icng" ]; then
+                # TODO
             
             elif [ "$policy" == "cb" ]; then
                 mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
@@ -244,6 +252,8 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
                 done
+            elif [ "$policy" == "cbng" ]; then
+                # TODO
             fi
             cat $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
