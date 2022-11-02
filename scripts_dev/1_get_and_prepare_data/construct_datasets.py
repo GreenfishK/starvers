@@ -307,7 +307,7 @@ out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-datasets = {'bearb_day':89} #'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32
+datasets = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32}
 ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
@@ -319,7 +319,7 @@ for dataset, totalVersions in datasets.items():
             print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
             data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
     
-    """construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
@@ -331,7 +331,7 @@ for dataset, totalVersions in datasets.items():
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
-                        annotation_style=AnnotationStyle.FLAT)"""
+                        annotation_style=AnnotationStyle.FLAT)
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.TBNG.trig",
