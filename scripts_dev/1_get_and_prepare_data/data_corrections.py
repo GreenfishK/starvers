@@ -11,6 +11,7 @@ def correct_bearb_hour(policy: str, file: str, init_ts: datetime):
     the alldata.TB_star_flat.ttl file. Triples, where such escapes occur are replaced by the corresponding
     correct triples from the original change sets. This bug only occurs in version 93.
     """
+    print("Correct bearb_hour TBSF and TBSH datasets: bad IRI with special characters")
 
     version_ts = init_ts + timedelta(seconds=92)
     sys_ts_formatted = datetime.strftime(version_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
@@ -70,13 +71,13 @@ def correct_bearc(policy: str, file: str):
     """
     Bad IRI found in BEARC dataset which prevents the Jena TDB2 loader to load it.
     Bad IRI: http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip
-    Looking for other bad IRIs:
+    Manual check: with query:
         select * where { 
         ?s ?p ?o.
         filter (regex (str(?o), "http:/(?!/).*"))
         } 
-    None found.
     """
+    print("Correct bearc dataset: bad IRI")
 
     if policy == "ic":
         bad_IRI = r'<http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip>' 
@@ -86,6 +87,31 @@ def correct_bearc(policy: str, file: str):
         with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
                 fout.write(line.replace(bad_IRI, correct_IRI))
+        fin.close()
+        fout.close()
+        shutil.move("tmp_out.ttl", file)
+
+def correct_beara(policy: str, file: str):
+    """
+    Bad datatime format found in BEARA dataset which prevents rdflib's Graph() constructor to load it.
+    Bad IRI: http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip
+    Looking for other bad IRIs:
+        select * where { 
+        ?s ?p ?o.
+        filter (regex (str(?o), "http:/(?!/).*"))
+        } 
+    None found.
+    """
+    print("Correct beara dataset: bad datetime format")
+
+    if policy == "ic":
+        bad_datatime_format= r' GMT+02:00"' 
+        correct_datatime_format = r'+02:00"' 
+
+        snapshot = file
+        with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
+            for line in fin:
+                fout.write(line.replace(bad_datatime_format, correct_datatime_format))
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)

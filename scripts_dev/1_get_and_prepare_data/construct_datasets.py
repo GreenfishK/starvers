@@ -315,11 +315,16 @@ for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
     print("Constructing datasets for {0}".format(dataset))
 
-    # Corrections
+    # Corrections on raw data
     if dataset == 'bearc':
         for i in range(1, datasets['bearc']+1):
             print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
             data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
+    
+    if dataset == 'beara':
+        for i in range(1, datasets['bearc']+1):
+            print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
+            data_corrections.correct_beara("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
     
     construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
@@ -342,7 +347,7 @@ for dataset, totalVersions in datasets.items():
                       destination=data_dir + "/alldata.ICNG.trig",
                       last_version=totalVersions)
 
-    # Corrections
+    # Corrections on new datasets
     if dataset == 'bearb_hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
         data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
