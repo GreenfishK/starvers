@@ -203,20 +203,22 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         :param query: A dataset as string with or without prologue.
         :return: A list with the prefixes as the first element and the actual query string as the second element.
         """
-        pattern = "@prefix\\s*[a-zA-Z0-9_-]*:\\s*<.*>\\s*\."
+        pattern = "@prefix\\s*([a-zA-Z0-9_-]*):\\s*(<.*>)\\s*\."
 
         prefixes_list = re.findall(pattern, dataset, re.MULTILINE)
-        prefixes = ''.join(prefixes_list)
-        dataset_without_prefixes = re.sub(pattern, "", dataset, re.MULTILINE)
+        dataset_without_prefixes = re.sub(pattern, "", dataset)
 
-        return [prefixes, dataset_without_prefixes]
+        return [prefixes_list, dataset_without_prefixes]
 
 
     print("Building version {0}. ".format(str(1)))
     cbng_dataset = ""
+    prefixes = {}
+    ns_cnt = 1
     ic0_raw = open(source_ic0, "r").read()
-    prefixes, ic0 = split_prefixes_dataset(ic0_raw)
+    sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+
     cbng_dataset = cbng_dataset + template.format(str(1), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
@@ -244,15 +246,39 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         cs_add_raw = open(source_cs + "/" + t[1], "r").read()
         cs_del_raw = open(source_cs + "/" + t[2], "r").read()
 
-        prefixes_add, cs_add = split_prefixes_dataset(cs_add_raw)
-        prefixes_del, cs_del = split_prefixes_dataset(cs_del_raw)
+        sub_prefixes_add, cs_add = split_prefixes_dataset(cs_add_raw)
+        sub_prefixes_del, cs_del = split_prefixes_dataset(cs_del_raw)
+
+        for prefix_iri_tuple in sub_prefixes_add:
+            ns = prefix_iri_tuple[0]
+            iri = prefix_iri_tuple[1]
+            if ns in prefixes.keys():
+                new_ns =   "new_ns" + str(ns_cnt)
+                # TODO: just for more elegancy: replace with regex by matching the prefix pattern in the data
+                cs_add = cs_add.replace(ns + ":", new_ns + ":")
+                ns_cnt = ns_cnt + 1
+                prefixes[new_ns] = iri
+            else:
+                prefixes[ns] = iri
+
+        for prefix_iri_tuple in sub_prefixes_del:
+            ns = prefix_iri_tuple[0]
+            iri = prefix_iri_tuple[1]
+            if iri in prefixes.keys():
+                new_ns =  "new_ns" + str(ns_cnt)
+                # TODO: just for more elegancy: replace with regex by matching the prefix pattern in the data
+                cs_add = cs_del.replace(ns + ":", new_ns + ":")
+                ns_cnt = ns_cnt + 1
+                prefixes[new_ns] = iri
+            else:
+                prefixes[ns] = iri
 
         cbng_dataset = cbng_dataset + template.format(str(i+2), cs_add, cs_del)
 
     
     print("Export data set.")
     f = open(destination, "w")
-    f.write(cbng_dataset)
+    f.write("\n".join(["@prefix " + key + ":" + value + " ." for key, value in prefixes.items()]) + "\n" + cbng_dataset)
     f.close()
 
 
