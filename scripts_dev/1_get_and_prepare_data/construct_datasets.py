@@ -50,6 +50,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     print("Constructing changesets")
     cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
+        print("Create directory: " + cb_comp_dir)
         os.makedirs(cb_comp_dir)
 
     for i in range(1, end_vers):
@@ -312,6 +313,7 @@ ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
+    print("Constructing datasets for {0}".format(dataset))
 
     # Corrections
     if dataset == 'bearc':
