@@ -63,6 +63,6 @@ def split_prefixes_query(query: str) -> list:
 
     prefixes_list = re.findall(pattern, query, re.MULTILINE)
     prefixes = ''.join(prefixes_list)
-    query_without_prefixes = re.sub(pattern, "", query, re.MULTILINE)
+    query_without_prefixes = re.sub(pattern, "", query)
 
     return [prefixes, query_without_prefixes]
