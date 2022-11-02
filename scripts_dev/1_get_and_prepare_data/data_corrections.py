@@ -115,3 +115,7 @@ def correct_beara(policy: str, file: str):
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)
+        
+    print("Correct beara dataset: <http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>")
+    # TODO: correct this
+    # Erronous line: <http://data.archiveshub.ac.uk/id/archivalresource/gb1089ukc-reading-rayner-3> <http://data.archiveshub.ac.uk/def/otherFindingAids> "<p xmlns=\"\">Item level catalogue of these books is available on the \n            <extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First\">University of Kent and Cathedral Library catalogue </extref>\n          </p>"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral> .
