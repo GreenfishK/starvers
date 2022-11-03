@@ -106,7 +106,7 @@ def correct_beara(policy: str, file: str):
     """
 
     if policy == "ic":
-        print("Correct beara IC datasets: format datetime")
+        print("Correct beara IC datasets: format datetime;  escape ampersands")
         
         bad_datatime_format= r' GMT+02:00"' 
         correct_datatime_format = r'+02:00"' 
@@ -115,17 +115,8 @@ def correct_beara(policy: str, file: str):
         with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
                 fout.write(line.replace(bad_datatime_format, correct_datatime_format))
+                fout.write(re.sub(r'&(?!amp;)', r'&amp;', line))
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)
         
-        print("Correct beara IC datasets: escape ampersands")
-
-        snapshot = file
-        strIn = open(snapshot, "r").read()
-        pattern = r'&(?!amp;)'
-        strOut = re.sub(pattern, r'&amp;', strIn)
-        fout = open(r"tmp_out.ttl", "w")
-        fout.write(strOut)
-        fout.close()
-        shutil.move("tmp_out.ttl", file)
