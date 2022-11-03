@@ -111,8 +111,7 @@ def correct_beara(policy: str, file: str):
         snapshot = file
         with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
-                fout.write(line.replace(r' GMT+02:00"', r'+02:00"'))
-                fout.write(line.replace(r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First', r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&amp;PAGE=First'))
+                fout.write(line.replace(r' GMT+02:00"', r'+02:00"').replace(r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First', r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&amp;PAGE=First'))
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)
