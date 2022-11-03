@@ -2,6 +2,7 @@ from datetime import timedelta, datetime
 from pathlib import Path
 from rdflib import Graph
 import shutil
+import re
 
 
 def correct_bearb_hour(policy: str, file: str, init_ts: datetime):
@@ -77,9 +78,10 @@ def correct_bearc(policy: str, file: str):
         filter (regex (str(?o), "http:/(?!/).*"))
         } 
     """
-    print("Correct bearc dataset: bad IRI")
 
     if policy == "ic":
+        print("Correct bearc IC datasets: bad IRI")
+
         bad_IRI = r'<http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip>' 
         correct_IRI = r'<http://cordis.europa.eu/data/cordis-fp7projects-xml.zip>' 
 
@@ -102,9 +104,10 @@ def correct_beara(policy: str, file: str):
         } 
     None found.
     """
-    print("Correct beara dataset: bad datetime format")
 
     if policy == "ic":
+        print("Correct beara IC datasets: format datetime")
+        
         bad_datatime_format= r' GMT+02:00"' 
         correct_datatime_format = r'+02:00"' 
 
@@ -116,6 +119,16 @@ def correct_beara(policy: str, file: str):
         fout.close()
         shutil.move("tmp_out.ttl", file)
         
-    print("Correct beara dataset: <http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral>")
+        print("Correct beara IC datasets: escape ampersands")
+
+        snapshot = file
+        strIn = open(snapshot, "r").read()
+        pattern = r'&(?!amp;)'
+        strOut = re.sub(pattern, r'&amp;', strIn)
+        fout = open(r"tmp_out.ttl", "w")
+        fout.write(strOut)
+        fout.close()
+        shutil.move("tmp_out.ttl", file)
+
     # TODO: correct this
     # Erronous line: <http://data.archiveshub.ac.uk/id/archivalresource/gb1089ukc-reading-rayner-3> <http://data.archiveshub.ac.uk/def/otherFindingAids> "<p xmlns=\"\">Item level catalogue of these books is available on the \n            <extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First\">University of Kent and Cathedral Library catalogue </extref>\n          </p>"^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral> .
