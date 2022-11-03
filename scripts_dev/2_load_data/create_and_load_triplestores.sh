@@ -45,7 +45,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             echo "Process is $policy, $dataset for GraphDB"
             total_ingestion_time=0
             total_file_size=0
-            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
+            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
                 cp ${SCRIPT_DIR}/2_load_data/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl
@@ -74,10 +74,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     echo "\n\n" >> $baseDir/output/logs/ingestion_graphdb_logs.txt
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
-                done
-            elif [ "$policy" == "icng" ]; then
-                # TODO
-            
+                done  
+                        
             elif [ "$policy" == "cb" ]; then
                 for v in $(seq 0 1 $((${versions}-1))); do 
                     ve=$(echo $v+1 | bc)
@@ -120,9 +118,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done
-            
-            elif [ "$policy" == "cbng" ]; then
-                # TODO
             fi
             cat $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
@@ -167,7 +162,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             echo "Process is $policy, $dataset for JenaTDB2"
             total_ingestion_time=0
             total_file_size=0
-            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" ]]; then
+            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng"]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
                 mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
@@ -203,9 +198,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
                 done
-
-            elif [ "$policy" == "icng" ]; then
-                # TODO
             
             elif [ "$policy" == "cb" ]; then
                 mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
@@ -252,8 +244,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
                 done
-            elif [ "$policy" == "cbng" ]; then
-                # TODO
             fi
             cat $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size ${baseDir}/databases/jenatdb2_${policy}_${dataset} | awk '{print substr($1, 1, length($1)-1)}'`
