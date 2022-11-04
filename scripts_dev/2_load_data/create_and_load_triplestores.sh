@@ -18,7 +18,9 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     for policy in ${policies[@]}; do
         case $policy in 
             ic) datasetDirOrFile=alldata.IC.nt;;
+            icng) datasetDirOrFile=alldata.ICNG.trig;;
             cb) datasetDirOrFile=alldata.CB_computed.ttl;;
+            cbng) datasetDirOrFile=alldata.CBNG.trig;;
             tb) datasetDirOrFile=alldata.TB.nq;;
             tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
             tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
@@ -136,7 +138,9 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     for policy in ${policies[@]}; do
         case $policy in 
             ic) datasetDirOrFile=alldata.IC.nt;;
+            icng) datasetDirOrFile=alldata.ICNG.trig;;
             cb) datasetDirOrFile=alldata.CB_computed.ttl;;
+            cbng) datasetDirOrFile=alldata.CBNG.trig;;
             tb) datasetDirOrFile=alldata.TB.nq;;
             tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
             tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;

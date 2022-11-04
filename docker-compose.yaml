@@ -11,6 +11,17 @@ services:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
+
+  correct_datasets:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: final_stage
+    image: starvers_eval
+    volumes:
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
+    entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/correct_raw_datasets.sh]
   
   construct_datasets:
     build: 
