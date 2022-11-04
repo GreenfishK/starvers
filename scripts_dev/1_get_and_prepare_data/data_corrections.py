@@ -96,22 +96,27 @@ def correct_bearc(policy: str, file: str):
 def correct_beara(policy: str, file: str):
     """
     Bad datatime format found in BEARA dataset which prevents rdflib's Graph() constructor to load it.
-    Bad IRI: http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip
-    Looking for other bad IRIs:
-        select * where { 
-        ?s ?p ?o.
-        filter (regex (str(?o), "http:/(?!/).*"))
-        } 
-    None found.
+    Faulty lines:
+    1.nt:
+        -     
     """
 
     if policy == "ic":
-        print("Correct beara IC datasets: format datetime;  escape ampersands")
+        print("Correct beara IC datasets: format datetime; escape ampersands; blank nodes")
         
         snapshot = file
         with open(snapshot) as fin, open("tmp_out.ttl", "w") as fout:
             for line in fin:
-                fout.write(line.replace(r' GMT+02:00"', r'+02:00"').replace(r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First', r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&amp;PAGE=First'))
+                if r' GMT+02:00"' in line:
+                    line = line.replace(r' GMT+02:00"', r'+02:00"')
+                    fout.write(line)
+                if r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First' in line:
+                    line = line.replace(r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&PAGE=First', r'<extref href=\"http://opac.kent.ac.uk/cgi-bin/Pwebrecon.cgi?DB=local&amp;PAGE=First')
+                    fout.write(line)
+
+        tmp = re.sub(r'(?<=\<)(node.*)(?=\>)', r'_:\1',fout.read())
+        fout.write(tmp)
+
         fin.close()
         fout.close()
         shutil.move("tmp_out.ttl", file)
