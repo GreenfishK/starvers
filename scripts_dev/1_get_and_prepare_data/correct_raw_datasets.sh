@@ -36,20 +36,18 @@ for policy in ${policies[@]}; do
                     echo "$ic_file"
                     echo "Correct bad timestamp format"
                     sed -i 's/ GMT+02:00"/+02:00"/g' $ic_file
-                    echo "Correct unescaped ampersand"
+                    sed -i -r 's/("-)([0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"\2/g' $ic_file
+                    sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime)>/\1date/g' $ic_file
+                    echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
-                    echo "Correct bad blank nodes format"
+                    echo "Correct bad blank nodes format" 
                     sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ic_file
                     # failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#gYear
-                    # Unrecognised ISO 8601 date format: '-0038'
                     # Unrecognised ISO 8601 time format: '8:00:00'
                     # Unrecognised ISO 8601 date format: '5-06-30'
                     # Unrecognised ISO 8601 date format: '2-07-01'
-                    # ISO 8601 time designator 'T' missing. Unable to parse datetime string '2008-06-18'
-                    # ISO 8601 time designator 'T' missing. Unable to parse datetime string '2008-08-22'
-                    # ISO 8601 time designator 'T' missing. Unable to parse datetime string '2009-05-26'
-                    # ISO 8601 time designator 'T' missing. Unable to parse datetime string '2009-06-15'
                     # prefix must not be bound to one of the reserved namespace names:
                 done
             elif [ "$dataset" == "bearc" ]; then
