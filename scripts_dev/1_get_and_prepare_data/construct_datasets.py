@@ -315,17 +315,6 @@ for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
     print("Constructing datasets for {0}".format(dataset))
 
-    # Corrections on raw data
-    #if dataset == 'bearc':
-    #    for i in range(1, datasets['bearc']+1):
-    #        print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-    #        data_corrections.correct_bearc("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-    
-    #if dataset == 'beara':
-    #    for i in range(1, datasets['bearc']+1):
-    #        print ("Correcting " + data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-    #        data_corrections.correct_beara("ic", data_dir + "/alldata.IC.nt/" + str(i) + ".nt")
-    
     construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
