@@ -67,9 +67,9 @@ def correct_bearb_hour(policy: str, file: str, init_ts: datetime):
         fout.close()
         shutil.move("tmp_out.ttl", file)
 
-
+"""
 def correct_bearc(policy: str, file: str):
-    """
+    '''
     Bad IRI found in BEARC dataset which prevents the Jena TDB2 loader to load it.
     Bad IRI: http:/cordis.europa.eu/data/cordis-fp7projects-xml.zip
     Manual check: with query:
@@ -77,7 +77,7 @@ def correct_bearc(policy: str, file: str):
         ?s ?p ?o.
         filter (regex (str(?o), "http:/(?!/).*"))
         } 
-    """
+    '''
 
     if policy == "ic":
         print("Correct bearc IC datasets: bad IRI")
@@ -94,12 +94,12 @@ def correct_bearc(policy: str, file: str):
         shutil.move("tmp_out.ttl", file)
 
 def correct_beara(policy: str, file: str):
-    """
+    '''
     Bad datatime format found in BEARA dataset which prevents rdflib's Graph() constructor to load it.
     Faulty lines:
     1.nt:
         -     
-    """
+    '''
 
     if policy == "ic":
         print("Correct beara IC datasets: format datetime; escape ampersands; blank nodes")
@@ -121,3 +121,4 @@ def correct_beara(policy: str, file: str):
         fout.close()
         shutil.move("tmp_out.ttl", file)
         
+"""
