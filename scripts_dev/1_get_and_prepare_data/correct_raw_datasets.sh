@@ -46,10 +46,9 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     echo "Correct bad blank nodes format" 
                     sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ic_file
+                    echo "Correct strings that are labeled as ints"
+                    sed -i -r 's/("[^0-9]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>)/\1string>/g' $ic_file
                     # failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#gYear
-                    # Unrecognised ISO 8601 time format: '8:00:00'
-                    # Unrecognised ISO 8601 date format: '5-06-30'
-                    # Unrecognised ISO 8601 date format: '2-07-01'
                     # prefix must not be bound to one of the reserved namespace names:
                 done
             elif [ "$dataset" == "bearc" ]; then
