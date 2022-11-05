@@ -9,7 +9,7 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data # move to image after development has finished
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
 
   correct_datasets:
@@ -20,7 +20,9 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data # move to image after development has finished
+    environment:
+      - datasets=${datasets}
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/correct_raw_datasets.sh]
   
   construct_datasets:
@@ -31,7 +33,7 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data
+      - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data # move to image after development has finished
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/1_get_and_prepare_data/construct_datasets.py"]
 
   load_data:
