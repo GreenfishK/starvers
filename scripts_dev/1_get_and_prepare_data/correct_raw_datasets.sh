@@ -34,11 +34,13 @@ for policy in ${policies[@]}; do
                 do
                     ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/${c}.nt
                     echo "$ic_file"
-                    echo "Correct bad timestamp format"
+                    echo "Correct bad timestamp formats"
                     sed -i 's/ GMT+02:00"/+02:00"/g' $ic_file
                     sed -i -r 's/("-)([0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"\2/g' $ic_file
                     sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ic_file
-                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime)>/\1date/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ic_file
+                    sed -i -r 's/(")([0-9]{1}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\10\2/g' $ic_file
+                    sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\1200\2/g' $ic_file
                     echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
