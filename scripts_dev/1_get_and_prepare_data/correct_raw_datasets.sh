@@ -47,7 +47,11 @@ for policy in ${policies[@]}; do
                     echo "Correct bad blank nodes format" 
                     sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ic_file
                     echo "Correct strings that are labeled as ints"
-                    sed -i -r 's/("[^0-9]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>)/\1string>/g' $ic_file
+                    sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>)/\1string>/g' $ic_file
+                    sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ic_file
+
+                    # motor City Five (MC5)
+                    # Little Carl Carlton 14 Year Old Sensation
                     # failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#gYear
                     # prefix must not be bound to one of the reserved namespace names:
                 done
