@@ -15,12 +15,26 @@ queries={
         "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ic/ts"},
         "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
     },
+    "icng":{
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "icng/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "icng/ts"},
+        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "icng/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "icng/ts"},
+        "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "icng/sparql"},
+    },
     "cb":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cb/ts"},
         "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cb/ts"},
         "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cb/bgp"},
         "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cb/ts"},
         "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cb/sparql"},
+    },
+    "cbng":{
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cbng/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cbng/ts"},
+        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cbng/bgp"},
+        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cbng/ts"},
+        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cbng/sparql"},
     },
     "tb":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
@@ -44,7 +58,7 @@ queries={
         "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "ic/sparql"},
     }
 }
-policies=["ic", "cb", "tb", "tbsf", "tbsh"]
+policies=["ic", "icng", "cb", "cbng", "tb", "tbsf", "tbsh"]
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 vers_ts = init_version_timestamp
