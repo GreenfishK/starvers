@@ -3,5 +3,5 @@
 SELECT * {{ 
     graph ?graph
     {2}
-    filter (str(?graph) <= "http://starvers_eval/added/{1}" || str(?graph) <= "http://starvers_eval/deleted/{1}")
+    filter (str(?graph) <= "http://starvers_eval/v{1}/added" || str(?graph) <= "http://starvers_eval/v{1}/deleted")
 }} order by ?graph
