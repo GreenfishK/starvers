@@ -335,11 +335,3 @@ for dataset, totalVersions in datasets.items():
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
                       last_version=totalVersions)
-
-    # Corrections on new datasets
-    if dataset == 'bearb_hour':
-        print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
-        correct_constructed_datasets.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
-        print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
-        correct_constructed_datasets.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
-    

@@ -57,14 +57,8 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>)/\1string>/g' $ic_file
 
-                #<http://purl.org/dc/terms/description> 
-
-                    # motor City Five (MC5)
-                    # Little Carl Carlton 14 Year Old Sensation
-                    # failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#gYear
-                    # prefix must not be bound to one of the reserved namespace names:
                 done
-            elif [ "$dataset" == "bearb" ]; then
+            elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
                 sed -i -r 's/(<http:\/\/dbpedia\.org\/resource\/Rodeo_\(Travis_Scott_album\)> <http:\/\/dbpedia\.org\/property\/cover> "\{\\\\rtf1\\\\ansi\\\\ansicpg1252\{\\\\fonttbl\}\\n\{\\\\colortbl;\\\\red255\\\\green255\\\\blue255;")(@en)/\1\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
             elif [ "$dataset" == "bearc" ]; then
