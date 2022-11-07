@@ -290,15 +290,19 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
     if not os.path.exists(source):
         os.makedirs(source)
 
+    print("Create empty dataset.")
+    f = open(destination, "w")
+    f.write("")
+    f.close()
+
     for i in range(last_version):
         print("Building version {0}. ".format(str(i+1)))
         ic = open(source + "/" + str(i+1).zfill(ic_zfills[dataset])  + ".nt", "r").read()
-        icng_dataset = icng_dataset + template.format(str(i+1), ic)
     
-    print("Export data set.")
-    f = open(destination, "w")
-    f.write(icng_dataset)
-    f.close()
+        print("Write ic {} to data set.".format(str(i+1)))
+        f = open(destination, "a")
+        f.write(template.format(str(i+1), ic) + "\n")
+        f.close()
 
 
 
