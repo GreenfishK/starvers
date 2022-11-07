@@ -39,22 +39,34 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/("-)([0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"\2/g' $ic_file
                     sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ic_file
                     sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3,6}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
                     sed -i -r 's/(")([0-9]{1}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\10\2/g' $ic_file
                     sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\1200\2/g' $ic_file
+                    sed -i -r 's/("[A-Za-z]+.*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1string>/g' $ic_file
+                    echo "Change XMLLiteral to string because many literals are not well-formed for XMLLiteral."
+                    sed -i -r 's/(<http:\/\/www.w3.org\/2000\/01\/rdf-schema#comment>|<http:\/\/purl.org\/dc\/terms\/description>)(\s*".*"\^\^)(<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\1\2<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
                     echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     echo "Correct bad blank nodes format" 
                     sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ic_file
-                    echo "Correct strings that are labeled as ints"
+                    echo "Correct strings that are labeled as ints, floats or dateTimes"
                     sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>)/\1string>/g' $ic_file
+                    sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(double>)/\1string>/g' $ic_file
                     sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ic_file
+                    sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
+                    sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>)/\1string>/g' $ic_file
+
+                #<http://purl.org/dc/terms/description> 
 
                     # motor City Five (MC5)
                     # Little Carl Carlton 14 Year Old Sensation
                     # failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#gYear
                     # prefix must not be bound to one of the reserved namespace names:
                 done
+            elif [ "$dataset" == "bearb" ]; then
+                ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
+                sed -i -r 's/(<http:\/\/dbpedia\.org\/resource\/Rodeo_\(Travis_Scott_album\)> <http:\/\/dbpedia\.org\/property\/cover> "\{\\\\rtf1\\\\ansi\\\\ansicpg1252\{\\\\fonttbl\}\\n\{\\\\colortbl;\\\\red255\\\\green255\\\\blue255;")(@en)/\1\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
             elif [ "$dataset" == "bearc" ]; then
                 echo "Correcting $dataset for $policy policy"
                 for c in $(seq -f $file_name_struc 1 ${versions})

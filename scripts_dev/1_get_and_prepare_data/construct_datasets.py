@@ -7,7 +7,7 @@ from rdflib import Graph
 from enum import Enum
 from typing import Union
 import re
-import data_corrections
+import correct_constructed_datasets
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -339,7 +339,7 @@ for dataset, totalVersions in datasets.items():
     # Corrections on new datasets
     if dataset == 'bearb_hour':
         print ("Correcting " + data_dir + "/alldata.TB_star_hierarchical." + out_frm)
-        data_corrections.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
+        correct_constructed_datasets.correct_bearb_hour("tbsh", data_dir + "/alldata.TB_star_hierarchical." + out_frm, init_ts=init_version_timestamp)
         print ("Correcting " + data_dir + "/alldata.TB_star_flat." + out_frm)
-        data_corrections.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
+        correct_constructed_datasets.correct_bearb_hour("tbsf", data_dir + "/alldata.TB_star_flat." + out_frm, init_ts=init_version_timestamp)
     
