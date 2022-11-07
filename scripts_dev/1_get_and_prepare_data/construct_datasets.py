@@ -284,7 +284,6 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
 
 def construct_icng_ds(source: str, destination: str, last_version: int):
-    icng_dataset = ""
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
 
     if not os.path.exists(source):
