@@ -39,12 +39,14 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/("-)([0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"\2/g' $ic_file
                     sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ic_file
                     sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ic_file
-                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3,6}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1gYear>/g' $ic_file
                     sed -i -r 's/(")([0-9]{1}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\10\2/g' $ic_file
-                    sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\1200\2/g' $ic_file
+                    sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#(time|dateTime)>)/\1200\2/g' $ic_file
                     sed -i -r 's/("[A-Za-z]+.*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1string>/g' $ic_file
+                    sed -i -r 's/("[A-SU-Za-z0-9]*)("\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#duration>)/\1T0H0M0S\2/g' $ic_file
                     echo "Change XMLLiteral to string because many literals are not well-formed for XMLLiteral."
-                    sed -i -r 's/(<http:\/\/www.w3.org\/2000\/01\/rdf-schema#comment>|<http:\/\/purl.org\/dc\/terms\/description>)(\s*".*"\^\^)(<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\1\2<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
+                    sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
                     echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
@@ -55,8 +57,9 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(double>)/\1string>/g' $ic_file
                     sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ic_file
                     sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
-                    sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>)/\1string>/g' $ic_file
-
+                    sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>|duration>)/\1string>/g' $ic_file
+                    echo "Correct hexBinary"
+                    sed -i -r 's/("\s*(\\n){0,1}\s*)([A-Za-z0-9]*)(\s*\\n\s*")(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#hexBinary>)/"\3"\5/g' $ic_file
                 done
             elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
