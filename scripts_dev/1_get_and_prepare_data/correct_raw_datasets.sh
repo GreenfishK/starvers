@@ -60,7 +60,8 @@ for policy in ${policies[@]}; do
                     echo "Correct hexBinary"
                     sed -i -r 's/("\s*(\\n){0,1}\s*)([A-Za-z0-9]*)(\s*\\n\s*")(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#hexBinary>)/"\3"\5/g' $ic_file
                     echo "Correct wrongly formatted object IRIs."
-                    sed -i -r 's/(^<[^>]*> <[^>]*>)( <([^h][^t][^t][^p]|[^:/>]*)> .$)/\1 <http:\/\/example.com\/\3> ./g' $ic_file
+                    sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
+                    # <application/rss+xml>
                 done
             elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
