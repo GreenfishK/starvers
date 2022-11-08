@@ -18,7 +18,7 @@ for policy in ${policies[@]}; do
     esac
     for dataset in ${datasets[@]}; do
         case $dataset in 
-            beara) versions=1 file_name_struc="%01g";; #versions=58
+            beara) versions=58 file_name_struc="%01g";; 
             bearb_hour) versions=1299 file_name_struc="%06g";; 
             bearb_day) versions=89 file_name_struc="%06g";;
             bearc) versions=32 file_name_struc="%01g";;
