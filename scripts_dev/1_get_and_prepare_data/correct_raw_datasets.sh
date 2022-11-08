@@ -53,13 +53,14 @@ for policy in ${policies[@]}; do
                     echo "Correct bad blank nodes format" 
                     sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ic_file
                     echo "Correct strings that are labeled as ints, floats or dateTimes"
-                    sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>)/\1string>/g' $ic_file
-                    sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(double>)/\1string>/g' $ic_file
+                    sed -i -r 's/(".*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>)/\1string>/g' $ic_file
                     sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ic_file
                     sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>|duration>)/\1string>/g' $ic_file
                     echo "Correct hexBinary"
                     sed -i -r 's/("\s*(\\n){0,1}\s*)([A-Za-z0-9]*)(\s*\\n\s*")(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#hexBinary>)/"\3"\5/g' $ic_file
+                    echo "Correct wrongly formatted object IRIs."
+                    sed -i -r 's/(^<[^>]*> <[^>]*>)( <([^h][^t][^t][^p]|[^:/>]*)> .$)/\1 <http:\/\/example.com\/\3> ./g' $ic_file
                 done
             elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
