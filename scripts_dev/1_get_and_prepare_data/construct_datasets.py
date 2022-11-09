@@ -91,7 +91,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                             datetimeref=xsd_datetime)
 
     """ Annotation of initial version triples """
-    print("Building version 1. ")
+    print("Building version 0. ")
 
     ic0 = Graph()
     ic0.parse(source_ic0)
@@ -140,7 +140,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     """ Annotation of change set triples """
     assert last_version - 1 <= len(change_sets)
     for t in change_sets[0:last_version-1]:
-        print("Building version {0}. ".format(int(t[0])))
+        print("Building version {0}. ".format(int(t[0]) - 1))
         
         """ Annotate added triples using rdf* syntax """
         cs_add = Graph()
@@ -212,7 +212,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         return [prefixes_list, dataset_without_prefixes]
 
 
-    print("Building version {0}. ".format(str(1)))
+    print("Building version {0}. ".format(str(0)))
     cbng_dataset = ""
     prefixes = {}
     ns_cnt = 1
@@ -220,7 +220,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
 
-    cbng_dataset = cbng_dataset + template.format(str(1), ic0, "")
+    cbng_dataset = cbng_dataset + template.format(str(0), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
     new_triples = {}
@@ -231,7 +231,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         os.makedirs(source_cs)
 
     for filename in os.listdir(source_cs):
-        version = filename.split('-')[2].split('.')[0].zfill(4)
+        version = int(filename.split('-')[2].split('.')[0].zfill(4)) - 1
         if filename.startswith("data-added"):
             new_triples[version] = filename
         if filename.startswith("data-deleted"):
@@ -274,7 +274,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
             else:
                 prefixes[ns] = iri
 
-        cbng_dataset = cbng_dataset + template.format(str(i+2), cs_add, cs_del)
+        cbng_dataset = cbng_dataset + template.format(str(i+1), cs_add, cs_del)
 
     
     print("Export data set.")
@@ -300,7 +300,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
     
         print("Write ic {} to data set.".format(str(i+1)))
         f = open(destination, "a")
-        f.write(template.format(str(i+1), ic) + "\n")
+        f.write(template.format(str(i), ic) + "\n")
         f.close()
 
 
@@ -333,7 +333,7 @@ for dataset, totalVersions in datasets.items():
                         annotation_style=AnnotationStyle.FLAT)
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                      destination=data_dir + "/alldata.TBNG.trig",
+                      destination=data_dir + "/alldata.CBNG.trig",
                       last_version=totalVersions)
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
