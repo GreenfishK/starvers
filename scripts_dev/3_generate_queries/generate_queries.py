@@ -16,11 +16,11 @@ queries={
         "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
     },
     "icng":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "icng/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "icng/ts"},
-        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "icng/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "icng/ts"},
-        "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "icng/sparql"},
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "icng/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "icng/ts"},
+        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "icng/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "icng/ts"},
+        "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "icng/sparql"},
     },
     "cb":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cb/ts"},
@@ -30,11 +30,11 @@ queries={
         "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cb/sparql"},
     },
     "cbng":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cbng/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cbng/ts"},
-        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cbng/bgp"},
-        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cbng/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cbng/sparql"},
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "cbng/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "cbng/ts"},
+        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "cbng/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "cbng/ts"},
+        "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "cbng/sparql"},
     },
     "tb":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
