@@ -30,6 +30,15 @@ ds_queries_map={'ic': {
                                                                 'ic/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 32, 'query_sets': ['ic/queries_bearc/complex']}       
                 },    
+                'icng': {
+                    'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['icng/queries_beara/high',
+                                                            'icng/queries_beara/low']}, 
+                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['icng/queries_bearb/lookup',
+                                                                'icng/queries_bearb/join']}, 
+                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['icng/queries_bearb/lookup',
+                                                                'icng/queries_bearb/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 32, 'query_sets': ['icng/queries_bearc/complex']}       
+                },  
                 'cb': {
                     'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb/queries_beara/high',
                                                             'cb/queries_beara/low']}, 
@@ -38,7 +47,16 @@ ds_queries_map={'ic': {
                     'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb/queries_bearb/lookup',
                                                                 'cb/queries_bearb/join']},
                     'bearc': {'query_versions': 1, 'repositories': 64, 'query_sets': ['cb/queries_bearc/complex']}       
-                },        
+                },      
+                'cbng': {
+                    'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cbng/queries_beara/high',
+                                                            'cbng/queries_beara/low']}, 
+                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cbng/queries_bearb/lookup',
+                                                                'cbng/queries_bearb/join']}, 
+                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cbng/queries_bearb/lookup',
+                                                                'cbng/queries_bearb/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 64, 'query_sets': ['cbng/queries_bearc/complex']}       
+                },     
                 'tb':{
                     'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb/queries_beara/high',
                                                             'tb/queries_beara/low']}, 
@@ -148,7 +166,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                 engine.setQuery(query_text)
                 file.close()
 
-                if policy in ["tbsh", "tbsf", "tb"]:
+                if policy in ["tbsh", "tbsf", "tb", "icng"]:
                     repository_name = "{policy}_{dataset}".format(policy=policy, dataset=ds)
                     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -172,7 +190,38 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     write.writerows(list_result)
 
                     df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
+                
+                elif policy == "cbng":
+                    repository_name = "{policy}_{dataset}".format(policy=policy, dataset=ds)
+                    engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                    engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
+                    logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
+                    start = time.time()
+                    result = engine.query()
+                    end = time.time()
+                    execution_time = end - start
+                        
+                    start = time.time()
+                    list_result = []
+                    change_sets = to_list(result)
+                    for row in change_sets:
+                        if row[-1].split('/')[-1] == 'added':
+                            list_result.append(row[:-1])
+                        elif row[-1].split('/')[-1] == 'deleted':
+                            list_result.remove(row[:-1])
+                    end = time.time()
+                    result_set_creation_time = end - start
+
+                    # Create output directory and save result set
+                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version + 1)
+                    Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                    file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
+                    write = csv.writer(file, delimiter=";")
+                    write.writerows(list_result)
+
+                    df = df.append(pd.Series([triple_store, ds, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
+                
                 elif policy == "ic":
                     for repository in range(1, int(repositories)+1):
                         repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=ds, repository=repository)

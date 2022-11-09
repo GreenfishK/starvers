@@ -62,6 +62,8 @@ for policy in ${policies[@]}; do
                     echo "Correct wrongly formatted object IRIs."
                     sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
                     # <application/rss+xml>
+                    echo "Correct wrongly formatted subject IRIs."
+                    sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' tmp_out.ttl  $ic_file
                 done
             elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
