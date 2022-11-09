@@ -5,6 +5,7 @@ baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
 policies=("ic" "tb") # only raw datasets
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
+> $baseDir/output/logs/corrections.txt
 
 echo "Start corrections"
 for policy in ${policies[@]}; do
@@ -63,10 +64,14 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
                     echo "Correct wrongly formatted subject IRIs."
                     sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' tmp_out.ttl  $ic_file
+                
+                    echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
                 done
             elif [ "$dataset" == "bearb_hour" ]; then
                 ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
                 sed -i -r 's/(<http:\/\/dbpedia\.org\/resource\/Rodeo_\(Travis_Scott_album\)> <http:\/\/dbpedia\.org\/property\/cover> "\{\\\\rtf1\\\\ansi\\\\ansicpg1252\{\\\\fonttbl\}\\n\{\\\\colortbl;\\\\red255\\\\green255\\\\blue255;")(@en)/\1\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
+            
+                echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
             elif [ "$dataset" == "bearc" ]; then
                 echo "Correcting $dataset for $policy policy"
                 for c in $(seq -f $file_name_struc 1 ${versions})
@@ -75,6 +80,8 @@ for policy in ${policies[@]}; do
                     echo "$ic_file"
                     echo "Correct bad IRI"
                     sed -i 's/<http:\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/<http:\/\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/g' $ic_file
+                
+                    echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
                 done
             fi
         fi
