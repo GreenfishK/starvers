@@ -310,7 +310,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
 
 
 """ Parameters and function calls """
-in_frm = "ttl"
+in_frm = "nt"
 out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
