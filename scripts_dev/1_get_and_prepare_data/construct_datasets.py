@@ -46,7 +46,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     format: ttl or nt.
 
     """
-    print("Constructing changesets")
+    print("Constructing changesets.")
     cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
         print("Create directory: " + cb_comp_dir)
@@ -76,7 +76,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
     from which one can get to the desired version timestamp.
     """
-    print("Constructing RDF-star dataset from ICs and changesets")
+    print("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
 
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
@@ -195,6 +195,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         return init_timestamp
 
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
+    print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
+
     def split_prefixes_dataset(dataset: str) -> list:
         """
         Separates the prologue (prefixes at the beginning of the query) from the dataset. 
@@ -283,6 +285,8 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
 
 def construct_icng_ds(source: str, destination: str, last_version: int):
+    print("Constructing the ICNG dataset with ICs as named graphs.")
+
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
 
     if not os.path.exists(source):
@@ -317,23 +321,32 @@ for dataset, totalVersions in datasets.items():
     data_dir = "/starvers_eval/rawdata/" + dataset
     print("Constructing datasets for {0}".format(dataset))
 
+    # CB
     construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+
+    # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
+    
+    # TBSF
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
                         last_version=totalVersions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
+
+    # CBNG
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.CBNG.trig",
                       last_version=totalVersions)
+
+    # ICNG
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
                       last_version=totalVersions)
