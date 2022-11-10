@@ -13,7 +13,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     export JAVA_HOME=/opt/java/openjdk
     export PATH=/opt/java/openjdk/bin:$PATH
     graphdb_evns=$GDB_JAVA_OPTS
-    > $baseDir/output/logs/ingestion_graphDB_logs.txt
+    > $baseDir/output/logs/ingestion_graphdb_logs.txt
 
     for policy in ${policies[@]}; do
         case $policy in 
@@ -55,9 +55,9 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                 # Load data into GraphDB
                 ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force) \
-                                2>&1 1>> $baseDir/output/logs/ingestion_graphDB_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
+                                2>&1 1>> $baseDir/output/logs/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $baseDir/output/logs/ingestion_graphDB_logs.txt
+                echo "\n\n" >> $baseDir/output/logs/ingestion_graphdb_logs.txt
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
@@ -166,7 +166,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             echo "Process is $policy, $dataset for JenaTDB2"
             total_ingestion_time=0
             total_file_size=0
-            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng"]]; then
+            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
                 mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
