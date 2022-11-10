@@ -183,7 +183,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     result_set_creation_time = end - start
 
                     # Create output directory and save result set
-                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version + 1)
+                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                     write = csv.writer(file, delimiter=";")
@@ -214,7 +214,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
                     result_set_creation_time = end - start
 
                     # Create output directory and save result set
-                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version + 1)
+                    result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + ds + "/" + query_set.split('/')[2] + "/" + str(query_version)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
                     write = csv.writer(file, delimiter=";")
