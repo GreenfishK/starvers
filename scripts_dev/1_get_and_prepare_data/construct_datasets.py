@@ -3,7 +3,7 @@ from datetime import datetime
 from datetime import timedelta, timezone
 import os
 import pandas as pd
-from rdflib import Graph
+from rdflib import Graph, compare
 from enum import Enum
 from typing import Union
 import re
@@ -29,13 +29,15 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
     ic2 = Graph()
     ic2.parse(ic2_ds_path, format=format)
 
-    cs_add = Graph()
-    cs_add.parse(ic2_ds_path, format=format)
-    cs_add.__isub__(ic1)
+    #cs_add = Graph()
+    #cs_add.parse(ic2_ds_path, format=format)
+    #cs_add.__isub__(ic1)
 
-    cs_del = Graph()
-    cs_del.parse(ic1_ds_path, format=format)
-    cs_del.__isub__(ic2)
+    #cs_del = Graph()
+    #cs_del.parse(ic1_ds_path, format=format)
+    #cs_del.__isub__(ic2)
+
+    same, cs_del, cs_add = compare.graph_diff(ic1, ic2)
 
     return cs_add, cs_del
 
