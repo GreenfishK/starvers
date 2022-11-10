@@ -7,6 +7,7 @@ from rdflib import Graph
 from enum import Enum
 from typing import Union
 import re
+import sys
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -313,22 +314,29 @@ in_frm = "ttl"
 out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
+datasets_string = sys.argv[1]
 
-datasets = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32}
+datasets = datasets_string.split(" ")
+dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32}
 ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
-for dataset, totalVersions in datasets.items():
+for dataset in datasets:
+    if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc']:
+        print("Dataset must be one of: ", dataset)
+        break
+
     data_dir = "/starvers_eval/rawdata/" + dataset
+    total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
     # CB
-    construct_change_sets(dataset_dir=data_dir, end_vers=totalVersions, format=out_frm, zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=out_frm, zf=ic_zfills[dataset])
 
     # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
-                        last_version=totalVersions,
+                        last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
@@ -336,7 +344,7 @@ for dataset, totalVersions in datasets.items():
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_flat." + out_frm,
-                        last_version=totalVersions,
+                        last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
 
@@ -344,9 +352,9 @@ for dataset, totalVersions in datasets.items():
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.CBNG.trig",
-                      last_version=totalVersions)
+                      last_version=total_versions)
 
     # ICNG
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
-                      last_version=totalVersions)
+                      last_version=total_versions)
