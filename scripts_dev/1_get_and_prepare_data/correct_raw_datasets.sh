@@ -63,7 +63,7 @@ for policy in ${policies[@]}; do
                     echo "Correct wrongly formatted object IRIs."
                     sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
                     echo "Correct wrongly formatted subject IRIs."
-                    sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' tmp_out.ttl  $ic_file
+                    sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' $ic_file
                 
                     echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
                 done
