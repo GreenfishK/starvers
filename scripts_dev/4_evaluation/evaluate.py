@@ -343,12 +343,7 @@ def query_dataset(triple_store: str, policy: str, ds: str, port: int):
     df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False, mode='a')
 
 
-def query():
-    triple_store = sys.argv[1]
-    policy = sys.argv[2]
-    dataset = sys.argv[3]
-    port = sys.argv[4]
-
+def query(triple_store = sys.argv[1], policy = sys.argv[2], dataset = sys.argv[3], port = sys.argv[4]):
     logger.info("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
     query_dataset(triple_store, policy, dataset, port)
 
