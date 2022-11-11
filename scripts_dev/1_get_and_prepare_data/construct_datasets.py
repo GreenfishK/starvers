@@ -49,8 +49,8 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
 
     cs_add_graph = Graph()
     cs_del_graph = Graph()
-    cs_add_graph.parse(cs_add_str)
-    cs_del_graph.parse(cs_del_str)
+    cs_add_graph.parse(data=cs_add_str, format=format)
+    cs_del_graph.parse(data=cs_del_str, format=format)
 
     return cs_add, cs_del
 
@@ -345,7 +345,7 @@ for dataset in datasets:
     print("Constructing datasets for {0}".format(dataset))
 
     # CB
-    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format="nt", zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_zfills[dataset])
 
     # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
