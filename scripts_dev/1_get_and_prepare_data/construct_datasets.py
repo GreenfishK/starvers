@@ -42,6 +42,7 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
             k = k + 1
 
     cs_add = ic2[k:]
+    print(len(cs_add), len(cs_del))
 
     # Add data to graph to 
     cs_add_str = "\n".join(triple for triple in cs_add)
