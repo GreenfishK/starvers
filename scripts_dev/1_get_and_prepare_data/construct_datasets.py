@@ -337,7 +337,7 @@ ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1}
 
 for dataset in datasets:
     if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc']:
-        print("Dataset must be one of: ", dataset)
+        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc'])
         break
 
     data_dir = "/starvers_eval/rawdata/" + dataset
