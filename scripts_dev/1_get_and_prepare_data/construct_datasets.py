@@ -24,21 +24,6 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
     ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version1).zfill(zf))
     ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version2).zfill(zf))
 
-    # Algorithm 1
-    """ic1 = Graph()
-    ic1.parse(ic1_ds_path, format=format)
-    ic2 = Graph()
-    ic2.parse(ic2_ds_path, format=format)
-
-    cs_add_graph = Graph()
-    cs_add_graph.parse(ic2_ds_path, format=format)
-    cs_add_graph.__isub__(ic1)
-
-    cs_del_graph = Graph()
-    cs_del_graph.parse(ic1_ds_path, format=format)
-    cs_del_graph.__isub__(ic2)"""
-
-    # Algorithm 2
     with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
         ic1 = set(ic1_file.read().splitlines())
         ic2 = set(ic2_file.read().splitlines())
