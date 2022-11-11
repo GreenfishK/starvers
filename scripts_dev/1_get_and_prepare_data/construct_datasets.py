@@ -52,7 +52,7 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
     cs_add_graph.parse(data=cs_add_str, format=format)
     cs_del_graph.parse(data=cs_del_str, format=format)
 
-    return cs_add, cs_del
+    return cs_add_graph, cs_del_graph
 
 
 def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int):
