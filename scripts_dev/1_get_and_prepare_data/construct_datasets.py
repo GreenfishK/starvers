@@ -28,8 +28,11 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
         ic1 = set(ic1_file.read().splitlines())
         ic2 = set(ic2_file.read().splitlines())
 
-    cs_add_str = "\n".join(triple for triple in ic2.difference(ic1))
-    cs_del_str = "\n".join(triple for triple in ic1.difference(ic2))
+    added = ic2.difference(ic1)
+    deleted = ic1.difference(ic2)
+    assert len(ic2) - len(ic1) == len(added) - len(deleted)
+    cs_add_str = "\n".join(triple for triple in added)
+    cs_del_str = "\n".join(triple for triple in deleted)
 
     cs_add_graph = Graph()
     cs_del_graph = Graph()
