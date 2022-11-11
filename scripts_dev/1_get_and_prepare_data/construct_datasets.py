@@ -34,6 +34,9 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
     cs_add_str = "\n".join(triple for triple in added)
     cs_del_str = "\n".join(triple for triple in deleted)
 
+    # Parsing into graph object to see if there are any ill-formed triples
+    # This check could alos be emitted and the sets 'added' and 'deleted' could be returned instead
+    # or the strings 'cs_add_str' and 'cs_del_str' could be serialized directly.
     cs_add_graph = Graph()
     cs_del_graph = Graph()
     cs_add_graph.parse(data=cs_add_str, format=format)
