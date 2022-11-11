@@ -25,28 +25,12 @@ def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: in
     ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version2).zfill(zf))
 
     with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
-        ic1 = ic1_file.read().splitlines()
-        ic2 = ic2_file.read().splitlines()
-    ic2_cnt_lines = len(ic2)
-
-    ic1.sort()
-    ic2.sort()
-
-    cs_add = []
-    cs_del = []
-    k = 0
-    for t in ic1:
-        if(ic2_cnt_lines <= k or t != ic2[k]):
-            cs_del.append(t)
-        else:
-            k = k + 1
-
-    cs_add = ic2[k:]
-    print(len(cs_add), len(cs_del))
+        ic1 = set(ic1_file.read().splitlines())
+        ic2 = set(ic2_file.read().splitlines())
 
     # Add data to graph to 
-    cs_add_str = "\n".join(triple for triple in cs_add)
-    cs_del_str = "\n".join(triple for triple in cs_del)
+    cs_add_str = "\n".join(triple for triple in ic2.difference(ic1))
+    cs_del_str = "\n".join(triple for triple in ic1.difference(ic2))
 
     cs_add_graph = Graph()
     cs_del_graph = Graph()
