@@ -281,6 +281,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
             else:
                 prefixes[ns] = iri
 
+        max_version_digits = len(str(last_version))
         cbng_dataset = cbng_dataset + template.format(str(i+1), cs_add, cs_del)
 
     
