@@ -80,17 +80,3 @@ for triple_store in ${triple_stores[@]}; do
     fi
  
 done
-
-### Evaluate ################################################################
-# Check if all GraphDB (and JenaTDB2 (TODO)) instances are running.
-#active_containers=0
-#while [ $active_containers -ne $((${#policies[@]} * ${#datasets[@]})) ]; do
-#    docker-compose logs | grep -w "Started GraphDB in workbench mode" > log.txt
-#    active_containers=$((`sed -n '$=' log.txt`))
-#done
-
-
-#docker network rm 4_evaluation_default
-
-# TODO: free heap space in graphdb by deactivating the repository after querying it
-
