@@ -9,5 +9,11 @@ GraphDB is stacking up the heap with every "activated" repository
 A repository becomes activated as soon as it is queried
 If there is not enough free memory, the cache/buffer is used up (see top command in linux)
 
-### Test run 1
-Default graphdb configurations
+## ERROR in CBNG
+Querying SPARQL endpoint http://Starvers:7200/repositories/cbng_bearb_day with query lookup_queries_p_q32_v2.txt
+Following row cannot be removed: ['http://dbpedia.org/resource/Islamic_State_of_Iraq_and_the_Levant', 'http://dbpedia.org/resource/Template:Infobox_war_faction']
+
+Cause: Error in filter clause in string comparison in SPARQL query:
+filter (str(?graph) <= "http://starvers_eval/v2/added" || str(?graph) <= "http://starvers_eval/v2/deleted")
+
+Solution: change query template population to have a fixed count of digits in the version number

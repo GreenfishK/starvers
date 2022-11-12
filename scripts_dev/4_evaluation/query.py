@@ -198,7 +198,8 @@ for query_set in query_sets:
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-
+                
+                # TODO: fix bug with query results
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 start = time.time()
                 result = engine.query()
@@ -209,10 +210,10 @@ for query_set in query_sets:
                 list_result = []
                 change_sets = to_list(result)
                 for row in change_sets:
-                    if row[-1].split('/')[-1] == 'added':
-                        list_result.append(row[:-1])
-                    elif row[-1].split('/')[-1] == 'deleted':
-                        list_result.remove(row[:-1])
+                    if row[0].split('/')[-1] == 'added':
+                        list_result.append(row[1:])
+                    elif row[0].split('/')[-1] == 'deleted':
+                        list_result.remove(row[1:])
                 end = time.time()
                 result_set_creation_time = end - start
 

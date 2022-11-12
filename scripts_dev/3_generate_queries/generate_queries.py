@@ -94,7 +94,11 @@ for policy in policies:
                             for query_version in range(query_versions):
                                 with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
                                     template = templateFile.read()
-                                    output_query = template.format(prefixes, str(query_version), raw_query)
+                                    if policy == "cbng":
+                                        max_version_digits = len(str(query_versions))
+                                        output_query = template.format(prefixes, str(query_version).zfill(max_version_digits), raw_query)
+                                    else:
+                                        output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
                                 with open(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     if policy in ["tbsf", "tbsh"]:
