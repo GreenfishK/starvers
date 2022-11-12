@@ -43,17 +43,15 @@ COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/pyt
 COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
 
 #COPY scripts_dev/1_get_and_prepare_data/construct_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
-#COPY scripts_dev/1_get_and_prepare_data/data_corrections.py /starvers_eval/scripts/1_get_and_prepare_data
 #COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
 #COPY scripts_dev/1_get_and_prepare_data/correct_raw_datasets.sh /starvers_eval/scripts/1_get_and_prepare_data
-#COPY scripts_dev/1_get_and_prepare_data/correct_processed_datasets.sh /starvers_eval/scripts/1_get_and_prepare_data
 
 #COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
 #COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data
 
 #COPY scripts_dev/3_generate_queries /starvers_eval/scripts/3_generate_queries
 
-#COPY scripts_dev/4_evaluation/evaluate.py /starvers_eval/scripts/4_evaluation
+#COPY scripts_dev/4_evaluation/query.py /starvers_eval/scripts/4_evaluation
 #COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
 
 # TODO: add visualization

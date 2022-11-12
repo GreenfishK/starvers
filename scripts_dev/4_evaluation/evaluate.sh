@@ -37,7 +37,7 @@ for triple_store in ${triple_stores[@]}; do
                 rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
                 echo "Shutting down fuseki server"
@@ -69,7 +69,7 @@ for triple_store in ${triple_stores[@]}; do
                 rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/evaluate.py ${triple_store} ${policy} ${dataset} ${graphdb_port} >> /starvers_eval/output/logs/queries.txt
+                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/4_evaluation/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port} >> /starvers_eval/output/logs/queries.txt
 
                 # Stop database server
                 echo "Shutting down GraphDB server"
