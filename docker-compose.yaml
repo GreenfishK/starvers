@@ -67,7 +67,9 @@ services:
     volumes:
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ./scripts_dev/3_generate_queries:/starvers_eval/scripts/3_generate_queries # move to image after development has finished
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_generate_queries/generate_queries.py"]
+    environment:
+      - policies=${policies}    
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_generate_queries/generate_queries.py", "$policies"]
 
   evaluate:
     build: 

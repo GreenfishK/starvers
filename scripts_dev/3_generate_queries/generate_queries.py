@@ -7,6 +7,9 @@ from datetime import datetime, timezone, timedelta
 
 raw_queries_dir="/starvers_eval/queries/raw_queries/"
 output_queries_dir="/starvers_eval/queries/final_queries/"
+policies_cmd = sys.argv[1]
+policies = policies_cmd.split(" ")
+
 queries={
     "ic":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ic/ts"},
@@ -58,7 +61,6 @@ queries={
         "bearc": {'output_dirs':{"bearc/complex": 32}, 'template': "ic/sparql"},
     }
 }
-policies=["ic", "icng", "cb", "cbng", "tb", "tbsf", "tbsh"]
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 vers_ts = init_version_timestamp
