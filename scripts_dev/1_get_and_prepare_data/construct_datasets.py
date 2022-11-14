@@ -310,8 +310,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
     
         print("Write ic {} to data set.".format(str(i+1)))
         f = open(destination, "a")
-        max_version_digits = len(str(last_version))
-        f.write(template.format(str(i).zfill(max_version_digits), ic) + "\n")
+        f.write(template.format(str(i), ic) + "\n")
         f.close()
 
 
