@@ -244,7 +244,7 @@ for query_set in query_sets:
                 result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
-                snapshot_g.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + "_snapshot.csv", format="n3")
+                snapshot_g.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + "_snapshot.csv", format="nt")
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
             
             elif policy == "ic":
