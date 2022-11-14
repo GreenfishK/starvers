@@ -217,10 +217,7 @@ for query_set in query_sets:
                 engine.setQuery(change_sets_until_v)
                 start = time.time()
                 result = engine.query()
-                end = time.time()
-                execution_time = end - start
 
-                start = time.time()
                 # Query all changesets until version :query_version ordered by change set versions
                 change_sets = result.convert()
                 # Build the snapshot at version :query_version by processing the changesets consecutively 
@@ -234,11 +231,16 @@ for query_set in query_sets:
                         elif p.split('/')[-1].startswith('deleted'):
                             snapshot_g.remove((t[0], t[1], t[2]))
                         t = []
-                # Query from snapshot at version :query_version
-                query_result = snapshot_g.query(query_text)
 
                 end = time.time()
+                # Actually snapshot construction time
                 result_set_creation_time = end - start
+
+                # Query from snapshot at version :query_version
+                start = time.time()
+                query_result = snapshot_g.query(query_text)
+                end = time.time()
+                execution_time = end - start
 
                 # Create output directory and save result set
                 result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
