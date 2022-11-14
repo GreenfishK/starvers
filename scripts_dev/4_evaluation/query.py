@@ -199,7 +199,7 @@ for query_set in query_sets:
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 
-                # TODO: fix bug with query results
+                # TODO: fix bug with join17_q5_v36.txt
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 start = time.time()
                 result = engine.query()
