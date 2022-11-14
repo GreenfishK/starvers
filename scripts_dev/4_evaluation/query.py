@@ -1,4 +1,4 @@
-from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON
+from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON, RDFXML
 from pathlib import Path
 import os
 import pandas as pd
@@ -6,6 +6,8 @@ import sys
 import time
 import multiprocessing
 from rdflib import Graph
+from rdflib.term import URIRef
+from rdflib.query import Result
 import shutil
 import csv
 import numpy as np
@@ -106,8 +108,6 @@ def to_list(result: Wrapper.QueryResult) -> list:
     :param result:
     :return: Dataframe
     """
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_colwidth', None)
 
     results = result.convert()
 
@@ -144,7 +144,7 @@ def to_list(result: Wrapper.QueryResult) -> list:
         values.append(row)
     
     return [header] + values
-    
+
 
 df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'query', 'execution_time', 'result_set_creation_time'])
 
@@ -198,32 +198,53 @@ for query_set in query_sets:
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                
+                engine.setReturnFormat(RDFXML)
+                #engine.addCustomHttpHeader("Accept", "application/query-results+xml")
+                #engine.addCustomHttpHeader("Content-type", "application/x-www-form-urlencoded")
+                #engine.setOnlyConneg(True)
+
                 # TODO: fix bug with join17_q5_v36.txt
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
+                change_sets_until_v = """ construct {{  _:a ?graph ?s  .
+                                                        _:a ?graph ?p  .
+                                                        _:a ?graph ?o  .}} WHERE {{
+                                        graph ?graph 
+                                        {{
+                                            ?s ?p ?o .
+                                            filter (str(?graph) <= "http://starvers_eval/v{0}/added" || str(?graph) <= "http://starvers_eval/v{0}/deleted")
+                                        }}
+                                    }} order by ?graph""".format(str(query_version).zfill(len(str(query_versions))))
+                engine.setQuery(change_sets_until_v)
                 start = time.time()
                 result = engine.query()
                 end = time.time()
                 execution_time = end - start
-                    
+
                 start = time.time()
-                list_result = []
-                change_sets = to_list(result)
-                for row in change_sets:
-                    if row[0].split('/')[-1] == 'added':
-                        list_result.append(row[1:])
-                    elif row[0].split('/')[-1] == 'deleted':
-                        list_result.remove(row[1:])
+                # Query all changesets until version :query_version ordered by change set versions
+                change_sets = result.convert()
+                # Build the snapshot at version :query_version by processing the changesets consecutively 
+                snapshot_g = Graph()
+                t = []
+                for s, p, o in change_sets:
+                    t.append(o)
+                    if len(t) == 3:
+                        if p.split('/')[-1].startswith('added'):
+                            snapshot_g.add((t[0], t[1], t[2]))
+                        elif p.split('/')[-1].startswith('deleted'):
+                            snapshot_g.remove((t[0], t[1], t[2]))
+                        t = []
+                # Query from snapshot at version :query_version
+                query_result = snapshot_g.query(query_text)
+
                 end = time.time()
                 result_set_creation_time = end - start
 
                 # Create output directory and save result set
                 result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                write = csv.writer(file, delimiter=";")
-                write.writerows(list_result)
-
+                query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
+                snapshot_g.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + "_snapshot.csv", format="n3")
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
             
             elif policy == "ic":
@@ -231,7 +252,7 @@ for query_set in query_sets:
                     repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=dataset, repository=repository)
                     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                    
+
                     logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                     start = time.time()
                     result = engine.query()
