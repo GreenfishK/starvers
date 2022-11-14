@@ -17,3 +17,16 @@ Cause: Error in filter clause in string comparison in SPARQL query:
 filter (str(?graph) <= "http://starvers_eval/v2/added" || str(?graph) <= "http://starvers_eval/v2/deleted")
 
 Solution: change query template population to have a fixed count of digits in the version number
+
+## ERROR in CBNG 
+Querying SPARQL endpoint http://Starvers:7200/repositories/cbng_bearb_day with query join17_q5_v36.txt
+
+SELECT * {
+    graph ?graph 
+    { 
+?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/SoccerPlayer> .
+?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+}
+
+    filter (str(?graph) <= "http://starvers_eval/v36/added" || str(?graph) <= "http://starvers_eval/v36/deleted")
+} order by ?graph
