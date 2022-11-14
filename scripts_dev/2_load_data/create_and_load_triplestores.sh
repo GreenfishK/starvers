@@ -32,6 +32,10 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
         for dataset in ${datasets[@]}; do
             echo $dataset
+
+            # Clean database directory
+            rm -rf ${baseDir}/databases/graphdb_${policy}_${dataset}
+
             case $dataset in 
                 beara) versions=58 file_name_struc="%01g";;
                 bearb_hour) versions=1299 file_name_struc="%06g";; 
@@ -152,6 +156,10 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
         for dataset in ${datasets[@]}; do
             echo $dataset
+
+            # Clean database directory
+            rm -rf ${baseDir}/databases/jenatdb2_${policy}_${dataset}
+
             case $dataset in 
                 beara) versions=58 file_name_struc="%01g";;
                 bearb_hour) versions=1299 file_name_struc="%06g";; 
@@ -174,7 +182,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-
+                
                 # Load data into Jena
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> $baseDir/output/logs/ingestion_jenatdb2_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `

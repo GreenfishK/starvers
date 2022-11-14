@@ -225,9 +225,10 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     ns_cnt = 1
     ic0_raw = open(source_ic0, "r").read()
     sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
-    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+    max_version_digits = len(str(last_version))
 
-    cbng_dataset = cbng_dataset + template.format(str(0), ic0, "")
+    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+    cbng_dataset = cbng_dataset + template.format(str(0).zfill(max_version_digits), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
     new_triples = {}
@@ -281,8 +282,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
             else:
                 prefixes[ns] = iri
 
-        max_version_digits = len(str(last_version))
-        cbng_dataset = cbng_dataset + template.format(str(i+1), cs_add, cs_del)
+        cbng_dataset = cbng_dataset + template.format(str(i+1).zfill(max_version_digits), cs_add, cs_del)
 
     
     print("Export data set.")
@@ -310,7 +310,8 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
     
         print("Write ic {} to data set.".format(str(i+1)))
         f = open(destination, "a")
-        f.write(template.format(str(i), ic) + "\n")
+        max_version_digits = len(str(last_version))
+        f.write(template.format(str(i).zfill(max_version_digits), ic) + "\n")
         f.close()
 
 
@@ -335,7 +336,7 @@ for dataset in datasets:
     print("Constructing datasets for {0}".format(dataset))
 
     # CB
-    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_zfills[dataset])
+    """construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_zfills[dataset])
 
     # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
@@ -352,7 +353,7 @@ for dataset in datasets:
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.FLAT)
-
+    """
     # CBNG
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
