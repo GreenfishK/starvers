@@ -213,7 +213,7 @@ for query_set in query_sets:
                 # Query all changesets until version :query_version ordered by change set versions
                 result = engine.query()
                 
-                # Build the snapshot at version :query_version by processing the changesets consecutively 
+                # Build the snapshot at version :query_version by adding triples from the add-set and deleting triples from the del-set consecutively 
                 def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
                     graph = Graph()
 
@@ -237,11 +237,7 @@ for query_set in query_sets:
                             value = r['o']["value"]
                             lang = r['o'].get("xml:lang", None)
                             datatype = r['o'].get("datatype", None)
-                            if lang is not None:
-                                value += "@" + lang
-                            if datatype is not None:
-                                value = '"' + value + '"^^<' + datatype + '>'
-                            o = Literal(value)
+                            o = Literal(value, lang=lang, datatype=datatype)
                         if r['graph']['value'].split('/')[-1].startswith('added'):
                             graph.add((s, p, o))
                         else:
