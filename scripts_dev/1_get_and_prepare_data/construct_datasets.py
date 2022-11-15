@@ -59,10 +59,8 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         os.makedirs(cb_comp_dir)
 
     for i in range(1, end_vers):
-        output = diff_set(dataset_dir, i, i + 1, format, zf)
-        cs_added = output[0]
+        cs_added, cs_deleted = diff_set(dataset_dir, i, i + 1, format, zf)
         assert isinstance(cs_added, Graph)
-        cs_deleted = output[1]
         assert isinstance(cs_deleted, Graph)
 
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
