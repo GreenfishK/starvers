@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 import sys
 from datetime import datetime, timezone, timedelta
+import shutil
 
 raw_queries_dir="/starvers_eval/queries/raw_queries/"
 output_queries_dir="/starvers_eval/queries/final_queries/"
@@ -65,17 +66,18 @@ LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 vers_ts = init_version_timestamp
 
-# Create directories
-for policy in policies:
-    for querySet in queries[policy].keys():
-        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
-            for query_version in range(query_versions):
-                Path(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version)).mkdir(parents=True, exist_ok=True)
-
-
 # Create queries
 for policy in policies:
     for querySet in queries[policy].keys():
+        # create directories
+        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+            for query_version in range(query_versions):
+                query_dir = Path(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version))
+                if query_dir.exists():
+                    shutil.rmtree(query_dir)
+                query_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create query files
         pathToQueries = raw_queries_dir + "queries_" + querySet
         for k, queriesFile in enumerate(os.listdir(raw_queries_dir + "queries_" + querySet)):
             if os.path.isfile(pathToQueries + "/" + queriesFile):
