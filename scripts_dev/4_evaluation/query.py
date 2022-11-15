@@ -1,4 +1,4 @@
-from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON, RDFXML
+from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON, N3
 from pathlib import Path
 import os
 import pandas as pd
@@ -6,7 +6,7 @@ import sys
 import time
 import multiprocessing
 from rdflib import Graph
-from rdflib.term import URIRef
+from rdflib.term import URIRef, Literal, BNode
 from rdflib.query import Result
 import shutil
 import csv
@@ -173,7 +173,7 @@ for query_set in query_sets:
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-
+                   
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 start = time.time()
                 result = engine.query()
@@ -198,16 +198,9 @@ for query_set in query_sets:
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                engine.setReturnFormat(RDFXML)
-                #engine.addCustomHttpHeader("Accept", "application/query-results+xml")
-                #engine.addCustomHttpHeader("Content-type", "application/x-www-form-urlencoded")
-                #engine.setOnlyConneg(True)
 
-                # TODO: fix bug with join17_q5_v36.txt
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                change_sets_until_v = """ construct {{  _:a ?graph ?s  .
-                                                        _:a ?graph ?p  .
-                                                        _:a ?graph ?o  .}} WHERE {{
+                change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
                                         graph ?graph 
                                         {{
                                             ?s ?p ?o .
@@ -215,26 +208,51 @@ for query_set in query_sets:
                                         }}
                                     }} order by ?graph""".format(str(query_version).zfill(len(str(query_versions))))
                 engine.setQuery(change_sets_until_v)
+                
                 start = time.time()
-                result = engine.query()
-
                 # Query all changesets until version :query_version ordered by change set versions
-                change_sets = result.convert()
+                result = engine.query()
+                
                 # Build the snapshot at version :query_version by processing the changesets consecutively 
-                snapshot_g = Graph()
-                t = []
-                for s, p, o in change_sets:
-                    t.append(o)
-                    if len(t) == 3:
-                        if p.split('/')[-1].startswith('added'):
-                            snapshot_g.add((t[0], t[1], t[2]))
-                        elif p.split('/')[-1].startswith('deleted'):
-                            snapshot_g.remove((t[0], t[1], t[2]))
-                        t = []
+                def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
+                    graph = Graph()
+
+                    if not "head" in change_sets or not "vars" in change_sets["head"]:
+                        return graph
+
+                    if not "results" in change_sets or not "bindings" in change_sets["results"]:
+                        return graph
+
+                    for r in change_sets["results"]["bindings"]:
+                        if r['s']['type'] == "uri":
+                            s = URIRef(r['s']['value'])
+                        else:
+                            s = BNode(r['s']['value'])
+                        p = URIRef(r['p']['value'])
+                        if r['o']['type']  == "uri":
+                            o = URIRef(r['o']['value'])
+                        elif r['o']['type'] == "blank":
+                            o = BNode(r['o']['value'])
+                        else:
+                            value = r['o']["value"]
+                            lang = r['o'].get("xml:lang", None)
+                            datatype = r['o'].get("datatype", None)
+                            if lang is not None:
+                                value += "@" + lang
+                            if datatype is not None:
+                                value = '"' + value + '"^^<' + datatype + '>'
+                            o = Literal(value)
+                        if r['graph']['value'].split('/')[-1].startswith('added'):
+                            graph.add((s, p, o))
+                        else:
+                            graph.remove((s, p, o))
+                    return graph
+                
+                change_sets = result.convert()
+                snapshot_g = build_snapshot(change_sets)
 
                 end = time.time()
-                # Actually snapshot construction time
-                result_set_creation_time = end - start
+                result_set_creation_time = end - start # Actually snapshot construction time
 
                 # Query from snapshot at version :query_version
                 start = time.time()
@@ -246,7 +264,6 @@ for query_set in query_sets:
                 result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
-                snapshot_g.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + "_snapshot.csv", format="nt")
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)
             
             elif policy == "ic":
