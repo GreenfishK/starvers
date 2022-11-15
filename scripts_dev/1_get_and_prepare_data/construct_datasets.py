@@ -71,6 +71,9 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
         cs_deleted.serialize(destination=cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format),
                              format=format)
+        # Free memory
+        cs_added = None
+        cs_deleted = None
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime,
