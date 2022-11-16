@@ -28,14 +28,13 @@ for policy in ${policies[@]}; do
                 exit 2
             ;;
         esac
-        if [ "$policy" == "ic" ]; then
+        if [ "$policy" == "ic" || "$policy" == "icng" ]; then
             if [ "$dataset" == "beara" ]; then
                 echo "Correcting $dataset for $policy policy"
                 for c in $(seq -f $file_name_struc 1 ${versions})
                 do
                     ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/${c}.nt
                     echo "$ic_file"
-                    # 12.nt, 15.nt: day is out of range for month
                     # 20.nt: Failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#decimal, Converter=<class 'decimal.Decimal'>
                     echo "Correct bad date, time dateTime, and duration formats"
                     sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
