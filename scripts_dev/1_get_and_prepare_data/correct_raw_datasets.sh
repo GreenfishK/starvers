@@ -37,10 +37,6 @@ for policy in ${policies[@]}; do
                     echo "$ic_file"
                     # 12.nt, 15.nt: day is out of range for month
                     # 20.nt: Failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#decimal, Converter=<class 'decimal.Decimal'>
-                    echo "Correct wrongly assigned datatypes."
-                    sed -i -r 's/("[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1gYear>/g' $ic_file
-                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ic_file
-
                     echo "Correct bad date, time dateTime, and duration formats"
                     sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
                     sed -i -r 's/(")([0-9]{1}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\10\2/g' $ic_file
@@ -61,9 +57,11 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                                         
-                    echo "Correct strings that are labeled as ints, floats or dateTimes"
+                    echo "Correct wrongly assigned datatypes to the actual ones"
                     sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ic_file
                     sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1gYear>/g' $ic_file
+                    sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ic_file
                                         
                     echo "Correct wrongly formatted object IRIS, subject IRIs and blank nodes."
                     sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
