@@ -28,7 +28,7 @@ for policy in ${policies[@]}; do
                 exit 2
             ;;
         esac
-        if [ "$policy" == "ic" || "$policy" == "icng" ]; then
+        if [[ "$policy" == "ic" || "$policy" == "icng" ]]; then
             if [ "$dataset" == "beara" ]; then
                 echo "Correcting $dataset for $policy policy"
                 for c in $(seq -f $file_name_struc 1 ${versions})
