@@ -207,7 +207,6 @@ for query_set in query_sets:
                 start = time.time()
                 # Query all changesets until version :query_version ordered by change set versions
                 result = engine.query()
-                
                 # Build the snapshot at version :query_version by adding triples from the add-set and deleting triples from the del-set consecutively 
                 def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
                     graph = Graph()
@@ -240,7 +239,6 @@ for query_set in query_sets:
                     return graph
                 
                 snapshot_g = build_snapshot(change_sets=result.convert())
-
                 end = time.time()
                 snapshot_creation_time = end - start # Actually snapshot construction time
 
