@@ -36,36 +36,10 @@ for policy in ${policies[@]}; do
                     ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/${c}.nt
                     echo "$ic_file"
                     echo "Correct bad timestamp formats"
-                    # 1.nt
-                    # 2.nt
-                    # 3.nt
-                    # 10.nt
-                    # March 16, 2010 # check
-                    # March 2007 # check
-                    # Failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#hexBinary # check
-                    # 11.nt
-                    # 12.nt
-                    # day is out of range for month
-                    # 13.nt
-                    # 14.nt
-                    # 15.nt
-                    # day is out of range for month
-                    # 16.nt
-                    # Unrecognised ISO 8601 date format: 'DVD-Audio' # check
-                    # 17.nt
-                    # 18.nt
-                    # valueError: year 0 is out of range: Datatype=http://www.w3.org/2001/XMLSchema#dateTime # check
-                    # 19.nt 
-                    # 20.nt
-                    # Failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#decimal, Converter=<class 'decimal.Decimal'>
-                    # 21.nt 
-                    # 22.nt
-                    # 23.nt
-                    # ??
-                    # isodate.isoerror.ISO8601Error: ISO 8601 time designator 'T' missing. Unable to parse datetime string '1347728953' # check
-
+                    # 12.nt, 15.nt: day is out of range for month
+                    # 20.nt: Failed to convert Literal lexical form to value. Datatype=http://www.w3.org/2001/XMLSchema#decimal, Converter=<class 'decimal.Decimal'>
                     sed -i 's/ GMT+02:00"/+02:00"/g' $ic_file
-                    sed -i -r 's/("-)([0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"\2/g' $ic_file
+                    sed -i -r 's/("-[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/"\1string>/g' $ic_file
                     sed -i -r 's/("-[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>)/\1string>/g' $ic_file # 
                     sed -i -r 's/("[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>)/\1string>/g' $ic_file #
                     sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ic_file #
@@ -92,7 +66,7 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|dateTime>|double>|int>|duration>)/\1string>/g' $ic_file
                     echo "Correct hexBinary"
-                    sed -i -r 's/("[a-z0-9]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ic_file #
+                    sed -i -r 's/("[^"]*[^A-Za-z0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ic_file #
                     echo "Correct wrongly formatted object IRIs."
                     sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ic_file
                     echo "Correct wrongly formatted subject IRIs."
