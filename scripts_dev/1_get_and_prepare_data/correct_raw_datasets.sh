@@ -55,7 +55,7 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/("[^0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>)/\1string>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|date>|dateTime>|double>|int>|duration>)/\1string>/g' $ic_file
                     sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
-                    sed -i -r 's/("[^"]*[^A-Za-z0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ic_file #
+                    sed -i -r 's/("[^"]*[^A-Za-z0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ic_file 
 
                     echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
