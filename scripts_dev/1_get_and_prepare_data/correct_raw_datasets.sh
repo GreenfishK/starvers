@@ -51,10 +51,11 @@ for policy in ${policies[@]}; do
 
                     echo "Change datatype of wrongly formatted datatypes to string."
                     sed -i -r 's/("(-[0-9]{4}-[0-9]{2}-[0-9]{2}|[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}|[0-9]+|[0-9]*[A-Za-z?!\\#@/-]+[^"]*|0[^"]*|[A-Za-z]+.*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ic_file
+                    sed -i -r 's/("-[0-9]{4}*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/\1string>/g' $ic_file 
                     sed -i -r 's/("[^0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>)/\1string>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(integer>|date>|dateTime>|double>|int>|duration>)/\1string>/g' $ic_file
                     sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
-                    
+
                     echo "Correct unescaped ampersand"  
                     sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
                     sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ic_file
