@@ -42,7 +42,7 @@ for policy in ${policies[@]}; do
                     sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#(time|dateTime)>)/\1200\2/g' $ic_file
                     sed -i -r 's/("[A-SU-Za-z0-9]*)("\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#duration>)/\1T0H0M0S\2/g' $ic_file
                     sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ic_file
-                    sed -i 's/ GMT+02:00"/+02:00"/g' $ic_file
+                    sed -i -r 's/ GMT+02:00"/+02:00"/g' $ic_file
 
                     echo "Change datatype of wrongly formatted datatypes to string."
                     sed -i -r 's/("(-[0-9]{4}-[0-9]{2}-[0-9]{2}|[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}|[0-9]+|[0-9]*[A-Za-z?!\\#@/-]+[^"]*|0[^"]*|[A-Za-z]+.*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ic_file
