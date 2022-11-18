@@ -34,6 +34,8 @@ for policy in ${policies[@]}; do
                 for c in $(seq -f $file_name_struc 1 ${versions})
                 do
                     ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/${c}.nt
+                    # 4.nt
+                    #   - DVD-Audio: Datatype=http://www.w3.org/2001/XMLSchema#gYear
                     echo "$ic_file"
                     echo "Correct bad date, time dateTime, and duration formats"
                     sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ic_file
@@ -45,7 +47,7 @@ for policy in ${policies[@]}; do
 
                     echo "Change datatype of wrongly formatted datatypes to string."
                     sed -i -r 's/("(-[0-9]{4}-[0-9]{2}-[0-9]{2}|[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}|[0-9]+|[0-9]*[A-Za-z?!\\#@/-]+[^"]*|0[^"]*|[A-Za-z]+.*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ic_file
-                    sed -i -r 's/("-[0-9]{4}*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/\1string>/g' $ic_file 
+                    sed -i -r 's/("(-[0-9]{4}*|[^0-9][^"]*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/\1string>/g' $ic_file 
                     sed -i -r 's/("[^0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>|decimal>)/\1string>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)([a-zA-Z]+>)/\1string>/g' $ic_file
                     sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
