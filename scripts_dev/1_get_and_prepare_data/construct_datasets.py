@@ -19,32 +19,6 @@ class AnnotationStyle(Enum):
     FLAT = 2
 
 
-def diff_set(dataset_dir: str, version1: int, version2: int, format: str, zf: int) -> Union[Graph, Graph]:
-    print("Calculating changeset between version {0} and {1}".format(version1, version2))
-    ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version1).zfill(zf))
-    ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(version2).zfill(zf))
-
-    with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
-        ic1 = set(ic1_file.read().splitlines())
-        ic2 = set(ic2_file.read().splitlines())
-
-    added = ic2.difference(ic1)
-    deleted = ic1.difference(ic2)
-    assert len(ic2) - len(ic1) == len(added) - len(deleted)
-    cs_add_str = "\n".join(triple for triple in added)
-    cs_del_str = "\n".join(triple for triple in deleted)
-
-    # Parsing into graph object to see if there are any ill-formed triples
-    # This check could alos be emitted and the sets 'added' and 'deleted' could be returned instead
-    # or the strings 'cs_add_str' and 'cs_del_str' could be serialized directly.
-    cs_add_graph = Graph()
-    cs_del_graph = Graph()
-    cs_add_graph.parse(data=cs_add_str, format=format)
-    cs_del_graph.parse(data=cs_del_str, format=format)
-
-    return cs_add_graph, cs_del_graph
-
-
 def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
@@ -59,17 +33,27 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         os.makedirs(cb_comp_dir)
 
     for i in range(1, end_vers):
-        cs_added, cs_deleted = diff_set(dataset_dir, i, i + 1, format, zf)
-        assert isinstance(cs_added, Graph)
-        assert isinstance(cs_deleted, Graph)
+        print("Calculating changeset between version {0} and {1}".format(i, i+1))
+        ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(zf))
+        ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(zf))
+
+        with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
+            ic1 = set(ic1_file.read().splitlines())
+            ic2 = set(ic2_file.read().splitlines())
+
+        cs_added = ic2.difference(ic1)
+        cs_deleted = ic1.difference(ic2)
+        assert len(ic2) - len(ic1) == len(cs_added) - len(cs_deleted)
 
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
-        cs_added.serialize(destination=cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format),
-                           format=format)
+        with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
+            cs_added_str = "\n".join(triple for triple in cs_added)
+            cs_added_file.write(cs_added_str)
+
         print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
-        cs_deleted.serialize(destination=cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format),
-                             format=format)
-        # Free memory
+        with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
+            cs_deleted_str = "\n".join(triple for triple in cs_added)
+            cs_deleted_file.write(cs_deleted_str)
         cs_added = None
         cs_deleted = None
 
