@@ -46,16 +46,16 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         assert len(ic2) - len(ic1) == len(cs_added) - len(cs_deleted)
 
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
+        cs_added_str = "\n".join(triple for triple in cs_added)
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
-            cs_added_str = "\n".join(triple for triple in cs_added)
             cs_added_file.write(cs_added_str)
-        cs_added = None
+        cs_added, cs_added_str = None, None
 
         print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
+        cs_deleted_str = "\n".join(triple for triple in cs_deleted)
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
-            cs_deleted_str = "\n".join(triple for triple in cs_deleted)
             cs_deleted_file.write(cs_deleted_str)
-        cs_deleted = None
+        cs_deleted, cs_deleted_str = None, None
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime,
