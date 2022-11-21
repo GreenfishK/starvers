@@ -46,7 +46,7 @@ for policy in ${policies[@]}; do
                     echo "Change datatype of wrongly formatted datatypes to string."
                     sed -i -r 's/("(-[0-9]{4}-[0-9]{2}-[0-9]{2}|[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}|[0-9]+|[0-9]*[A-Za-z?!\\#@/-]+[^"]*|0[^"]*|[A-Za-z]+.*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ic_file
                     sed -i -r 's/("(-[0-9]{4}|[^0-9][^"]*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/\1string>/g' $ic_file 
-                    sed -i -r 's/("[^0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>|decimal>)/\1string>/g' $ic_file
+                    sed -i -r 's/("([^0-9]+[^"]*|[0-9]+[^0-9"]*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>|decimal>)/\1string>/g' $ic_file
                     sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)([a-zA-Z]+>)/\1string>/g' $ic_file
                     sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
                     sed -i -r 's/("[^"]*[^A-Za-z0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ic_file 
