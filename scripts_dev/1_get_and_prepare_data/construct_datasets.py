@@ -302,7 +302,6 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
 
 """ Parameters and function calls """
 in_frm = "nt"
-out_frm = "ttl"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 datasets_cmd = sys.argv[1]
@@ -325,7 +324,7 @@ for dataset in datasets:
     # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                        destination=data_dir + "/alldata.TB_star_hierarchical." + out_frm,
+                        destination=data_dir + "/alldata.TB_star_hierarchical." + ".ttls",
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
@@ -333,7 +332,7 @@ for dataset in datasets:
     # TBSF
     # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
     #                    source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-    #                    destination=data_dir + "/alldata.TB_star_flat." + out_frm,
+    #                    destination=data_dir + "/alldata.TB_star_flat." + ".ttls",
     #                    last_version=total_versions,
     #                    init_timestamp=init_version_timestamp,
     #                    annotation_style=AnnotationStyle.FLAT)
