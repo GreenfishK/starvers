@@ -331,12 +331,12 @@ for dataset in datasets:
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
     # TBSF
-    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
-                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                        destination=data_dir + "/alldata.TB_star_flat." + out_frm,
-                        last_version=total_versions,
-                        init_timestamp=init_version_timestamp,
-                        annotation_style=AnnotationStyle.FLAT)
+    # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
+    #                    source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+    #                    destination=data_dir + "/alldata.TB_star_flat." + out_frm,
+    #                    last_version=total_versions,
+    #                    init_timestamp=init_version_timestamp,
+    #                    annotation_style=AnnotationStyle.FLAT)
     
     # CBNG
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
