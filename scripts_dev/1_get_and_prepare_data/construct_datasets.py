@@ -164,11 +164,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                                                              valid_from_ts_p,
                                                                                              re.escape(valid_until_predicate), 
                                                                                              re.escape(valid_ufn_ts_res))
-                    print(added_triple_pattern)
                     rdf_star_ds = re.sub(pattern=added_triple_pattern,
                                          repl=r'\1{0}\3'.format(vers_ts_str),
                                          string=rdf_star_ds 
                     )  
+                    print(rdf_star_ds)
         else:
             pass
             # TODO: implement for FLAT approach    
