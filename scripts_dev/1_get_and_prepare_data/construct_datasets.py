@@ -146,7 +146,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # Replace valid_until timestamps with the artificial end timestamp in the final dataset
     vers_ts = init_timestamp
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
-        print("Write deleted triples from changeset {0} to final dataset.".format(cs_add_file_name))
+        print("Write deleted triples from changeset {0} to final dataset.".format(cs_del_file_name))
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
             vers_ts = vers_ts + timedelta(seconds=1)
             vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
