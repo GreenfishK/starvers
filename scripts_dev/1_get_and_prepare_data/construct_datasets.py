@@ -135,9 +135,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
-            with open(destination, "r") as rdf_star_ds_file, open(source_cs + "/" + cs_del_file_name) as cs_del_file:
+            with open(destination, "r") as rdf_star_ds_file, open(source_cs + "/" + cs_del_file_names[vers]) as cs_del_file:
                 rdf_star_ds = rdf_star_ds_file.read()
                 cs_del = cs_del_file.readlines()
+                valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + re.escape(tz_offset) + '"\^\^' + re.escape(xsd_datetime)
                 for triple in cs_del: 
                     triple = triple[0:-2]
                     added_triple_pattern = r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(re.escape(triple),
