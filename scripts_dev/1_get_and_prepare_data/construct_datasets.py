@@ -102,8 +102,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         print("Number of data triples: {0}".format(len(ic0)/2))
 
     # Load all change set file names into a dict 
-    cs_add_files = {}
-    cs_del_files = {}
+    cs_add_file_names = {}
+    cs_del_file_names = {}
 
     if not os.path.exists(source_cs):
         print("There are is no changeset directory " + source_cs)
@@ -112,22 +112,22 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     for filename in os.listdir(source_cs):
         version = filename.split('-')[2].split('.')[0].zfill(4)
         if filename.startswith("data-added"):
-            cs_add_files[version] = filename
+            cs_add_file_names[version] = filename
         if filename.startswith("data-deleted"):
-            cs_del_files[version] = filename
+            cs_del_file_names[version] = filename
     print("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
 
     # Transforming triples/lines from all loaded change sets into their rdf-star representations
     # and write then to the final rdf star dataset 
     vers_ts = init_timestamp
-    for vers, cs_add_file in sorted(cs_add_files.items()):#
+    for vers, cs_add_file_name in sorted(cs_add_file_names.items()):#
         vers_ts = vers_ts + timedelta(seconds=1)
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
             ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
             tz_offset=tz_offset, 
             datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:
-            with open(source_cs + "/" + cs_add_file) as cs_add_file:
+            with open(source_cs + "/" + cs_add_file_name) as cs_add_file:
                 cnt = 0
                 cs_add = cs_add_file.read()
                 for triple in cs_add:
@@ -135,15 +135,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
-                print(source_cs + "/" + cs_add + ": " + str(cnt))
-            with open(source_cs + "/" + cs_del_files[vers]) as cs_del_file:
+                print(source_cs + "/" + cs_add_file_name + ": " + str(cnt))
+            with open(source_cs + "/" + cs_del_file_names[vers]) as cs_del_file:
                 cnt = 0
                 cs_del = cs_del_file.read()                
                 for triple in cs_del:
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))  
-                print(source_cs + "/" + cs_del[vers] + ": " + str(cnt))
+                print(source_cs + "/" + cs_del_file_names[vers] + ": " + str(cnt))
 
         else:
             with open(source_cs + "/" + cs_add_file) as cs_add:
