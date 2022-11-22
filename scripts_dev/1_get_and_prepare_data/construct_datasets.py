@@ -69,20 +69,56 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     from which one can get to the desired version timestamp.
     """
     print("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
-
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
     tz_offset = "+02:00"
     valid_ufn_ts_res = '"9999-12-31T00:00:00.000{tz_offset}"^^{datetimeref}'.format(tz_offset=tz_offset,
                                                                                     datetimeref=xsd_datetime)
-    # sys_ts = datetime.now()
     sys_ts_formatted = datetime.strftime(init_timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
     init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset,
                                                             datetimeref=xsd_datetime)
 
-    # Annotation of initial version triples 
     print("Write initial snapshot {0} to final dataset ".format(source_ic0))
+    # Read ic0 + all cs_add sets into list in chronological order
+    added_triples = []
+    deleted_triples = []
+
+    added_triples_raw += open(source_ic0, "r").read().split(" .\n")
+    added_triples += list(zip(["<< << "] * len(added_triples),
+                             added_triples_raw, 
+                             [">> "] * len(added_triples), 
+                             [valid_from_predicate] * len(added_triples),
+                             [init_ts_res] * len(added_triples), 
+                             [">> "] * len(added_triples),
+                             [valid_until_predicate] * len(added_triples),
+                             [valid_ufn_ts_res] * len(added_triples),
+                             [' .'] * len(added_triples)))
+    vers_ts = init_timestamp
+    for filename in sorted(os.listdir(source_cs)):
+        version = filename.split('-')[2].split('.')[0].zfill(4)
+        if filename.startswith("data-added"):
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
+            vers_ts = vers_ts + timedelta(seconds=1)
+            vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
+            added_triples += list(zip(["<< << "] * len(added_triples),
+                                      added_triples_raw, 
+                                      [">> "] * len(added_triples), 
+                                      [valid_from_predicate] * len(added_triples),
+                                      [vers_ts_str] * len(added_triples), 
+                                      [">> "] * len(added_triples),
+                                      [valid_until_predicate] * len(added_triples),
+                                      [valid_ufn_ts_res] * len(added_triples),
+                                      [' .'] * len(added_triples)))
+        if filename.startswith("data-deleted"):
+            deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
+    # transform all triples in the list to their starvers RDF-star representations
+
+    # Read all cs_del sets into a list in chronological order
+
+    # iterate over all added triples and compare with the first element from the deleted list
+    # if they match, pop the first element from the deleted list (cs_del.pop(0)) 
+    # and replace the artificial end timestamp with the deletion timestamp of the current version
 
     ic0 = Graph()
     ic0.parse(source_ic0)
@@ -149,8 +185,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                     rdf_star_ds = re.sub(pattern=added_triple_pattern,
                                         repl=r'\1{0}\3'.format(vers_ts_str),
                                         string=r'{0}'.format(rdf_star_ds),
-                                        count=1 
-                    )
+                                        count=1)
             with open(destination, "w") as rdf_star_ds_file:
                 rdf_star_ds_file.write(rdf_star_ds)
                                    
