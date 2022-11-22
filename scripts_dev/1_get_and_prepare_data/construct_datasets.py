@@ -140,6 +140,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 cnt = 0
                 cs_del = cs_del_file.readlines()                
                 for triple in cs_del:
+                    cnt = cnt + 1
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))  
