@@ -122,7 +122,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     vers_ts = init_timestamp
     for vers, cs_add_file in sorted(cs_add_files.items()):#
         vers_ts = vers_ts + timedelta(seconds=1)
-        vers_ts_str = datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]        
+        vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
+            ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
+            tz_offset=tz_offset, 
+            datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:
             with open(source_cs + "/" + cs_add_file) as cs_add:
                 for triple in cs_add.readline():
