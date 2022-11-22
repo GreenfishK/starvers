@@ -80,110 +80,75 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset,
                                                             datetimeref=xsd_datetime)
 
-    """ Annotation of initial version triples """
+    # Annotation of initial version triples 
     print("Building version 0. ")
 
     ic0 = Graph()
     ic0.parse(source_ic0)
+    open(destination, "w").write("")
+    rdf_star_ds = open(destination, "a")
 
-    init_ds = []
     if annotation_style == AnnotationStyle.HIERARCHICAL:
         for s, p, o in ic0:
-            init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, init_ts_res,
-                            valid_until_predicate, valid_ufn_ts_res])
-        df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'valid_from_predicate', 'valid_from_timestamp',
-                                                   'valid_until_predicate', 'valid_until_timestamp'])
-        print("Number of data triples: {0}".format(
-            len(df_tb_set.query("valid_until_timestamp == '{0}'".format(valid_ufn_ts_res)))))
+            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} >> {5} {6} .\n".format(s.n3(), p.n3(), o.n3(),
+            valid_from_predicate, init_ts_res, valid_until_predicate, valid_ufn_ts_res))
+        print("Number of data triples: {0}".format(len(ic0)))
     else:
-        assert(annotation_style == AnnotationStyle.FLAT)
         for s, p, o in ic0:
-            init_ds.append([s.n3(), p.n3(), o.n3(), valid_from_predicate, init_ts_res])
-            init_ds.append([s.n3(), p.n3(), o.n3(), valid_until_predicate, valid_ufn_ts_res])
-        df_tb_set = pd.DataFrame(init_ds, columns=['s', 'p', 'o', 'vers_predicate', 'timestamp'])
-        print("Number of data triples: {0}".format(
-            len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
+            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
+            valid_from_predicate, init_ts_res))
+            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
+            valid_until_predicate, valid_ufn_ts_res))
+        print("Number of data triples: {0}".format(len(ic0)/2))
 
-    """ Loading change set files """
-    # build list (version, filename_added, filename_deleted, version_timestamp)
-    new_triples = {}
-    deleted_triples = {}
-    change_sets = []
+    # Load all change set file names into a dict 
+    cs_add_files = {}
+    cs_del_files = {}
 
     if not os.path.exists(source_cs):
-        os.makedirs(source_cs)
+        print("There are is no changeset directory " + source_cs)
+        return
 
     for filename in os.listdir(source_cs):
         version = filename.split('-')[2].split('.')[0].zfill(4)
         if filename.startswith("data-added"):
-            new_triples[version] = filename
+            cs_add_files[version] = filename
         if filename.startswith("data-deleted"):
-            deleted_triples[version] = filename
-    print("{0} change sets are in directory {1}".format(len(new_triples), source_cs))
+            cs_del_files[version] = filename
+    print("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
 
+    # Transforming triples/lines from all loaded change sets into their rdf-star representations
+    # and write then to the final rdf star dataset 
     vers_ts = init_timestamp
-    for vers, new_trpls in sorted(new_triples.items()):
+    for vers, cs_add_file in sorted(cs_add_files.items()):#
         vers_ts = vers_ts + timedelta(seconds=1)
-        change_sets.append((vers, new_trpls, deleted_triples[vers], datetime.strftime(vers_ts,
-                                                                                      "%Y-%m-%dT%H:%M:%S.%f")[:-3]))
-
-    """ Annotation of change set triples """
-    assert last_version - 1 <= len(change_sets)
-    for t in change_sets[0:last_version-1]:
-        print("Building version {0}. ".format(int(t[0]) - 1))
-        
-        """ Annotate added triples using rdf* syntax """
-        cs_add = Graph()
-        cs_add.parse(source_cs + "/" + t[1])
-        valid_from_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=t[3], tz_offset=tz_offset,
-                                                                      datetimeref=xsd_datetime)
-        for s, p, o in cs_add:
-            if annotation_style == AnnotationStyle.FLAT:
-                df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_from_predicate, valid_from_ts_res]
-                df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_until_predicate, valid_ufn_ts_res]
-            if annotation_style == AnnotationStyle.HIERARCHICAL:
-                df_tb_set.loc[len(df_tb_set)] = [s.n3(), p.n3(), o.n3(), valid_from_predicate, valid_from_ts_res,
-                                                 valid_until_predicate, valid_ufn_ts_res]
-
-        """ Annotate deleted triples using rdf* syntax """
-        cs_del = Graph()
-        cs_del.parse(source_cs + "/" + t[2])
-        if annotation_style == AnnotationStyle.FLAT:
-            df_tb_set.set_index(['s', 'p', 'o', 'vers_predicate'], drop=False, inplace=True)
-            for s, p, o in cs_del:
-                df_tb_set.loc[(s.n3(), p.n3(), o.n3(), valid_until_predicate), 'timestamp'] = valid_from_ts_res
-            print("Number of data triples: {0}".format(len(df_tb_set.query("timestamp == '{0}'".format(valid_ufn_ts_res)))))
+        vers_ts_str = datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3]        
         if annotation_style == AnnotationStyle.HIERARCHICAL:
-            df_tb_set.set_index(['s', 'p', 'o'], drop=False, inplace=True)
-            for s, p, o in cs_del:
-                df_tb_set.loc[(s.n3(), p.n3(), o.n3()), 'valid_until_timestamp'] = valid_from_ts_res
-            print("Number of data triples: {0}".format(
-                len(df_tb_set.query("valid_until_timestamp == '{0}'".format(valid_ufn_ts_res)))))
+            with open(source_cs + "/" + cs_add_file) as cs_add:
+                for triple in cs_add.readline():
+                    rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
+                    valid_from_predicate, vers_ts_str, 
+                    valid_until_predicate, valid_ufn_ts_res))
+            with open(source_cs + "/" + cs_del_files[vers]) as cs_del:
+                for triple in cs_del.readline():
+                    rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
+                    valid_from_predicate, vers_ts_str, 
+                    valid_until_predicate, valid_ufn_ts_res))  
+        else:
+            with open(source_cs + "/" + cs_add_file) as cs_add:
+                for triple in cs_add.readline():
+                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
+                    valid_from_predicate, vers_ts_str))
+                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
+                    valid_until_predicate, valid_ufn_ts_res))
+            with open(source_cs + "/" + cs_del_files[vers]) as cs_del:
+                for triple in cs_del.readline():
+                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
+                    valid_from_predicate, vers_ts_str))
+                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
+                    valid_until_predicate, valid_ufn_ts_res))        
+    rdf_star_ds.close()              
 
-    """ Export dataset by reading out each line. Pandas does so far not provide any function 
-    to serialize in ttl oder n3 format"""
-    print("Export data set.")
-    f = open(destination, "w")
-    f.write("")
-    f.close()
-    with open(destination, "a") as output_tb_ds:
-        if annotation_style == AnnotationStyle.FLAT:
-            for index, row in df_tb_set.iterrows():
-                triple = "{0} {1} {2}".format(row['s'], row['p'], row['o'])
-                output_tb_ds.write("<<{triple}>> {vers_p} {ts} .\n".format(triple=triple,
-                                                                           vers_p=row['vers_predicate'],
-                                                                           ts=row['timestamp']))
-        if annotation_style == AnnotationStyle.HIERARCHICAL:
-            for index, row in df_tb_set.iterrows():
-                triple = "{0} {1} {2}".format(row['s'], row['p'], row['o'])
-                output_tb_ds.write("<<<<{triple}>> {vf_ts_p} {vf_ts}>>"
-                                   " {vu_ts_p} {vu_ts} .\n".format(triple=triple,
-                                                                   vf_ts_p=row['valid_from_predicate'],
-                                                                   vf_ts=row['valid_from_timestamp'],
-                                                                   vu_ts_p=row['valid_until_predicate'],
-                                                                   vu_ts=row['valid_until_timestamp']))
-        output_tb_ds.close()
-        return init_timestamp
 
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
     print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
@@ -216,8 +181,8 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     cbng_dataset = cbng_dataset + template.format(str(0).zfill(max_version_digits), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
-    new_triples = {}
-    deleted_triples = {}
+    cs_add_files = {}
+    cs_del_files = {}
     change_sets = []
 
     if not os.path.exists(source_cs):
@@ -226,13 +191,13 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     for filename in os.listdir(source_cs):
         version = int(filename.split('-')[2].split('.')[0].zfill(4)) - 1
         if filename.startswith("data-added"):
-            new_triples[version] = filename
+            cs_add_files[version] = filename
         if filename.startswith("data-deleted"):
-            deleted_triples[version] = filename
-    print("{0} change sets are in directory {1}".format(len(new_triples), source_cs))
+            cs_del_files[version] = filename
+    print("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
 
-    for vers, new_trpls in sorted(new_triples.items()):
-        change_sets.append((vers, new_trpls, deleted_triples[vers]))
+    for vers, cs_add_file in sorted(cs_add_files.items()):
+        change_sets.append((vers, cs_add_file, cs_del_files[vers]))
 
     assert last_version - 1 <= len(change_sets)
     for i, t in enumerate(change_sets[0:last_version-1]):
