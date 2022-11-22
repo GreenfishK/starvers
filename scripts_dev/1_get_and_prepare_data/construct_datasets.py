@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Union
 import re
 import sys
+import re
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -128,7 +129,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:
             with open(source_cs + "/" + cs_add_file_name) as cs_add_file:
-                cnt = 0
                 cs_add = cs_add_file.readlines()
                 for triple in cs_add:
                     cnt = cnt + 1
@@ -136,29 +136,32 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
                 print(source_cs + "/" + cs_add_file_name + ": " + str(cnt))
-            with open(source_cs + "/" + cs_del_file_names[vers]) as cs_del_file:
-                cnt = 0
-                cs_del = cs_del_file.readlines()                
-                for triple in cs_del:
-                    cnt = cnt + 1
-                    rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
-                    valid_from_predicate, vers_ts_str, 
-                    valid_until_predicate, valid_ufn_ts_res))  
-                print(source_cs + "/" + cs_del_file_names[vers] + ": " + str(cnt))
-
         else:
-            with open(source_cs + "/" + cs_add_file) as cs_add:
-                for triple in cs_add.readline():
-                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
-                    valid_from_predicate, vers_ts_str))
-                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
-                    valid_until_predicate, valid_ufn_ts_res))
-            with open(source_cs + "/" + cs_del_files[vers]) as cs_del:
-                for triple in cs_del.readline():
-                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
-                    valid_from_predicate, vers_ts_str))
-                    rdf_star_ds.write("<< {0} >> {1} {2} .\n".format(triple, 
-                    valid_until_predicate, valid_ufn_ts_res))        
+            pass
+            # TODO: implement for FLAT approach
+    
+    rdf_star_ds.close()
+    rdf_star_ds = open(destination, "w").read()
+    for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
+        vers_ts = vers_ts + timedelta(seconds=1)
+        vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
+            ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
+            tz_offset=tz_offset, 
+            datetimeref=xsd_datetime)
+        if annotation_style == AnnotationStyle.HIERARCHICAL:    
+            with open(source_cs + "/" + cs_del_file_name) as cs_del_file:
+                cs_del = cs_del_file.readlines()
+                for triple in cs_del: 
+                    valid_from_ts_pattern = '"' + '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"^^' + xsd_datetime
+                    re.sub(pattern=r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res),
+                           repl=r"\1{0}\2".format(valid_ufn_ts_res),
+                           string=rdf_star_ds 
+                    )           
+        else:
+            pass
+            # TODO: implement for FLAT approach    
+
+
     rdf_star_ds.close()              
 
 
