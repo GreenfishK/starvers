@@ -127,17 +127,19 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             tz_offset=tz_offset, 
             datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:
-            with open(source_cs + "/" + cs_add_file) as cs_add:
+            with open(source_cs + "/" + cs_add_file) as cs_add_file:
                 cnt = 0
-                for triple in cs_add.readline():
+                cs_add = cs_add_file.read()
+                for triple in cs_add:
                     cnt = cnt + 1
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
                 print(source_cs + "/" + cs_add_file + ": " + str(cnt))
-            with open(source_cs + "/" + cs_del_files[vers]) as cs_del:
+            with open(source_cs + "/" + cs_del_files[vers]) as cs_del_file:
                 cnt = 0
-                for triple in cs_del.readline():
+                cs_del = cs_del_file.read()                
+                for triple in cs_del:
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))  
