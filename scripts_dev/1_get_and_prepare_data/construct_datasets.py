@@ -148,10 +148,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
         print("Write deleted triples from changeset {0} to final dataset.".format(cs_del_file_name))
         # Regex patterns
-        valid_from_predicate_p = valid_from_predicate.replace("/", "\/")
-        valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"\^\^' + xsd_datetime.replace("/", "\/")
-        valid_until_predicate_p = valid_until_predicate.replace("/", "\"")
-        valid_until_ts_p = valid_ufn_ts_res.replace("/", "\/").replace("^^", "\^\^")
+        valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"\^\^' + xsd_datetime
         
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
             vers_ts = vers_ts + timedelta(seconds=1)
@@ -164,12 +161,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 for triple in cs_del: 
                     triple = triple[0:-2]
                     added_triple_pattern = r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple,
-                                                                                             valid_from_predicate_p,
+                                                                                             valid_from_predicate,
                                                                                              valid_from_ts_p,
-                                                                                             valid_until_predicate_p, 
-                                                                                             valid_until_ts_p)
-                    print(added_triple_pattern)
-                    re.sub(pattern=added_triple_pattern,
+                                                                                             valid_until_predicate, 
+                                                                                             valid_ufn_ts_res)
+                    print(re.escape(added_triple_pattern))
+                    re.sub(pattern=re.escape(added_triple_pattern),
                            repl=r'\1{0}\2'.format(vers_ts_str),
                            string=rdf_star_ds 
                     )  
