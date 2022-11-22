@@ -134,14 +134,14 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
-                print(source_cs + "/" + cs_add_file + ": " + cnt)
+                print(source_cs + "/" + cs_add_file + ": " + str(cnt))
             with open(source_cs + "/" + cs_del_files[vers]) as cs_del:
                 cnt = 0
                 for triple in cs_del.readline():
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))  
-                print(source_cs + "/" + cs_del_files[vers] + ": " + cnt)
+                print(source_cs + "/" + cs_del_files[vers] + ": " + str(cnt))
 
         else:
             with open(source_cs + "/" + cs_add_file) as cs_add:
