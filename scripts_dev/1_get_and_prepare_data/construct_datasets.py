@@ -144,19 +144,24 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     rdf_star_ds = rdf_star_ds_file.read()
 
     # Replace valid_until timestamps with the artificial end timestamp in the final dataset
+    vers_ts = init_timestamp
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
         print("Write deleted triples from changeset {0} to final dataset.".format(cs_add_file_name))
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
+            vers_ts = vers_ts + timedelta(seconds=1)
+            vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
+                ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
+                tz_offset=tz_offset, 
+                datetimeref=xsd_datetime)            
             with open(source_cs + "/" + cs_del_file_name) as cs_del_file:
                 cs_del = cs_del_file.readlines()
                 for triple in cs_del: 
                     triple = triple[0:-2]
                     valid_from_ts_pattern = '"' + '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"^^' + xsd_datetime
-                    triple_to_outdate = re.sub(pattern=r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res),
-                           repl=r'\1{0}\2'.format(valid_ufn_ts_res),
+                    re.sub(pattern=r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res),
+                           repl=r'\1{0}\2'.format(vers_ts_str),
                            string=rdf_star_ds 
                     )  
-                    print(triple_to_outdate)         
         else:
             pass
             # TODO: implement for FLAT approach    
