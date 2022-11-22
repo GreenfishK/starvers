@@ -86,21 +86,21 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     ic0 = Graph()
     ic0.parse(source_ic0)
-    open(destination, "w").write("")
-    rdf_star_ds = open(destination, "a")
-
-    if annotation_style == AnnotationStyle.HIERARCHICAL:
-        for s, p, o in ic0:
-            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} >> {5} {6} .\n".format(s.n3(), p.n3(), o.n3(),
-            valid_from_predicate, init_ts_res, valid_until_predicate, valid_ufn_ts_res))
-        print("Number of data triples: {0}".format(len(ic0)))
-    else:
-        for s, p, o in ic0:
-            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
-            valid_from_predicate, init_ts_res))
-            rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
-            valid_until_predicate, valid_ufn_ts_res))
-        print("Number of data triples: {0}".format(len(ic0)/2))
+    with open(destination, "w") as rdf_star_ds:
+        rdf_star_ds.write("")
+    with open(destination, "a") as rdf_star_ds:
+        if annotation_style == AnnotationStyle.HIERARCHICAL:
+            for s, p, o in ic0:
+                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} >> {5} {6} .\n".format(s.n3(), p.n3(), o.n3(),
+                valid_from_predicate, init_ts_res, valid_until_predicate, valid_ufn_ts_res))
+            print("Number of data triples: {0}".format(len(ic0)))
+        else:
+            for s, p, o in ic0:
+                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
+                valid_from_predicate, init_ts_res))
+                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
+                valid_until_predicate, valid_ufn_ts_res))
+            print("Number of data triples: {0}".format(len(ic0)/2))
 
     # Load all change set file names into a dict 
     cs_add_file_names = {}
@@ -128,54 +128,31 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             tz_offset=tz_offset, 
             datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:
-            with open(source_cs + "/" + cs_add_file_name) as cs_add_file:
+            with open(destination, "a") as rdf_star_ds, open(source_cs + "/" + cs_add_file_name) as cs_add_file: 
                 cs_add = cs_add_file.readlines()
                 for triple in cs_add:
                     triple = triple[0:-2]
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
-        else:
-            pass
-            # TODO: implement for FLAT approach
-    
-    rdf_star_ds.close()
-    rdf_star_ds_file = open(destination, "r")
-    rdf_star_ds = rdf_star_ds_file.read()
-
-    # Replace valid_until timestamps with the artificial end timestamp in the final dataset
-    vers_ts = init_timestamp
-    for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
-        print("Write deleted triples from changeset {0} to final dataset.".format(cs_del_file_name))
-        valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + re.escape(tz_offset) + '"\^\^' + re.escape(xsd_datetime)
-        
-        if annotation_style == AnnotationStyle.HIERARCHICAL:    
-            vers_ts = vers_ts + timedelta(seconds=1)
-            vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
-                ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
-                tz_offset=tz_offset, 
-                datetimeref=xsd_datetime)            
-            with open(source_cs + "/" + cs_del_file_name) as cs_del_file:
+            with open(destination, "r") as rdf_star_ds_file, open(source_cs + "/" + cs_del_file_name) as cs_del_file:
+                rdf_star_ds = rdf_star_ds_file.read()
                 cs_del = cs_del_file.readlines()
                 for triple in cs_del: 
                     triple = triple[0:-2]
                     added_triple_pattern = r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(re.escape(triple),
-                                                                                             re.escape(valid_from_predicate),
-                                                                                             valid_from_ts_p,
-                                                                                             re.escape(valid_until_predicate), 
-                                                                                             re.escape(valid_ufn_ts_res))
+                                                                                            re.escape(valid_from_predicate),
+                                                                                            valid_from_ts_p,
+                                                                                            re.escape(valid_until_predicate), 
+                                                                                            re.escape(valid_ufn_ts_res))
                     rdf_star_ds = re.sub(pattern=added_triple_pattern,
-                                         repl=r'\1{0}\3'.format(vers_ts_str),
-                                         string=r'{0}'.format(rdf_star_ds),
-                                         count=1 
-                    )  
-        else:
-            pass
-            # TODO: implement for FLAT approach    
-    rdf_star_ds_file.close()  
-    with open(destination, "w") as rdf_star_ds_out:
-        rdf_star_ds_out.write(rdf_star_ds)           
-
+                                        repl=r'\1{0}\3'.format(vers_ts_str),
+                                        string=r'{0}'.format(rdf_star_ds),
+                                        count=1 
+                    )
+            with open(destination, "w") as rdf_star_ds_file:
+                rdf_star_ds_file.write(rdf_star_ds)
+                                   
 
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
     print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
