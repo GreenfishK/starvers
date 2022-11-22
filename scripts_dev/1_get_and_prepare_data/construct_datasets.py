@@ -157,9 +157,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 cs_del = cs_del_file.readlines()
                 for triple in cs_del: 
                     triple = triple[0:-2]
+                    valid_from_ts_pattern = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"^^' + xsd_datetime
                     added_triple_pattern = r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res)
                     print(added_triple_pattern)
-                    valid_from_ts_pattern = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"^^' + xsd_datetime
                     re.sub(pattern=added_triple_pattern,
                            repl=r'\1{0}\2'.format(vers_ts_str),
                            string=rdf_star_ds 
