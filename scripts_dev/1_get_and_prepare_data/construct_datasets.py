@@ -82,7 +82,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                             datetimeref=xsd_datetime)
 
     # Annotation of initial version triples 
-    print("Building version 0. ")
+    print("Write initial snapshot {0} to final dataset ".format(source_ic0))
 
     ic0 = Graph()
     ic0.parse(source_ic0)
@@ -118,10 +118,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             cs_del_file_names[version] = filename
     print("{0} change set pairs are in directory {1}".format(len(cs_add_file_names), source_cs))
 
-    # Transforming triples/lines from all loaded change sets into their rdf-star representations
-    # and write then to the final rdf star dataset 
+    # Write added triples from all changesets to final dataset
     vers_ts = init_timestamp
     for vers, cs_add_file_name in sorted(cs_add_file_names.items()):#
+        print("Write added triples from changeset {0} to final dataset.".format(cs_add_file_name))
         vers_ts = vers_ts + timedelta(seconds=1)
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
             ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
@@ -131,27 +131,31 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             with open(source_cs + "/" + cs_add_file_name) as cs_add_file:
                 cs_add = cs_add_file.readlines()
                 for triple in cs_add:
-                    cnt = cnt + 1
+                    triple = triple[0:-2]
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
                     valid_until_predicate, valid_ufn_ts_res))
-                print(source_cs + "/" + cs_add_file_name + ": " + str(cnt))
         else:
             pass
             # TODO: implement for FLAT approach
     
     rdf_star_ds.close()
     rdf_star_ds = open(destination, "w").read()
+
+    # Replace valid_until timestamps with the artificial end timestamp in the final dataset
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
+        print("Write deleted triples from changeset {0} to final dataset.".format(cs_add_file_name))
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
             with open(source_cs + "/" + cs_del_file_name) as cs_del_file:
                 cs_del = cs_del_file.readlines()
                 for triple in cs_del: 
+                    triple = triple[0:-2]
                     valid_from_ts_pattern = '"' + '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"^^' + xsd_datetime
-                    re.sub(pattern=r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res),
-                           repl=r"\1{0}\2".format(valid_ufn_ts_res),
+                    triple_to_outdate = re.sub(pattern=r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(triple, valid_from_predicate, valid_from_ts_pattern, valid_until_predicate, valid_ufn_ts_res),
+                           repl=r'\1{0}\2'.format(valid_ufn_ts_res),
                            string=rdf_star_ds 
-                    )           
+                    )  
+                    print(triple_to_outdate)         
         else:
             pass
             # TODO: implement for FLAT approach    
