@@ -140,7 +140,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             # TODO: implement for FLAT approach
     
     rdf_star_ds.close()
-    rdf_star_ds = open(destination, "w").read()
+    rdf_star_ds_file = open(destination, "r")
+    rdf_star_ds = rdf_star_ds_file.read()
 
     # Replace valid_until timestamps with the artificial end timestamp in the final dataset
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
@@ -159,9 +160,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         else:
             pass
             # TODO: implement for FLAT approach    
-
-
-    rdf_star_ds.close()              
+    rdf_star_ds_file.close()  
+    with open(destination, "w") as rdf_star_ds_out:
+        rdf_star_ds_out.write(rdf_star_ds)           
 
 
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
