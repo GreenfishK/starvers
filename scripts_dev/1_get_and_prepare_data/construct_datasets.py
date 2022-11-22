@@ -168,7 +168,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                          repl=r'\1{0}\3'.format(vers_ts_str),
                                          string=rdf_star_ds 
                     )  
-                    print(rdf_star_ds)
+                    print("begin " + rdf_star_ds + "end")
         else:
             pass
             # TODO: implement for FLAT approach    
