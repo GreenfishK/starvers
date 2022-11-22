@@ -147,8 +147,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     vers_ts = init_timestamp
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
         print("Write deleted triples from changeset {0} to final dataset.".format(cs_del_file_name))
-        # Regex patterns
-        valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + tz_offset + '"\^\^' + xsd_datetime
+        valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + re.escape(tz_offset) + '"\^\^' + re.escape(xsd_datetime)
         
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
             vers_ts = vers_ts + timedelta(seconds=1)
