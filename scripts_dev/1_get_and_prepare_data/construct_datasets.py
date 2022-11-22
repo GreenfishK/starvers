@@ -143,11 +143,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     rdf_star_ds.close()
     rdf_star_ds = open(destination, "w").read()
     for vers, cs_del_file_name in sorted(cs_del_file_names.items()):
-        vers_ts = vers_ts + timedelta(seconds=1)
-        vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
-            ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
-            tz_offset=tz_offset, 
-            datetimeref=xsd_datetime)
         if annotation_style == AnnotationStyle.HIERARCHICAL:    
             with open(source_cs + "/" + cs_del_file_name) as cs_del_file:
                 cs_del = cs_del_file.readlines()
