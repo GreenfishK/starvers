@@ -115,7 +115,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             cs_add_file_names[version] = filename
         if filename.startswith("data-deleted"):
             cs_del_file_names[version] = filename
-    print("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
+    print("{0} change set pairs are in directory {1}".format(len(cs_add_file_names), source_cs))
 
     # Transforming triples/lines from all loaded change sets into their rdf-star representations
     # and write then to the final rdf star dataset 
