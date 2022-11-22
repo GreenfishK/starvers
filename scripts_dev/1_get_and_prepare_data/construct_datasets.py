@@ -166,7 +166,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                                                              re.escape(valid_ufn_ts_res))
                     rdf_star_ds = re.sub(pattern=added_triple_pattern,
                                          repl=r'\1{0}\3'.format(vers_ts_str),
-                                         string=rdf_star_ds,
+                                         string=r'{0}'.format(rdf_star_ds),
                                          count=1 
                     )  
         else:
