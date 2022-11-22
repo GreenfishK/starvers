@@ -169,7 +169,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                          string=rdf_star_ds,
                                          count=1 
                     )  
-                    print("begin " + rdf_star_ds + "end")
         else:
             pass
             # TODO: implement for FLAT approach    
