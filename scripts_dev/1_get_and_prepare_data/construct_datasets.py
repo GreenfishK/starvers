@@ -129,7 +129,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         if annotation_style == AnnotationStyle.HIERARCHICAL:
             with open(source_cs + "/" + cs_add_file_name) as cs_add_file:
                 cnt = 0
-                cs_add = cs_add_file.read()
+                cs_add = cs_add_file.readlines()
                 for triple in cs_add:
                     cnt = cnt + 1
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
@@ -138,7 +138,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 print(source_cs + "/" + cs_add_file_name + ": " + str(cnt))
             with open(source_cs + "/" + cs_del_file_names[vers]) as cs_del_file:
                 cnt = 0
-                cs_del = cs_del_file.read()                
+                cs_del = cs_del_file.readlines()                
                 for triple in cs_del:
                     rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
                     valid_from_predicate, vers_ts_str, 
