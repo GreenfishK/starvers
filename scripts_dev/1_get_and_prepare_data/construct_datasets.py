@@ -105,7 +105,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             print(added_triples_raw)
             vers_ts = vers_ts + timedelta(seconds=1)
             vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
-            added_triples += list(zip(["<< <<"] * len(added_triples_raw),
+            added_triples += list(zip([r"<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
                                       [valid_from_predicate] * len(added_triples_raw),
