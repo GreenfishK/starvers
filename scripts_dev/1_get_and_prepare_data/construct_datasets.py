@@ -36,6 +36,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         os.makedirs(cb_comp_dir)
 
     total_cnt_triples = 0    
+    total_cnt_rdf_star = 0
 
     for i in range(1, end_vers):
         print("Calculating changeset between version {0} and {1}".format(i, i+1))
@@ -52,6 +53,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
 
         cs_added_str = "\n".join(triple for triple in cs_added if not triple.startswith("#"))
         total_cnt_triples += cs_added_str.count("\n") + 1
+        total_cnt_rdf_star += cs_added_str.count("\n") + 1
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_added_str.count("\n") + 1))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
@@ -64,6 +66,8 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
             cs_deleted_file.write(cs_deleted_str)
         cs_deleted, cs_deleted_str = None, None
     print("The last snapshot (snapshot {0}) has {1} triples".format(end_vers, total_cnt_triples))        
+    print("The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, total_cnt_rdf_star))        
+
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int,
@@ -136,6 +140,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                     result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
         
+    print("The final rdf-star dataset has {0} triples".format(len(result_set)))
     print("Write result string to file.")
     rdf_star_ds_str = ""
     for rdf_star_triple_list in result_set:
