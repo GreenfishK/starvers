@@ -87,7 +87,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     # transform all triples in the list to their starvers RDF-star representations
     added_triples_raw = open(source_ic0, "r").read().split(" .\n")
-    added_triples += list(zip(["<< <<"] * len(added_triples_raw),
+    added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
                              [">>"] * len(added_triples_raw), 
                              [valid_from_predicate] * len(added_triples_raw),
@@ -95,7 +95,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                              [">>"] * len(added_triples_raw),
                              [valid_until_predicate] * len(added_triples_raw),
                              [valid_ufn_ts_res] * len(added_triples_raw),
-                             ['.'] * len(added_triples_raw)))
+                             ['.'] * len(added_triples_raw))))
     vers_ts = init_timestamp
     for filename in sorted(os.listdir(source_cs)):
         version = filename.split('-')[2].split('.')[0].zfill(4)
@@ -103,7 +103,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         if filename.startswith("data-added"):
             added_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
-            added_triples += list(zip(["<< <<"] * len(added_triples_raw),
+            added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
                                       [valid_from_predicate] * len(added_triples_raw),
@@ -111,7 +111,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       [">>"] * len(added_triples_raw),
                                       [valid_until_predicate] * len(added_triples_raw),
                                       [valid_ufn_ts_res] * len(added_triples_raw),
-                                      ['.'] * len(added_triples_raw)))
+                                      ['.'] * len(added_triples_raw))))
         if filename.startswith("data-deleted"):
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
             for i, triple in enumerate(added_triples):
