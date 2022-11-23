@@ -121,6 +121,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
             for i, triple in enumerate(added_triples):
+                print(triple)
                 if len(deleted_triples_raw) == 0:
                     break
                 if triple[1] == deleted_triples_raw[0]:
