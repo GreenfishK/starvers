@@ -125,6 +125,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 if len(deleted_triples_raw) == 0:
                     break
                 if triple[1] == deleted_triples_raw[0]:
+                    print(i, triple[1])
                     added_triples[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
 
