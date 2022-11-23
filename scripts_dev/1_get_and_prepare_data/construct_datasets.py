@@ -85,7 +85,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples = []
     deleted_triples = []
 
-    added_triples_raw += open(source_ic0, "r").read().split(" .\n")
+    added_triples_raw = open(source_ic0, "r").read().split(" .\n")
     added_triples += list(zip(["<< << "] * len(added_triples),
                              added_triples_raw, 
                              [">> "] * len(added_triples), 
