@@ -28,6 +28,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     format: ttl or nt.
 
     """
+
     print("Constructing changesets.")
     cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
@@ -76,11 +77,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
     tz_offset = "+02:00"
-    valid_ufn_ts_res = '"9999-12-31T00:00:00.000{tz_offset}"^^{datetimeref}'.format(tz_offset=tz_offset,
-                                                                                    datetimeref=xsd_datetime)
+    valid_ufn_ts_res = '"9999-12-31T00:00:00.000{tz_offset}"^^{datetimeref}'.format(tz_offset=tz_offset, datetimeref=xsd_datetime)
     sys_ts_formatted = datetime.strftime(init_timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset,
-                                                            datetimeref=xsd_datetime)
+    init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime)
 
     print("Write initial snapshot {0} to final dataset ".format(source_ic0))
     result_set = []
@@ -97,8 +96,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                              [valid_until_predicate] * len(added_triples_raw),
                              [valid_ufn_ts_res] * len(added_triples_raw),
                              ['.'] * len(added_triples_raw))))
+
+    # Map versions to files in chronological orders
+    change_sets = {}
     for filename in sorted(os.listdir(source_cs)):
-        version = filename.split('-')[1][-1:] #.zfill(4)
+        version = filename.split('-')[1][-1:]
+        change_sets[filename] = version
+
+    # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
+    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=int(version))
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         
@@ -136,6 +142,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
+    """
+    TODO: write docu
+    """
+
     print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
 
     def split_prefixes_dataset(dataset: str) -> list:
@@ -152,7 +162,6 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         dataset_without_prefixes = re.sub(pattern, "", dataset)
 
         return [prefixes_list, dataset_without_prefixes]
-
 
     print("Building version {0}. ".format(str(0)))
     cbng_dataset = ""
@@ -219,7 +228,6 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
         cbng_dataset = cbng_dataset + template.format(str(i+1).zfill(max_version_digits), cs_add, cs_del)
 
-    
     print("Export data set.")
     f = open(destination, "w")
     f.write("\n".join(["@prefix " + key + ":" + value + " ." for key, value in prefixes.items()]) + "\n" + cbng_dataset)
@@ -227,10 +235,12 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
 
 def construct_icng_ds(source: str, destination: str, last_version: int):
+    """
+    TODO: write docu
+    """
+
     print("Constructing the ICNG dataset with ICs as named graphs.")
-
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
-
     if not os.path.exists(source):
         os.makedirs(source)
 
@@ -249,8 +259,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
         f.close()
 
 
-
-""" Parameters and function calls """
+############################################# Parameters and function calls #############################################
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
