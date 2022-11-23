@@ -86,7 +86,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     deleted_triples = []
 
     added_triples_raw = open(source_ic0, "r").read().split(" .\n")
-    print(added_triples_raw)
     added_triples += list(zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
                              [">>"] * len(added_triples_raw), 
@@ -96,16 +95,14 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                              [valid_until_predicate] * len(added_triples_raw),
                              [valid_ufn_ts_res] * len(added_triples_raw),
                              ['.'] * len(added_triples_raw)))
-    print(added_triples)
     vers_ts = init_timestamp
     for filename in sorted(os.listdir(source_cs)):
         version = filename.split('-')[2].split('.')[0].zfill(4)
         if filename.startswith("data-added"):
             added_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
-            print(added_triples_raw)
             vers_ts = vers_ts + timedelta(seconds=1)
             vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
-            added_triples += list(zip([r"<< <<"] * len(added_triples_raw),
+            added_triples += list(zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
                                       [valid_from_predicate] * len(added_triples_raw),
@@ -117,10 +114,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         if filename.startswith("data-deleted"):
             pass
             #deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
-    print(added_triples)
-    with open(destination, "w") as f:
-        wr = csv.writer(f, delimiter=" ", escapechar="|", quoting=csv.QUOTE_NONE)
-        wr.writerows(added_triples)
+    rdf_star_ds_str = ""
+    for rdf_star_triple_list in added_triples:
+        rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
+    with open(destination, "w") as rdf_star_ds_file:
+        rdf_star_ds_file.write(rdf_star_ds_str)
     # transform all triples in the list to their starvers RDF-star representations
 
     # Read all cs_del sets into a list in chronological order
