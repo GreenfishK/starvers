@@ -116,6 +116,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
         if filename.startswith("data-deleted"):
+            # Reset timestamp
+            vers_ts = init_timestamp
+            
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
             for i, triple in enumerate(added_triples):
                 if len(deleted_triples_raw) == 0:
