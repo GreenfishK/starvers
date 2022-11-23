@@ -114,11 +114,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       ['.'] * len(added_triples_raw))))
         if filename.startswith("data-deleted"):
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
+            print(deleted_triples_raw)
+            print(len(deleted_triples_raw))
             for i, triple in enumerate(added_triples):
                 if triple[1] == deleted_triples_raw[0]:
-                    print(type(added_triples[i][7]))
-                    print(added_triples[i])
-                    print(added_triples[i][7])
                     added_triples[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
 
