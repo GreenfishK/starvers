@@ -95,6 +95,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                              [valid_until_predicate] * len(added_triples),
                              [valid_ufn_ts_res] * len(added_triples),
                              [' .'] * len(added_triples)))
+    print(added_triples)
     vers_ts = init_timestamp
     for filename in sorted(os.listdir(source_cs)):
         version = filename.split('-')[2].split('.')[0].zfill(4)
@@ -114,6 +115,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         if filename.startswith("data-deleted"):
             pass
             #deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
+    print(added_triples)
     with open(destination, "w") as f:
         wr = csv.writer(f, delimiter=" ")
         wr.writerows(added_triples)
