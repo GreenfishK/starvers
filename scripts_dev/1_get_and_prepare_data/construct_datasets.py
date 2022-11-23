@@ -53,7 +53,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
 
         cs_added_str = "\n".join(triple for triple in cs_added if not triple.startswith("#"))
         total_cnt_triples += len(cs_added)
-        total_cnt_rdf_star += len(cs_added)
+        total_cnt_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_added_str.count("\n") + 1))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
