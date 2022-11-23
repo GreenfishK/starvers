@@ -65,7 +65,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
             cs_deleted_file.write(cs_deleted_str)
         cs_deleted, cs_deleted_str = None, None
-    print("The last snapshot (snapshot {0}) has {1} triples".format(end_vers, total_cnt_triples))        
+    print("From the first to the last snapshot {1} triples were added (net)".format(end_vers, total_cnt_triples))        
     print("The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, total_cnt_rdf_star))        
 
 
