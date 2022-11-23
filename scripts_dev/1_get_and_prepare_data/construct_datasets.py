@@ -81,14 +81,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                                             datetimeref=xsd_datetime)
 
     print("Write initial snapshot {0} to final dataset ".format(source_ic0))
-    # Read ic0 + all cs_add sets into list in chronological order
-    added_triples = []
-    deleted_triples = []
+    result_set = []
 
     # transform all triples in the list to their starvers RDF-star representations
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
-    added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
+    result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
                              [">>"] * len(added_triples_raw), 
                              [valid_from_predicate] * len(added_triples_raw),
@@ -98,15 +96,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                              [valid_ufn_ts_res] * len(added_triples_raw),
                              ['.'] * len(added_triples_raw))))
     for filename in sorted(os.listdir(source_cs)):
-        print(filename)
         version = filename.split('-')[1][-1:] #.zfill(4)
         vers_ts = init_timestamp + timedelta(seconds=int(version))
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
-        print(vers_ts_str)
+        
         if filename.startswith("data-added"):
+            print("Read changeset {0} from filesystem and add it to the result set.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
-            added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
+            result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
                                       [valid_from_predicate] * len(added_triples_raw),
@@ -116,105 +114,25 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
         if filename.startswith("data-deleted"):
-            # Reset timestamp
-            vers_ts = init_timestamp
-            
+            print("Read changeset {0} from filesystem and remove all the triples from the result set that match with the triples in {0}.".format(filename))
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
-            print(deleted_triples_raw)
-            for i, triple in enumerate(added_triples):
-                print(triple)
+            for i, triple in enumerate(result_set):
                 if len(deleted_triples_raw) == 0:
                     break
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
-                    print("yeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeees", i, triple[1])
-                    added_triples[i][7] = vers_ts_str
+                    result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
-
-    # Read all cs_del sets into a list in chronological order
-
-    # iterate over all added triples and compare with the first element from the deleted list
-    # if they match, pop the first element from the deleted list (cs_del.pop(0)) 
-    # and replace the artificial end timestamp with the deletion timestamp of the current version
         
-    # Write result string to file
+    print("Write result string to file.")
     rdf_star_ds_str = ""
-    for rdf_star_triple_list in added_triples:
+    for rdf_star_triple_list in result_set:
         assert rdf_star_triple_list[1][-2:] == " ."
         rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
         rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(rdf_star_ds_str)
 
-    """ic0 = Graph()
-    ic0.parse(source_ic0)
-    with open(destination, "w") as rdf_star_ds:
-        rdf_star_ds.write("")
-    with open(destination, "a") as rdf_star_ds:
-        if annotation_style == AnnotationStyle.HIERARCHICAL:
-            for s, p, o in ic0:
-                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} >> {5} {6} .\n".format(s.n3(), p.n3(), o.n3(),
-                valid_from_predicate, init_ts_res, valid_until_predicate, valid_ufn_ts_res))
-            print("Number of data triples: {0}".format(len(ic0)))
-        else:
-            for s, p, o in ic0:
-                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
-                valid_from_predicate, init_ts_res))
-                rdf_star_ds.write("<< << {0} {1} {2} >> {3} {4} .\n".format(s.n3(), p.n3(), o.n3(),
-                valid_until_predicate, valid_ufn_ts_res))
-            print("Number of data triples: {0}".format(len(ic0)/2))
-
-    # Load all change set file names into a dict 
-    cs_add_file_names = {}
-    cs_del_file_names = {}
-
-    if not os.path.exists(source_cs):
-        print("There are is no changeset directory " + source_cs)
-        return
-
-    for filename in os.listdir(source_cs):
-        version = filename.split('-')[2].split('.')[0].zfill(4)
-        if filename.startswith("data-added"):
-            cs_add_file_names[version] = filename
-        if filename.startswith("data-deleted"):
-            cs_del_file_names[version] = filename
-    print("{0} change set pairs are in directory {1}".format(len(cs_add_file_names), source_cs))
-
-    # Write added triples from all changesets to final dataset
-    vers_ts = init_timestamp
-    for vers, cs_add_file_name in sorted(cs_add_file_names.items()):#
-        print("Write added triples from changeset {0} to final dataset.".format(cs_add_file_name))
-        vers_ts = vers_ts + timedelta(seconds=1)
-        vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(
-            ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], 
-            tz_offset=tz_offset, 
-            datetimeref=xsd_datetime)
-        if annotation_style == AnnotationStyle.HIERARCHICAL:
-            with open(destination, "a") as rdf_star_ds, open(source_cs + "/" + cs_add_file_name) as cs_add_file: 
-                cs_add = cs_add_file.readlines()
-                for triple in cs_add:
-                    triple = triple[0:-2]
-                    rdf_star_ds.write("<< << {0} >> {1} {2} >> {3} {4} .\n".format(triple, 
-                    valid_from_predicate, vers_ts_str, 
-                    valid_until_predicate, valid_ufn_ts_res))
-            with open(destination, "r") as rdf_star_ds_file, open(source_cs + "/" + cs_del_file_names[vers]) as cs_del_file:
-                rdf_star_ds = rdf_star_ds_file.read()
-                cs_del = cs_del_file.readlines()
-                valid_from_ts_p = '"' + r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.000' + re.escape(tz_offset) + '"\^\^' + re.escape(xsd_datetime)
-                for triple in cs_del: 
-                    triple = triple[0:-2]
-                    added_triple_pattern = r'(<< << {0} >> {1} {2} >> {3} )({4})( .)'.format(re.escape(triple),
-                                                                                            re.escape(valid_from_predicate),
-                                                                                            valid_from_ts_p,
-                                                                                            re.escape(valid_until_predicate), 
-                                                                                            re.escape(valid_ufn_ts_res))
-                    rdf_star_ds = re.sub(pattern=added_triple_pattern,
-                                        repl=r'\1{0}\3'.format(vers_ts_str),
-                                        string=r'{0}'.format(rdf_star_ds),
-                                        count=1)
-            with open(destination, "w") as rdf_star_ds_file:
-                rdf_star_ds_file.write(rdf_star_ds)"""
-                                   
-
+  
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
     print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
 
