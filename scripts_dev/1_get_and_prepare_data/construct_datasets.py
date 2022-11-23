@@ -86,7 +86,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     deleted_triples = []
 
     # transform all triples in the list to their starvers RDF-star representations
-    added_triples_raw = open(source_ic0, "r").read().split(" .\n")
+    added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
@@ -104,7 +104,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         print(vers_ts_str)
         if filename.startswith("data-added"):
-            added_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
             added_triples += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
@@ -119,7 +119,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             # Reset timestamp
             vers_ts = init_timestamp
             
-            deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
+            deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             print(deleted_triples_raw)
             for i, triple in enumerate(added_triples):
                 print(triple)
@@ -139,6 +139,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # Write result string to file
     rdf_star_ds_str = ""
     for rdf_star_triple_list in added_triples:
+        assert rdf_star_triple_list[1][-2:] == " ."
+        rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
         rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(rdf_star_ds_str)
