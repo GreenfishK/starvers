@@ -87,7 +87,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     added_triples_raw = open(source_ic0, "r").read().split(" .\n")
     print(added_triples_raw)
-    added_triples += list(zip([r"<< << "] * len(added_triples_raw),
+    added_triples += list(zip(["<< << "] * len(added_triples_raw),
                              added_triples_raw, 
                              [">> "] * len(added_triples_raw), 
                              [valid_from_predicate] * len(added_triples_raw),
@@ -119,7 +119,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             #deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
     print(added_triples)
     with open(destination, "w") as f:
-        wr = csv.writer(f, delimiter=" ")
+        wr = csv.writer(f, delimiter="", quoting=csv.QUOTE_NONE)
         wr.writerows(added_triples)
     # transform all triples in the list to their starvers RDF-star representations
 
