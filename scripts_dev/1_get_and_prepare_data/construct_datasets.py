@@ -60,15 +60,17 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         cs_deleted, cs_deleted_str = None, None
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime,
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime,
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
-    :param: cb_rel_path: The name of the directory where the change sets are stored. This is not the absolute
-    but only the relative path to "/starvers/rawdata/<dataset>/
+    :param: source_ic0: The path in the filesystem to the initial snapshot.
+    :param: destination: The path in the filesystem to the resulting dataset.
+    :param: init_timestamp: The initial timestamp that is being incremented by 1sec for each dataset version/pair of changesets.
+    :param: annotation_style: The starvers rdf-star paradigm to be used during the dataset construction.
 
-    :return: initial timestamp. This is only returned for some necessary corrections that need the initial timestamp
-    from which one can get to the desired version timestamp.
+    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
+    
     print("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
@@ -273,7 +275,6 @@ for dataset in datasets:
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttls",
-                        last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
