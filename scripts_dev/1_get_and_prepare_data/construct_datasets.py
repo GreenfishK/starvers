@@ -61,7 +61,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         cs_deleted, cs_deleted_str = None, None
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime,
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version=total_versions,
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
@@ -100,7 +100,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # Map versions to files in chronological orders
     change_sets = {}
     for filename in sorted(os.listdir(source_cs)):
-        version = filename.split('-')[1][-1:]
+        version = filename.split('-')[2].split('.')[1].zfill(len(str(total_versions))) - 1
         change_sets[filename] = version
 
     # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
@@ -284,6 +284,7 @@ for dataset in datasets:
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttls",
+                        last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
