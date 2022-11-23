@@ -120,7 +120,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             vers_ts = init_timestamp
             
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().split(" .\n")
+            print(deleted_triples_raw)
             for i, triple in enumerate(added_triples):
+                print(triple)
                 if len(deleted_triples_raw) == 0:
                     break
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
