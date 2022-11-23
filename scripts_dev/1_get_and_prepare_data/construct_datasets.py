@@ -9,6 +9,7 @@ from typing import Union
 import re
 import sys
 import re
+import csv
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -111,7 +112,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       [valid_ufn_ts_res] * len(added_triples),
                                       [' .'] * len(added_triples)))
         if filename.startswith("data-deleted"):
-            deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
+            pass
+            #deleted_triples += open(source_cs + "/" + filename, "r").read().splitlines()
+    with open(destination, "w") as f:
+        wr = csv.writer(f, delimiter=" ")
+        wr.writerows(added_triples)
     # transform all triples in the list to their starvers RDF-star representations
 
     # Read all cs_del sets into a list in chronological order
@@ -120,7 +125,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # if they match, pop the first element from the deleted list (cs_del.pop(0)) 
     # and replace the artificial end timestamp with the deletion timestamp of the current version
 
-    ic0 = Graph()
+    """ic0 = Graph()
     ic0.parse(source_ic0)
     with open(destination, "w") as rdf_star_ds:
         rdf_star_ds.write("")
@@ -187,7 +192,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                         string=r'{0}'.format(rdf_star_ds),
                                         count=1)
             with open(destination, "w") as rdf_star_ds_file:
-                rdf_star_ds_file.write(rdf_star_ds)
+                rdf_star_ds_file.write(rdf_star_ds)"""
                                    
 
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
