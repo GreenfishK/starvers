@@ -100,12 +100,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # Map versions to files in chronological orders
     change_sets = {}
     for filename in sorted(os.listdir(source_cs)):
-        version = filename.split('-')[2].split('.')[1].zfill(len(str(last_version))) - 1
+        version = int(filename.split('-')[2].split('.')[1].zfill(len(str(last_version)))) - 1
         change_sets[filename] = version
 
     # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
-        vers_ts = init_timestamp + timedelta(seconds=int(version))
+        vers_ts = init_timestamp + timedelta(seconds=version)
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         
         if filename.startswith("data-added"):
