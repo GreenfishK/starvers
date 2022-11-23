@@ -100,7 +100,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # Map versions to files in chronological orders
     change_sets = {}
     for filename in sorted(os.listdir(source_cs)):
-        version = int(filename.split('-')[2].split('.')[1].zfill(len(str(last_version)))) - 1
+        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
         change_sets[filename] = version
 
     # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
