@@ -140,7 +140,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                 if len(deleted_triples_raw) == 0:
                     break
                 # debug
-                if deleted_triples_raw[0] == '<http://dbpedia.org/resource/Doctor_Who_(series_9)> <http://dbpedia.org/property/airdate> "39"^^<http://www.w3.org/2001/XMLSchema#integer> .':
+                if '<http://dbpedia.org/resource/Doctor_Who_(series_9)> <http://dbpedia.org/property/airdate> "39"^^<http://www.w3.org/2001/XMLSchema#integer> .' in deleted_triples_raw:
                     print(i)
                 ###                
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
