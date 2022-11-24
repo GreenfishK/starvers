@@ -37,6 +37,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
 
     total_cnt_triples = 0    
     total_cnt_rdf_star = 0
+    valid_trpls_last_ic = 0
 
     for i in range(1, end_vers):
         print("Calculating changeset between version {0} and {1}".format(i, i+1))
@@ -54,19 +55,21 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         cs_added_str = "\n".join(triple for triple in cs_added if not triple.startswith("#"))
         total_cnt_triples += len(cs_added)
         total_cnt_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
+        valid_trpls_last_ic = len(ic2) if i == end_vers - 1 else 0
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_added_str.count("\n") + 1))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
         cs_added, cs_added_str = None, None
 
         cs_deleted_str = "\n".join(triple for triple in cs_deleted if not triple.startswith("#"))
-        total_cnt_triples = total_cnt_triples - len(cs_deleted)
+        total_cnt_triples -= len(cs_deleted)
         print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_deleted_str.count("\n") + 1))
         with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
             cs_deleted_file.write(cs_deleted_str)
         cs_deleted, cs_deleted_str = None, None
     print("From the first to the last snapshot {1} triples were added (net)".format(end_vers, total_cnt_triples))        
     print("The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, total_cnt_rdf_star))        
+    print("Triples that are still valid: {0}".format(valid_trpls_last_ic))
 
 
 
