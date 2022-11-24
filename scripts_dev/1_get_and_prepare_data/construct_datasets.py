@@ -2,7 +2,6 @@ from pathlib import Path
 from datetime import datetime
 from datetime import timedelta, timezone
 import os
-import pandas as pd
 from rdflib import Graph, compare
 from enum import Enum
 from typing import Union
@@ -11,15 +10,14 @@ import sys
 import re
 import csv
 
-desired_width = 320
-pd.set_option('display.width', desired_width)
-pd.set_option('display.max_columns', 10)
-
+# Global variables for assertions
+# cnt_net_triples_added = 0
+# cnt_triples_rdf_star = 0
+# cnt_valid_triples_last_ic = 0
 
 class AnnotationStyle(Enum):
     HIERARCHICAL = 1
     FLAT = 2
-
 
 def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int):
     """
@@ -35,9 +33,9 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         print("Create directory: " + cb_comp_dir)
         os.makedirs(cb_comp_dir)
 
-    total_cnt_triples = 0    
-    total_cnt_rdf_star = 0
-    valid_trpls_last_ic = 0
+    cnt_net_triples_added = 0    
+    cnt_triples_rdf_star = 0
+    cnt_valid_triples_last_ic = 0
 
     for i in range(1, end_vers):
         print("Calculating changeset between version {0} and {1}".format(i, i+1))
@@ -45,32 +43,37 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(zf))
 
         with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
-            ic1 = set(ic1_file.read().splitlines())
-            ic2 = set(ic2_file.read().splitlines())
+            ic1 = ic1_file.read().splitlines()
+            ic2 = ic2_file.read().splitlines()
+        
+        ic1 = set([line for line in ic1 if not line.startswith("#")])
+        ic2 = set([line for line in ic2 if not line.startswith("#")])
 
         cs_added = ic2.difference(ic1)
         cs_deleted = ic1.difference(ic2)
         assert len(ic2) - len(ic1) == len(cs_added) - len(cs_deleted)
 
-        cs_added_str = "\n".join(triple for triple in cs_added if not triple.startswith("#"))
-        total_cnt_triples += len(cs_added)
-        total_cnt_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
-        valid_trpls_last_ic = len(ic2) if i == end_vers - 1 else 0
-        print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_added_str.count("\n") + 1))
+        cs_added_str = "\n".join(triple for triple in cs_added) # if not triple.startswith("#")
+        cnt_net_triples_added += len(cs_added)
+        cnt_triples_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
+        cnt_valid_triples_last_ic = len(ic2) if i == end_vers - 1 else 0
+        print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
         cs_added, cs_added_str = None, None
 
-        cs_deleted_str = "\n".join(triple for triple in cs_deleted if not triple.startswith("#"))
-        total_cnt_triples -= len(cs_deleted)
-        print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, cs_deleted_str.count("\n") + 1))
+        cs_deleted_str = "\n".join(triple for triple in cs_deleted) # if not triple.startswith("#")
+        cnt_net_triples_added -= len(cs_deleted)
+        print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
         with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
             cs_deleted_file.write(cs_deleted_str)
         cs_deleted, cs_deleted_str = None, None
-    print("From the first to the last snapshot {1} triples were added (net)".format(end_vers, total_cnt_triples))        
-    print("The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, total_cnt_rdf_star))        
-    print("Triples that are still valid: {0}".format(valid_trpls_last_ic))
-
+    
+    print("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
+    print("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
+    # sed -n "$=" alldata.TB_star_hierarchical.ttls        
+    print("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
+    # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttls    
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int,
@@ -112,6 +115,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # Map versions to files in chronological orders
     change_sets = {}
     for filename in sorted(os.listdir(source_cs)):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue 
         version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
         change_sets[filename] = version
 
@@ -133,16 +138,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                                       [valid_until_predicate] * len(added_triples_raw),
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
+            result_set = sorted(result_set, key=lambda x: x[1])                       
         if filename.startswith("data-deleted"):
-            print("Read changeset {0} from filesystem and remove all the triples from the result set that match with the triples in {0}.".format(filename))
+            print("Read changeset {0} from filesystem".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
-            for i, triple in enumerate(sorted(result_set, key=lambda x: x[1])):
+            
+            print("Remove all the triples from the result set that match with the triples in {0}.".format(filename))
+            for i, triple in enumerate(result_set):
                 if len(deleted_triples_raw) == 0:
-                    break
-                # debug
-                if deleted_triples_raw[0] == '<http://dbpedia.org/resource/Doctor_Who_(series_9)> <http://dbpedia.org/property/airdate> "39"^^<http://www.w3.org/2001/XMLSchema#integer> .':
-                    print(i)
-                ###                
+                    break  
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
                     result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
@@ -200,6 +204,8 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
         os.makedirs(source_cs)
 
     for filename in os.listdir(source_cs):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue 
         version = int(filename.split('-')[2].split('.')[0].zfill(4)) - 1
         if filename.startswith("data-added"):
             cs_add_files[version] = filename
