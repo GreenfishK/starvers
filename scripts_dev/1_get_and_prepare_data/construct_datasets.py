@@ -137,6 +137,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
             print("Read changeset {0} from filesystem and remove all the triples from the result set that match with the triples in {0}.".format(filename))
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             for i, triple in enumerate(result_set):
+                # debug
+                if triple[1] == '<http://dbpedia.org/resource/Doctor_Who_(series_9)> <http://dbpedia.org/property/airdate> "39"^^<http://www.w3.org/2001/XMLSchema#integer>':
+                    print(i)
+                    print(deleted_triples_raw[0])
+                ###
                 if len(deleted_triples_raw) == 0:
                     break
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
