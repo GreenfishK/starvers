@@ -43,8 +43,8 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
             ic1 = ic1_file.read().splitlines()
             ic2 = ic2_file.read().splitlines()
         
-        ic1 = set([line for line in ic1 if not line.startswith("#")])
-        ic2 = set([line for line in ic2 if not line.startswith("#")])
+        ic1 = set([line for line in ic1 if not (line.startswith("#") or len(line) == 0)])
+        ic2 = set([line for line in ic2 if not (line.startswith("#") or len(line) == 0)])
 
         cs_added = ic2.difference(ic1)
         cs_deleted = ic1.difference(ic2)
