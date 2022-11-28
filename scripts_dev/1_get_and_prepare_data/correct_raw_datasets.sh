@@ -28,6 +28,7 @@ for dataset in ${datasets[@]}; do
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
             ;;
+            echo $file_var
         esac
         if [ "$dataset" == "beara" ]; then
             echo "Correcting $dataset for $policy policy"
