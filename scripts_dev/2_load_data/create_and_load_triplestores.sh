@@ -22,8 +22,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             cb) datasetDirOrFile=alldata.CB_computed.ttl;;
             cbng) datasetDirOrFile=alldata.CBNG.trig;;
             tb) datasetDirOrFile=alldata.TB.nq;;
-            tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
-            tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
+            tbsf) datasetDirOrFile=alldata.TB_star_flat.ttls;;
+            tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttls;;
             *)
                 echo "Policy must be in ic, cb, tb, tbsf, tbsh"
                 exit 2
