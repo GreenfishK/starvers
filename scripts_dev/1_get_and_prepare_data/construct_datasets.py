@@ -288,7 +288,7 @@ LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 datasets_cmd = sys.argv[1]
 datasets = datasets_cmd.split(" ")
-dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':32, 'beart': 4}
+dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4}
 ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6}
 
 for dataset in datasets:
