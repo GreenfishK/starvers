@@ -22,8 +22,8 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) datasetDirOrFile=alldata.IC.nt file_var='';;
-            tb) datasetDirOrFile=alldata.TB.nq versions=1 file_var='/${c}.nt';;
+            ic) datasetDirOrFile=alldata.IC.nt file_var='/${c}.nt';;
+            tb) datasetDirOrFile=alldata.TB.nq versions=1 file_var='';;
             *)
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
