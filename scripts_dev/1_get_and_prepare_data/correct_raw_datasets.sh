@@ -28,8 +28,9 @@ for dataset in ${datasets[@]}; do
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
             ;;
-            echo $file_var
         esac
+        echo $file_var
+
         if [ "$dataset" == "beara" ]; then
             echo "Correcting $dataset for $policy policy"
             for c in $(seq -f $file_name_struc 1 ${versions})
