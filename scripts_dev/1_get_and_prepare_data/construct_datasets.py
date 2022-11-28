@@ -1,14 +1,10 @@
-from pathlib import Path
 from datetime import datetime
 from datetime import timedelta, timezone
 import os
-from rdflib import Graph, compare
 from enum import Enum
-from typing import Union
 import re
 import sys
 import re
-import csv
 
 # Global variables for assertions
 # cnt_net_triples_added = 0
