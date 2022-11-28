@@ -84,6 +84,7 @@ for dataset in ${datasets[@]}; do
             echo "Correcting $dataset for $policy policy"
             for c in $(seq -f $file_name_struc 1 ${versions})
             do
+                echo ${file_var}
                 file=`eval echo ${file_var}`
                 ic_file=$baseDir/rawdata/$dataset/${datasetDirOrFile}${file}
                 echo "$ic_file"
