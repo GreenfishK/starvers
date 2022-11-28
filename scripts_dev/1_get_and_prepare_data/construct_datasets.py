@@ -88,6 +88,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     """
     
     print("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
+    # Constants
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
@@ -96,12 +97,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     sys_ts_formatted = datetime.strftime(init_timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
     init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime)
 
-    print("Write initial snapshot {0} to final dataset ".format(source_ic0))
     result_set = []
-
-    # transform all triples in the list to their starvers RDF-star representations
+    print("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
+    # transform all triples in the list to their starvers RDF-star representations
     result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
                              [">>"] * len(added_triples_raw), 
@@ -126,9 +126,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         
         if filename.startswith("data-added"):
-            print("Read changeset {0} from filesystem and add it to the result set.".format(filename))
+            print("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
+
+            print("Add changeset to RDF-star dataset.")
             result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
@@ -141,10 +143,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
             result_set = sorted(result_set, key=lambda x: x[1])       
             print("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
         if filename.startswith("data-deleted"):
-            print("Read changeset {0} from filesystem".format(filename))
+            print("Read negative changeset {0} into memory".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             
-            print("Remove all the triples from the result set that match with the triples in {0}.".format(filename))
+            print("Remove all the triples from the RDF-star dataset that match with the triples in {0}.".format(filename))
             for i, triple in enumerate(result_set):
                 if len(deleted_triples_raw) == 0:
                     break  
@@ -152,8 +154,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                     result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
         
-    print("The final rdf-star dataset has {0} triples".format(len(result_set)))
-    print("Write result string to file.")
+    print("The final RDF-star dataset has {0} triples".format(len(result_set)))
+    print("Write RDF-star dataset from memory to file.")
     rdf_star_ds_str = ""
     for rdf_star_triple_list in result_set:
         assert rdf_star_triple_list[1][-2:] == " ."
