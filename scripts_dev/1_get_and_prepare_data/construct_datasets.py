@@ -34,9 +34,10 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     cnt_valid_triples_last_ic = 0
 
     for i in range(1, end_vers):
-        print("Calculating changeset between version {0} and {1}".format(i, i+1))
         ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(zf))
         ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(zf))
+        print("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(zf), str(i+1).zfill(zf)))
+
 
         with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
             ic1 = ic1_file.read().splitlines()
@@ -52,7 +53,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
         cs_added_str = "\n".join(triple for triple in cs_added) 
         cnt_net_triples_added += len(cs_added)
         cnt_triples_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
-        cnt_valid_triples_last_ic = len(ic2) if i == end_vers else 0
+        cnt_valid_triples_last_ic = len(ic2) if i == end_vers - 1 else 0
         print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
