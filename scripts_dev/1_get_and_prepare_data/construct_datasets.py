@@ -143,7 +143,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
             print("Read negative changeset {0} into memory".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             
-            print("Remove all the triples from the RDF-star dataset that match with the triples in {0}.".format(filename))
+            print("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
             for i, triple in enumerate(result_set):
                 if len(deleted_triples_raw) == 0:
                     break  
