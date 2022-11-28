@@ -138,7 +138,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                                       [valid_until_predicate] * len(added_triples_raw),
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
-            result_set = sorted(result_set, key=lambda x: x[1])                       
+            result_set = sorted(result_set, key=lambda x: x[1])       
+            print("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
         if filename.startswith("data-deleted"):
             print("Read changeset {0} from filesystem".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
