@@ -13,7 +13,7 @@ for dataset in ${datasets[@]}; do
         beara) versions=58 file_name_struc="%01g";; 
         bearb_hour) versions=1299 file_name_struc="%06g";; 
         bearb_day) versions=89 file_name_struc="%06g";;
-        bearc) versions=32 file_name_struc="%01g";;
+        bearc) versions=33 file_name_struc="%01g";;
         *)
             echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc"
             exit 2
@@ -22,7 +22,7 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) datasetDirOrFile=alldata.IC.nt file_var=/;;
+            ic) datasetDirOrFile=alldata.IC.nt file_var='';;
             tb) datasetDirOrFile=alldata.TB.nq versions=1 file_var='/${c}.nt';;
             *)
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
