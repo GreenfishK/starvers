@@ -3,7 +3,7 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
-policies=("tb" "ic") # only raw datasets
+policies=("ic" "tb") # only raw datasets. Don't change order!
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
@@ -59,9 +59,9 @@ for dataset in ${datasets[@]}; do
             # Comment out that invalid triple in the dataset
             while : ; do   
                 invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
+                [[ ! -z "$invalid_line" ]] || break
                 echo "$invalid_line" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt     
                 sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path      
-            [[ ! -z "$invalid_line" ]] || break
             done
 
             cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
