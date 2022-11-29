@@ -68,6 +68,7 @@ for dataset in ${datasets[@]}; do
             elif
                 cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
+            fi
         done
     done
 done
