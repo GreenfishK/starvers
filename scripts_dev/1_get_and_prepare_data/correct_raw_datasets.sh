@@ -13,7 +13,6 @@ export FUSEKI_HOME=/jena-fuseki
 > $baseDir/output/logs/corrections.txt
 mkdir -p ${baseDir}/databases/preprocessing
 rm -rf ${baseDir}/configs/preprocessing/*
-rm -rf configs/preprocessing/*
 
 echo "Start corrections"
 for dataset in ${datasets[@]}; do
