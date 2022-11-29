@@ -63,9 +63,11 @@ for dataset in ${datasets[@]}; do
                 echo "$invalid_line" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt     
                 sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path      
             done
-
-            cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
-            echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
+            if [ ! -z "$invalid_line" ]; then
+                echo "$ds_abs_path has no errors."
+            elif
+                cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
+                echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
         done
     done
 done
