@@ -8,7 +8,6 @@ datasets=("${datasets}") # beara bearb_hour bearb_day bearc
 
 # Dirs and files
 > $baseDir/output/logs/corrections.txt
-> $baseDir/output/logs/invalid_triples.txt
 mkdir -p ${baseDir}/databases/preprocessing
 
 echo "Start corrections"
@@ -49,6 +48,7 @@ for dataset in ${datasets[@]}; do
                 sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 
                 # Load dataset and extract line number of invalid triple
+                > $baseDir/output/logs/invalid_triples_${repositoryID}.txt
                 /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path >> $baseDir/output/logs/invalid_triples.txt
                 
                 # sed -i -r "${n}s/(.*)/# \1/g" # 206, 207, 208
