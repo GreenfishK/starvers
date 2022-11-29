@@ -42,75 +42,31 @@ for dataset in ${datasets[@]}; do
         esac
         echo "Correcting $dataset for $policy policy"
         mkdir -p ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}
-        if [ "$dataset" == "beara" ]; then
-            for c in $(seq -f $file_name_struc 1 ${versions})
-            do
-                ds_abs_path=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
+        for c in $(seq -f $file_name_struc 1 ${versions})
+        do
+            ds_abs_path=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
 
-                # copy config template
-                repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
-                echo $repositoryID
-                cp ${SCRIPT_DIR}/1_get_and_prepare_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-                sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-                sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-                sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-                
-                # Load dataset and extract line number of invalid triple
-                > $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt
-
-                while : ; do   
-                    invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
-                    echo "$invalid_line" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt     
-                    sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path      
-                [[ ! -z "$invalid_line" ]] || break
-                done
-
-                # sed -i -r "${n}s/(.*)/# \1/g" # 206, 207, 208
-                #echo "Correct bad date, time dateTime, and duration formats"
-                #sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ds_file
-                #sed -i -r 's/(")([0-9]{1}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#time>)/\10\2/g' $ds_file
-                #sed -i -r 's/(")([0-9]{1}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#(time|dateTime)>)/\1200\2/g' $ds_file
-                #sed -i -r 's/("[A-SU-Za-z0-9]*)("\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#duration>)/\1T0H0M0S\2/g' $ds_file
-                #sed -i -r 's/"([1-9])"(\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#gYear>)/"000\1"\2/g' $ds_file
-                #sed -i -r 's/ GMT+02:00"/+02:00"/g' $ds_file
-
-                #echo "Change datatype of wrongly formatted datatypes to string."
-                #sed -i -r 's/("(-[0-9]{4}-[0-9]{2}-[0-9]{2}|[A-Za-z]{0,20}\s([0-9]{2},\s){0,1}[0-9]{4}|[0-9]+|[0-9]*[A-Za-z?!\\#@/-]+[^"]*|0[^"]*|[A-Za-z]+.*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(date>|dateTime>)/\1string>/g' $ds_file
-                #sed -i -r 's/("(-[0-9]{4}|[^0-9][^"]*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(gYear>)/\1string>/g' $ds_file 
-                #sed -i -r 's/("([^0-9]+[^"]*|[0-9]+[^0-9"]*)"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(int>|double>|decimal>)/\1string>/g' $ds_file
-                #sed -i -r 's/(""\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)([a-zA-Z]+>)/\1string>/g' $ds_file
-                #sed -i -r 's/(\^\^<http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#XMLLiteral>)/\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ds_file
-                #sed -i -r 's/("[^"]*[^A-Za-z0-9]+[^"]*"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(hexBinary>)/\1string>/g' $ds_file 
-
-                #echo "Correct unescaped ampersand"  
-                #sed -i -r 's/(href=\\.*\?.*)(\&)(amp;){0,1}/\1\&amp;/g' $ds_file
-                #sed -i -r 's/(<extref href=\\"http:\/\/www.kent.ac.uk\/library\/specialcollections\/other\/search.html\?k\[0\]=PC)(\&)(amp;){0,1}/\1\&amp;/g' $ds_file
-                                    
-                #echo "Correct wrongly assigned datatypes to the actual ones"
-                #sed -i -r 's/("[0-9]+"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1int>/g' $ds_file
-                #sed -i -r 's/("[0-9]+\.[0-9]+(E\+[0-9]+){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(string>)/\1double>/g' $ds_file
-                #sed -i -r 's/("[0-9]{4}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1gYear>/g' $ds_file
-                #sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#)(dateTime>)/\1date>/g' $ds_file
-                                    
-                #echo "Correct wrongly formatted object IRIS, subject IRIs and blank nodes."
-                #sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*|http:[^/][^>]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ds_file
-                #sed -i -r 's/(^(<[^>]*>|_:.*) <[^>]*>)( <([^h][^t][^t][^p]|[^:]*)> .$)/\1 <http:\/\/example.com\/\4> ./g' $ds_file
-                #sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' $ds_file
-                #sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ds_file
-
-                echo "Corrected $ds_abs_path"
-            done
-        elif [ "$dataset" == "bearc" ]; then
-            for c in $(seq -f $file_name_struc 1 ${versions})
-            do
-
-                ds_abs_path=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
-                echo "Correct bad IRI"
-                sed -i 's/<http:\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/<http:\/\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/g' $ds_abs_path
+            # copy config template
+            repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
+            echo $repositoryID
+            cp ${SCRIPT_DIR}/1_get_and_prepare_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+            sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+            sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+            sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             
-                echo "Corrected $ds_abs_path"
+            # Load dataset with jena tdb2 loader. 
+            # Write the line number of every invalid triple into a file
+            # Comment out that invalid triple in the dataset
+            while : ; do   
+                invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
+                echo "$invalid_line" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt     
+                sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path      
+            [[ ! -z "$invalid_line" ]] || break
             done
-        fi
+
+            cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
+            echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
+        done
     done
 done
 
