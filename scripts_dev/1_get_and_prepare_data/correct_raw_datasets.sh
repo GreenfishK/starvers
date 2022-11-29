@@ -15,6 +15,8 @@ mkdir -p ${baseDir}/databases/preprocessing
 rm -rf ${baseDir}/databases/preprocessing/*
 mkdir -p ${baseDir}/configs/preprocessing
 rm -rf ${baseDir}/configs/preprocessing/*
+mkdir -p $baseDir/output/logs/preprocessing/
+rm -rf $baseDir/output/logs/preprocessing/*
 
 echo "Start corrections"
 for dataset in ${datasets[@]}; do
@@ -54,7 +56,7 @@ for dataset in ${datasets[@]}; do
                 sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 
                 # Load dataset and extract line number of invalid triple
-                > $baseDir/output/logs/invalid_triples_${repositoryID}.txt
+                > $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt
                 /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path >> $baseDir/output/logs/invalid_triples_${repositoryID}.txt
                 
                 # sed -i -r "${n}s/(.*)/# \1/g" # 206, 207, 208
