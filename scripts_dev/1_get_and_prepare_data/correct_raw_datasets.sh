@@ -3,7 +3,7 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
-policies=("tb") # only raw datasets
+policies=("tb" "ic") # only raw datasets
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
@@ -65,7 +65,6 @@ for dataset in ${datasets[@]}; do
                 [[ ! -z "$invalid_line" ]] || break
                 done
 
-
                 # sed -i -r "${n}s/(.*)/# \1/g" # 206, 207, 208
                 #echo "Correct bad date, time dateTime, and duration formats"
                 #sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ds_file
@@ -99,18 +98,17 @@ for dataset in ${datasets[@]}; do
                 #sed -i -r 's/(^<)(#[^>]*> <.*> (<.*>|".*"(\^\^<.*>){0,1}) .$)/\1http:\/\/example\.com\2/g' $ds_file
                 #sed -i -r 's/(<)(node[A-Za-z0-9]*)(>)/_:\2/g' $ds_file
 
-                #echo "Corrected $ds_file \n" >> $baseDir/output/logs/corrections.txt
+                echo "Corrected $ds_abs_path"
             done
         elif [ "$dataset" == "bearc" ]; then
             for c in $(seq -f $file_name_struc 1 ${versions})
             do
-                file=`eval echo ${file_var}`
-                ds_file=$baseDir/rawdata/$dataset/${ds_rel_path}${file}
-                echo "$ds_file"
+
+                ds_abs_path=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
                 echo "Correct bad IRI"
-                sed -i 's/<http:\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/<http:\/\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/g' $ds_file
+                sed -i 's/<http:\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/<http:\/\/cordis.europa.eu\/data\/cordis-fp7projects-xml.zip>/g' $ds_abs_path
             
-                echo "Corrected $ds_file \n" >> $baseDir/output/logs/corrections.txt
+                echo "Corrected $ds_abs_path"
             done
         fi
     done
