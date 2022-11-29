@@ -29,9 +29,8 @@ for dataset in ${datasets[@]}; do
                 exit 2
             ;;
         esac
-
+        echo "Correcting $dataset for $policy policy"
         if [ "$dataset" == "beara" ]; then
-            echo "Correcting $dataset for $policy policy"
             for c in $(seq -f $file_name_struc 1 ${versions})
             do
                 file=`eval echo ${file_var}`
@@ -70,18 +69,7 @@ for dataset in ${datasets[@]}; do
 
                 echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
             done
-        elif [ "$dataset" == "bearb_hour" ]; then
-            if [ "$policy" == "ic" ]; then
-                ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile/93.nt
-            fi
-            if [ "$policy" == "tb" ]; then
-                ic_file=$baseDir/rawdata/$dataset/$datasetDirOrFile
-            fi
-            sed -i -r 's/(<http:\/\/dbpedia\.org\/resource\/Rodeo_\(Travis_Scott_album\)> <http:\/\/dbpedia\.org\/property\/cover> "\{\\\\rtf1\\\\ansi\\\\ansicpg1252\{\\\\fonttbl\}\\n\{\\\\colortbl;\\\\red255\\\\green255\\\\blue255;")(@en)/\1\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#string>/g' $ic_file
-
-            echo "Corrected $ic_file \n" >> $baseDir/output/logs/corrections.txt
         elif [ "$dataset" == "bearc" ]; then
-            echo "Correcting $dataset for $policy policy"
             for c in $(seq -f $file_name_struc 1 ${versions})
             do
                 file=`eval echo ${file_var}`
