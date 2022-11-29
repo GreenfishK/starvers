@@ -63,7 +63,7 @@ for dataset in ${datasets[@]}; do
             cp $ds_abs_path $ds_abs_path_tmp
             invalid_line_cnt=0
             while : ; do   
-                invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
+                invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path_tmp | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
                 [[ ! -z "$invalid_line" ]] || break
                 sed -i "0,{$invalid_line}d" $ds_abs_path_tmp
                 invalid_line_cnt=$(($invalid_line_cnt+$invalid_line))
