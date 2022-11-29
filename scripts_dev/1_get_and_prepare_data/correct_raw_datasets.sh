@@ -65,11 +65,12 @@ for dataset in ${datasets[@]}; do
             while : ; do   
                 invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
                 [[ ! -z "$invalid_line" ]] || break
-                sed -i "0,{$invalid_line}d"  
+                sed -i "0,{$invalid_line}d" $ds_abs_path_tmp
                 invalid_line_cnt=$(($invalid_line_cnt+$invalid_line))
                 echo "$invalid_line_cnt" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt   
                 #sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path_tmp      
             done
+            rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
                 echo "$ds_abs_path_tmp has no errors according to the jena tdb2loader."
             else
