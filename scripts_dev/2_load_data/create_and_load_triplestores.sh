@@ -137,7 +137,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     export PATH=/usr/local/openjdk-11/bin:$PATH
     export FUSEKI_HOME=/jena-fuseki
     > $baseDir/output/logs/ingestion_jenatdb2_logs.txt
-    rm -rf configs/*
+    rm -rf ${baseDir}/configs/*
 
     for policy in ${policies[@]}; do
         case $policy in 
