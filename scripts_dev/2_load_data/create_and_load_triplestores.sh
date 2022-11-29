@@ -174,10 +174,12 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             echo "Process is $policy, $dataset for JenaTDB2"
             total_ingestion_time=0
             total_file_size=0
+            mkdir -p ${baseDir}/configs/jenatdb2_${policy}_${dataset}
+            
             if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
-                mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
+                
                 cp ${SCRIPT_DIR}/2_load_data/configs/jenatdb2-config_template.ttl ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
@@ -192,7 +194,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
             elif [ "$policy" == "ic" ]; then
-                mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
                 for c in $(seq -f $file_name_struc 1 ${versions})
                 do
                     repositoryID=${policy}_${dataset}_$((10#$c))
@@ -212,7 +213,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 done
             
             elif [ "$policy" == "cb" ]; then
-                mkdir ${baseDir}/configs/jenatdb2_${policy}_${dataset}
                 for v in $(seq 0 1 $((${versions}-1))); do 
                     ve=$(echo $v+1 | bc)
                     if [ $v -eq 0 ]; then
