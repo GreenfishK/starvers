@@ -12,6 +12,8 @@ export FUSEKI_HOME=/jena-fuseki
 # Dirs and files
 > $baseDir/output/logs/corrections.txt
 mkdir -p ${baseDir}/databases/preprocessing
+rm -rf ${baseDir}/databases/preprocessing/*
+mkdir -p ${baseDir}/configs/preprocessing
 rm -rf ${baseDir}/configs/preprocessing/*
 
 echo "Start corrections"
