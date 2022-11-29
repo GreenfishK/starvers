@@ -65,7 +65,7 @@ for dataset in ${datasets[@]}; do
             while : ; do   
                 invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path_tmp | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
                 [[ ! -z "$invalid_line" ]] || break
-                sed -i "0,{$invalid_line}d" $ds_abs_path_tmp
+                sed -i "1,{$invalid_line}d" $ds_abs_path_tmp
                 invalid_line_cnt=$(($invalid_line_cnt+$invalid_line))
                 echo "$invalid_line_cnt" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt   
                 #sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path_tmp      
