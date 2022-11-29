@@ -57,8 +57,8 @@ for dataset in ${datasets[@]}; do
                 
                 # Load dataset and extract line number of invalid triple
                 > $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt
-                /jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path 2>&1 | tee -a $baseDir/output/logs/invalid_triples_${repositoryID}.txt
-                
+                invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path`
+                echo $invalid_line
                 # sed -i -r "${n}s/(.*)/# \1/g" # 206, 207, 208
                 #echo "Correct bad date, time dateTime, and duration formats"
                 #sed -i -r 's/("[0-9]{4}-[0-9]{2}-[0-9]{2}) ([0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3,6}){0,1}"\^\^<http:\/\/www.w3.org\/2001\/XMLSchema#dateTime>)/\1T\2/g' $ds_file
