@@ -65,7 +65,7 @@ for dataset in ${datasets[@]}; do
             done
             if [ ! -z "$invalid_line" ]; then
                 echo "$ds_abs_path has no errors."
-            elif
+            else
                 cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
             fi
