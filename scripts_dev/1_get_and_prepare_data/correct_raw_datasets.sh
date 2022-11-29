@@ -63,7 +63,7 @@ for dataset in ${datasets[@]}; do
                 echo "$invalid_line" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt     
                 sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path      
             done
-            if [ ! -z "$invalid_line" ]; then
+            if [[ ! -z "$invalid_line" ]]; then
                 echo "$ds_abs_path has no errors."
             else
                 cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
