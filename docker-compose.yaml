@@ -9,8 +9,6 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ${base_host_dir}/configs:/starvers_eval/configs
-      - ${base_host_dir}/databases:/starvers_eval/databases
       - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data # move to image after development has finished
     entrypoint: [/starvers_eval/scripts/1_get_and_prepare_data/download_data.sh]
 
@@ -23,6 +21,8 @@ services:
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/configs:/starvers_eval/configs
+      - ${base_host_dir}/databases:/starvers_eval/databases
       - ./scripts_dev/1_get_and_prepare_data:/starvers_eval/scripts/1_get_and_prepare_data # move to image after development has finished
     environment:
       - datasets=${datasets}
