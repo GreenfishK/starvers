@@ -30,14 +30,21 @@ public class Validate {
         
         String [] splitFileName = args[0].split("\\.");
         String extension = splitFileName[splitFileName.length - 1];
-
         final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.graph(g); 
         ArrayList<Integer> invalidLines = new ArrayList<Integer>();
-
         FileInputStream inputStream = null;
         Scanner sc = null;
         int i = 0;
+        Lang l = null;
+        if (extension.equals("nt")) {
+            l = Lang.NT;
+        } else if (extension.equals("nq")) {
+            l = Lang.NQ;
+        } else {
+            System.out.println("Extension must be .nt or .nq");
+        }
+
         try {
             inputStream = new FileInputStream(new File(args[0]));
             sc = new Scanner(inputStream, "UTF-8");
@@ -45,14 +52,7 @@ public class Validate {
             while (sc.hasNextLine()) {
                 String triple = sc.nextLine();
                 try {
-                    Lang l = null;
-                    if (extension.equals("nt")) {
-                        l = Lang.NT;
-                    } else if (extension.equals("nq")) {
-                        l = Lang.NQ;
-                    } else {
-                        System.out.println("Extension must be .nt or .nq");
-                    }
+
                     RDFParser.fromString(triple).lang(l).parse(dest);
                 
                 } catch(RiotException e) {
