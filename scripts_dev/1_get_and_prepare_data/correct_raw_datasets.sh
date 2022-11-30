@@ -8,6 +8,7 @@ datasets=("${datasets}") # beara bearb_hour bearb_day bearc
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 export FUSEKI_HOME=/jena-fuseki
+export _JAVA_OPTIONS="-Xmx90g"
 
 # Dirs and files
 #> $baseDir/output/logs/corrections.txt
