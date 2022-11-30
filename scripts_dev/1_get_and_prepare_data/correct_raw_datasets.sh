@@ -72,10 +72,10 @@ for dataset in ${datasets[@]}; do
             done
             rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
-                echo "$ds_abs_path_tmp has no errors according to the jena tdb2loader."
+                echo "$ds_abs_path has no errors according to the jena tdb2loader."
             else
                 cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
-                echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path_tmp"
+                echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
             fi
         done
     done
