@@ -79,9 +79,9 @@ for dataset in ${datasets[@]}; do
             do
                 sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path
             done
-            # Include lines that are already excluded via hashtags at the beginning of the log file
-            commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
-            sed -i "1i $commented_out_lines" $invalid_lines_file
+            # TODO: Include lines that are already excluded via hashtags at the beginning of the log file
+            #commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
+            #sed -i "1i $commented_out_lines" $invalid_lines_file
 
             rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
