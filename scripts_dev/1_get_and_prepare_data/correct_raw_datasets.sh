@@ -54,13 +54,14 @@ for dataset in ${datasets[@]}; do
             sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             
-            # Load dataset with jena tdb2 loader. 
-            # Write the line number of every invalid triple into a file
-            # Comment out that invalid triple in the dataset
             filename=`basename -- "${ds_abs_path}"`
             extension="${filename##*.}"
             ds_abs_path_tmp=${ds_abs_path}_tmp.$extension
             cp $ds_abs_path $ds_abs_path_tmp
+
+            # Load dataset with jena tdb2 loader. 
+            # Write the line number of every invalid triple into a file
+            # Comment out that invalid triple in the dataset
             invalid_line_cnt=0
             while : ; do   
                 invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path_tmp | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
@@ -70,6 +71,10 @@ for dataset in ${datasets[@]}; do
                 echo "$invalid_line_cnt" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt   
                 #sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path_tmp      
             done
+
+            # TODO: sed -i -r "${invalid_line}s/(.*)/# \1/g" for each line in $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt  
+            # TODO: include lines that are already excluded via hashtags at the beginning of $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt  
+
             rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
                 echo "$ds_abs_path has no errors according to the jena tdb2loader."
