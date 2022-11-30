@@ -68,7 +68,6 @@ for dataset in ${datasets[@]}; do
             #commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
             #sed -i "1i $commented_out_lines" $invalid_lines_file
 
-            rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
                 echo "$ds_abs_path has no errors according to the jena tdb2loader."
             else
