@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import java.util.ArrayList;
+import java.util.Scanner;
 
 
 public class Validate {
@@ -27,23 +28,32 @@ public class Validate {
     public static void main(String [] args) {
         ARQ.init();
         
-        String content = "";
+        //String content = "";
         String [] splitFileName = args[0].split("\\.");
         String extension = splitFileName[splitFileName.length - 1];
 
-        try {
+        /*try {
             content = Files.readString(Path.of(args[0]));
         } catch(IOException e) {
             e.printStackTrace();
         }
         String [] triples = content.split(System.lineSeparator());
-        System.out.println("Number of lines in " + args[0] + ": " + triples.length);
+        System.out.println("Number of lines in " + args[0] + ": " + triples.length);*/
 
         final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.graph(g); 
         ArrayList<Integer> invalidLines = new ArrayList<Integer>();
-        for (int i=0;i<triples.length;i++) {
-            try {
+
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        int i = 0;
+        try {
+            inputStream = new FileInputStream(new File(args[0]));
+            sc = new Scanner(inputStream, "UTF-8");
+
+            while (sc.hasNextLine()) {
+                String triple = sc.nextLine();
+                try {
                     Lang l = null;
                     if (extension.equals("nt")) {
                         l = Lang.NT;
@@ -52,12 +62,32 @@ public class Validate {
                     } else {
                         System.out.println("Extension must be .nt or .nq");
                     }
-                    RDFParser.fromString(triples[i]).lang(l).parse(dest);
+                    RDFParser.fromString(triple).lang(l).parse(dest);
                 
-            } catch(RiotException e) {
-                invalidLines.add(i+1);
+                } catch(RiotException e) {
+                    invalidLines.add(i+1);
+                }                
+                i++;
+            }
+            // note that Scanner suppresses exceptions
+            if (sc.ioException() != null) {
+                throw sc.ioException();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (sc != null) {
+                sc.close();
             }
         }
+        System.out.println("Number of lines in " + args[0] + ": " + Integer.toString(i));
         System.out.println("Number of invalid lines: " + invalidLines.size());
         try {
             FileWriter writer = new FileWriter(args[1]); 
