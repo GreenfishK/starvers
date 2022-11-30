@@ -45,6 +45,7 @@ COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
 #COPY scripts_dev/1_get_and_prepare_data/construct_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
 #COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
 #COPY scripts_dev/1_get_and_prepare_data/correct_raw_datasets.sh /starvers_eval/scripts/1_get_and_prepare_data
+COPY scripts_dev/1_get_and_prepare_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/1_get_and_prepare_data
 
 #COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
 #COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data
