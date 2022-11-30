@@ -28,17 +28,8 @@ public class Validate {
     public static void main(String [] args) {
         ARQ.init();
         
-        //String content = "";
         String [] splitFileName = args[0].split("\\.");
         String extension = splitFileName[splitFileName.length - 1];
-
-        /*try {
-            content = Files.readString(Path.of(args[0]));
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-        String [] triples = content.split(System.lineSeparator());
-        System.out.println("Number of lines in " + args[0] + ": " + triples.length);*/
 
         final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.graph(g); 
@@ -65,6 +56,8 @@ public class Validate {
                     RDFParser.fromString(triple).lang(l).parse(dest);
                 
                 } catch(RiotException e) {
+                    System.out.println(e.getMessage());
+                    System.out.println("Invalid line: " + Integer.toString(i+1))
                     invalidLines.add(i+1);
                 }                
                 i++;
@@ -87,6 +80,7 @@ public class Validate {
                 sc.close();
             }
         }
+
         System.out.println("Number of lines in " + args[0] + ": " + Integer.toString(i));
         System.out.println("Number of invalid lines: " + invalidLines.size());
         try {
