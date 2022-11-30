@@ -63,23 +63,31 @@ for dataset in ${datasets[@]}; do
             # Write the line number of every invalid triple into a file
             # Comment out that invalid triple in the dataset
             invalid_line_cnt=0
+            invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             while : ; do   
                 invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path_tmp | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
                 [[ ! -z "$invalid_line" ]] || break
                 sed -i "1,${invalid_line}d" $ds_abs_path_tmp
                 invalid_line_cnt=$(($invalid_line_cnt+$invalid_line))
-                echo "$invalid_line_cnt" >> $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt   
+                echo "$invalid_line_cnt" >> $invalid_lines_file 
                 #sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path_tmp      
             done
 
-            # TODO: sed -i -r "${invalid_line}s/(.*)/# \1/g" for each line in $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt  
-            # TODO: include lines that are already excluded via hashtags at the beginning of $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt  
+            # Exclude invalid lines by out-commenting them in the original file
+            invalid_lines=`cat $invalid_lines_file`
+            for invalid_line in $invalid_lines
+            do
+                sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path
+            done
+            # Include lines that are already excluded via hashtags at the beginning of the log file
+            commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
+            sed -i "1i $commented_out_lines" $invalid_lines_file
 
             rm $ds_abs_path_tmp
             if [ -z "$invalid_line" ]; then
                 echo "$ds_abs_path has no errors according to the jena tdb2loader."
             else
-                cnt_excluded=`sed -n "$=" $baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt`
+                cnt_excluded=`sed -n "$=" $invalid_lines_file`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
             fi
         done
