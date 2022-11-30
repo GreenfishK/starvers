@@ -54,9 +54,7 @@ for dataset in ${datasets[@]}; do
             sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 
-            # Load dataset with jena tdb2 loader. 
             # Write the line number of every invalid triple into a file
-            # Comment out that invalid triple in the dataset
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             java -jar $SCRIPT_DIR/1_get_and_prepare_data/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
 
