@@ -57,7 +57,7 @@ public class Validate {
                 
                 } catch(RiotException e) {
                     System.out.println(e.getMessage());
-                    System.out.println("Invalid line: " + Integer.toString(i+1))
+                    System.out.println("Invalid line: " + Integer.toString(i+1));
                     invalidLines.add(i+1);
                 }                
                 i++;
