@@ -56,7 +56,8 @@ for dataset in ${datasets[@]}; do
 
             # Write the line number of every invalid triple into a file
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
-            java -jar $SCRIPT_DIR/1_get_and_prepare_data/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
+            # TODO: change path to $SCRIPT_DIR/1_get_and_prepare_data/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
+            java -jar $SCRIPT_DIR/1_get_and_prepare_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
 
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
@@ -69,7 +70,7 @@ for dataset in ${datasets[@]}; do
             #sed -i "1i $commented_out_lines" $invalid_lines_file
 
             if [ -z "$invalid_line" ]; then
-                echo "$ds_abs_path has no errors according to the jena tdb2loader."
+                echo "$ds_abs_path has no errors according to the jena RDFParser."
             else
                 cnt_excluded=`sed -n "$=" $invalid_lines_file`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
