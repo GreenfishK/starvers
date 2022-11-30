@@ -53,25 +53,12 @@ for dataset in ${datasets[@]}; do
             sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
             sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-            
-            filename=`basename -- "${ds_abs_path}"`
-            extension="${filename##*.}"
-            ds_abs_path_tmp=${ds_abs_path}_tmp.$extension
-            cp $ds_abs_path $ds_abs_path_tmp
 
             # Load dataset with jena tdb2 loader. 
             # Write the line number of every invalid triple into a file
             # Comment out that invalid triple in the dataset
-            invalid_line_cnt=0
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
-            while : ; do   
-                invalid_line=`/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} $ds_abs_path_tmp | grep -Po '(?<=ERROR riot            :: \[line: )[0-9]+'`
-                [[ ! -z "$invalid_line" ]] || break
-                sed -i "1,${invalid_line}d" $ds_abs_path_tmp
-                invalid_line_cnt=$(($invalid_line_cnt+$invalid_line))
-                echo "$invalid_line_cnt" >> $invalid_lines_file 
-                #sed -i -r "${invalid_line}s/(.*)/# \1/g" $ds_abs_path_tmp      
-            done
+            java -jar $SCRIPT_DIR/1_get_and_prepare_data/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
 
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
