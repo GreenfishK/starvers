@@ -66,7 +66,7 @@ RUN apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
--Xmx5g -Xms5g \
+-Xmx90g -Xms90g \
 -Dgraphdb.home=/opt/graphdb/home \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
 -Dgraphdb.workbench.cors.enable=true \
