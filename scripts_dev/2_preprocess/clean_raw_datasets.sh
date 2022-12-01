@@ -62,7 +62,6 @@ for dataset in ${datasets[@]}; do
 
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
-            echo "$invalid_lines"
             substitutions=""
             for invalid_line in $invalid_lines
             do
