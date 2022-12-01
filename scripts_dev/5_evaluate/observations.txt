@@ -1,0 +1,32 @@
+# Observations
+## Network errors
+If I run the command with the -d flag: docker-compose up -d graphdb_run_${policy}_${dataset} 
+The error "network 4_evaluation_default is ambiguous (2 matches found on name)" 
+does not occur
+
+## Heap space
+GraphDB is stacking up the heap with every "activated" repository
+A repository becomes activated as soon as it is queried
+If there is not enough free memory, the cache/buffer is used up (see top command in linux)
+
+## ERROR in CBNG
+Querying SPARQL endpoint http://Starvers:7200/repositories/cbng_bearb_day with query lookup_queries_p_q32_v2.txt
+Following row cannot be removed: ['http://dbpedia.org/resource/Islamic_State_of_Iraq_and_the_Levant', 'http://dbpedia.org/resource/Template:Infobox_war_faction']
+
+Cause: Error in filter clause in string comparison in SPARQL query:
+filter (str(?graph) <= "http://starvers_eval/v2/added" || str(?graph) <= "http://starvers_eval/v2/deleted")
+
+Solution: change query template population to have a fixed count of digits in the version number
+
+## ERROR in CBNG 
+Querying SPARQL endpoint http://Starvers:7200/repositories/cbng_bearb_day with query join17_q5_v36.txt
+
+SELECT * {
+    graph ?graph 
+    { 
+?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/SoccerPlayer> .
+?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://xmlns.com/foaf/0.1/Person> .
+}
+
+    filter (str(?graph) <= "http://starvers_eval/v36/added" || str(?graph) <= "http://starvers_eval/v36/deleted")
+} order by ?graph
