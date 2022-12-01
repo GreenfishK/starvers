@@ -38,7 +38,7 @@ RUN mkdir -p /starvers_eval/scripts/6_visualization
 COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
 COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
 COPY --from=ontotext/graphdb:9.11.2-se /opt /opt
-COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
+COPY scripts_dev/3_ingest/configs/graphdb.license /opt/graphdb/home/conf/
 COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/python_venv 
 
 # Copy raw queries and scripts to /starvers_eval 
