@@ -15,7 +15,7 @@ class AnnotationStyle(Enum):
     HIERARCHICAL = 1
     FLAT = 2
 
-def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int):
+def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename_length: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
     in the dataset_dir.
@@ -34,9 +34,9 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, zf: int)
     cnt_valid_triples_last_ic = 0
 
     for i in range(1, end_vers):
-        ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(zf))
-        ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(zf))
-        print("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(zf), str(i+1).zfill(zf)))
+        ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(basename_length))
+        ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(basename_length))
+        print("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(basename_length), str(i+1).zfill(basename_length)))
 
 
         with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
@@ -300,7 +300,7 @@ for dataset in datasets:
     print("Constructing datasets for {0}".format(dataset))
 
     # CB
-    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_basename_lengths[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
