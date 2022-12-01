@@ -42,7 +42,7 @@ COPY scripts_dev/2_load_data/configs/graphdb.license /opt/graphdb/home/conf/
 COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/python_venv 
 
 # Copy raw queries and scripts to /starvers_eval 
-COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
+COPY raw_queries /starvers_eval/queries/raw_queries
 
 #COPY scripts_dev/1_download/download_data.sh /starvers_eval/scripts/1_download
 #COPY scripts_dev/2_preprocess/construct_datasets.py /starvers_eval/scripts/2_preprocess

@@ -2,7 +2,6 @@
 .ipynb_checkpoints/
 .DS_Store
 **/*.log
-src/rdfstarArchive/target/*
 scripts_dev/.idea
 scripts_dev/.ipynb_checkpoints/
-scripts_dev/4_evaluation/graphdb/target
+scripts_dev/5_evaluate/graphdb/target
