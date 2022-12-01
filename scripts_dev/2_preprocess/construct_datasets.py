@@ -257,7 +257,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     f.close()
 
 
-def construct_icng_ds(source: str, destination: str, last_version: int):
+def construct_icng_ds(source: str, destination: str, last_version: int, basename_length: int):
     """
     TODO: write docu
     """
@@ -274,7 +274,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
 
     for i in range(last_version):
         print("Building version {0}. ".format(str(i+1)))
-        ic = open(source + "/" + str(i+1).zfill(ic_zfills[dataset])  + ".nt", "r").read()
+        ic = open(source + "/" + str(i+1).zfill(basename_length)  + ".nt", "r").read()
     
         print("Write ic {} to data set.".format(str(i+1)))
         f = open(destination, "a")
@@ -283,13 +283,12 @@ def construct_icng_ds(source: str, destination: str, last_version: int):
 
 
 ############################################# Parameters and function calls #############################################
+datasets = sys.argv[1].split(" ")
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-datasets_cmd = sys.argv[1]
-datasets = datasets_cmd.split(" ")
 dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4}
-ic_zfills = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6}
+ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6}
 
 for dataset in datasets:
     if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart']:
@@ -301,10 +300,10 @@ for dataset in datasets:
     print("Constructing datasets for {0}".format(dataset))
 
     # CB
-    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_zfills[dataset])
+    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, zf=ic_basename_lengths[dataset])
 
     # TBSH
-    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
+    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
                         last_version=total_versions,
@@ -312,7 +311,7 @@ for dataset in datasets:
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
     # TBSF
-    # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
+    # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
     #                    source_cs=data_dir + "/alldata.CB_computed." + in_frm,
     #                    destination=data_dir + "/alldata.TB_star_flat." + ".ttl",
     #                    last_version=total_versions,
@@ -320,7 +319,7 @@ for dataset in datasets:
     #                    annotation_style=AnnotationStyle.FLAT)
     
     # CBNG
-    construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_zfills[dataset])  + ".nt",
+    construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.CBNG.trig",
                       last_version=total_versions)
@@ -328,4 +327,5 @@ for dataset in datasets:
     # ICNG
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
-                      last_version=total_versions)
+                      last_version=total_versions,
+                      basename_length=ic_basename_lengths[dataset])
