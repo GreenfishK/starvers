@@ -1,23 +1,18 @@
+package com.starvers.rdfvalidator;
+
 import org.apache.jena.graph.Graph;
 import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.riot.RDFParser;
 import org.apache.jena.riot.system.StreamRDFLib;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
 import java.io.FileInputStream;
 import java.io.File;
-import java.io.InputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.FileWriter;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import java.util.ArrayList;
 import java.util.Scanner;
