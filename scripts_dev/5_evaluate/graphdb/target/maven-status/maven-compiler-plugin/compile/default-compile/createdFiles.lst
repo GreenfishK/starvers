@@ -1,0 +1,11 @@
+com/ontotext/graphdb/example/util/EmbeddedGraphDB$1.class
+com/ontotext/graphdb/example/util/chunkloader/ChunkCommitter.class
+com/ontotext/graphdb/example/util/UpdateUtil.class
+com/ontotext/graphdb/example/util/ExportUtil$ExportType.class
+com/ontotext/graphdb/example/util/ExportUtil$1.class
+com/ontotext/graphdb/example/util/EmbeddedGraphDB.class
+com/ontotext/graphdb/example/util/QueryUtil.class
+com/ontotext/graphdb/example/util/ExportUtil.class
+com/ontotext/graphdb/example/util/ConnectionUtil.class
+com/ontotext/graphdb/example/util/chunkloader/ChunkLoader.class
+com/ontotext/graphdb/example/app/hello/HelloWorld.class

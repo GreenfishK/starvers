@@ -1,3 +1,0 @@
-GRAPH <http://starvers_eval/ic/v{0}> {{
-    {1}
-}}

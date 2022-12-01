@@ -18,6 +18,8 @@ RUN /starvers_eval/python_venv/bin/python3 -m pip install -r requirements.txt
 
 FROM python:3.8.15-slim as final_stage
 # Create /starvers_eval directories
+# RUN mkdir -p "/starvers_eval/queries/raw_queries/
+# RUN mkdir -p "/starvers_eval/queries/final_queries/
 RUN mkdir -p /starvers_eval/databases
 RUN mkdir -p /starvers_eval/output/logs
 RUN mkdir -p /starvers_eval/output/measurements
@@ -25,12 +27,12 @@ RUN mkdir -p /starvers_eval/output/result_sets
 RUN mkdir -p /starvers_eval/output/figures
 RUN mkdir -p /starvers_eval/rawdata
 RUN mkdir -p /starvers_eval/configs
-
-RUN mkdir -p /starvers_eval/scripts/1_get_and_prepare_data
-RUN mkdir -p /starvers_eval/scripts/2_load_data
-RUN mkdir -p /starvers_eval/scripts/3_generate_queries
-RUN mkdir -p /starvers_eval/scripts/4_evaluation
-RUN mkdir -p /starvers_eval/scripts/5_visualization
+RUN mkdir -p /starvers_eval/scripts/1_download
+RUN mkdir -p /starvers_eval/scripts/2_preprocess
+RUN mkdir -p /starvers_eval/scripts/3_ingest
+RUN mkdir -p /starvers_eval/scripts/4_generate_queries
+RUN mkdir -p /starvers_eval/scripts/5_evaluation
+RUN mkdir -p /starvers_eval/scripts/6_visualization
 
 # copy from other images
 COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
@@ -42,18 +44,18 @@ COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/pyt
 # Copy raw queries and scripts to /starvers_eval 
 COPY /data/queries/raw_queries /starvers_eval/queries/raw_queries
 
-#COPY scripts_dev/1_get_and_prepare_data/construct_datasets.py /starvers_eval/scripts/1_get_and_prepare_data
-#COPY scripts_dev/1_get_and_prepare_data/download_data.sh /starvers_eval/scripts/1_get_and_prepare_data
-#COPY scripts_dev/1_get_and_prepare_data/correct_raw_datasets.sh /starvers_eval/scripts/1_get_and_prepare_data
-#COPY scripts_dev/1_get_and_prepare_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/1_get_and_prepare_data
+#COPY scripts_dev/1_download/download_data.sh /starvers_eval/scripts/1_download
+#COPY scripts_dev/2_preprocess/construct_datasets.py /starvers_eval/scripts/2_preprocess
+#COPY scripts_dev/2_preprocess/clean_raw_datasets.sh /starvers_eval/scripts/2_preprocess
+#COPY scripts_dev/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/2_preprocess
 
-#COPY scripts_dev/2_load_data/configs /starvers_eval/scripts/2_load_data/configs
-#COPY scripts_dev/2_load_data/create_and_load_triplestores.sh /starvers_eval/scripts/2_load_data
+#COPY scripts_dev/3_ingest/configs /starvers_eval/scripts/3_ingest/configs
+#COPY scripts_dev/3_ingest/create_and_load_triplestores.sh /starvers_eval/scripts/3_ingest
 
-#COPY scripts_dev/3_generate_queries /starvers_eval/scripts/3_generate_queries
+#COPY scripts_dev/4_generate_queries /starvers_eval/scripts/4_generate_queries
 
-#COPY scripts_dev/4_evaluation/query.py /starvers_eval/scripts/4_evaluation
-#COPY scripts_dev/4_evaluation/evaluate.sh /starvers_eval/scripts/4_evaluation
+#COPY scripts_dev/5_evaluate/query.py /starvers_eval/scripts/5_evaluate
+#COPY scripts_dev/5_evaluate/evaluate.sh /starvers_eval/scripts/5_evaluate
 
 # TODO: add visualization
 
