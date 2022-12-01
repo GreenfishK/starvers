@@ -62,6 +62,7 @@ for dataset in ${datasets[@]}; do
 
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
+            echo "$invalid_lines"
             substitutions=""
             for invalid_line in $invalid_lines
             do
@@ -72,7 +73,7 @@ for dataset in ${datasets[@]}; do
             #commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
             #sed -i "1i $commented_out_lines" $invalid_lines_file
 
-            if [ -z "$invalid_line" ]; then
+            if [ -z "$invalid_lines" ]; then
                 echo "$ds_abs_path has no errors according to the jena RDFParser."
             else
                 cnt_excluded=`sed -n "$=" $invalid_lines_file`
