@@ -68,9 +68,9 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     
     print("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
     print("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
-    # sed -n "$=" alldata.TB_star_hierarchical.ttls        
+    # sed -n "$=" alldata.TB_star_hierarchical.ttl      
     print("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
-    # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttls    
+    # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int,
