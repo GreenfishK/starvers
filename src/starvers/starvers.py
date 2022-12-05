@@ -540,7 +540,6 @@ class TripleStoreEngine:
         template = open(self._template_location + "/outdate_triples.txt", "r").read()
         outdate_block = ""
         for triple in triples:
-            logging.info(type(triple), triple)
             if isinstance(triples, list) and len(triple) == 3:
                 outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
             if isinstance(triples, str):
