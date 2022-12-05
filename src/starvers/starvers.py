@@ -444,7 +444,7 @@ class TripleStoreEngine:
         for triple in triples:
             if isinstance(triple, list) and len(triple) == 3:
                 insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-            if isinstance(triple, str) and len(triple) == 1:
+            if isinstance(triple, str):
                 insert_block = insert_block +  "({0})\n".format(triple[:-1])
             else:
                 raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
@@ -542,7 +542,7 @@ class TripleStoreEngine:
         for triple in triples:
             if isinstance(triples, list) and len(triple) == 3:
                 outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-            if isinstance(triples, str) and len(triple) == 1:
+            if isinstance(triples, str):
                 outdate_block = outdate_block + "({0})\n".format(triple[:-1])
             else:
                 raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
