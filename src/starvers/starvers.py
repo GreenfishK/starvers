@@ -422,8 +422,8 @@ class TripleStoreEngine:
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
 
         or 
-        ['<http://example.com/Obama>' '<http://example.com/president_of>' '<http://example.com/UnitedStates',
-        '<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver']
+        ['<http://example.com/Obama>' '<http://example.com/president_of>' '<http://example.com/UnitedStates' .,
+        '<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver .']
 
         :param triples: A list of list of triples in n3 syntax.
         :param prefixes: Prefixes that are used within :param triples.
@@ -445,12 +445,12 @@ class TripleStoreEngine:
             if isinstance(triple, list) and len(triple) == 3:
                 insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
             if isinstance(triple, str) and len(triple) == 1:
-                insert_block = insert_block +  "({0})\n".format(triple)
+                insert_block = insert_block +  "({0})\n".format(triple[:-1])
             else:
                 raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
-            insert_statement = statement.format(sparql_prefixes, insert_block, version_timestamp)
+            insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
         else:
             insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
         self.sparql_post.setQuery(insert_statement)
@@ -521,7 +521,7 @@ class TripleStoreEngine:
         [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates']]
 
         or 
-        ['<http://example.com/Donald_Trump>' '<http://example.com/president_of>' '<http://example.com/UnitedStates']
+        ['<http://example.com/Donald_Trump>' '<http://example.com/president_of>' '<http://example.com/UnitedStates' .]
 
 
         :param triples: A list of valid triples in n3 syntax that should be outdated.
@@ -543,12 +543,12 @@ class TripleStoreEngine:
             if isinstance(triples, list) and len(triple) == 3:
                 outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
             if isinstance(triples, str) and len(triple) == 1:
-                outdate_block = outdate_block + "({0})\n".format(triple)
+                outdate_block = outdate_block + "({0})\n".format(triple[:-1])
             else:
                 raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
-            outdate_statement = template.format(sparql_prefixes, outdate_block, version_timestamp)
+            outdate_statement = template.format(sparql_prefixes, outdate_block, '"' + version_timestamp + '"')
         else:
             outdate_statement = template.format(sparql_prefixes, outdate_block, "NOW()")
         self.sparql_post.setQuery(outdate_statement)
