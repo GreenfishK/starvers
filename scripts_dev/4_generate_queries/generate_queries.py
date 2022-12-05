@@ -5,6 +5,20 @@ import os
 import sys
 from datetime import datetime, timezone, timedelta
 import shutil
+import logging
+
+############################################# Logging ###################################################################
+if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
+    os.makedirs('/starvers_eval/output/logs/generate_queries')
+with open('/starvers_eval/output/logs/generate_queries/generate_queries.txt', "w") as log_file:
+    log_file.write("")
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/generate_queries/generate_queries.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+
+############################################# Parameters ################################################################
 
 raw_queries_dir="/starvers_eval/queries/raw_queries/"
 output_queries_dir="/starvers_eval/queries/final_queries/"
@@ -83,7 +97,7 @@ for policy in policies:
             if os.path.isfile(pathToQueries + "/" + queriesFile):
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
                     relativeTempLoc = queries[policy][querySet]['template']
-                    print("Create queries for {0} and {1}".format(policy, querySet))
+                    logging.info("Create queries for {0} and {1}".format(policy, querySet))
                     if relativeTempLoc.split('/')[1] == 'ts':
                         raw_queries = file.readlines()
                     else:

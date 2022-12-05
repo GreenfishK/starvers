@@ -288,6 +288,8 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.close()
 
 ############################################# Logging ###################################################################
+if not os.path.exists('/starvers_eval/output/logs/preprocessing'):
+    os.makedirs('/starvers_eval/output/logs/preprocessing')
 with open('/starvers_eval/output/logs/preprocessing/construct_datasets.txt', "w") as log_file:
     log_file.write("")
 logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
