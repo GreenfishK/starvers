@@ -290,8 +290,11 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
 ############################################# Logging ###################################################################
 with open('/starvers_eval/output/logs/preprocessing/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(filename='/starvers_eval/output/logs/preprocessing/construct_datasets.txt',
-                    encoding='utf-8', level=logging.INFO)
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
 
 ############################################# Parameters and function calls #############################################
 datasets = sys.argv[1].split(" ")
