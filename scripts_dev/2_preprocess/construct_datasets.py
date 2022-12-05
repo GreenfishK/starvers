@@ -120,10 +120,13 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
+    insert_block = ""
+    for line in added_triples_raw:
+        insert_block = insert_block + "(" + line[:-1] + ")\n"
 
     # Ingest ic0 into GraphDB as RDF-star dataset
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
+    rdf_star_engine.insert(triples=insert_block, timestamp=init_timestamp)
 
     # transform all triples in the list to their starvers RDF-star representations
     """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
@@ -153,6 +156,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
+            insert_block = ""
+            for line in added_triples_raw:
+                insert_block = insert_block + "(" + line[:-1] + ")\n"
 
             # logging.info("Add changeset to RDF-star dataset.")
             """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
@@ -166,17 +172,20 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                       ['.'] * len(added_triples_raw))))
             result_set = sorted(result_set, key=lambda x: x[1])   """    
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
-            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
+            rdf_star_engine.insert(triples=insert_block, timestamp=vers_ts)
             # logging.info("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
             #deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
+            outdate_block = ""
+            for line in deleted_triples_raw:
+                outdate_block = outdate_block + "(" + line[:-1] + ")\n"
 
             #logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
-            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
+            rdf_star_engine.outdate(triples=outdate_block, timestamp=vers_ts)
 
             """try:
                 for i, triple in enumerate(result_set):
@@ -227,7 +236,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         lang = r['b'].get("xml:lang", None)
         datatype = r['b'].get("datatype", None)
         b = Literal(value,lang=lang,dataype=datatype)
-        results_str = "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ."
+        results_str = results_str + "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ." + "\n"
 
     logging.info("Write RDF-star dataset from memory to file.")
     with open(destination, "w") as rdf_star_ds_file:
