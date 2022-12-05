@@ -421,6 +421,10 @@ class TripleStoreEngine:
         [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
 
+        or 
+        ['<http://example.com/Obama>' '<http://example.com/president_of>' '<http://example.com/UnitedStates',
+        '<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver']
+
         :param triples: A list of list of triples in n3 syntax.
         :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the inserted triples will be annotated with this timestamp.
@@ -439,17 +443,11 @@ class TripleStoreEngine:
         insert_block = ""
         for triple in triples:
             if isinstance(triple, list) and len(triple) == 3:
-                s = triple[0]
-                p = triple[1]
-                o = triple[2]
-
-                insert_block = insert_block + "(" + s + " " + p + " " + o + " )\n"
-
-                logging.info("Triple {0} successfully inserted: ".format(triple))
+                insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
+            if isinstance(triple, str) and len(triple) == 1:
+                insert_block = insert_block +  "({0})\n".format(triple)
             else:
-                e = "The triple is either not of type list or the list does not have the length 3."
-                logging.error(e)
-                raise WrongInputFormatException(e)
+                raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
             insert_statement = statement.format(sparql_prefixes, insert_block, version_timestamp)
@@ -522,6 +520,9 @@ class TripleStoreEngine:
         old_triples = 
         [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates']]
 
+        or 
+        ['<http://example.com/Donald_Trump>' '<http://example.com/president_of>' '<http://example.com/UnitedStates']
+
 
         :param triples: A list of valid triples in n3 syntax that should be outdated.
         :param prefixes: Prefixes that are used within :triples.
@@ -541,8 +542,10 @@ class TripleStoreEngine:
         for triple in triples:
             if isinstance(triples, list) and len(triple) == 3:
                 outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
+            if isinstance(triples, str) and len(triple) == 1:
+                outdate_block = outdate_block + "({0})\n".format(triple)
             else:
-                raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
+                raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
             outdate_statement = template.format(sparql_prefixes, outdate_block, version_timestamp)
