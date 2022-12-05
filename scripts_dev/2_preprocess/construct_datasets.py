@@ -123,8 +123,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     logging.info("Build insert block")
     for i, line in enumerate(added_triples_raw):
-        added_triples_raw[i] = line[:-1]
-    insert_block = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
+        added_triples_raw[i] = line[:-2]
+    insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
+    insert_block = '\n'.join(list(map(' '.join, insert_list)))
 
     # Ingest ic0 into GraphDB as RDF-star dataset
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
@@ -161,8 +162,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
             logging.info("Build insert block")
             for i, line in enumerate(added_triples_raw):
-                added_triples_raw[i] = line[:-1]
-            insert_block = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
+                added_triples_raw[i] = line[:-2]
+            insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
+            insert_block = '\n'.join(list(map(' '.join, insert_list)))
             # logging.info("Add changeset to RDF-star dataset.")
             """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
@@ -186,7 +188,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Build outdate block")
             for i, line in enumerate(deleted_triples_raw):
                 deleted_triples_raw[i] = line[:-1]
-            outdate_block = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
+            outdate_list = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
+            outdate_block = '\n'.join(list(map(' '.join, outdate_list)))
 
             #logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
