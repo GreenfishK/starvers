@@ -45,6 +45,7 @@ COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/pyt
 COPY raw_queries /starvers_eval/queries/raw_queries
 
 #COPY scripts_dev/1_download/download_data.sh /starvers_eval/scripts/1_download
+#COPY scripts_dev/2_preprocess/start_graphdb.sh /starvers_eval/scripts/2_preprocess
 #COPY scripts_dev/2_preprocess/construct_datasets.py /starvers_eval/scripts/2_preprocess
 #COPY scripts_dev/2_preprocess/clean_raw_datasets.sh /starvers_eval/scripts/2_preprocess
 #COPY scripts_dev/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/2_preprocess
