@@ -116,7 +116,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
 
-    #result_set = []
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
