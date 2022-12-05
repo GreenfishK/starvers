@@ -36,6 +36,7 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ./scripts_dev/2_preprocess:/starvers_eval/scripts/2_preprocess # move to image after development has finished
     environment:
       - datasets=${datasets}
