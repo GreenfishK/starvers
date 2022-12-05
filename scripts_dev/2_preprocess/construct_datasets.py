@@ -159,9 +159,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
+            deleted_triples_raw = list(filter(None, deleted_triples_raw))
             
             logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
-
             try:
                 for i, triple in enumerate(result_set):
                     #if len(deleted_triples_raw) == 0:
