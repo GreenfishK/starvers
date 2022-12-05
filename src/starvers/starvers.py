@@ -412,7 +412,7 @@ class TripleStoreEngine:
         return df
 
 
-    def insert(self, triples: list, prefixes: dict = None, timestamp: datetime = None):
+    def insert(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None):
         """
         Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from and 
         valid_until timestamp using the RDF-star paradigm. The triples must be provided in n3 syntax, 
@@ -422,8 +422,12 @@ class TripleStoreEngine:
         ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
 
         or 
-        ['<http://example.com/Obama>' '<http://example.com/president_of>' '<http://example.com/UnitedStates' .,
-        '<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver .']
+        ['<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates .,
+        <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver .']
+
+        or the whole insert block for the VALUES clause:
+        "(<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates) 
+        (<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver)"
 
         :param triples: A list of list of triples in n3 syntax.
         :param prefixes: Prefixes that are used within :param triples.
@@ -442,13 +446,20 @@ class TripleStoreEngine:
         logging.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
         insert_block = ""
-        for triple in triples:
-            if isinstance(triple, list) and len(triple) == 3:
-                insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-            if isinstance(triple, str):
-                insert_block = insert_block +  "({0})\n".format(triple[:-1])
-            else:
-                raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+
+        if isinstance(type(triples), list):
+            for triple in triples:
+                if isinstance(triple, list) and len(triple) == 3:
+                    insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
+                if isinstance(triple, str):
+                    insert_block = insert_block +  "({0})\n".format(triple[:-1])
+                else:
+                    raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+        elif isinstance(type(triples), str):
+            insert_block = triples
+        else:
+            raise Exception("Type of triples must be either list or string. See doc of this function.")
+
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
             insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
@@ -514,17 +525,20 @@ class TripleStoreEngine:
 
 
 
-    def outdate(self, triples: list, prefixes: dict = None, timestamp: datetime = None):
+    def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function).
         The provided triples in :triples must be in n3 syntax, i.e. IRIs must be surrounded with pointy brackets < >. 
         E.g.:
         old_triples = 
-        [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates']]
+        [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates>']]
 
         or 
-        ['<http://example.com/Donald_Trump>' '<http://example.com/president_of>' '<http://example.com/UnitedStates' .]
+        ['<http://example.com/Donald_Trump> <http://example.com/president_of> <http://example.com/UnitedStates>' .]
+
+        or the whole insert block for the VALUES clause:
+        "(<http://example.com/Donald_Trump> <http://example.com/president_of> <http://example.com/UnitedStates>)"
 
 
         :param triples: A list of valid triples in n3 syntax that should be outdated.
@@ -543,13 +557,19 @@ class TripleStoreEngine:
         logging.info("Creating outdate statement.")
         template = open(self._template_location + "/outdate_triples.txt", "r").read()
         outdate_block = ""
-        for triple in triples:
-            if isinstance(triple, list) and len(triple) == 3:
-                outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-            if isinstance(triple, str):
-                outdate_block = outdate_block + "({0})\n".format(triple[:-1])
-            else:
-                raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+
+        if isinstance(type(triples), list):
+            for triple in triples:
+                if isinstance(triple, list) and len(triple) == 3:
+                    outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
+                if isinstance(triple, str):
+                    outdate_block = outdate_block + "({0})\n".format(triple[:-1])
+                else:
+                    raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+        elif isinstance(type(triples), str):
+            outdate_block = triples
+        else:
+            raise Exception("Type of triples must be either list or string. See doc of this function.")
         if timestamp:
             version_timestamp = versioning_timestamp_format(timestamp)
             outdate_statement = template.format(sparql_prefixes, outdate_block, '"' + version_timestamp + '"')
