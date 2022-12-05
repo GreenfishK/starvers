@@ -446,6 +446,7 @@ class TripleStoreEngine:
         logging.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
         insert_block = ""
+        logging.info(type(triples))
 
         if isinstance(type(triples), list):
             for triple in triples:
