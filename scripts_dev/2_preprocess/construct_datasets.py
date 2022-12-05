@@ -80,8 +80,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int, dataset:str,
-                         annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, policy:str, dataset:str):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
@@ -99,11 +98,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     
     logging.info("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
     # Constants
-    if annotation_style == AnnotationStyle.HIERARCHICAL:
-        policy="tbsh"
-        logging.info(policy)
-    if annotation_style == AnnotationStyle.FLAT:
-        policy="tbsf"
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
@@ -408,9 +402,9 @@ for dataset in datasets:
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
                         last_version=total_versions,
-                        dataset=dataset,
                         init_timestamp=init_version_timestamp,
-                        annotation_style=AnnotationStyle.HIERARCHICAL)
+                        policy="tbsh",
+                        dataset=dataset)
     
     # TBSF
     # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
