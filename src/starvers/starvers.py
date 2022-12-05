@@ -439,6 +439,7 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = versioning_prefixes("")
 
+        logging.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
         insert_block = ""
         for triple in triples:
@@ -454,6 +455,7 @@ class TripleStoreEngine:
         else:
             insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
         
+        logging.info("Inserting triples.")
         self.sparql_post.setQuery(insert_statement)
         self.sparql_post.query()
         logging.info("Triples inserted.")
@@ -537,7 +539,8 @@ class TripleStoreEngine:
             sparql_prefixes = versioning_prefixes(prefixes)
         else:
             sparql_prefixes = versioning_prefixes("")
-
+        
+        logging.info("Creating outdate statement.")
         template = open(self._template_location + "/outdate_triples.txt", "r").read()
         outdate_block = ""
         for triple in triples:
@@ -552,6 +555,8 @@ class TripleStoreEngine:
             outdate_statement = template.format(sparql_prefixes, outdate_block, '"' + version_timestamp + '"')
         else:
             outdate_statement = template.format(sparql_prefixes, outdate_block, "NOW()")
+        
+        logging.info("Outdating triples.")
         self.sparql_post.setQuery(outdate_statement)
         self.sparql_post.query()
         logging.info("Triples outdated.")
