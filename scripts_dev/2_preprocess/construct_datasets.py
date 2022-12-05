@@ -119,7 +119,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
-    added_triples_raw = list(filter(lambda x: x.startswith("# "), added_triples_raw))
+    added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
     # Ingest ic0 into GraphDB as RDF-star dataset
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
