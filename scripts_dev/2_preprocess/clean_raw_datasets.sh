@@ -5,10 +5,6 @@ baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
 policies=("ic" "tb") # only raw datasets. Don't change order!
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
-export JAVA_HOME=/usr/local/openjdk-11
-export PATH=/usr/local/openjdk-11/bin:$PATH
-export FUSEKI_HOME=/jena-fuseki
-export _JAVA_OPTIONS="-Xmx90g"
 
 # Dirs and files
 mkdir -p ${baseDir}/databases/preprocessing
@@ -42,7 +38,6 @@ for dataset in ${datasets[@]}; do
             ;;
         esac
         echo "Correcting $dataset for $policy policy"
-        mkdir -p ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
             ds_abs_path=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
@@ -50,11 +45,6 @@ for dataset in ${datasets[@]}; do
             # copy config template
             repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
             echo $repositoryID
-            cp ${SCRIPT_DIR}/2_preprocess/configs/jenatdb2-config_template.ttl ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-            sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-            sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-            sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-
             # Write the line number of every invalid triple into a file
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
