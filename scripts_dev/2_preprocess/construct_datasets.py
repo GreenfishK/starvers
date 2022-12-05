@@ -104,14 +104,17 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     valid_ufn_ts_res = '"9999-12-31T00:00:00.000{tz_offset}"^^{datetimeref}'.format(tz_offset=tz_offset, datetimeref=xsd_datetime)
     sys_ts_formatted = datetime.strftime(init_timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
     init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime) 
+
+    # Start GraphDB  
+    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
+
+    # Create RDF engines
     rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                         'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
     sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
-
-    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
 
     #result_set = []
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
