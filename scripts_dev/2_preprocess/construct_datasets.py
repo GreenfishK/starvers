@@ -146,14 +146,18 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             
             logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
-            for i, triple in enumerate(result_set):
-                if len(deleted_triples_raw) == 0:
-                    break  
-                if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
-                    result_set[i][7] = vers_ts_str
-                    deleted_triples_raw.pop(0)
-                if (i % round(len(result_set)/10)) == 0:
-                    logging.info("{0}% artificial valid_until timestamps updated.".format((i/len(result_set))*100))
+
+            try:
+                for i, triple in enumerate(result_set):
+                    #if len(deleted_triples_raw) == 0:
+                    #    break  
+                    if triple[1] == deleted_triples_raw.pop(0) and triple[7] == valid_ufn_ts_res:
+                        result_set[i][7] = vers_ts_str
+                    #if (i % round(len(result_set)/10)) == 0:
+                    #    logging.info("{0}% artificial valid_until timestamps updated.".format((i/len(result_set))*100))
+            except IndexError:
+                logging.info("All artificial valid_until timestamps in the RDF-star dataset have been updated according to the triples in {0}.".format(filename))
+                continue
         
     logging.info("The final RDF-star dataset has {0} triples".format(len(result_set)))
     logging.info("Write RDF-star dataset from memory to file.")
