@@ -453,6 +453,8 @@ class TripleStoreEngine:
             insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
         else:
             insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
+        logging.info(insert_statement)
+        
         self.sparql_post.setQuery(insert_statement)
         self.sparql_post.query()
         logging.info("Triples inserted.")
