@@ -1,8 +1,4 @@
 #!/bin/bash
-# Params:
-# dataset
-# policy
-# ic0
 
 # Set variables
 baseDir=/starvers_eval
@@ -19,8 +15,8 @@ repositoryID=${policy}_${dataset}
 cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 sed -i "s/{{repositoryID}}/$repositoryID/g" ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 
-# Ingest ic0
-/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${ic0} --force
+# Ingest empty dataset
+/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --force
 
 # Start database server and run in background
 /opt/graphdb/dist/bin/graphdb -d -s
