@@ -5,6 +5,8 @@ from enum import Enum
 import re
 import sys
 import re
+import logging
+
 
 # Global variables for assertions
 # cnt_net_triples_added = 0
@@ -23,10 +25,10 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
 
     """
 
-    print("Constructing changesets.")
+    logging.info("Constructing changesets.")
     cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
     if not os.path.exists(cb_comp_dir):
-        print("Create directory: " + cb_comp_dir)
+        logging.info("Create directory: " + cb_comp_dir)
         os.makedirs(cb_comp_dir)
 
     cnt_net_triples_added = 0    
@@ -36,7 +38,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     for i in range(1, end_vers):
         ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(basename_length))
         ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(basename_length))
-        print("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(basename_length), str(i+1).zfill(basename_length)))
+        logging.info("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(basename_length), str(i+1).zfill(basename_length)))
 
 
         with open(ic1_ds_path, "r") as ic1_file, open(ic2_ds_path, "r") as ic2_file:
@@ -54,22 +56,22 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
         cnt_net_triples_added += len(cs_added)
         cnt_triples_rdf_star += len(cs_added) + (len(ic1) if i == 1 else 0)
         cnt_valid_triples_last_ic = len(ic2) if i == end_vers - 1 else 0
-        print("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
+        logging.info("Create data-added_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_added)))
         with open(cb_comp_dir + "/" + "data-added_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_added_file:
             cs_added_file.write(cs_added_str)
         cs_added, cs_added_str = None, None
 
         cs_deleted_str = "\n".join(triple for triple in cs_deleted)
         cnt_net_triples_added -= len(cs_deleted)
-        print("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
+        logging.info("Create data-deleted_{0}-{1}.nt with {2} triples.".format(i, i + 1, len(cs_deleted)))
         with open(cb_comp_dir + "/" + "data-deleted_{0}-{1}.{2}".format(i, i + 1, format), "w") as cs_deleted_file:
             cs_deleted_file.write(cs_deleted_str)
         cs_deleted, cs_deleted_str = None, None
     
-    print("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
-    print("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
+    logging.info("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
+    logging.info("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
     # sed -n "$=" alldata.TB_star_hierarchical.ttl      
-    print("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
+    logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
     # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
@@ -84,7 +86,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
     
-    print("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
+    logging.info("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
     # Constants
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
@@ -95,7 +97,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime)
 
     result_set = []
-    print("Read initial snapshot {0} into memory.".format(source_ic0))
+    logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     # transform all triples in the list to their starvers RDF-star representations
@@ -123,11 +125,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
         vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         
         if filename.startswith("data-added"):
-            print("Read positive changeset {0} into memory.".format(filename))
+            logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
 
-            print("Add changeset to RDF-star dataset.")
+            logging.info("Add changeset to RDF-star dataset.")
             result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
@@ -138,12 +140,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
             result_set = sorted(result_set, key=lambda x: x[1])       
-            print("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
+            logging.info("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
         if filename.startswith("data-deleted"):
-            print("Read negative changeset {0} into memory.".format(filename))
+            logging.info("Read negative changeset {0} into memory.".format(filename))
             deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             
-            print("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
+            logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
             for i, triple in enumerate(result_set):
                 if len(deleted_triples_raw) == 0:
                     break  
@@ -151,15 +153,19 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                     result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
         
-    print("The final RDF-star dataset has {0} triples".format(len(result_set)))
-    print("Write RDF-star dataset from memory to file.")
+    logging.info("The final RDF-star dataset has {0} triples".format(len(result_set)))
+    logging.info("Write RDF-star dataset from memory to file.")
     rdf_star_ds_str = ""
-    for rdf_star_triple_list in result_set:
-        assert rdf_star_triple_list[1][-2:] == " ."
-        rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
-        rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(rdf_star_ds_str)
+    for i, rdf_star_triple_list in enumerate(result_set):
+        # assert rdf_star_triple_list[1][-2:] == " ."
+        rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
+        rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
+        if (i % 1000000 == 0):
+            with open(destination, "a") as rdf_star_ds_file:
+                rdf_star_ds_file.write(rdf_star_ds_str)
+
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
@@ -184,7 +190,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
         return [prefixes_list, dataset_without_prefixes]
 
-    print("Building version {0}. ".format(str(0)))
+    logging.info("Building version {0}. ".format(str(0)))
     cbng_dataset = ""
     prefixes = {}
     ns_cnt = 1
@@ -211,14 +217,14 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
             cs_add_files[version] = filename
         if filename.startswith("data-deleted"):
             cs_del_files[version] = filename
-    print("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
+    logging.info("{0} change sets are in directory {1}".format(len(cs_add_files), source_cs))
 
     for vers, cs_add_file in sorted(cs_add_files.items()):
         change_sets.append((vers, cs_add_file, cs_del_files[vers]))
 
     assert last_version - 1 <= len(change_sets)
     for i, t in enumerate(change_sets[0:last_version-1]):
-        print("Building version {0}. ".format(int(t[0])))
+        logging.info("Building version {0}. ".format(int(t[0])))
         cs_add_raw = open(source_cs + "/" + t[1], "r").read()
         cs_del_raw = open(source_cs + "/" + t[2], "r").read()
 
@@ -251,7 +257,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
 
         cbng_dataset = cbng_dataset + template.format(str(i+1).zfill(max_version_digits), cs_add, cs_del)
 
-    print("Export data set.")
+    logging.info("Export data set.")
     f = open(destination, "w")
     f.write("\n".join(["@prefix " + key + ":" + value + " ." for key, value in prefixes.items()]) + "\n" + cbng_dataset)
     f.close()
@@ -262,25 +268,28 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
     TODO: write docu
     """
 
-    print("Constructing the ICNG dataset with ICs as named graphs.")
+    logging.info("Constructing the ICNG dataset with ICs as named graphs.")
     template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
     if not os.path.exists(source):
         os.makedirs(source)
 
-    print("Create empty dataset.")
+    logging.info("Create empty dataset.")
     f = open(destination, "w")
     f.write("")
     f.close()
 
     for i in range(last_version):
-        print("Building version {0}. ".format(str(i+1)))
+        logging.info("Building version {0}. ".format(str(i+1)))
         ic = open(source + "/" + str(i+1).zfill(basename_length)  + ".nt", "r").read()
     
-        print("Write ic {} to data set.".format(str(i+1)))
+        logging.info("Write ic {} to data set.".format(str(i+1)))
         f = open(destination, "a")
         f.write(template.format(str(i), ic) + "\n")
         f.close()
 
+############################################# Logging ###################################################################
+logging.basicConfig(filename='/starvers_eval/output/logs/preprocessing/construct_datasets.txt',
+                    encoding='utf-8', level=logging.INFO)
 
 ############################################# Parameters and function calls #############################################
 datasets = sys.argv[1].split(" ")
