@@ -85,7 +85,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
     :param: init_timestamp: The initial timestamp that is being incremented by 1sec for each dataset version/pair of changesets.
-    :param: annotation_style: The starvers rdf-star paradigm to be used during the dataset construction.
 
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
@@ -96,7 +95,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     """
     
-    logging.info("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
+    logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
     # Constants
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
