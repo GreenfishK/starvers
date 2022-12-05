@@ -101,7 +101,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # Constants
     if annotation_style == AnnotationStyle.HIERARCHICAL:
         policy="tbsh"
-    if annotation_style == annotation_style.FLAT:
+        logging.info(policy)
+    if annotation_style == AnnotationStyle.FLAT:
         policy="tbsf"
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
