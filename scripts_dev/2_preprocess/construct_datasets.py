@@ -6,6 +6,7 @@ import re
 import sys
 import re
 import logging
+from starvers.starvers import TripleStoreEngine
 
 
 # Global variables for assertions
@@ -85,6 +86,18 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
 
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
+
+    """
+    Call GraphDB instance
+    export JAVA_HOME=/opt/java/openjdk
+    export PATH=/opt/java/openjdk/bin:$PATH
+    graphdb_evns=$GDB_JAVA_OPTS
+
+    export GDB_JAVA_OPTS="$graphdb_evns -Dgraphdb.home.data=${baseDir}/databases/graphdb_${policy}_${dataset}/data"
+
+    /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force
+
+    """
     
     logging.info("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
     # Constants
@@ -100,6 +113,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
+    added_triples_raw = list(filter(lambda x: x.startswith("# "), added_triples_raw))
+
     # transform all triples in the list to their starvers RDF-star representations
     result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
