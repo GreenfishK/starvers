@@ -122,9 +122,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
     logging.info("Build insert block")
-    insert_block = ""
-    for line in added_triples_raw:
-        insert_block = insert_block + "(" + line[:-1] + ")\n"
+    for i, line in enumerate(added_triples_raw):
+        added_triples_raw[i] = line[:-1]
+    insert_block = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
 
     # Ingest ic0 into GraphDB as RDF-star dataset
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
