@@ -297,7 +297,6 @@ if not os.path.exists('/starvers_eval/output/logs/preprocessing'):
     os.makedirs('/starvers_eval/output/logs/preprocessing')
 with open('/starvers_eval/output/logs/preprocessing/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-    log_file.close()
 logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
