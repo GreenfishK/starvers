@@ -15,7 +15,10 @@ def versioning_timestamp_format(version_timestamp: datetime) -> str:
     :param version_timestamp:
     :return:
     """
-    return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[:-2] + ":" + version_timestamp.strftime("%z")[3:5]
+    if version_timestamp.strftime("%z") != '':
+        return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]  + version_timestamp.strftime("%z")[0:3] + ":" + version_timestamp.strftime("%z")[3:5]
+    else:
+        return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
 def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:

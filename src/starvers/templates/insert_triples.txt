@@ -10,5 +10,5 @@ where {{
         # block of triples
         {1}
     }}
-    BIND(xsd:dateTime(NOW()) AS ?newVersion)
+    BIND(xsd:dateTime({2}) AS ?newVersion)
 }}

@@ -13,5 +13,5 @@ where {{
 	}}
     # versioning
     << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
-    BIND(xsd:dateTime(NOW()) AS ?newVersion).
+    BIND(xsd:dateTime({2}) AS ?newVersion).
 }}
