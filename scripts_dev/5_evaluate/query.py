@@ -16,7 +16,7 @@ import logging as logger
 ############################################# Logging ###################################################################
 with open('/starvers_eval/output/logs/evaluate/query.txt', "w") as log_file:
     log_file.write("")
-logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
+logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/evaluate/query.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
