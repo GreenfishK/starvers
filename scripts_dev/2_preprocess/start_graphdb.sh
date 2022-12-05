@@ -2,6 +2,7 @@
 # Input parametrers
 policy=$1
 dataset=$2
+
 # Set variables
 baseDir=/starvers_eval
 script_dir=/starvers_eval/scripts
@@ -18,7 +19,7 @@ cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl ${script_dir}/
 sed -i "s/{{repositoryID}}/$repositoryID/g" ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 
 # Ingest empty dataset
-/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --force
+/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --forcez
 
 # Start database server and run in background
 /opt/graphdb/dist/bin/graphdb -d -s
