@@ -116,6 +116,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
 
+    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
+    subprocess.run("policy={0}".format(policy))
+    subprocess.run("dataset={0}".format(dataset))
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh'))
+
+
     #result_set = []
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
