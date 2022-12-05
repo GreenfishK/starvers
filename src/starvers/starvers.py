@@ -412,7 +412,7 @@ class TripleStoreEngine:
         return df
 
 
-    def insert(self, triples: list, prefixes: dict = None):
+    def insert(self, triples: list, prefixes: dict = None, timestamp: datetime = None):
         """
         Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from and 
         valid_until timestamp using the RDF-star paradigm. The triples must be provided in n3 syntax, 
@@ -423,6 +423,7 @@ class TripleStoreEngine:
 
         :param triples: A list of list of triples in n3 syntax.
         :param prefixes: Prefixes that are used within :param triples.
+        :param timestamp: If a timestamp is given, the inserted triples will be annotated with this timestamp.
         :return:
         """
 
@@ -449,7 +450,11 @@ class TripleStoreEngine:
                 e = "The triple is either not of type list or the list does not have the length 3."
                 logging.error(e)
                 raise WrongInputFormatException(e)
-        insert_statement = statement.format(sparql_prefixes, insert_block)
+        if timestamp:
+            version_timestamp = versioning_timestamp_format(timestamp)
+            insert_statement = statement.format(sparql_prefixes, insert_block, version_timestamp)
+        else:
+            insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
         self.sparql_post.setQuery(insert_statement)
         self.sparql_post.query()
         logging.info("Triples inserted.")
@@ -508,7 +513,7 @@ class TripleStoreEngine:
 
 
 
-    def outdate(self, triples: list, prefixes: dict = None):
+    def outdate(self, triples: list, prefixes: dict = None, timestamp: datetime = None):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function).
@@ -520,6 +525,7 @@ class TripleStoreEngine:
 
         :param triples: A list of valid triples in n3 syntax that should be outdated.
         :param prefixes: Prefixes that are used within :triples.
+        :param timestamp: If a timestamp is given, the outdated triples will be annotated with this timestamp.
         """
 
         if len(triples) == 0:
@@ -537,7 +543,11 @@ class TripleStoreEngine:
                 outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
             else:
                 raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
-        outdate_statement = template.format(sparql_prefixes, outdate_block)
+        if timestamp:
+            version_timestamp = versioning_timestamp_format(timestamp)
+            outdate_statement = template.format(sparql_prefixes, outdate_block, version_timestamp)
+        else:
+            outdate_statement = template.format(sparql_prefixes, outdate_block, "NOW()")
         self.sparql_post.setQuery(outdate_statement)
         self.sparql_post.query()
         logging.info("Triples outdated.")
