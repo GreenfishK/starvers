@@ -6,6 +6,10 @@ import re
 import sys
 import re
 import logging
+import subprocess
+import shlex
+from SPARQLWrapper import SPARQLWrapper, JSON
+from rdflib.term import URIRef, Literal, BNode
 from starvers.starvers import TripleStoreEngine
 
 
@@ -76,7 +80,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int,
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_timestamp: datetime, last_version: int, dataset:str,
                          annotation_style: AnnotationStyle = AnnotationStyle.FLAT):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
@@ -88,35 +92,41 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     """
 
     """
-    Call GraphDB instance
-    export JAVA_HOME=/opt/java/openjdk
-    export PATH=/opt/java/openjdk/bin:$PATH
-    graphdb_evns=$GDB_JAVA_OPTS
-
-    export GDB_JAVA_OPTS="$graphdb_evns -Dgraphdb.home.data=${baseDir}/databases/graphdb_${policy}_${dataset}/data"
-
-    /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_load_data/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force
+    # Call GraphDB instance
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/ingest_and_start_graphdb.sh source_ic0 tbsh beara'))
 
     """
     
     logging.info("Constructing RDF-star dataset with the {0} annotation style from ICs and changesets.".format(annotation_style))
     # Constants
+    if annotation_style == AnnotationStyle.HIERARCHICAL:
+        policy="tbsh"
+    if annotation_style == annotation_style.FLAT:
+        policy="tbsf"
     valid_from_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_from>"
     valid_until_predicate = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
     xsd_datetime = "<http://www.w3.org/2001/XMLSchema#dateTime>"
     tz_offset = "+02:00"
     valid_ufn_ts_res = '"9999-12-31T00:00:00.000{tz_offset}"^^{datetimeref}'.format(tz_offset=tz_offset, datetimeref=xsd_datetime)
     sys_ts_formatted = datetime.strftime(init_timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3]
-    init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime)
+    init_ts_res = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=sys_ts_formatted, tz_offset=tz_offset, datetimeref=xsd_datetime) 
+    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{policy}_{dataset}'.format(policy, dataset),
+                                        'http://Starvers:7200/repositories/{policy}_{dataset}/statements'.format(policy, dataset))
+    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{policy}_{dataset}'.format(policy, dataset))
+    sparql_engine.setReturnFormat(JSON)
+    sparql_engine.setOnlyConneg(True)
 
-    result_set = []
+    #result_set = []
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: x.startswith("# "), added_triples_raw))
 
+    # Ingest ic0 into GraphDB as RDF-star dataset
+    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
+
     # transform all triples in the list to their starvers RDF-star representations
-    result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
+    """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                              added_triples_raw, 
                              [">>"] * len(added_triples_raw), 
                              [valid_from_predicate] * len(added_triples_raw),
@@ -124,7 +134,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                              [">>"] * len(added_triples_raw),
                              [valid_until_predicate] * len(added_triples_raw),
                              [valid_ufn_ts_res] * len(added_triples_raw),
-                             ['.'] * len(added_triples_raw))))
+                             ['.'] * len(added_triples_raw))))"""
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -137,15 +147,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
-        vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
+        #vers_ts_str = '"{ts}{tz_offset}"^^{datetimeref}'.format(ts=datetime.strftime(vers_ts, "%Y-%m-%dT%H:%M:%S.%f")[:-3], tz_offset=tz_offset, datetimeref=xsd_datetime)            
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
 
-            logging.info("Add changeset to RDF-star dataset.")
-            result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
+            # logging.info("Add changeset to RDF-star dataset.")
+            """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
                                       [">>"] * len(added_triples_raw), 
                                       [valid_from_predicate] * len(added_triples_raw),
@@ -154,15 +164,21 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                                       [valid_until_predicate] * len(added_triples_raw),
                                       [valid_ufn_ts_res] * len(added_triples_raw),
                                       ['.'] * len(added_triples_raw))))
-            result_set = sorted(result_set, key=lambda x: x[1])       
-            logging.info("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
+            result_set = sorted(result_set, key=lambda x: x[1])   """    
+            logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
+            # logging.info("Positive change {0} set added: Number of triples in RDF-star dataset: {1}".format(filename, len(result_set)))       
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
-            deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
+            #deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
+            deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
-            
-            logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
-            try:
+
+            #logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
+            logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
+
+            """try:
                 for i, triple in enumerate(result_set):
                     #if len(deleted_triples_raw) == 0:
                     #    break  
@@ -173,11 +189,55 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                     #    logging.info("{0}% artificial valid_until timestamps updated.".format((i/len(result_set))*100))
             except IndexError:
                 logging.info("All artificial valid_until timestamps in the RDF-star dataset have been updated according to the triples in {0}.".format(filename))
-                continue
+                continue"""
         
-    logging.info("The final RDF-star dataset has {0} triples".format(len(result_set)))
+    #logging.info("The final RDF-star dataset has {0} triples".format(len(result_set)))
+    logging.info("Query final RDF-star dataset.")
+    sparql_engine.setQuery("""
+    select ?s ?p ?o ?x ?y ?a ?b {
+        << <<?s ?p ?o >> ?x ?y >> ?a ?b .
+    }
+    """)
+    results = sparql_engine.queryAndConvert()
+    results_str = ""
+
+    logging.info("Convert JSON output of final RDF-star dataset into N3 format.")
+    for r in results["results"]["bindings"]:
+        if r['s']['type'] == "uri":
+            s = URIRef(r['s']['value'])
+        else:
+            s = BNode(r['s']['value'])
+        p = URIRef(r['p']['value'])
+        if r['o']['type']  == "uri":
+            o = URIRef(r['o']['value'])
+        elif r['o']['type'] == "blank":
+            o = BNode(r['o']['value'])
+        else:
+            value = r['o']["value"]
+            lang = r['o'].get("xml:lang", None)
+            datatype = r['o'].get("datatype", None)
+            o = Literal(value, lang=lang, datatype=datatype)
+        x = URIRef(r['x']['value'])
+        value = r['y']["value"]
+        lang = r['y'].get("xml:lang", None)
+        datatype = r['y'].get("datatype", None)
+        y = Literal(value,lang=lang,dataype=datatype)
+        a = URIRef(r['a']['value'])
+        value = r['b']["value"]
+        lang = r['b'].get("xml:lang", None)
+        datatype = r['b'].get("datatype", None)
+        b = Literal(value,lang=lang,dataype=datatype)
+        results_str = "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ."
+
     logging.info("Write RDF-star dataset from memory to file.")
-    rdf_star_ds_str = ""
+    with open(destination, "w") as rdf_star_ds_file:
+        rdf_star_ds_file.write(results_str)
+
+    # TODO: extract ?b and ?y and assemble RDF star dataset
+    logging.info("Shutting down GraphDB server.")
+    subprocess.run("pkill", "-f", "'/opt/java/openjdk/bin/java'")
+
+    """rdf_star_ds_str = ""
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(rdf_star_ds_str)
     for i, rdf_star_triple_list in enumerate(result_set):
@@ -185,7 +245,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
         rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
         rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
     with open(destination, "a") as rdf_star_ds_file:
-          rdf_star_ds_file.write(rdf_star_ds_str)
+          rdf_star_ds_file.write(rdf_star_ds_str)"""
 
 
   
@@ -344,6 +404,7 @@ for dataset in datasets:
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
                         last_version=total_versions,
+                        dataset=dataset,
                         init_timestamp=init_version_timestamp,
                         annotation_style=AnnotationStyle.HIERARCHICAL)
     
