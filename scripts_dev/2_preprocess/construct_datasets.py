@@ -120,6 +120,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
+
+    logging.info("Build insert block")
     insert_block = ""
     for line in added_triples_raw:
         insert_block = insert_block + "(" + line[:-1] + ")\n"
@@ -156,6 +158,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
+
+            logging.info("Build insert block")
             insert_block = ""
             for line in added_triples_raw:
                 insert_block = insert_block + "(" + line[:-1] + ")\n"
@@ -179,6 +183,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             #deleted_triples_raw = sorted(open(source_cs + "/" + filename, "r").read().splitlines())
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
+
+            logging.info("Build outdate block")
             outdate_block = ""
             for line in deleted_triples_raw:
                 outdate_block = outdate_block + "(" + line[:-1] + ")\n"
