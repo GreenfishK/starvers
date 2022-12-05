@@ -1,5 +1,7 @@
 #!/bin/bash
-
+# Input parametrers
+policy=$1
+dataset=$2
 # Set variables
 baseDir=/starvers_eval
 script_dir=/starvers_eval/scripts
