@@ -122,6 +122,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
     # Ingest ic0 into GraphDB as RDF-star dataset
+    logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
 
     # transform all triples in the list to their starvers RDF-star representations
