@@ -11,13 +11,13 @@ export FUSEKI_HOME=/jena-fuseki
 export _JAVA_OPTIONS="-Xmx90g"
 
 # Dirs and files
-#> $baseDir/output/logs/corrections.txt
 mkdir -p ${baseDir}/databases/preprocessing
 rm -rf ${baseDir}/databases/preprocessing/*
 mkdir -p ${baseDir}/configs/preprocessing
 rm -rf ${baseDir}/configs/preprocessing/*
 mkdir -p $baseDir/output/logs/preprocessing/
 rm -rf $baseDir/output/logs/preprocessing/*
+> $baseDir/output/logs/preprocessing/clean_raw_datasets.txt
 
 echo "Start corrections"
 for dataset in ${datasets[@]}; do
@@ -68,16 +68,18 @@ for dataset in ${datasets[@]}; do
                 substitutions="${substitutions}${invalid_line}s/(.*)/# \1/g;"
             done
             sed -i -r "$substitutions" $ds_abs_path
-            # TODO: Include lines that are already excluded via hashtags at the beginning of the log file
-            #commented_out_lines=`grep -n -E "^2" invalid_triples_ic_beara_1.txt | cut -f1 -d:`
-            #sed -i "1i $commented_out_lines" $invalid_lines_file
 
+            # Print how many lines were excluded in this run
             if [ -z "$invalid_lines" ]; then
                 echo "$ds_abs_path has no errors according to the jena RDFParser."
             else
                 cnt_excluded=`sed -n "$=" $invalid_lines_file`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path"
             fi
+
+            # Log how many lines are excluded from the dataset
+            excluded_lines=`grep -c '^# ' $ds_abs_path`
+            echo "${ds_abs_path}: $excluded_lines" >> $baseDir/output/logs/preprocessing/clean_raw_datasets.txt
         done
     done
 done
