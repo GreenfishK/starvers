@@ -151,8 +151,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                 for i, triple in enumerate(result_set):
                     #if len(deleted_triples_raw) == 0:
                     #    break  
-                    if triple[1] == deleted_triples_raw.pop(0) and triple[7] == valid_ufn_ts_res:
+                    if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
                         result_set[i][7] = vers_ts_str
+                        deleted_triples_raw.pop(0)
                     #if (i % round(len(result_set)/10)) == 0:
                     #    logging.info("{0}% artificial valid_until timestamps updated.".format((i/len(result_set))*100))
             except IndexError:
