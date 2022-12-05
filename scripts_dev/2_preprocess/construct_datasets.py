@@ -160,10 +160,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             added_triples_raw = list(filter(None, added_triples_raw))
 
             logging.info("Build insert block")
-            insert_block = ""
-            for line in added_triples_raw:
-                insert_block = insert_block + "(" + line[:-1] + ")\n"
-
+            for i, line in enumerate(added_triples_raw):
+                added_triples_raw[i] = line[:-1]
+            insert_block = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
             # logging.info("Add changeset to RDF-star dataset.")
             """result_set += list(map(list, zip(["<< <<"] * len(added_triples_raw),
                                       added_triples_raw, 
@@ -185,9 +184,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
             logging.info("Build outdate block")
-            outdate_block = ""
-            for line in deleted_triples_raw:
-                outdate_block = outdate_block + "(" + line[:-1] + ")\n"
+            for i, line in enumerate(deleted_triples_raw):
+                deleted_triples_raw[i] = line[:-1]
+            outdate_block = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
 
             #logging.info("Update the artificial valid_until timestamps of all triples in the RDF-star dataset that match with the triples in {0}.".format(filename))
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
