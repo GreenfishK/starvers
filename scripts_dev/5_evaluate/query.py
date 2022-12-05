@@ -14,6 +14,8 @@ import numpy as np
 import logging as logger
 
 ############################################# Logging ###################################################################
+if not os.path.exists('/starvers_eval/output/logs/evaluate'):
+    os.makedirs('/starvers_eval/output/logs/evaluate')
 with open('/starvers_eval/output/logs/evaluate/query.txt', "w") as log_file:
     log_file.write("")
 logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/evaluate/query.txt", 
