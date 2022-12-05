@@ -11,14 +11,16 @@ from rdflib.query import Result
 import shutil
 import csv
 import numpy as np
-import logging
+import logging as logger
 
-logger = logging.getLogger("evaluate")
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s [%(name)-12s] %(levelname)-8s %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
+############################################# Logging ###################################################################
+with open('/starvers_eval/output/logs/evaluate/query.txt', "w") as log_file:
+    log_file.write("")
+logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logger.INFO)
 
 ###################################### Parameters ######################################
 triple_store = sys.argv[1]
@@ -369,6 +371,7 @@ for query_set in query_sets:
                     write.writerows(list_result)
                     file.close()
                     df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)"""
+
 logger.info("Writing performance measurements to disk ...")            
 df.drop_duplicates(inplace=True)
 df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False, mode='a')
