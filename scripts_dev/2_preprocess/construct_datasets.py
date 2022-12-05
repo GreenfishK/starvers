@@ -152,6 +152,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
                 if triple[1] == deleted_triples_raw[0] and triple[7] == valid_ufn_ts_res:
                     result_set[i][7] = vers_ts_str
                     deleted_triples_raw.pop(0)
+                if round((i/len(result_set))*100) % 10 == 0:
+                    logging.info("Processed {0}%".format(round((i/len(result_set))*100)))
         
     logging.info("The final RDF-star dataset has {0} triples".format(len(result_set)))
     logging.info("Write RDF-star dataset from memory to file.")
@@ -159,12 +161,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, init_time
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(rdf_star_ds_str)
     for i, rdf_star_triple_list in enumerate(result_set):
-        # assert rdf_star_triple_list[1][-2:] == " ."
+        assert rdf_star_triple_list[1][-2:] == " ."
         rdf_star_triple_list[1] = rdf_star_triple_list[1][:-2]
         rdf_star_ds_str += " ".join(rdf_star_triple_list) + "\n"
-        if (i % 1000000 == 0):
-            with open(destination, "a") as rdf_star_ds_file:
-                rdf_star_ds_file.write(rdf_star_ds_str)
+    with open(destination, "a") as rdf_star_ds_file:
+          rdf_star_ds_file.write(rdf_star_ds_str)
 
 
   
