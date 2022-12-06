@@ -140,6 +140,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
     with open(destination, "w") as rdf_star_ds_file:
         for r in results["results"]["bindings"]:
+            # Further potential replacements: 
+            # replace(r"\"", '"')
+            # replace(r"\x", r"\\x")
             if r['s']['type'] == "uri":
                 s = "<" + r['s']['value'] + ">"
             else:
