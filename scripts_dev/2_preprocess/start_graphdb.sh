@@ -19,7 +19,7 @@ cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl ${script_dir}/
 sed -i "s/{{repositoryID}}/$repositoryID/g" ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 
 # Ingest empty dataset
-/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --forcez
+/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --force
 
 # Start database server and run in background
 /opt/graphdb/dist/bin/graphdb -d -s

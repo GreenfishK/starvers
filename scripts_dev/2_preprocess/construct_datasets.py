@@ -93,7 +93,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # Start JenaTDB2  
     #logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
     #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
-    logging.info("Ingest empty file into GraphDB repository and start JenaTDB2.")
+    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
     subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
 
     # Create RDF engines
