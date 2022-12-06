@@ -455,20 +455,33 @@ class TripleStoreEngine:
                     insert_block = insert_block +  "({0})\n".format(triple[:-1])
                 else:
                     raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+
+            if timestamp:
+                version_timestamp = versioning_timestamp_format(timestamp)
+                insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
+            else:
+                insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
+            
+            logging.info("Inserting triples.")
+            self.sparql_post.setQuery(insert_statement)
+            self.sparql_post.query()
+        
         elif isinstance(triples, str):
-            insert_block = triples
+            insert_block = triples.splitlines()
+            for i in range(0, len(insert_block), 1000):
+                insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
+
+                if timestamp:
+                    version_timestamp = versioning_timestamp_format(timestamp)
+                    insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
+                else:
+                    insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
+
+                logging.info("Inserting triples as batch {0} to {1}.".format(i, min(i+1000, len(insert_block))))
+                self.sparql_post.setQuery(insert_statement)
+                self.sparql_post.query()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
-
-        if timestamp:
-            version_timestamp = versioning_timestamp_format(timestamp)
-            insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
-        else:
-            insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
-        
-        logging.info("Inserting triples.")
-        self.sparql_post.setQuery(insert_statement)
-        self.sparql_post.query()
         logging.info("Triples inserted.")
 
 
@@ -557,7 +570,7 @@ class TripleStoreEngine:
         logging.info("Creating outdate statement.")
         template = open(self._template_location + "/outdate_triples.txt", "r").read()
         outdate_block = ""
-
+        
         if isinstance(triples, list):
             for triple in triples:
                 if isinstance(triple, list) and len(triple) == 3:
