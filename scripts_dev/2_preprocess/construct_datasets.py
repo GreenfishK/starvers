@@ -140,34 +140,38 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     with open(destination, "w") as rdf_star_ds_file:
         for r in results["results"]["bindings"]:
             if r['s']['type'] == "uri":
-                s = URIRef(r['s']['value'])
+                s = "<" + r['s']['value'] + ">"
             else:
-                s = BNode(r['s']['value'])
+                s = r['s']['value']
             p = URIRef(r['p']['value'])
             if r['o']['type']  == "uri":
-                o = URIRef(r['o']['value'])
+                o = "<" + r['o']['value'] + ">"
             elif r['o']['type'] == "blank":
-                o = BNode(r['o']['value'])
+                o = r['o']['value']
             else:
                 value = r['o']["value"]
                 lang = r['o'].get("xml:lang", None)
                 datatype = r['o'].get("datatype", None)
-                o = Literal(value, lang=lang, datatype=datatype)
+                o = '"' + value + '"'
+                if lang:
+                    o+='"@' + lang + '"' 
+                elif datatype:
+                    p+="^^" + "<" + datatype + ">"
+            
             x = URIRef(r['x']['value'])
             value = r['y']["value"]
-            lang = r['y'].get("xml:lang", None)
             datatype = r['y'].get("datatype", None)
-            y = Literal(value,lang=lang,datatype=datatype)
+            y = '"' + value + '"^^' + "<" + datatype + ">"
+            
             a = URIRef(r['a']['value'])
             value = r['b']["value"]
-            lang = r['b'].get("xml:lang", None)
             datatype = r['b'].get("datatype", None)
-            b = Literal(value,lang=lang,datatype=datatype)
-            rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .\n")
+            b = '"' + value + '"^^' + "<" + datatype + ">"
+            rdf_star_ds_file.write("<< << " + s + " " + p.n3() + " " + o  + ">>" + x.n3()  + " " + y  + " >>" + a.n3()  + " " + b + " .\n")
     
     cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
-    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00"', destination], capture_output=True, text=True)  
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down GraphDB server.")
