@@ -143,7 +143,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             if r['s']['type'] == "uri":
                 s = "<" + r['s']['value'] + ">"
             else:
-                s = r['s']['value']
+                s = r['s']['value'].replace("\n","\\n").replace("\t", "\\t")
             p = URIRef(r['p']['value'])
             if r['o']['type']  == "uri":
                 o = "<" + r['o']['value'] + ">"
