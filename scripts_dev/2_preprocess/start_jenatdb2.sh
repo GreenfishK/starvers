@@ -14,11 +14,12 @@ export #JAVA_OPTIONS="-Xmx90g -Xms90g"
 export _JAVA_OPTIONS="-Xmx90g -Xms90g"
 export ADMIN_PASSWORD=starvers
 
-# Clean repository
+# Clean directories
 rm -rf ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}
 
-# Create repositories
+# Create directories
 mkdir -p ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}
+mkdir -p /run/configuration
 
 # Parametrize and copy config file
 repositoryID=${policy}_${dataset}
