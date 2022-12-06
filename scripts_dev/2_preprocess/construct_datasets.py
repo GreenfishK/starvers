@@ -75,9 +75,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     
     logging.info("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
     logging.info("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
-    # sed -n "$=" alldata.TB_star_hierarchical.ttl      
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
-    # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, policy:str, dataset:str):
@@ -171,6 +169,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             datatype = r['b'].get("datatype", None)
             b = Literal(value,lang=lang,datatype=datatype)
             rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .\n")
+    
+    cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '"$="', "alldata.TB_star_hierarchical.ttl"], capture_output=True, text=True)   
+    logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000"'], capture_output=True, text=True)  
+    logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down GraphDB server.")
     subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
