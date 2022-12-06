@@ -90,27 +90,16 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     """
     
     logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
-    # Start JenaTDB2  
-    # logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    # subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
     logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
     subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
-
-    # Create RDF engines
-    #rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-    #                                    'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
-    #sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
-    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-                                        'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
-    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
-    sparql_engine.setReturnFormat(JSON)
-    sparql_engine.setOnlyConneg(True)
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
+    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+                                        'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
 
@@ -122,7 +111,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
         change_sets[filename] = version
 
-    # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
+    # Apply changesets to RDF-star dataset
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
         
@@ -143,13 +132,15 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
 
     logging.info("Extract the whole dataset from the GraphDB repository.")
+    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
+    sparql_engine.setReturnFormat(JSON)
+    sparql_engine.setOnlyConneg(True)
     sparql_engine.setQuery("""
     select ?s ?p ?o ?x ?y ?a ?b {
         << <<?s ?p ?o >> ?x ?y >> ?a ?b .
     }
     """)
     results = sparql_engine.queryAndConvert()
-    #results_str = ""
 
     logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
     with open(destination, "w") as rdf_star_ds_file:
@@ -180,15 +171,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             b = Literal(value,lang=lang,datatype=datatype)
             rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .")
 
-    logging.info("Write RDF-star dataset from memory to file.")
-    #with open(destination, "w") as rdf_star_ds_file:
-    #    rdf_star_ds_file.write(results_str)
-
-    #logging.info("Shutting down JenaTDB2 server.")
-    #subprocess.run("pkill", "-f", "'/jena-fuseki/fuseki-server.jar'")
-
     logging.info("Shutting down GraphDB server.")
-    subprocess.run("pkill", "-f", "'/opt/java/openjdk/bin/java'")
+    subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
