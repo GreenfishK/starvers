@@ -189,12 +189,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         value = r['y']["value"]
         lang = r['y'].get("xml:lang", None)
         datatype = r['y'].get("datatype", None)
-        y = Literal(value,lang=lang,dataype=datatype)
+        y = Literal(value,lang=lang,datatype=datatype)
         a = URIRef(r['a']['value'])
         value = r['b']["value"]
         lang = r['b'].get("xml:lang", None)
         datatype = r['b'].get("datatype", None)
-        b = Literal(value,lang=lang,dataype=datatype)
+        b = Literal(value,lang=lang,datatype=datatype)
         results_str = results_str + "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ." + "\n"
 
     logging.info("Write RDF-star dataset from memory to file.")
