@@ -141,19 +141,19 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     with open(destination, "w") as rdf_star_ds_file:
         for r in results["results"]["bindings"]:
             # Further potential replacements: 
-            # replace(r"\"", '"')
+            # replace(r"\"", '\\"')
             # replace(r"\x", r"\\x")
             if r['s']['type'] == "uri":
                 s = "<" + r['s']['value'] + ">"
             else:
-                s = r['s']['value']#.replace("\\","\\\\").replace("\n","\\n").replace("\t", "\\t")
+                s = r['s']['value'].replace("\\","\\\\").replace(r'"', r'\"').replace("\n","\\n").replace("\t", "\\t")
             p = URIRef(r['p']['value'])
             if r['o']['type']  == "uri":
                 o = "<" + r['o']['value'] + ">"
             elif r['o']['type'] == "blank":
                 o = r['o']['value']
             else:
-                value = r['o']["value"]#.replace("\\","\\\\").replace("\n","\\n").replace("\t", "\\t")
+                value = r['o']["value"].replace("\\","\\\\").replace(r'"', r'\"').replace("\n","\\n").replace("\t", "\\t")
                 lang = r['o'].get("xml:lang", None)
                 datatype = r['o'].get("datatype", None)
                 o = '"' + value + '"'
