@@ -141,6 +141,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     }
     """)
     results = sparql_engine.queryAndConvert()
+    logging.info("There are {0} triples in the extraction.".format(len(results["results"]["bindings"])))
 
     logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
     with open(destination, "w") as rdf_star_ds_file:
