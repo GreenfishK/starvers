@@ -170,9 +170,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             b = Literal(value,lang=lang,datatype=datatype)
             rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .\n")
     
-    cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '"$="', "alldata.TB_star_hierarchical.ttl"], capture_output=True, text=True)   
+    cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
-    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000"'], capture_output=True, text=True)  
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down GraphDB server.")
@@ -209,7 +209,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
     max_version_digits = len(str(last_version))
 
-    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+    template = open("/starvers_eval/scripts/2_preprocess/templates/cbng.txt", "r").read()
     cbng_dataset = cbng_dataset + template.format(str(0).zfill(max_version_digits), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
@@ -280,7 +280,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
     """
 
     logging.info("Constructing the ICNG dataset with ICs as named graphs.")
-    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
+    template = open("/starvers_eval/scripts/2_preprocess/templates/icng.txt", "r").read()
     if not os.path.exists(source):
         os.makedirs(source)
 
