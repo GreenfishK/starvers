@@ -444,7 +444,7 @@ class TripleStoreEngine:
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
 
         if isinstance(triples, list):
-            logging.info("Creating insert statement:Build insert block.")
+            logging.info("Creating insert statement: Build insert block.")
             for i, line in enumerate(triples):
                 triples[i] = line[:-2]
             insert_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
@@ -455,16 +455,14 @@ class TripleStoreEngine:
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
 
+        logging.info("Inserting triples as batches of 1000 triples.")
         for i in range(0, len(insert_block), 1000):
             insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
-            logging.info("Creating insert statement: Format and insert timestamp.")
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
             else:
                 insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
-
-            logging.info("Inserting triples as batch {0} to {1}.".format(i, min(i+1000, len(insert_block))))
             self.sparql_post.setQuery(insert_statement)
             self.sparql_post.query()
         logging.info("Triples inserted.")
@@ -566,17 +564,15 @@ class TripleStoreEngine:
             outdate_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
-
+        
+        logging.info("Outdating triples as batches of 1000 triples.")
         for i in range(0, len(outdate_block), 1000):
             outdate_batch = "\n".join(outdate_block[i:min(i+1000, len(outdate_block))])
-            logging.info("Creating outdate statement: Format and insert timestamp.")
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, "NOW()")
-
-            logging.info("Outdating triples as batch {0} to {1}.".format(i, min(i+1000, len(outdate_block))))
             self.sparql_post.setQuery(outdate_statement)
             self.sparql_post.query()
         logging.info("Triples outdated.")
