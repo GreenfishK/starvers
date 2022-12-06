@@ -418,10 +418,6 @@ class TripleStoreEngine:
         valid_until timestamp using the RDF-star paradigm. The triples must be provided in n3 syntax, 
         i.e. IRIs must be surrounded with pointy brackets < >.
         E.g.: 
-        [['<http://example.com/Obama>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates'],
-        ['<http://example.com/Hamilton>', '<http://example.com/occupation>', '<http://example.com/Formel1Driver']]
-
-        or 
         ['<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates .,
         <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver .']
 
@@ -436,7 +432,8 @@ class TripleStoreEngine:
         """
 
         if len(triples) == 0:
-            raise Exception ("List is empty. No triples will be inserted.")
+            logging.info("List is empty. No triples will be outdated.")
+            return
 
         if prefixes:
             sparql_prefixes = versioning_prefixes(prefixes)
@@ -445,43 +442,31 @@ class TripleStoreEngine:
 
         logging.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
-        insert_block = ""
 
         if isinstance(triples, list):
-            for triple in triples:
-                if isinstance(triple, list) and len(triple) == 3:
-                    insert_block = insert_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-                if isinstance(triple, str):
-                    insert_block = insert_block +  "({0})\n".format(triple[:-1])
-                else:
-                    raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
-
-            if timestamp:
-                version_timestamp = versioning_timestamp_format(timestamp)
-                insert_statement = statement.format(sparql_prefixes, insert_block, '"' + version_timestamp + '"')
-            else:
-                insert_statement = statement.format(sparql_prefixes, insert_block, "NOW()")
-            
-            logging.info("Inserting triples.")
-            self.sparql_post.setQuery(insert_statement)
-            self.sparql_post.query()
-        
+            logging.info("Creating insert statement:Build insert block.")
+            for i, line in enumerate(triples):
+                triples[i] = line[:-2]
+            insert_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
+            insert_block = list(map(' '.join, insert_list))
         elif isinstance(triples, str):
+            logging.info("Creating insert statement: Build insert block.")
             insert_block = triples.splitlines()
-            for i in range(0, len(insert_block), 1000):
-                insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
-
-                if timestamp:
-                    version_timestamp = versioning_timestamp_format(timestamp)
-                    insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
-                else:
-                    insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
-
-                logging.info("Inserting triples as batch {0} to {1}.".format(i, min(i+1000, len(insert_block))))
-                self.sparql_post.setQuery(insert_statement)
-                self.sparql_post.query()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
+
+        for i in range(0, len(insert_block), 1000):
+            insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
+            logging.info("Creating insert statement: Format and insert timestamp.")
+            if timestamp:
+                version_timestamp = versioning_timestamp_format(timestamp)
+                insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
+            else:
+                insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
+
+            logging.info("Inserting triples as batch {0} to {1}.".format(i, min(i+1000, len(insert_block))))
+            self.sparql_post.setQuery(insert_statement)
+            self.sparql_post.query()
         logging.info("Triples inserted.")
 
 
@@ -506,8 +491,9 @@ class TripleStoreEngine:
         :param prefixes: Prefixes that are used within :old_triples and :new_triples.
         """
 
-        if len(old_triples) == 0:
-            raise Exception ("List is empty. No triples will be inserted.")
+        if len(old_triple) == 0:
+            logging.info("List is empty. No triples will be outdated.")
+            return
 
         if len(old_triples) != len(new_triples):
             raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
@@ -560,7 +546,8 @@ class TripleStoreEngine:
         """
 
         if len(triples) == 0:
-            raise Exception ("List is empty. No triples will be outdated.")
+            logging.info("List is empty. No triples will be outdated.")
+            return
 
         if prefixes:
             sparql_prefixes = versioning_prefixes(prefixes)
