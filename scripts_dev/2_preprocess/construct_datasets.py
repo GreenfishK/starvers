@@ -91,13 +91,18 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
     # Start JenaTDB2  
-    logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
+    #logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
+    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
+    logging.info("Ingest empty file into GraphDB repository and start JenaTDB2.")
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
 
     # Create RDF engines
-    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-                                        'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
-    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
+    #rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
+    #                                    'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
+    #sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
+    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+                                        'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
+    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
 
@@ -112,7 +117,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
     insert_block = '\n'.join(list(map(' '.join, insert_list)))
 
-    # Ingest ic0 into JenaTDB2 as RDF-star dataset
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=insert_block, timestamp=init_timestamp)
 
@@ -197,9 +201,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     with open(destination, "w") as rdf_star_ds_file:
         rdf_star_ds_file.write(results_str)
 
-    # TODO: extract ?b and ?y and assemble RDF star dataset
-    logging.info("Shutting down JenaTDB2 server.")
-    subprocess.run("pkill", "-f", "'/jena-fuseki/fuseki-server.jar'")
+    #logging.info("Shutting down JenaTDB2 server.")
+    #subprocess.run("pkill", "-f", "'/jena-fuseki/fuseki-server.jar'")
+
+    logging.info("Shutting down GraphDB server.")
+    subprocess.run("pkill", "-f", "'/opt/java/openjdk/bin/java'")
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
