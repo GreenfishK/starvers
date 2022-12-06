@@ -529,20 +529,18 @@ class TripleStoreEngine:
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function).
         The provided triples in :triples must be in n3 syntax, i.e. IRIs must be surrounded with pointy brackets < >. 
-        E.g.:
-        old_triples = 
-        [['<http://example.com/Donald_Trump>', '<http://example.com/president_of>' ,'<http://example.com/UnitedStates>']]
-
-        or 
-        ['<http://example.com/Donald_Trump> <http://example.com/president_of> <http://example.com/UnitedStates>' .]
+        E.g.: 
+        ['<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates .,
+        <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver .']
 
         or the whole insert block for the VALUES clause:
-        "(<http://example.com/Donald_Trump> <http://example.com/president_of> <http://example.com/UnitedStates>)"
+        "(<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates) 
+        (<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver)"
 
-
-        :param triples: A list of valid triples in n3 syntax that should be outdated.
-        :param prefixes: Prefixes that are used within :triples.
+        :param triples: A list of list of triples in n3 syntax.
+        :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the outdated triples will be annotated with this timestamp.
+        :return:
         """
 
         if len(triples) == 0:
@@ -553,32 +551,34 @@ class TripleStoreEngine:
             sparql_prefixes = versioning_prefixes(prefixes)
         else:
             sparql_prefixes = versioning_prefixes("")
-        
+
         logging.info("Creating outdate statement.")
-        template = open(self._template_location + "/outdate_triples.txt", "r").read()
-        outdate_block = ""
-        
+        statement = open(self._template_location + "/outdate_triples.txt", "r").read()
+
         if isinstance(triples, list):
-            for triple in triples:
-                if isinstance(triple, list) and len(triple) == 3:
-                    outdate_block = outdate_block + "({0} {1} {2})\n".format(triple[0],triple[1],triple[2])
-                if isinstance(triple, str):
-                    outdate_block = outdate_block + "({0})\n".format(triple[:-1])
-                else:
-                    raise WrongInputFormatException("The triple is not given in the requested format. See doc of this function.")
+            logging.info("Creating outdate statement:Build outdate block.")
+            for i, line in enumerate(triples):
+                triples[i] = line[:-2]
+            outdate_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
+            outdate_block = list(map(' '.join, outdate_list))
         elif isinstance(triples, str):
-            outdate_block = triples
+            logging.info("Creating outdate statement: Build outdate block.")
+            outdate_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
-        if timestamp:
-            version_timestamp = versioning_timestamp_format(timestamp)
-            outdate_statement = template.format(sparql_prefixes, outdate_block, '"' + version_timestamp + '"')
-        else:
-            outdate_statement = template.format(sparql_prefixes, outdate_block, "NOW()")
-        
-        logging.info("Outdating triples.")
-        self.sparql_post.setQuery(outdate_statement)
-        self.sparql_post.query()
+
+        for i in range(0, len(outdate_block), 1000):
+            outdate_batch = "\n".join(outdate_block[i:min(i+1000, len(outdate_block))])
+            logging.info("Creating outdate statement: Format and insert timestamp.")
+            if timestamp:
+                version_timestamp = versioning_timestamp_format(timestamp)
+                outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
+            else:
+                outdate_statement = statement.format(sparql_prefixes, outdate_batch, "NOW()")
+
+            logging.info("Outdating triples as batch {0} to {1}.".format(i, min(i+1000, len(outdate_block))))
+            self.sparql_post.setQuery(outdate_statement)
+            self.sparql_post.query()
         logging.info("Triples outdated.")
 
     
