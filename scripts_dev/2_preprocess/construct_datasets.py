@@ -149,39 +149,40 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     }
     """)
     results = sparql_engine.queryAndConvert()
-    results_str = ""
+    #results_str = ""
 
-    logging.info("Convert JSON output of final RDF-star dataset into N3 format.")
-    for r in results["results"]["bindings"]:
-        if r['s']['type'] == "uri":
-            s = URIRef(r['s']['value'])
-        else:
-            s = BNode(r['s']['value'])
-        p = URIRef(r['p']['value'])
-        if r['o']['type']  == "uri":
-            o = URIRef(r['o']['value'])
-        elif r['o']['type'] == "blank":
-            o = BNode(r['o']['value'])
-        else:
-            value = r['o']["value"]
-            lang = r['o'].get("xml:lang", None)
-            datatype = r['o'].get("datatype", None)
-            o = Literal(value, lang=lang, datatype=datatype)
-        x = URIRef(r['x']['value'])
-        value = r['y']["value"]
-        lang = r['y'].get("xml:lang", None)
-        datatype = r['y'].get("datatype", None)
-        y = Literal(value,lang=lang,datatype=datatype)
-        a = URIRef(r['a']['value'])
-        value = r['b']["value"]
-        lang = r['b'].get("xml:lang", None)
-        datatype = r['b'].get("datatype", None)
-        b = Literal(value,lang=lang,datatype=datatype)
-        results_str = results_str + "<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " ." + "\n"
+    logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
+    with open(destination, "w") as rdf_star_ds_file:
+        for r in results["results"]["bindings"]:
+            if r['s']['type'] == "uri":
+                s = URIRef(r['s']['value'])
+            else:
+                s = BNode(r['s']['value'])
+            p = URIRef(r['p']['value'])
+            if r['o']['type']  == "uri":
+                o = URIRef(r['o']['value'])
+            elif r['o']['type'] == "blank":
+                o = BNode(r['o']['value'])
+            else:
+                value = r['o']["value"]
+                lang = r['o'].get("xml:lang", None)
+                datatype = r['o'].get("datatype", None)
+                o = Literal(value, lang=lang, datatype=datatype)
+            x = URIRef(r['x']['value'])
+            value = r['y']["value"]
+            lang = r['y'].get("xml:lang", None)
+            datatype = r['y'].get("datatype", None)
+            y = Literal(value,lang=lang,datatype=datatype)
+            a = URIRef(r['a']['value'])
+            value = r['b']["value"]
+            lang = r['b'].get("xml:lang", None)
+            datatype = r['b'].get("datatype", None)
+            b = Literal(value,lang=lang,datatype=datatype)
+            rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .")
 
     logging.info("Write RDF-star dataset from memory to file.")
-    with open(destination, "w") as rdf_star_ds_file:
-        rdf_star_ds_file.write(results_str)
+    #with open(destination, "w") as rdf_star_ds_file:
+    #    rdf_star_ds_file.write(results_str)
 
     #logging.info("Shutting down JenaTDB2 server.")
     #subprocess.run("pkill", "-f", "'/jena-fuseki/fuseki-server.jar'")
