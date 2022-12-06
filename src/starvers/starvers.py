@@ -458,6 +458,7 @@ class TripleStoreEngine:
         logging.info("Inserting triples as batches of 1000 triples.")
         for i in range(0, len(insert_block), 1000):
             insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
+            insert_batch = re.sub(r'(?<!["])_:([a-zA-Z0-9]+)(?!["])', r'<_:\1>', insert_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
@@ -568,6 +569,7 @@ class TripleStoreEngine:
         logging.info("Outdating triples as batches of 1000 triples.")
         for i in range(0, len(outdate_block), 1000):
             outdate_batch = "\n".join(outdate_block[i:min(i+1000, len(outdate_block))])
+            outdate_batch = re.sub(r'(?<!["])_:([a-zA-Z0-9]+)(?!["])', r'<_:\1>', outdate_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
