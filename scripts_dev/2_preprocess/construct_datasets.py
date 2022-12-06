@@ -156,7 +156,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 if lang:
                     o+='"@' + lang + '"' 
                 elif datatype:
-                    p+="^^" + "<" + datatype + ">"
+                    o+="^^" + "<" + datatype + ">"
             
             x = URIRef(r['x']['value'])
             value = r['y']["value"]
