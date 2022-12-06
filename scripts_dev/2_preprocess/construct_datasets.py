@@ -91,8 +91,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
     # Start JenaTDB2  
-    #logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
+    # logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
+    # subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
     logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
     subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
 
@@ -110,12 +110,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
-
-    """logging.info("Build insert block")
-    for i, line in enumerate(added_triples_raw):
-        added_triples_raw[i] = line[:-2]
-    insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-    insert_block = '\n'.join(list(map(' '.join, insert_list)))"""
 
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
@@ -136,12 +130,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
-
-            """logging.info("Build insert block")
-            for i, line in enumerate(added_triples_raw):
-                added_triples_raw[i] = line[:-2]
-            insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-            insert_block = '\n'.join(list(map(' '.join, insert_list)))"""
             
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
             rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
@@ -151,16 +139,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
-            """logging.info("Build outdate block")
-            for i, line in enumerate(deleted_triples_raw):
-                deleted_triples_raw[i] = line[:-1]
-            outdate_list = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
-            outdate_block = '\n'.join(list(map(' '.join, outdate_list)))"""
-
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
             rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
 
-    logging.info("Query final RDF-star dataset.")
+    logging.info("Extract the whole dataset from the GraphDB repository.")
     sparql_engine.setQuery("""
     select ?s ?p ?o ?x ?y ?a ?b {
         << <<?s ?p ?o >> ?x ?y >> ?a ?b .
@@ -195,7 +177,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         lang = r['b'].get("xml:lang", None)
         datatype = r['b'].get("datatype", None)
         b = Literal(value,lang=lang,datatype=datatype)
-        results_str = results_str + "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ." + "\n"
+        results_str = results_str + "<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " ." + "\n"
 
     logging.info("Write RDF-star dataset from memory to file.")
     with open(destination, "w") as rdf_star_ds_file:
