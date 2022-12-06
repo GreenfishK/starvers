@@ -171,7 +171,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
-    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00+02:00"', destination], capture_output=True, text=True)  
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down GraphDB server.")
