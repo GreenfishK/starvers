@@ -170,7 +170,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             lang = r['b'].get("xml:lang", None)
             datatype = r['b'].get("datatype", None)
             b = Literal(value,lang=lang,datatype=datatype)
-            rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .")
+            rdf_star_ds_file.write("<< << " + s.n3() + " " + p.n3() + " " + o.n3()  + ">>" + x.n3()  + " " + y.n3()  + " >>" + a.n3()  + " " + b.n3() + " .\n")
 
     logging.info("Shutting down GraphDB server.")
     subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
