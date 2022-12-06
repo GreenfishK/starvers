@@ -13,11 +13,6 @@ from rdflib.term import URIRef, Literal, BNode
 from starvers.starvers import TripleStoreEngine
 
 
-# Global variables for assertions
-# cnt_net_triples_added = 0
-# cnt_triples_rdf_star = 0
-# cnt_valid_triples_last_ic = 0
-
 class AnnotationStyle(Enum):
     HIERARCHICAL = 1
     FLAT = 2
@@ -172,7 +167,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
-    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000"', destination], capture_output=True, text=True)  
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down GraphDB server.")
@@ -336,16 +331,7 @@ for dataset in datasets:
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         policy="tbsh",
-                        dataset=dataset)
-    
-    # TBSF
-    # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-    #                    source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-    #                    destination=data_dir + "/alldata.TB_star_flat." + ".ttl",
-    #                    last_version=total_versions,
-    #                    init_timestamp=init_version_timestamp,
-    #                    annotation_style=AnnotationStyle.FLAT)
-    
+                        dataset=dataset)    
     # CBNG
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
