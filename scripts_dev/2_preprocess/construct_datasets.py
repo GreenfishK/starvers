@@ -150,11 +150,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             elif r['o']['type'] == "blank":
                 o = r['o']['value']
             else:
-                if s.startswith("<http://dbpedia.org/resource/2015_Rugby_World_Cup>") and p.n3().startswith("<http://dbpedia.org/property/attendance>"):
-                    logging.info(r['o']["value"])
-                    logging.info(Literal(r['o']["value"]).n3())
-                    logging.info(from_n3(r['o']["value"]))
-                value = r['o']["value"]
+                value = r['o']["value"].replace("\n","\\n").replace("\t", "\\t")
                 lang = r['o'].get("xml:lang", None)
                 datatype = r['o'].get("datatype", None)
                 o = '"' + value + '"'
