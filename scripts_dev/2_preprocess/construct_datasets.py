@@ -111,14 +111,14 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    logging.info("Build insert block")
+    """logging.info("Build insert block")
     for i, line in enumerate(added_triples_raw):
         added_triples_raw[i] = line[:-2]
     insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-    insert_block = '\n'.join(list(map(' '.join, insert_list)))
+    insert_block = '\n'.join(list(map(' '.join, insert_list)))"""
 
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine.insert(triples=insert_block, timestamp=init_timestamp)
+    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -137,28 +137,28 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
 
-            logging.info("Build insert block")
+            """logging.info("Build insert block")
             for i, line in enumerate(added_triples_raw):
                 added_triples_raw[i] = line[:-2]
             insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-            insert_block = '\n'.join(list(map(' '.join, insert_list)))
+            insert_block = '\n'.join(list(map(' '.join, insert_list)))"""
             
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
-            rdf_star_engine.insert(triples=insert_block, timestamp=vers_ts)
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
         
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
-            logging.info("Build outdate block")
+            """logging.info("Build outdate block")
             for i, line in enumerate(deleted_triples_raw):
                 deleted_triples_raw[i] = line[:-1]
             outdate_list = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
-            outdate_block = '\n'.join(list(map(' '.join, outdate_list)))
+            outdate_block = '\n'.join(list(map(' '.join, outdate_list)))"""
 
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
-            rdf_star_engine.outdate(triples=outdate_block, timestamp=vers_ts)
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
 
     logging.info("Query final RDF-star dataset.")
     sparql_engine.setQuery("""
