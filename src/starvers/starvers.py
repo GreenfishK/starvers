@@ -455,14 +455,13 @@ class TripleStoreEngine:
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
 
-        # Surround blank nodes in the subject position with pointy brackets
-        insert_block = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', insert_block)
-        # Surround blank nodes in the object position with pointy brackets
-        insert_block = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', insert_block)
-
         logging.info("Inserting triples as batches of 1000 triples.")
         for i in range(0, len(insert_block), 1000):
             insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
+            # Surround blank nodes in the subject position with pointy brackets
+            insert_batch = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', insert_batch)
+            # Surround blank nodes in the object position with pointy brackets
+            insert_batch = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', insert_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
@@ -569,16 +568,14 @@ class TripleStoreEngine:
             outdate_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
-
-        # Surround blank nodes in the subject position with pointy brackets
-        outdate_block = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_block)
-        # Surround blank nodes in the object position with pointy brackets
-        outdate_block = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', outdate_block)
         
         logging.info("Outdating triples as batches of 1000 triples.")
         for i in range(0, len(outdate_block), 1000):
             outdate_batch = "\n".join(outdate_block[i:min(i+1000, len(outdate_block))])
-            outdate_batch = re.sub(r'(?<!["])_:([a-zA-Z0-9]+)(?!["])', r'<_:\1>', outdate_batch)
+            # Surround blank nodes in the subject position with pointy brackets
+            outdate_batch = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_batch)
+            # Surround blank nodes in the object position with pointy brackets
+            outdate_batch = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', outdate_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
