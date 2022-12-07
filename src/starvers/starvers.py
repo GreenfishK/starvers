@@ -414,9 +414,12 @@ class TripleStoreEngine:
 
     def insert(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None):
         """
-        Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from and 
-        valid_until timestamp using the RDF-star paradigm. The triples must be provided in n3 syntax, 
-        i.e. IRIs must be surrounded with pointy brackets < >.
+        Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from (NOW()) and 
+        "artificial" valid_until timestamp using the RDF-star paradigm. Each inserted triple has the following form 
+        where the strings in curly brackets are replaced during execution time: 
+            << {s} {p} {o} >> vers:valid_from "{valid_from}"^^xsd:datetime >> vers:valid_until "9999-31-12T00:00:00.000+02:00"^^xsd:dateTime .
+        The triples must be provided in n3 syntax. 
+        Blank nodes are not supported currently and will yield a SPARQL exception. 
         E.g.: 
         ['<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates .,
         <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver .']
@@ -425,7 +428,7 @@ class TripleStoreEngine:
         "(<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates) 
         (<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver)"
 
-        :param triples: A list of list of triples in n3 syntax.
+        :param triples: A list of list of triples in n3 syntax (including the dot) or a string in the SPARQL syntax for the VALUES block.
         :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the inserted triples will be annotated with this timestamp.
         :return:
@@ -531,8 +534,10 @@ class TripleStoreEngine:
     def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
-        and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function).
-        The provided triples in :triples must be in n3 syntax, i.e. IRIs must be surrounded with pointy brackets < >. 
+        and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function) or the given :timestamp.
+        The triples that are match have the following form where {valid_until} gets replaced during execution time:
+            << s p o >> vers:valid_from "valid_from"^^xsd:datetime >> vers:valid_until "{valid_until}"^^xsd:dateTime .
+        The provided triples in :triples must be in n3 syntax. Blank nodes are not supported currently and will yield a SPARQL exception. 
         E.g.: 
         ['<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates .,
         <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver .']
@@ -541,7 +546,7 @@ class TripleStoreEngine:
         "(<http://example.com/Obama> <http://example.com/president_of> <http://example.com/UnitedStates) 
         (<http://example.com/Hamilton>' '<http://example.com/occupation>' '<http://example.com/Formel1Driver)"
 
-        :param triples: A list of list of triples in n3 syntax.
+        :param triples: A list of list of triples in n3 syntax (including the dot) or a string in the SPARQL syntax for the VALUES block.
         :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the outdated triples will be annotated with this timestamp.
         :return:
