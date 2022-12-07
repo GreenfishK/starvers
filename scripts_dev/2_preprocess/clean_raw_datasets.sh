@@ -14,6 +14,7 @@ rm -rf ${baseDir}/configs/preprocessing/*
 mkdir -p $baseDir/output/logs/preprocessing/
 rm -rf $baseDir/output/logs/preprocessing/*
 > $baseDir/output/logs/preprocessing/clean_raw_datasets.txt
+> $baseDir/output/logs/preprocessing/clean_raw_datasets_blank_nodes.txt
 
 echo "Start corrections"
 for dataset in ${datasets[@]}; do
@@ -61,9 +62,13 @@ for dataset in ${datasets[@]}; do
             # Exclude invalid triples
             sed -i -r "$substitutions" $ds_abs_path
             # Skolemize blank nodes in subject position
+            cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $ds_abs_path`
             sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $ds_abs_path
             # Skolemize blank nodes in object position
+            cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $ds_abs_path`
             sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $ds_abs_path
+            echo "${ds_abs_path}: skolemized blank nodesin subject position: $cnt_b_sub" >> $baseDir/output/logs/preprocessing/clean_raw_datasets_blank_nodes.txt
+            echo "${ds_abs_path}: skolemized blank nodesin object position: $cnt_b_obj" >> $baseDir/output/logs/preprocessing/clean_raw_datasets_blank_nodes.txt
 
             # Print how many lines were excluded in this run
             if [ -z "$invalid_lines" ]; then
