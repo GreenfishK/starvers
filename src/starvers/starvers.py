@@ -459,7 +459,7 @@ class TripleStoreEngine:
         for i in range(0, len(insert_block), 1000):
             insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
             # Surround blank nodes in the subject position with pointy brackets
-            insert_batch = re.sub(r'(?<=(\n|^)\()\s*_:([a-zA-Z0-9]+)', r'<_:\1>', insert_batch)
+            insert_batch = re.sub(r'(?:(?<=\s\()|(?<=^\())\s*_:([a-zA-Z0-9]+)', r'<_:\1>', insert_batch)
             # Surround blank nodes in the object position with pointy brackets
             insert_batch = re.sub(r'_:([a-zA-Z0-9]+)\s*(?=\)(\s|$))', r'<_:\1>', insert_batch)
             logging.info(insert_batch)
@@ -575,7 +575,7 @@ class TripleStoreEngine:
         for i in range(0, len(outdate_block), 1000):
             outdate_batch = "\n".join(outdate_block[i:min(i+1000, len(outdate_block))])
             # Surround blank nodes in the subject position with pointy brackets
-            outdate_batch = re.sub(r'(?<=(\n|^)\()\s*_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_batch)
+            outdate_batch = re.sub(r'(?:(?<=\s\()|(?<=^\())\s*_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_batch)
             # Surround blank nodes in the object position with pointy brackets
             outdate_batch = re.sub(r'_:([a-zA-Z0-9]+)\s*(?=\)(\s|$))', r'<_:\1>', outdate_batch)
             if timestamp:
