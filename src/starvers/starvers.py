@@ -569,11 +569,11 @@ class TripleStoreEngine:
             outdate_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
-            
+
         # Surround blank nodes in the subject position with pointy brackets
-        insert_block = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', insert_block)
+        outdate_block = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_block)
         # Surround blank nodes in the object position with pointy brackets
-        insert_block = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', insert_block)
+        outdate_block = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', outdate_block)
         
         logging.info("Outdating triples as batches of 1000 triples.")
         for i in range(0, len(outdate_block), 1000):
