@@ -462,7 +462,7 @@ class TripleStoreEngine:
             # Surround blank nodes in the subject position with pointy brackets
             insert_batch = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', insert_batch)
             # Surround blank nodes in the object position with pointy brackets
-            insert_batch = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', insert_batch)
+            insert_batch = re.sub(r'_:([a-zA-Z0-9]+)\s*(?=\)(\s|$))', r'<_:\1>', insert_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
@@ -576,7 +576,7 @@ class TripleStoreEngine:
             # Surround blank nodes in the subject position with pointy brackets
             outdate_batch = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', outdate_batch)
             # Surround blank nodes in the object position with pointy brackets
-            outdate_batch = re.sub(r'_:([a-zA-Z0-9]+)(?=\s\)(\s|$))', r'<_:\1>', outdate_batch)
+            outdate_batch = re.sub(r'_:([a-zA-Z0-9]+)\s*(?=\)(\s|$))', r'<_:\1>', outdate_batch)
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
