@@ -51,9 +51,6 @@ for dataset in ${datasets[@]}; do
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
 
-            # grep -c -E '_:[a-zA-Z0-9]+\s\.$'
-            # grep -c -E '^_:[a-zA-Z0-9]+'
-
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
             substitutions=""
