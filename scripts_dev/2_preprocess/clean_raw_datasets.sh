@@ -45,10 +45,14 @@ for dataset in ${datasets[@]}; do
             # copy config template
             repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
             echo $repositoryID
-            # Write the line number of every invalid triple into a file
+
+            # Match invalid triples and save the line numbers to invalid_lines_file
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $ds_abs_path $invalid_lines_file
+
+            # grep -c -E '_:[a-zA-Z0-9]+\s\.$'
+            # grep -c -E '^_:[a-zA-Z0-9]+'
 
             # Exclude invalid lines by out-commenting them in the original file
             invalid_lines=`cat $invalid_lines_file`
@@ -57,7 +61,12 @@ for dataset in ${datasets[@]}; do
             do
                 substitutions="${substitutions}${invalid_line}s/(.*)/# \1/g;"
             done
+            # Exclude invalid triples
             sed -i -r "$substitutions" $ds_abs_path
+            # Skolemize blank nodes in subject position
+            sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $ds_abs_path
+            # Skolemize blank nodes in object position
+            sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $ds_abs_path
 
             # Print how many lines were excluded in this run
             if [ -z "$invalid_lines" ]; then
