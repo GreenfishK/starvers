@@ -458,11 +458,12 @@ class TripleStoreEngine:
         logging.info("Inserting triples as batches of 1000 triples.")
         for i in range(0, len(insert_block), 1000):
             insert_batch = "\n".join(insert_block[i:min(i+1000, len(insert_block))])
-            logging.info(insert_batch)
             # Surround blank nodes in the subject position with pointy brackets
             insert_batch = re.sub(r'(?<=^\(\s)_:([a-zA-Z0-9]+)', r'<_:\1>', insert_batch)
             # Surround blank nodes in the object position with pointy brackets
             insert_batch = re.sub(r'_:([a-zA-Z0-9]+)\s*(?=\)(\s|$))', r'<_:\1>', insert_batch)
+            logging.info(insert_batch)
+
             if timestamp:
                 version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
