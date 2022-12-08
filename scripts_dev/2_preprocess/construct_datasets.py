@@ -11,12 +11,8 @@ import shlex
 from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef, Literal, BNode
 from starvers.starvers import TripleStoreEngine
+from rdflib.util import from_n3
 
-
-# Global variables for assertions
-# cnt_net_triples_added = 0
-# cnt_triples_rdf_star = 0
-# cnt_valid_triples_last_ic = 0
 
 class AnnotationStyle(Enum):
     HIERARCHICAL = 1
@@ -75,9 +71,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     
     logging.info("Assertion: From the first to the last snapshot {1} triples were added (net)".format(end_vers, cnt_net_triples_added))        
     logging.info("Assertion: The rdf-star dataset created with function construct_tb_star_ds should have {1} triples".format(end_vers, cnt_triples_rdf_star))
-    # sed -n "$=" alldata.TB_star_hierarchical.ttl      
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
-    # grep -c '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000' alldata.TB_star_hierarchical.ttl 
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, policy:str, dataset:str):
@@ -90,35 +84,22 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     """
     
     logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
-    # Start JenaTDB2  
-    #logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
-    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
-
-    # Create RDF engines
-    #rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-    #                                    'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
-    #sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
-    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-                                        'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
-    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
-    sparql_engine.setReturnFormat(JSON)
-    sparql_engine.setOnlyConneg(True)
+    #logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
+    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
+    logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    logging.info("Build insert block")
-    for i, line in enumerate(added_triples_raw):
-        added_triples_raw[i] = line[:-2]
-    insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-    insert_block = '\n'.join(list(map(' '.join, insert_list)))
-
+    #rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+    #                                    'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
+    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
+                                        'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine.insert(triples=insert_block, timestamp=init_timestamp)
+    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -128,7 +109,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
         change_sets[filename] = version
 
-    # First add all triples from the "add changesets", then delete the matching triples from the "delete changesets"
+    # Apply changesets to RDF-star dataset
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
         
@@ -136,76 +117,77 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
-
-            logging.info("Build insert block")
-            for i, line in enumerate(added_triples_raw):
-                added_triples_raw[i] = line[:-2]
-            insert_list = list(map(list, zip(['('] * len(added_triples_raw), added_triples_raw, [')'] * len(added_triples_raw))))
-            insert_block = '\n'.join(list(map(' '.join, insert_list)))
             
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
-            rdf_star_engine.insert(triples=insert_block, timestamp=vers_ts)
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
         
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
             deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
-            logging.info("Build outdate block")
-            for i, line in enumerate(deleted_triples_raw):
-                deleted_triples_raw[i] = line[:-1]
-            outdate_list = list(map(list, zip(['('] * len(deleted_triples_raw), deleted_triples_raw, [')'] * len(deleted_triples_raw))))
-            outdate_block = '\n'.join(list(map(' '.join, outdate_list)))
-
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
-            rdf_star_engine.outdate(triples=outdate_block, timestamp=vers_ts)
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
 
-    logging.info("Query final RDF-star dataset.")
+    #logging.info("Extract the whole dataset from the GraphDB repository.")
+    #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
+    logging.info("Extract the whole dataset from the JenaTDB2 repository.")
+    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
+    sparql_engine.setReturnFormat(JSON)
+    sparql_engine.setOnlyConneg(True)
     sparql_engine.setQuery("""
     select ?s ?p ?o ?x ?y ?a ?b {
         << <<?s ?p ?o >> ?x ?y >> ?a ?b .
     }
     """)
     results = sparql_engine.queryAndConvert()
-    results_str = ""
+    logging.info("There are {0} triples in the extraction.".format(len(results["results"]["bindings"])))
 
-    logging.info("Convert JSON output of final RDF-star dataset into N3 format.")
-    for r in results["results"]["bindings"]:
-        if r['s']['type'] == "uri":
-            s = URIRef(r['s']['value'])
-        else:
-            s = BNode(r['s']['value'])
-        p = URIRef(r['p']['value'])
-        if r['o']['type']  == "uri":
-            o = URIRef(r['o']['value'])
-        elif r['o']['type'] == "blank":
-            o = BNode(r['o']['value'])
-        else:
-            value = r['o']["value"]
-            lang = r['o'].get("xml:lang", None)
-            datatype = r['o'].get("datatype", None)
-            o = Literal(value, lang=lang, datatype=datatype)
-        x = URIRef(r['x']['value'])
-        value = r['y']["value"]
-        lang = r['y'].get("xml:lang", None)
-        datatype = r['y'].get("datatype", None)
-        y = Literal(value,lang=lang,dataype=datatype)
-        a = URIRef(r['a']['value'])
-        value = r['b']["value"]
-        lang = r['b'].get("xml:lang", None)
-        datatype = r['b'].get("datatype", None)
-        b = Literal(value,lang=lang,dataype=datatype)
-        results_str = results_str + "<< << " + s + " " + p + " " + o + ">>" + x + " " + y + " >>" + a + " " + b + " ." + "\n"
-
-    logging.info("Write RDF-star dataset from memory to file.")
+    logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
     with open(destination, "w") as rdf_star_ds_file:
-        rdf_star_ds_file.write(results_str)
+        for r in results["results"]["bindings"]:
+            # Further potential replacements: 
+            # replace(r"\"", '\\"')
+            # replace(r"\x", r"\\x")
+            if r['s']['type'] == "uri":
+                s = "<" + r['s']['value'] + ">"
+            else:
+                s = r['s']['value'].replace("\\","\\\\").replace(r'"', r'\"').replace("\n","\\n").replace("\t", "\\t")
+            p = URIRef(r['p']['value'])
+            if r['o']['type']  == "uri":
+                o = "<" + r['o']['value'] + ">"
+            elif r['o']['type'] == "blank":
+                o = r['o']['value']
+            else:
+                value = r['o']["value"].replace("\\","\\\\").replace(r'"', r'\"').replace("\n","\\n").replace("\t", "\\t")
+                lang = r['o'].get("xml:lang", None)
+                datatype = r['o'].get("datatype", None)
+                o = '"' + value + '"'
+                if lang:
+                    o+='@' + lang 
+                elif datatype:
+                    o+="^^" + "<" + datatype + ">"
+            
+            x = URIRef(r['x']['value'])
+            value = r['y']["value"]
+            datatype = r['y'].get("datatype", None)
+            y = '"' + value + '"^^' + "<" + datatype + ">"
+            
+            a = URIRef(r['a']['value'])
+            value = r['b']["value"]
+            datatype = r['b'].get("datatype", None)
+            b = '"' + value + '"^^' + "<" + datatype + ">"
+            rdf_star_ds_file.write("<< << " + s + " " + p.n3() + " " + o  + ">>" + x.n3()  + " " + y  + " >>" + a.n3()  + " " + b + " .\n")
+    
+    cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
+    logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
+    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
+    logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
-    #logging.info("Shutting down JenaTDB2 server.")
-    #subprocess.run("pkill", "-f", "'/jena-fuseki/fuseki-server.jar'")
-
-    logging.info("Shutting down GraphDB server.")
-    subprocess.run("pkill", "-f", "'/opt/java/openjdk/bin/java'")
+    #logging.info("Shutting down GraphDB server.")
+    #subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
+    logging.info("Shutting down JenaTDB2 server.")
+    subprocess.run(["pkill", "-f", "'/jena-fuseki/fuseki-server.jar'"])
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
@@ -238,7 +220,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
     max_version_digits = len(str(last_version))
 
-    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/cbng.txt", "r").read()
+    template = open("/starvers_eval/scripts/2_preprocess/templates/cbng.txt", "r").read()
     cbng_dataset = cbng_dataset + template.format(str(0).zfill(max_version_digits), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
@@ -309,7 +291,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
     """
 
     logging.info("Constructing the ICNG dataset with ICs as named graphs.")
-    template = open("/starvers_eval/scripts/1_get_and_prepare_data/templates/icng.txt", "r").read()
+    template = open("/starvers_eval/scripts/2_preprocess/templates/icng.txt", "r").read()
     if not os.path.exists(source):
         os.makedirs(source)
 
@@ -365,16 +347,7 @@ for dataset in datasets:
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         policy="tbsh",
-                        dataset=dataset)
-    
-    # TBSF
-    # construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-    #                    source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-    #                    destination=data_dir + "/alldata.TB_star_flat." + ".ttl",
-    #                    last_version=total_versions,
-    #                    init_timestamp=init_version_timestamp,
-    #                    annotation_style=AnnotationStyle.FLAT)
-    
+                        dataset=dataset)    
     # CBNG
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
