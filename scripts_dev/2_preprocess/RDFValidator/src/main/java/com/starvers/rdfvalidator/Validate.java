@@ -66,12 +66,9 @@ public class Validate {
                         invalidLines.add(i+1);
                     } catch(Exception e) {
                         System.out.println("Exception: " + e.getMessage());
-                        System.out.println("Invalid line: " + Integer.toString(i+1));
-                        invalidLines.add(i+1);
                     }  catch(Error e) {
-                        System.out.println("Exception: " + e.getMessage());
-                        System.out.println("Invalid line: " + Integer.toString(i+1));
-                        invalidLines.add(i+1);
+                        System.out.println("Error: " + e.getMessage());
+                        System.out.println("Probably due to blank nodes. Line will not be counted as invalid")
                     }                                
                     i++;
                 }
