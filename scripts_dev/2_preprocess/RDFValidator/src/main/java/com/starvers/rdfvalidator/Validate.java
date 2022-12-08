@@ -61,10 +61,14 @@ public class Validate {
                     try {
                         org.apache.jena.riot.RDFParser.fromString(triple).lang(l).parse(dest);
                     } catch(RiotException e) {
-                        System.out.println(e.getMessage());
+                        System.out.println("RiotException: " + e.getMessage());
                         System.out.println("Invalid line: " + Integer.toString(i+1));
                         invalidLines.add(i+1);
-                    }                
+                    } catch(Exception e) {
+                        System.out.println("Exception: " + e.getMessage());
+                        System.out.println("Invalid line: " + Integer.toString(i+1));
+                        invalidLines.add(i+1);
+                    }                               
                     i++;
                 }
             } else if (parser.equals("rdf4j")) {
@@ -93,7 +97,7 @@ public class Validate {
                         triple.close();
                     }
                     i++;
-             }
+                }
 
             } else throw new Exception("Parser must be one of: jena, rdf4j");
 
