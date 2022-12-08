@@ -84,16 +84,20 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     """
     
     logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
-    logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
+    #logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
+    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
+    logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-                                        'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
+    #rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+    #                                    'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
+    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
+                                        'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
 
@@ -125,8 +129,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
             rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
 
-    logging.info("Extract the whole dataset from the GraphDB repository.")
-    sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
+    #logging.info("Extract the whole dataset from the GraphDB repository.")
+    #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
+    logging.info("Extract the whole dataset from the JenaTDB2 repository.")
+    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
     sparql_engine.setQuery("""
@@ -178,8 +184,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
-    logging.info("Shutting down GraphDB server.")
-    subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
+    #logging.info("Shutting down GraphDB server.")
+    #subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
+    logging.info("Shutting down JenaTDB2 server.")
+    subprocess.run(["pkill", "-f", "'/jena-fuseki/fuseki-server.jar'"])
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
