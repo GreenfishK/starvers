@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
 
 
@@ -36,7 +36,7 @@ public class Validate {
         String extension = splitFileName[splitFileName.length - 1];
         final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.graph(g); 
-        ArrayList<Integer> invalidLines = new ArrayList<Integer>();
+        HashSet<Integer> invalidLines = new HashSet<Integer>();
         FileInputStream inputStream = null;
         Scanner sc = null;
         int i = 0;
