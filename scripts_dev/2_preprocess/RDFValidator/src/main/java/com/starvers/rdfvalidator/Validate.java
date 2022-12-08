@@ -32,7 +32,6 @@ public class Validate {
         
         String [] splitFileName = args[0].split("\\.");
         String logFile = args[1];
-        String parser = args[2];
 
         String extension = splitFileName[splitFileName.length - 1];
         final Graph g = ModelFactory.createDefaultModel().getGraph();
@@ -42,66 +41,62 @@ public class Validate {
         Scanner sc = null;
         int i = 0;
 
+        Lang l = null;
+        RDFFormat format = null;
+        if (extension.equals("nt")) {
+            l = Lang.NT;
+            format = RDFFormat.NTRIPLES;
+        } else if (extension.equals("nq")) {
+            l = Lang.NQ;
+            format = RDFFormat.NQUADS;
+        } else {
+            System.out.println("Extension must be .nt or .nq");
+        }
+
         try {
             inputStream = new FileInputStream(new File(args[0]));
             sc = new Scanner(inputStream, "UTF-8");
 
-            if (parser.equals("jena")) {
-                Lang l = null;
-                if (extension.equals("nt")) {
-                    l = Lang.NT;
-                } else if (extension.equals("nq")) {
-                    l = Lang.NQ;
-                } else {
-                    System.out.println("Extension must be .nt or .nq");
+            org.eclipse.rdf4j.rio.RDFParser rdfParser = Rio.createParser(format);
+            while (sc.hasNextLine()) {
+                String nextLine = sc.nextLine();
+                // Jena parser
+                try {
+                    org.apache.jena.riot.RDFParser.fromString(nextLine).lang(l).parse(dest);
+                } catch(RiotException e) {
+                    System.out.println("jena:RiotException: " + e.getMessage());
+                    System.out.println("jena:Invalid line: " + Integer.toString(i+1));
+                    invalidLines.add(i+1);
+                } catch(Exception e) {
+                    System.out.println("jena:Exception at line: " + Integer.toString(i+1) + ":" + e.getMessage());
+                }  catch(Error e) {
+                    System.out.println("jena:Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
+                    System.out.println("jena:Probably due to blank nodes. Line will not be counted as invalid");
                 }
-
-                while (sc.hasNextLine()) {
-                    String triple = sc.nextLine();
-                    try {
-                        org.apache.jena.riot.RDFParser.fromString(triple).lang(l).parse(dest);
-                    } catch(RiotException e) {
-                        System.out.println("RiotException: " + e.getMessage());
-                        System.out.println("Invalid line: " + Integer.toString(i+1));
+                //rdf4j parser
+                InputStream triple = null;
+                try {
+                    triple = new ByteArrayInputStream(nextLine.getBytes());
+                    rdfParser.parse(triple);
+                }
+                catch (IOException e) {
+                    System.out.println(e.getMessage());
+                }
+                catch (RDFParseException e) {
+                        System.out.println("rdf4j:RDFParseException: " + e.getMessage());
+                        System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
                         invalidLines.add(i+1);
-                    } catch(Exception e) {
-                        System.out.println("Exception at line: " + Integer.toString(i+1) + ":" + e.getMessage());
-                    }  catch(Error e) {
-                        System.out.println("Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
-                        System.out.println("Probably due to blank nodes. Line will not be counted as invalid");
-                    }                                
-                    i++;
                 }
-            } else if (parser.equals("rdf4j")) {
-                org.eclipse.rdf4j.rio.RDFParser rdfParser = Rio.createParser(RDFFormat.NTRIPLES);
-
-                while (sc.hasNextLine()) {
-                    InputStream triple = null;
-                    try {
-                        triple = new ByteArrayInputStream(sc.nextLine().getBytes());
-                        rdfParser.parse(triple);
-                    }
-                    catch (IOException e) {
-                        System.out.println(e.getMessage());
-                    }
-                    catch (RDFParseException e) {
-                            System.out.println(e.getMessage());
-                            System.out.println("Invalid line: " + Integer.toString(i+1));
-                            invalidLines.add(i+1);
-                    }
-                    catch (RDFHandlerException e) {
-                            System.out.println(e.getMessage());
-                            System.out.println("Invalid line: " + Integer.toString(i+1));
-                            invalidLines.add(i+1);
-                    }
-                    finally {
-                        triple.close();
-                    }
-                    i++;
+                catch (RDFHandlerException e) {
+                        System.out.println("rdf4j:RDFHandlerException: " + e.getMessage());
+                        System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
+                        invalidLines.add(i+1);
                 }
-
-            } else throw new Exception("Parser must be one of: jena, rdf4j");
-
+                finally {
+                    triple.close();
+                }                                
+                i++;
+            }
             
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
