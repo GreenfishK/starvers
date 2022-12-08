@@ -68,7 +68,11 @@ public class Validate {
                         System.out.println("Exception: " + e.getMessage());
                         System.out.println("Invalid line: " + Integer.toString(i+1));
                         invalidLines.add(i+1);
-                    }                               
+                    }  catch(Error e) {
+                        System.out.println("Exception: " + e.getMessage());
+                        System.out.println("Invalid line: " + Integer.toString(i+1));
+                        invalidLines.add(i+1);
+                    }                                
                     i++;
                 }
             } else if (parser.equals("rdf4j")) {
