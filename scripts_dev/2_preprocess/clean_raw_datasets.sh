@@ -76,6 +76,7 @@ for dataset in ${datasets[@]}; do
             else
                 cnt_excluded=`sed -n "$=" $invalid_lines_file`
                 echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path ."
+                rm $invalid_lines_file
             fi
 
             # Log how many lines are excluded from the dataset
