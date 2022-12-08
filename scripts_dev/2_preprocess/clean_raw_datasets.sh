@@ -5,6 +5,8 @@ baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
 policies=("ic" "tb") # only raw datasets. Don't change order!
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
+export JAVA_HOME=/usr/local/openjdk-11
+export PATH=/usr/local/openjdk-11/bin:$PATH
 
 # Dirs and files
 mkdir -p ${baseDir}/databases/preprocessing
