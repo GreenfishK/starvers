@@ -45,7 +45,7 @@ for dataset in ${datasets[@]}; do
         do
             #ds_dir=`eval echo $baseDir/rawdata/$dataset`
             raw_ds=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
-            clean_ds=${raw_ds/./_clean.}
+            clean_ds=${raw_ds/${c}./${c}_clean.}
             #clean_ds_base=`basename $raw_ds`
             #clean_ds_extension=${raw_ds##*.}
             #clean_ds=$ds_dir/${clean_ds_base}_clean.${clean_ds_extension}
@@ -53,7 +53,7 @@ for dataset in ${datasets[@]}; do
             # Read dataset $raw_ds line by line. 
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
-            repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
+            repositoryID=`eval echo ${policy}_${dataset}${ds_sds_rel_pathegment}`
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
 
