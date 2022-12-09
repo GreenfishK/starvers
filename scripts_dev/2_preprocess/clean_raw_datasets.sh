@@ -47,45 +47,28 @@ for dataset in ${datasets[@]}; do
             raw_ds=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
             clean_ds_base=`basename $ds_rel_path`
             clean_ds_extension=${clean_ds_base##*.}
-            clean_ds=${clean_ds_base}_clean.${clean_ds_extension}
+            clean_ds=$ds_dir/${clean_ds_base}_clean.${clean_ds_extension}
 
-            # Match invalid triples and save the line numbers to invalid_lines_file
+            # Read dataset $raw_ds line by line. 
+            # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             repositoryID=`eval echo ${policy}_${dataset}${ds_segment}`
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
 
-            # Build substitutions string argument for sed
-            #invalid_lines=`cat $invalid_lines_file`
-            #substitutions=""
-            #for invalid_line in $invalid_lines
-            #do
-            #    substitutions="${substitutions}${invalid_line}s/(.*)/# \1/g;"
-            #done
-            # Exclude invalid triples
-            #sed -i -r "$substitutions" $ds_abs_path
-
-            # Print how many lines were excluded in this run
-            #if [ -z "$invalid_lines" ]; then
-            #    echo "$ds_abs_path no errors."
-            #else
-            #    cnt_excluded=`sed -n "$=" $invalid_lines_file`
-            #    echo "$cnt_excluded excluded via commenting (hashtag) from $ds_abs_path ."
-            #    rm $invalid_lines_file
-            #fi
-
             # Log how many lines are excluded from the dataset
-            excluded_lines=`grep -c '^# ' $ds_dir/${clean_ds}`
-            echo "${clean_ds}: $excluded_lines" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
+            mv $clean_ds $raw_ds
+            excluded_lines=`grep -c '^# ' ${raw_ds}`
+            echo "${raw_ds}: $excluded_lines" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
 
             # Skolemize blank nodes in subject position
-            cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $clean_ds`
-            sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $clean_ds
+            cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $raw_ds`
+            sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
             # Skolemize blank nodes in object position
-            cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $clean_ds`
-            sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $clean_ds
-            echo "${clean_ds}: skolemized blank nodesin subject position: $cnt_b_sub" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
-            echo "${clean_ds}: skolemized blank nodesin object position: $cnt_b_obj" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $raw_ds`
+            sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
+            echo "${raw_ds}: skolemized blank nodesin subject position: $cnt_b_sub" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            echo "${raw_ds}: skolemized blank nodesin object position: $cnt_b_obj" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
 
         done
     done
