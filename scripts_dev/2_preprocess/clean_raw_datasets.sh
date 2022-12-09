@@ -43,11 +43,12 @@ for dataset in ${datasets[@]}; do
         echo "Correcting $dataset for $policy policy"
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
-            ds_dir=`eval echo $baseDir/rawdata/$dataset`
+            #ds_dir=`eval echo $baseDir/rawdata/$dataset`
             raw_ds=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
-            clean_ds_base=`basename $ds_rel_path`
-            clean_ds_extension=${clean_ds_base##*.}
-            clean_ds=$ds_dir/${clean_ds_base}_clean.${clean_ds_extension}
+            clean_ds=${raw_ds/./_clean.}
+            #clean_ds_base=`basename $raw_ds`
+            #clean_ds_extension=${raw_ds##*.}
+            #clean_ds=$ds_dir/${clean_ds_base}_clean.${clean_ds_extension}
 
             # Read dataset $raw_ds line by line. 
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
