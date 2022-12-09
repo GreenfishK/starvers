@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 
-import java.util.HashSet;
 import java.util.Scanner;
 
 
@@ -30,16 +29,14 @@ public class Validate {
     public static void main(String [] args) throws Exception {
         ARQ.init();
         
-        String [] splitFileName = args[0].split("\\.");
-        String logFile = args[1];
+        String [] splitFileName = args[0].split("\\.(?=[^\\.]+$)");
+        String cleanDatasetFile = args[1];
 
-        String extension = splitFileName[splitFileName.length - 1];
+        String extension = splitFileName[1];
         final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.graph(g); 
-        HashSet<Integer> invalidLines = new HashSet<Integer>();
         FileInputStream inputStream = null;
         Scanner sc = null;
-        int i = 0;
 
         Lang l = null;
         RDFFormat format = null;
@@ -56,9 +53,12 @@ public class Validate {
         try {
             inputStream = new FileInputStream(new File(args[0]));
             sc = new Scanner(inputStream, "UTF-8");
+            FileWriter writer = new FileWriter(cleanDatasetFile);
+            int i = 0;
 
             org.eclipse.rdf4j.rio.RDFParser rdfParser = Rio.createParser(format);
             while (sc.hasNextLine()) {
+                boolean invalidLine = false;
                 String nextLine = sc.nextLine();
                 // Jena parser
                 try {
@@ -66,7 +66,7 @@ public class Validate {
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
                     System.out.println("jena:Invalid line: " + Integer.toString(i+1));
-                    invalidLines.add(i+1);
+                    invalidLine = true;
                 } catch(Exception e) {
                     System.out.println("jena:Exception at line: " + Integer.toString(i+1) + ":" + e.getMessage());
                 }  catch(Error e) {
@@ -85,18 +85,27 @@ public class Validate {
                 catch (RDFParseException e) {
                         System.out.println("rdf4j:RDFParseException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLines.add(i+1);
+                        invalidLine = true;
                 }
                 catch (RDFHandlerException e) {
                         System.out.println("rdf4j:RDFHandlerException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLines.add(i+1);
+                        invalidLine = true;
                 }
                 finally {
                     triple.close();
                 }                                
                 i++;
+                try {
+                    if (invalidLine) 
+                        writer.write("# " + nextLine + System.lineSeparator());
+                    else
+                        writer.write(nextLine + System.lineSeparator());                   
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+            writer.close();
             
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
@@ -115,18 +124,6 @@ public class Validate {
             if (sc != null) {
                 sc.close();
             }
-        }
-
-        System.out.println("Number of lines in " + args[0] + ": " + Integer.toString(i));
-        System.out.println("Number of invalid lines: " + invalidLines.size());
-        try {
-            FileWriter writer = new FileWriter(logFile); 
-            for(Integer invalidLine: invalidLines) {
-                writer.write(Integer.toString(invalidLine) + System.lineSeparator());
-            }
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
