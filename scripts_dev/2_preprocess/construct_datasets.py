@@ -99,7 +99,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                         'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp)
+    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=5000)
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -119,7 +119,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             added_triples_raw = list(filter(None, added_triples_raw))
             
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
-            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts)
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, batch_size=5000)
         
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
@@ -127,7 +127,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
-            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts)
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=5000)
 
     #logging.info("Extract the whole dataset from the GraphDB repository.")
     #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
