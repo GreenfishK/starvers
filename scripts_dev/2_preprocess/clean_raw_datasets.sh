@@ -52,21 +52,37 @@ for dataset in ${datasets[@]}; do
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             repositoryID=`eval echo ${policy}_${dataset}${ds_sds_rel_pathegment}`
             invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
-            java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
-
-            # Log how many lines are excluded from the dataset
-            mv $clean_ds $raw_ds
-            excluded_lines=`grep -c '^# ' ${raw_ds}`
-            echo "${raw_ds}: $excluded_lines" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
+            first_line=`grep -E '^# invalid_lines_excluded' $raw_ds`
+            if [[ -z "$first_line" ]]; then
+                java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
+                excluded_lines=`grep -c '^# ' ${raw_ds}`
+                sed -i "1s/^/# invalid_lines_excluded: ${excluded_lines}\n/" $clean_ds
+                mv $clean_ds $raw_ds
+                # Log how many lines are excluded from the dataset
+                echo "${raw_ds}: $excluded_lines" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
+            else
+                echo "${raw_ds}: 0 in this run. Previously excluded lines: see first comment in ${raw_ds}" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
+            fi
 
             # Skolemize blank nodes in subject position
             cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $raw_ds`
-            sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
+            if [[ $cnt_b_sub != 0 ]]; then
+                sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
+                sed -i "2s/^/# skolemized_blank_nodes_in_subject_position: ${cnt_b_sub}\n/" $raw_ds
+                echo "${raw_ds}: skolemized blank nodes in subject position: $cnt_b_sub" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            else
+                echo "${raw_ds}: skolemized blank nodes in subject position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            fi
+            
             # Skolemize blank nodes in object position
             cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $raw_ds`
-            sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
-            echo "${raw_ds}: skolemized blank nodesin subject position: $cnt_b_sub" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
-            echo "${raw_ds}: skolemized blank nodesin object position: $cnt_b_obj" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            if [[ $cnt_b_obj != 0 ]]; then
+                sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
+                sed -i "2s/^/# skolemized_blank_nodes_in_object_position: ${cnt_b_obj}\n/" $raw_ds
+                echo "${raw_ds}: skolemized blank nodes in object position: $cnt_b_obj" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            else
+                echo "${raw_ds}: skolemized blank nodes in object position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
+            fi
 
         done
     done

@@ -106,6 +106,8 @@ public class Validate {
                 }
             }
             writer.close();
+
+            
             
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
