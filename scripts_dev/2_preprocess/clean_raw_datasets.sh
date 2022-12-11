@@ -55,10 +55,10 @@ for dataset in ${datasets[@]}; do
             first_line=`grep -E '^# invalid_lines_excluded' $raw_ds`
             if [[ -z "$first_line" ]]; then
                 java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
-                excluded_lines=`grep -c '^# ' ${raw_ds}`
                 sed -i "1s/^/# invalid_lines_excluded: ${excluded_lines}\n/" $clean_ds
                 mv $clean_ds $raw_ds
                 # Log how many lines are excluded from the dataset
+                excluded_lines=`grep -c '^# ' ${raw_ds}`
                 echo "${raw_ds}: $excluded_lines" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
             else
                 echo "${raw_ds}: 0 in this run. Previously excluded lines: see first comment in ${raw_ds}" >> $baseDir/output/logs/preprocessing/exclude_invalid_triples.txt
