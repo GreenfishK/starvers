@@ -66,7 +66,7 @@ for dataset in ${datasets[@]}; do
 
             # Skolemize blank nodes in subject position
             yn_skolemized_sub=`grep -E '^# skolemized_blank_nodes_in_subject_position' $raw_ds`
-            if [ -z[ $yn_skolemized_sub ]]; then
+            if [[ -z $yn_skolemized_sub ]]; then
                 cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $raw_ds`
                 sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
                 sed -i "2s/^/# skolemized_blank_nodes_in_subject_position: ${cnt_b_sub}\n/" $raw_ds
@@ -77,7 +77,7 @@ for dataset in ${datasets[@]}; do
             
             # Skolemize blank nodes in object position
             yn_skolemized_obj=`grep -E '^# skolemized_blank_nodes_in_object_position' $raw_ds`
-            if [[ $cnt_b_obj != 0 ]]; then
+            if [[ -z $yn_skolemized_obj ]]; then
                 cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $raw_ds`
                 sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
                 sed -i "2s/^/# skolemized_blank_nodes_in_object_position: ${cnt_b_obj}\n/" $raw_ds
