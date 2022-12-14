@@ -1,3 +1,6 @@
 output/
 .git
 2_preprocess/RDFValidator/target/classes/
+2_preprocess/RDFValidator/target/archive-tmp/
+2_preprocess/RDFValidator/target/generated-sources/
+2_preprocess/RDFValidator/target/maven-status/

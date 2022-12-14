@@ -6,3 +6,6 @@ scripts_dev/.idea
 scripts_dev/.ipynb_checkpoints/
 scripts_dev/5_evaluate/graphdb/target
 2_preprocess/RDFValidator/target/classes/
+2_preprocess/RDFValidator/target/archive-tmp/
+2_preprocess/RDFValidator/target/generated-sources/
+2_preprocess/RDFValidator/target/maven-status/
