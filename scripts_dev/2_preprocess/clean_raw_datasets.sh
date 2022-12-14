@@ -25,6 +25,7 @@ for dataset in ${datasets[@]}; do
         bearb_hour) versions=1299 file_name_struc="%06g";; 
         bearb_day) versions=89 file_name_struc="%06g";;
         bearc) versions=33 file_name_struc="%01g";;
+        beart) versions=4 file_name_struc="%06g";;
         *)
             echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc"
             exit 2
