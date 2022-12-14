@@ -5,3 +5,4 @@
 scripts_dev/.idea
 scripts_dev/.ipynb_checkpoints/
 scripts_dev/5_evaluate/graphdb/target
+2_preprocess/RDFValidator/target/classes/
