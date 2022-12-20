@@ -9,10 +9,13 @@ script_dir=/starvers_eval/scripts
 #graphdb_port=$((7200))
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
-export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=${baseDir}/databases/graphdb_${policy}_${dataset}/data"
+export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=${baseDir}/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
 # Clean repository
-rm -rf ${baseDir}/databases/graphdb_${policy}_${dataset}
+rm -rf ${baseDir}/databases/preprocessing/
+
+# Create directories
+mkdir -p ${baseDir}/configs/preprocessing/graphdb_${policy}_${dataset}
 
 repositoryID=${policy}_${dataset}
 cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl ${script_dir}/2_preprocess/configs/graphdb-config.ttl

@@ -15,7 +15,8 @@ export _JAVA_OPTIONS="-Xmx90g -Xms90g"
 export ADMIN_PASSWORD=starvers
 
 # Clean directories
-rm -rf ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}
+rm -rf ${baseDir}/databases/preprocessing/
+rm -rf /run/configuration
 
 # Create directories
 mkdir -p ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}
