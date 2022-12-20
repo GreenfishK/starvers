@@ -60,7 +60,7 @@ public class Validate {
                 boolean invalidLine = false;
                 String nextLine = sc.nextLine();
                 // Jena parser
-                try {
+                /*try {
                     org.apache.jena.riot.RDFParser.fromString(nextLine).lang(l).parse(dest);
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
@@ -93,7 +93,7 @@ public class Validate {
                 }
                 finally {
                     triple.close();
-                }                                
+                }*/                                
                 i++;
                 try {
                     if (invalidLine) 
