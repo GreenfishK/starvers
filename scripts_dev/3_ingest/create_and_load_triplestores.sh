@@ -3,7 +3,7 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
-datasets=("${datasets}") # bearb_day bearb_hour beara bearc
+datasets=("${datasets}") 
 triple_stores=("${triple_stores}")
 policies=("${policies}") 
 
