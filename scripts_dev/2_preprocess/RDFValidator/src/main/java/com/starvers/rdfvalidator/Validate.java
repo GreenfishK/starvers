@@ -55,8 +55,7 @@ public class Validate {
             sc = new Scanner(inputStream, "UTF-8");
             FileWriter writer = new FileWriter(cleanDatasetFile);
             int i = 0;
-
-            org.eclipse.rdf4j.rio.RDFParser rdfParser = Rio.createParser(format);
+            
             while (sc.hasNextLine()) {
                 boolean invalidLine = false;
                 String nextLine = sc.nextLine();
@@ -77,7 +76,7 @@ public class Validate {
                 InputStream triple = null;
                 try {
                     triple = new ByteArrayInputStream(nextLine.getBytes());
-                    rdfParser.parse(triple);
+                    Rio.parse(triple, format);
                 }
                 catch (IOException e) {
                     System.out.println(e.getMessage());
