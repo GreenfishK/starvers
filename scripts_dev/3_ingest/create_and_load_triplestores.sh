@@ -3,9 +3,9 @@
 # Variables
 baseDir=/starvers_eval
 SCRIPT_DIR=/starvers_eval/scripts
+datasets=("${datasets}") # bearb_day bearb_hour beara bearc
 triple_stores=("${triple_stores}")
-policies=("${policies}") # cb tbsf tbsh tb
-datasets=("${datasets}") # bearb_day beara bearc
+policies=("${policies}") 
 
 # Create directories
 mkdir -p $baseDir/output/logs/ingest/
@@ -21,15 +21,14 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) datasetDirOrFile=alldata.IC.nt;;
-            icng) datasetDirOrFile=alldata.ICNG.trig;;
-            cb) datasetDirOrFile=alldata.CB_computed.ttl;;
-            cbng) datasetDirOrFile=alldata.CBNG.trig;;
-            tb) datasetDirOrFile=alldata.TB.nq;;
-            tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
-            tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
+            ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;
+            cb_mr_tr) datasetDirOrFile=alldata.CB_computed.nt;;
+            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
+            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
+            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
+            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
             *)
-                echo "Policy must be in ic, cb, tb, tbsf, tbsh"
+                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs"
                 exit 2
             ;;
         esac
@@ -55,7 +54,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             echo "Process is $policy, $dataset for GraphDB"
             total_ingestion_time=0
             total_file_size=0
-            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
+            if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
                 cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
@@ -69,7 +68,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
-            elif [ "$policy" == "ic" ]; then
+            elif [ "$policy" == "ic_mr_tr" ]; then
                 for c in $(seq -f $file_name_struc 1 ${versions}) # ${versions}
                 do
                     # Replace repositoryID in config template
@@ -86,7 +85,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done  
                         
-            elif [ "$policy" == "cb" ]; then
+            elif [ "$policy" == "cb_mr_tr" ]; then
                 for v in $(seq 0 1 $((${versions}-1))); do 
                     ve=$(echo $v+1 | bc)
                     if [ $v -eq 0 ]; then
@@ -145,15 +144,14 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) datasetDirOrFile=alldata.IC.nt;;
-            icng) datasetDirOrFile=alldata.ICNG.trig;;
-            cb) datasetDirOrFile=alldata.CB_computed.ttl;;
-            cbng) datasetDirOrFile=alldata.CBNG.trig;;
-            tb) datasetDirOrFile=alldata.TB.nq;;
-            tbsf) datasetDirOrFile=alldata.TB_star_flat.ttl;;
-            tbsh) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
+            ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;
+            cb_mr_tr) datasetDirOrFile=alldata.CB_computed.nt;;
+            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
+            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
+            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
+            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
             *)
-                echo "Policy must be in ic, cb, tb, tbsf, tbsh"
+                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs"
                 exit 2
             ;;
         esac
@@ -180,7 +178,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             total_file_size=0
             mkdir -p ${baseDir}/configs/jenatdb2_${policy}_${dataset}
             
-            if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
+            if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
                 
@@ -197,7 +195,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 file_size=`ls -l --block-size=k ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
-            elif [ "$policy" == "ic" ]; then
+            elif [ "$policy" == "ic_mr_tr" ]; then
                 for c in $(seq -f $file_name_struc 1 ${versions})
                 do
                     repositoryID=${policy}_${dataset}_$((10#$c))
@@ -216,7 +214,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
                 done
             
-            elif [ "$policy" == "cb" ]; then
+            elif [ "$policy" == "cb_mr_tr" ]; then
                 for v in $(seq 0 1 $((${versions}-1))); do 
                     ve=$(echo $v+1 | bc)
                     if [ $v -eq 0 ]; then
