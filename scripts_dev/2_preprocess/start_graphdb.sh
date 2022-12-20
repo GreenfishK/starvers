@@ -4,25 +4,24 @@ policy=$1
 dataset=$2
 
 # Set variables
-baseDir=/starvers_eval
 script_dir=/starvers_eval/scripts
 #graphdb_port=$((7200))
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
-export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=${baseDir}/databases/preprocessing/graphdb_${policy}_${dataset}/data"
+export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
 # Clean repository
-rm -rf ${baseDir}/databases/preprocessing/
+rm -rf /starvers_eval/databases/preprocessing/
 
 # Create directories
-mkdir -p ${baseDir}/configs/preprocessing/graphdb_${policy}_${dataset}
+mkdir -p /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
 
 repositoryID=${policy}_${dataset}
 cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 sed -i "s/{{repositoryID}}/$repositoryID/g" ${script_dir}/2_preprocess/configs/graphdb-config.ttl
 
 # Ingest empty dataset
-/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/empty.nt --force
+/opt/graphdb/dist/bin/preload -c ${script_dir}/2_preprocess/configs/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt --force
 
 # Start database server and run in background
 /opt/graphdb/dist/bin/graphdb -d -s

@@ -4,7 +4,6 @@ policy=$1
 dataset=$2
 
 # Set variables
-baseDir=/starvers_eval
 script_dir=/starvers_eval/scripts
 #jenatdb2_port=$((3030))
 export JAVA_HOME=/usr/local/openjdk-11
@@ -15,25 +14,25 @@ export _JAVA_OPTIONS="-Xmx90g -Xms90g"
 export ADMIN_PASSWORD=starvers
 
 # Clean directories
-rm -rf ${baseDir}/databases/preprocessing/
+rm -rf /starvers_eval/databases/preprocessing/
 rm -rf /run/configuration
 
 # Create directories
-mkdir -p ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}
+mkdir -p /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}
 mkdir -p /run/configuration
 
 # Parametrize and copy config file
 repositoryID=${policy}_${dataset}
-cp ${script_dir}/2_preprocess/configs/jenatdb2-config_template.ttl ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-sed -i "s/{{policy}}/$policy/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-sed -i "s/{{dataset}}/$dataset/g" ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+cp ${script_dir}/2_preprocess/configs/jenatdb2-config_template.ttl /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 
 # Ingest empty dataset
-/jena-fuseki/tdbloader2 --loc ${baseDir}/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} ${baseDir}/rawdata/${dataset}/empty.nt
+/jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 
 # Start database server and run in background
-cp ${baseDir}/configs/preprocessing/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
+cp /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
 # Wait until server is up
