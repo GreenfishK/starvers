@@ -1,10 +1,8 @@
 package com.starvers.rdfvalidator;
 
-import org.apache.jena.graph.Graph;
 import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.riot.system.StreamRDFLib;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
@@ -12,7 +10,6 @@ import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
-
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -37,7 +34,6 @@ public class Validate {
         Scanner sc = null;
 
         //Jena variables for output of parser
-        //final Graph g = ModelFactory.createDefaultModel().getGraph();
         final StreamRDF dest = StreamRDFLib.sinkNull(); 
 
         Lang l = null;
@@ -101,9 +97,6 @@ public class Validate {
                     writer.write(nextLine + System.lineSeparator());              
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
-                if (i % 1000000 == 0) {
-                    System.gc();
                 }
             }
             writer.close();
