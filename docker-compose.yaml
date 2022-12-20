@@ -56,9 +56,9 @@ services:
       - ${base_host_dir}/configs:/starvers_eval/configs
       - ./scripts_dev/3_ingest:/starvers_eval/scripts/3_ingest # move to image after development has finished
     environment:
+      - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
-      - datasets=${datasets}
     entrypoint: ["/starvers_eval/scripts/3_ingest/create_and_load_triplestores.sh"]
   
   generate_queries:
@@ -93,9 +93,9 @@ services:
       - 7200:7200
       - 3030:3030
     environment:
-      - policies=${policies}
       - datasets=${datasets}
       - triple_stores=${triple_stores}
+      - policies=${policies}
       - graphdb_port=${graphdb_port}
       - jenatdb2_port=${jenatdb2_port}
     entrypoint: ["/starvers_eval/scripts/5_evaluate/evaluate.sh"]
