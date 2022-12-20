@@ -74,7 +74,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, policy:str, dataset:str):
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, dataset:str):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
@@ -83,21 +83,21 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
     
-    logging.info("Constructing RDF-star dataset for the {} policy from ICs and changesets.".format(policy))
+    logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
     #logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
-    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format(policy, dataset)))
+    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format("tb_rs", dataset)))
     logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format(policy, dataset)))
+    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format("tb_rs", dataset)))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    #rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-    #                                    'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset))
-    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-                                        'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset))
+    #rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset),
+    #                                    'http://Starvers:7200/repositories/{0}_{1}/statements'.format("tb_rs", dataset))
+    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset),
+                                        'http://Starvers:3030/{0}_{1}/update'.format("tb_rs", dataset))
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=5000)
 
@@ -130,9 +130,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=5000)
 
     #logging.info("Extract the whole dataset from the GraphDB repository.")
-    #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset))
+    #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset))
     logging.info("Extract the whole dataset from the JenaTDB2 repository.")
-    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset))
+    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset))
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
     sparql_engine.setQuery("""
@@ -337,24 +337,20 @@ for dataset in datasets:
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
-    # CB
     construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
-    # TBSH
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
-                        policy="tbsh",
                         dataset=dataset)    
-    # CBNG
+    
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
                       destination=data_dir + "/alldata.CBNG.trig",
                       last_version=total_versions)
 
-    # ICNG
     construct_icng_ds(source=data_dir + "/alldata.IC.nt",
                       destination=data_dir + "/alldata.ICNG.trig",
                       last_version=total_versions,

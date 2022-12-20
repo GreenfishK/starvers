@@ -58,11 +58,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             if [[ "$policy" == "tbsh" || "$policy" == "tbsf" || "$policy" == "tb" || "$policy" == "icng" || "$policy" == "cbng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
-                cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
-                sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
+                cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile} --force) \
                                 2>&1 1>> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -74,11 +74,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 do
                     # Replace repositoryID in config template
                     repositoryID=${policy}_${dataset}_$((10#$c))
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryID/g" ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
+                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryID/g" ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl ${baseDir}/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt --force) \
                                     2>&1 1>> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -104,11 +104,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Add
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
+                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${fileadd} --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl ${baseDir}/rawdata/${dataset}/${fileadd} --force) \
                                     2>&1 1>> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -117,11 +117,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Delete
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl
+                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryIDDel/g" ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config.ttl ${baseDir}/rawdata/${dataset}/${filedel} --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c ${baseDir}/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl ${baseDir}/rawdata/${dataset}/${filedel} --force) \
                                     2>&1 1>> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $baseDir/output/logs/ingest/ingestion_graphdb_logs.txt     
