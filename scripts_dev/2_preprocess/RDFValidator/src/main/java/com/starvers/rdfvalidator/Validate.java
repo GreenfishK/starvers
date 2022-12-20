@@ -57,17 +57,17 @@ public class Validate {
             int i = 0;
             
             while (sc.hasNextLine()) {
-                boolean invalidLine = false;
                 String nextLine = sc.nextLine();
                 // Jena parser
-                /*try {
+                try {
                     org.apache.jena.riot.RDFParser.fromString(nextLine).lang(l).parse(dest);
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
                     System.out.println("jena:Invalid line: " + Integer.toString(i+1));
-                    invalidLine = true;
+                    nextLine = "# " + nextLine;
                 } catch(Exception e) {
                     System.out.println("jena:Exception at line: " + Integer.toString(i+1) + ":" + e.getMessage());
+                    //nextLine = "# " + nextLine;
                 }  catch(Error e) {
                     System.out.println("jena:Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
                     System.out.println("jena:Probably due to blank nodes. Line will not be counted as invalid");
@@ -84,24 +84,24 @@ public class Validate {
                 catch (RDFParseException e) {
                         System.out.println("rdf4j:RDFParseException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLine = true;
+                        nextLine = "# " + nextLine;
                 }
                 catch (RDFHandlerException e) {
                         System.out.println("rdf4j:RDFHandlerException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLine = true;
+                        nextLine = "# " + nextLine;
                 }
                 finally {
                     triple.close();
-                }*/                                
+                }                               
                 i++;
                 try {
-                    if (invalidLine) 
-                        writer.write("# " + nextLine + System.lineSeparator());
-                    else
-                        writer.write(nextLine + System.lineSeparator());                   
+                    writer.write(nextLine + System.lineSeparator());              
                 } catch (IOException e) {
                     e.printStackTrace();
+                }
+                if (i % 1000000 == 0) {
+                    System.gc();
                 }
             }
             writer.close();
