@@ -33,10 +33,12 @@ public class Validate {
         String cleanDatasetFile = args[1];
 
         String extension = splitFileName[1];
-        final Graph g = ModelFactory.createDefaultModel().getGraph();
-        final StreamRDF dest = StreamRDFLib.graph(g); 
         FileInputStream inputStream = null;
         Scanner sc = null;
+
+        //Jena variables for output of parser
+        //final Graph g = ModelFactory.createDefaultModel().getGraph();
+        final StreamRDF dest = StreamRDFLib.sinkNull(); 
 
         Lang l = null;
         RDFFormat format = null;
@@ -59,7 +61,7 @@ public class Validate {
             while (sc.hasNextLine()) {
                 String nextLine = sc.nextLine();
                 // Jena parser
-                /*try {
+                try {
                     org.apache.jena.riot.RDFParser.fromString(nextLine).lang(l).parse(dest);
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
@@ -71,7 +73,7 @@ public class Validate {
                 }  catch(Error e) {
                     System.out.println("jena:Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
                     System.out.println("jena:Probably due to blank nodes. Line will not be counted as invalid");
-                }*/
+                }
                 //rdf4j parser
                 InputStream triple = null;
                 try {
@@ -105,8 +107,6 @@ public class Validate {
                 }
             }
             writer.close();
-
-            
             
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
