@@ -8,10 +8,10 @@ import re
 import logging
 import subprocess
 import shlex
+import shutil
 from SPARQLWrapper import SPARQLWrapper, JSON
-from rdflib.term import URIRef, Literal, BNode
+from rdflib.term import URIRef
 from starvers.starvers import TripleStoreEngine
-from rdflib.util import from_n3
 
 
 class AnnotationStyle(Enum):
@@ -186,8 +186,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     #logging.info("Shutting down GraphDB server.")
     #subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
-    logging.info("Shutting down JenaTDB2 server.")
+    logging.info("Shutting down JenaTDB2 server and removing database files.")
     subprocess.run(["pkill", "-f", "'/jena-fuseki/fuseki-server.jar'"])
+    shutil.rmtree("/starvers_eval/databases/preprocessing/")
+    shutil.rmtree("/run/configuration")
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
