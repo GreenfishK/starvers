@@ -164,7 +164,7 @@ for query_set in query_sets:
             engine.setQuery(query_text)
             file.close()
 
-            if policy in ["tbsh", "tbsf", "tb", "icng"]:
+            if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -184,7 +184,7 @@ for query_set in query_sets:
 
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
             
-            elif policy == "cbng":
+            elif policy == "cb_sr_ng":
                 repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
                 engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
                 engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -249,7 +249,7 @@ for query_set in query_sets:
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
             
-            elif policy == "ic":
+            elif policy == "ic_mr_tr":
                 for repository in range(1, int(repositories)+1):
                     repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=dataset, repository=repository)
                     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
@@ -271,7 +271,7 @@ for query_set in query_sets:
                     df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
                 
 
-            elif policy == "cb":
+            elif policy == "cb_mr_tr":
                 logger.info("To be implemented")
                 """manager = multiprocessing.Manager()
                 for repository in range(0, int(repositories/2)):
