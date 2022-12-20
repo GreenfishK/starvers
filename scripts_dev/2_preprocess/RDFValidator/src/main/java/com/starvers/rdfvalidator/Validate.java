@@ -59,7 +59,7 @@ public class Validate {
             while (sc.hasNextLine()) {
                 String nextLine = sc.nextLine();
                 // Jena parser
-                try {
+                /*try {
                     org.apache.jena.riot.RDFParser.fromString(nextLine).lang(l).parse(dest);
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
@@ -71,7 +71,7 @@ public class Validate {
                 }  catch(Error e) {
                     System.out.println("jena:Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
                     System.out.println("jena:Probably due to blank nodes. Line will not be counted as invalid");
-                }
+                }*/
                 //rdf4j parser
                 InputStream triple = null;
                 try {
