@@ -74,7 +74,7 @@ public class Validate {
                 InputStream triple = null;
                 try {
                     triple = new ByteArrayInputStream(nextLine.getBytes());
-                    Rio.parse(triple, format);
+                    Rio.parse(triple, null, format);
                 }
                 catch (IOException e) {
                     System.out.println(e.getMessage());

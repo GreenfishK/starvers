@@ -50,6 +50,7 @@ for dataset in ${datasets[@]}; do
             # Read dataset $raw_ds line by line. 
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
+            echo "Validating $raw_ds"
             first_line=`grep -E -m 1 '^# invalid_lines_excluded' $raw_ds`
             if [[ -z "$first_line" ]]; then
                 java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
