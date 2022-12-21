@@ -34,8 +34,8 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) ds_rel_path='alldata.IC.nt/${c}.nt' ds_segment='_${c}';;
-            tb) ds_rel_path='alldata.TB.nq' versions=1 ds_segment='';;
+            ic) ds_rel_path='alldata.IC.nt/${c}.nt' ds_segment='_${c}' base_name='${c}';;
+            tb) ds_rel_path='alldata.TB.nq' versions=1 ds_segment='' base_name='alldata.TB';;
             *)
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
@@ -44,15 +44,13 @@ for dataset in ${datasets[@]}; do
         echo "Correcting $dataset for $policy policy"
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
-            #ds_dir=`eval echo $baseDir/rawdata/$dataset`
+            base_name=`eval echo $base_name`
             raw_ds=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
-            clean_ds=${raw_ds/${c}./${c}_clean.}
+            clean_ds=${raw_ds/${base_name}./${base_name}_clean.}
 
             # Read dataset $raw_ds line by line. 
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
-            repositoryID=`eval echo ${policy}_${dataset}${ds_sds_rel_pathegment}`
-            invalid_lines_file=$baseDir/output/logs/preprocessing/invalid_triples_${repositoryID}.txt 
             first_line=`grep -E -m 1 '^# invalid_lines_excluded' $raw_ds`
             if [[ -z "$first_line" ]]; then
                 java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
@@ -85,7 +83,6 @@ for dataset in ${datasets[@]}; do
             else
                 echo "${raw_ds}: skolemized blank nodes in object position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> $baseDir/output/logs/preprocessing/skolemize_blank_nodes.txt
             fi
-
         done
     done
 done
