@@ -1,10 +1,8 @@
 package com.starvers.rdfvalidator;
 
-import org.apache.jena.graph.Graph;
 import org.apache.jena.riot.system.StreamRDF;
 import org.apache.jena.riot.system.StreamRDFLib;
 import org.apache.jena.riot.Lang;
-import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
@@ -12,7 +10,6 @@ import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
-
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -33,10 +30,11 @@ public class Validate {
         String cleanDatasetFile = args[1];
 
         String extension = splitFileName[1];
-        final Graph g = ModelFactory.createDefaultModel().getGraph();
-        final StreamRDF dest = StreamRDFLib.graph(g); 
         FileInputStream inputStream = null;
         Scanner sc = null;
+
+        //Jena variables for output of parser
+        final StreamRDF dest = StreamRDFLib.sinkNull(); 
 
         Lang l = null;
         RDFFormat format = null;
@@ -55,10 +53,8 @@ public class Validate {
             sc = new Scanner(inputStream, "UTF-8");
             FileWriter writer = new FileWriter(cleanDatasetFile);
             int i = 0;
-
-            org.eclipse.rdf4j.rio.RDFParser rdfParser = Rio.createParser(format);
+            
             while (sc.hasNextLine()) {
-                boolean invalidLine = false;
                 String nextLine = sc.nextLine();
                 // Jena parser
                 try {
@@ -66,9 +62,10 @@ public class Validate {
                 } catch(RiotException e) {
                     System.out.println("jena:RiotException: " + e.getMessage());
                     System.out.println("jena:Invalid line: " + Integer.toString(i+1));
-                    invalidLine = true;
+                    nextLine = "# " + nextLine;
                 } catch(Exception e) {
                     System.out.println("jena:Exception at line: " + Integer.toString(i+1) + ":" + e.getMessage());
+                    //nextLine = "# " + nextLine;
                 }  catch(Error e) {
                     System.out.println("jena:Error at line: " + Integer.toString(i+1) + ":" + e.getMessage());
                     System.out.println("jena:Probably due to blank nodes. Line will not be counted as invalid");
@@ -77,7 +74,7 @@ public class Validate {
                 InputStream triple = null;
                 try {
                     triple = new ByteArrayInputStream(nextLine.getBytes());
-                    rdfParser.parse(triple);
+                    Rio.parse(triple, format);
                 }
                 catch (IOException e) {
                     System.out.println(e.getMessage());
@@ -85,29 +82,24 @@ public class Validate {
                 catch (RDFParseException e) {
                         System.out.println("rdf4j:RDFParseException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLine = true;
+                        nextLine = "# " + nextLine;
                 }
                 catch (RDFHandlerException e) {
                         System.out.println("rdf4j:RDFHandlerException: " + e.getMessage());
                         System.out.println("rdf4j:Invalid line: " + Integer.toString(i+1));
-                        invalidLine = true;
+                        nextLine = "# " + nextLine;
                 }
                 finally {
                     triple.close();
-                }                                
+                }                               
                 i++;
                 try {
-                    if (invalidLine) 
-                        writer.write("# " + nextLine + System.lineSeparator());
-                    else
-                        writer.write(nextLine + System.lineSeparator());                   
+                    writer.write(nextLine + System.lineSeparator());              
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
             writer.close();
-
-            
             
             // note that Scanner suppresses exceptions
             if (sc.ioException() != null) {
