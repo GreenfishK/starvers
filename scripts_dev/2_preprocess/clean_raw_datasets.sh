@@ -44,7 +44,7 @@ for dataset in ${datasets[@]}; do
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
             base_name=`eval echo $base_name`
-            raw_ds=`eval echo $baseDir/rawdata/$dataset/${ds_rel_path}`
+            raw_ds=`eval echo /starvers_eval/rawdata/$dataset/${ds_rel_path}`
             clean_ds=${raw_ds/${base_name}./${base_name}_clean.}
 
             # Read dataset $raw_ds line by line. 
