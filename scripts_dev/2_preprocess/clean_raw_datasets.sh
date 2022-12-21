@@ -51,7 +51,7 @@ for dataset in ${datasets[@]}; do
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
             # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             echo "Validating $raw_ds"
-            first_line=`grep -E -m 1 '^# invalid_lines_excluded' $raw_ds`
+            first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`
             if [[ -z "$first_line" ]]; then
                 java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
                 mv $clean_ds $raw_ds
@@ -63,7 +63,7 @@ for dataset in ${datasets[@]}; do
             fi
 
             # Skolemize blank nodes in subject position
-            yn_skolemized_sub=`grep -E -m 1 '^# skolemized_blank_nodes_in_subject_position' $raw_ds`
+            yn_skolemized_sub=`head -3 $raw_ds | grep -E -m 1 '^# skolemized_blank_nodes_in_subject_position'`
             if [[ -z $yn_skolemized_sub ]]; then
                 cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $raw_ds`
                 sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
@@ -74,7 +74,7 @@ for dataset in ${datasets[@]}; do
             fi
             
             # Skolemize blank nodes in object position
-            yn_skolemized_obj=`grep -E -m 1 '^# skolemized_blank_nodes_in_object_position' $raw_ds`
+            yn_skolemized_obj=`head -3 $raw_ds | grep -E -m 1 '^# skolemized_blank_nodes_in_object_position'`
             if [[ -z $yn_skolemized_obj ]]; then
                 cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $raw_ds`
                 sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
