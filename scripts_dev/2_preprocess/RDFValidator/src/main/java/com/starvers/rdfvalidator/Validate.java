@@ -7,10 +7,14 @@ import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
 import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.RDFParserFactory;
+import org.eclipse.rdf4j.rio.RDFParserRegistry;
 import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
+import org.eclipse.rdf4j.rio.nquads.NQuadsParserFactory;
+import org.eclipse.rdf4j.rio.ntriples.NTriplesParserFactory;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -39,18 +43,23 @@ public class Validate {
 
         Lang l = null;
         RDFFormat format = null;
+        RDFParserRegistry parserRegistry = RDFParserRegistry.getInstance();
         if (extension.equals("nt")) {
             l = Lang.NT;
             format = RDFFormat.NTRIPLES;
+            parserRegistry.add(new NTriplesParserFactory());
         } else if (extension.equals("nq")) {
             l = Lang.NQ;
             format = RDFFormat.NQUADS;
+            parserRegistry.add(new NQuadsParserFactory());
         } else {
             System.out.println("Extension must be .nt or .nq");
         }
 
         //GraphDB parser initialization
-        RDFParser rdfParser = Rio.createParser(format);
+        //RDFParser rdfParser = Rio.createParser(format);
+        RDFParserFactory factory = parserRegistry.get(format).get();
+        RDFParser rdfParser = factory.getParser();
 
         try {
             inputStream = new FileInputStream(new File(args[0]));
@@ -78,7 +87,7 @@ public class Validate {
                 InputStream triple = null;
                 try {
                     triple = new ByteArrayInputStream(nextLine.getBytes());
-                    Rio.parse(triple, null);
+                    rdfParser.parse(triple, null);
                 }
                 catch (IOException e) {
                     System.out.println(e.getMessage());
