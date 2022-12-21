@@ -41,6 +41,7 @@ public class Validate {
         //Jena variables for output of parser
         final StreamRDF dest = StreamRDFLib.sinkNull(); 
 
+        // Setting format
         Lang l = null;
         RDFFormat format = null;
         RDFParserRegistry parserRegistry = RDFParserRegistry.getInstance();
@@ -57,7 +58,6 @@ public class Validate {
         }
 
         //GraphDB parser initialization
-        //RDFParser rdfParser = Rio.createParser(format);
         RDFParserFactory factory = parserRegistry.get(format).get();
         RDFParser rdfParser = factory.getParser();
 
