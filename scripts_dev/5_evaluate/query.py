@@ -1,16 +1,16 @@
-from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, DIGEST, GET, JSON, N3
-from pathlib import Path
-import os
-import pandas as pd
-import sys
-import time
-import multiprocessing
+from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, JSON
 from rdflib import Graph
 from rdflib.term import URIRef, Literal, BNode
 from rdflib.query import Result
+import pandas as pd
+
+from pathlib import Path
+import os
+import sys
+import time
+import multiprocessing
 import shutil
 import csv
-import numpy as np
 import logging as logger
 
 ############################################# Logging ###################################################################
@@ -150,6 +150,18 @@ repositories = ds_queries_map[policy][dataset]['repositories']
 engine = SPARQLWrapper(endpoint="dummy")
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
+engine.setMethod(POST)
+
+def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWrapper, repository_suffix: str = None):
+    if repository_suffix:
+        # For multi repository (mr) storage management policy
+        repository_name = "{policy}_{dataset}_{repository_suffix}".format(policy=policy, dataset=dataset,
+            repository_suffix=repository_suffix)
+    else:
+        # For single repository (sr) storage management policy
+        repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
+    engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
+    engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
 for query_set in query_sets:
     for query_version in range(query_versions):
@@ -165,10 +177,8 @@ for query_set in query_sets:
             file.close()
 
             if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
-                repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
-                engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                   
+                _set_endpoints(dataset, policy, endpoints, engine)   
+
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 start = time.time()
                 result = engine.query()
@@ -185,9 +195,7 @@ for query_set in query_sets:
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
             
             elif policy == "cb_sr_ng":
-                repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
-                engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                _set_endpoints(dataset, policy, endpoints, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
@@ -202,6 +210,7 @@ for query_set in query_sets:
                 start = time.time()
                 # Query all changesets until version :query_version ordered by change set versions
                 result = engine.query()
+                
                 # Build the snapshot at version :query_version by adding triples from the add-set and deleting triples from the del-set consecutively 
                 def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
                     graph = Graph()
@@ -251,9 +260,7 @@ for query_set in query_sets:
             
             elif policy == "ic_mr_tr":
                 for repository in range(1, int(repositories)+1):
-                    repository_name = "{policy}_{dataset}_{repository}".format(policy=policy, dataset=dataset, repository=repository)
-                    engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-                    engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
+                    _set_endpoints(dataset, policy, endpoints, engine, str(repository))
 
                     logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                     start = time.time()
