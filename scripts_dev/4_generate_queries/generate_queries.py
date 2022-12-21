@@ -26,53 +26,46 @@ policies_cmd = sys.argv[1]
 policies = policies_cmd.split(" ")
 
 queries={
-    "ic":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ic/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ic/ts"},
+    "ic_mr_tr":{
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
         "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ic/ts"},
+        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ictr/ts"},
         "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
     },
-    "icng":{
+    "cb_mr_tr":{
+        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
+        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
+        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "ictr/ts"},
+        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "ic/sparql"},
+    },
+    "ic_sr_ng":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "icng/ts"},
         "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "icng/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "icng/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "icng/ts"},
         "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "icng/sparql"},
     },
-    "cb":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "cb/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "cb/ts"},
-        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "cb/bgp"},
-        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "cb/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "cb/sparql"},
+    "cb_sr_ng":{
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
+        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ictr/bgp"},
+        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
+        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
     },
-    "cbng":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "cbng/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "cbng/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "cbng/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "cbng/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "cbng/sparql"},
-    },
-    "tb":{
+    "tb_sr_ng":{
         "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
         "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tb/bgp"},
         "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tb/ts"},
         "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "tb/sparql"},
     },
-    "tbsf":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
+    "tb_sr_rs":{
+        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
+        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
         "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ic/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ic/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ic/sparql"},
-    },
-    "tbsh":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ic/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ic/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ic/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ic/ts"},
+        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
         "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ic/sparql"},
     }
 }
@@ -110,14 +103,14 @@ for policy in policies:
                             for query_version in range(query_versions):
                                 with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
                                     template = templateFile.read()
-                                    if policy == "cbng":
+                                    if policy == "cb_sr_ng":
                                         max_version_digits = len(str(query_versions))
                                         output_query = template.format(prefixes, str(query_version).zfill(max_version_digits), raw_query)
                                     else:
                                         output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
                                 with open(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
-                                    if policy in ["tbsf", "tbsh"]:
+                                    if policy in ["tb_sr_rs"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
                                         output_file.write(timestamped_output_query[0])
                                         vers_ts = vers_ts + timedelta(seconds=1)

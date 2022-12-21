@@ -1,8 +1,8 @@
 #!/bin/bash
 
-policies=("${policies}") # cb tbsf tbsh tb
-datasets=("${datasets}") # bearb_day beara bearc
-triple_stores=("${triple_stores}") # jenatdb2
+policies=("${policies}") 
+datasets=("${datasets}") 
+triple_stores=("${triple_stores}")
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
 
