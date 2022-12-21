@@ -7,6 +7,7 @@ import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
 import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFParseException;
 import org.eclipse.rdf4j.rio.RDFHandlerException;
@@ -48,6 +49,9 @@ public class Validate {
             System.out.println("Extension must be .nt or .nq");
         }
 
+        //GraphDB parser initialization
+        RDFParser rdfParser = Rio.createParser(format);
+
         try {
             inputStream = new FileInputStream(new File(args[0]));
             sc = new Scanner(inputStream, "UTF-8");
@@ -74,7 +78,7 @@ public class Validate {
                 InputStream triple = null;
                 try {
                     triple = new ByteArrayInputStream(nextLine.getBytes());
-                    Rio.parse(triple, null, format);
+                    Rio.parse(triple, null);
                 }
                 catch (IOException e) {
                     System.out.println(e.getMessage());
