@@ -1,0 +1,31 @@
+# construct_datasets.py - construct_tb_star_ds
+construct_datasets_1  | # A fatal error has been detected by the Java Runtime Environment:
+construct_datasets_1  | #
+construct_datasets_1  | #  SIGBUS (0x7) at pc=0x00007f74ff550c76, pid=48, tid=96
+construct_datasets_1  | #
+construct_datasets_1  | # JRE version: OpenJDK Runtime Environment 18.9 (11.0.11+9) (build 11.0.11+9)
+construct_datasets_1  | # Java VM: OpenJDK 64-Bit Server VM 18.9 (11.0.11+9, mixed mode, tiered, g1 gc, linux-amd64)
+construct_datasets_1  | # Problematic frame:
+construct_datasets_1  | # v  ~StubRoutines::jlong_disjoint_arraycopy
+construct_datasets_1  | #
+construct_datasets_1  | # Core dump will be written. Default location: Core dumps may be processed with "/lib/systemd/systemd-coredump %P %u %g %s %t 9223372036854775808 %h" (or dumping to //core.48)
+construct_datasets_1  | #
+construct_datasets_1  | # An error report file with more information is saved as:
+construct_datasets_1  | # //hs_err_pid48.log
+construct_datasets_1  | Compiled method (c2)  694701 5184       4       org.apache.jena.dboe.trans.bplustree.BPTreeRecords::promote (116 bytes)
+construct_datasets_1  |  total in heap  [0x00007f7507373310,0x00007f7507376a88] = 14200
+construct_datasets_1  |  relocation     [0x00007f7507373488,0x00007f75073735f0] = 360
+construct_datasets_1  |  main code      [0x00007f7507373600,0x00007f7507374e80] = 6272
+construct_datasets_1  |  stub code      [0x00007f7507374e80,0x00007f7507374ee0] = 96
+construct_datasets_1  |  oops           [0x00007f7507374ee0,0x00007f7507374f00] = 32
+construct_datasets_1  |  metadata       [0x00007f7507374f00,0x00007f7507375070] = 368
+construct_datasets_1  |  scopes data    [0x00007f7507375070,0x00007f7507376070] = 4096
+construct_datasets_1  |  scopes pcs     [0x00007f7507376070,0x00007f75073767f0] = 1920
+construct_datasets_1  |  dependencies   [0x00007f75073767f0,0x00007f7507376810] = 32
+construct_datasets_1  |  handler table  [0x00007f7507376810,0x00007f7507376918] = 264
+construct_datasets_1  |  nul chk table  [0x00007f7507376918,0x00007f7507376a88] = 368
+construct_datasets_1  | Could not load hsdis-amd64.so; library not loadable; PrintAssembly is disabled
+construct_datasets_1  | #
+construct_datasets_1  | # If you would like to submit a bug report, please visit:
+construct_datasets_1  | #   https://bugreport.java.com/bugreport/crash.jsp
+construct_datasets_1  | #
