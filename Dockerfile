@@ -79,6 +79,11 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 
+# Set jenatdb2 environment variables
+ENV FUSEKI_HOME=/jena-fuseki
+ENV JAVA_OPTIONS="-Xmx90g -Xms90g"
+ENV ADMIN_PASSWORD=starvers
+
 # Docker knowledge
 # RUN RUN is an image build step, the state of the container after a RUN command will be committed to the container image. 
 # A Dockerfile can have many RUN steps that layer on top of one another to build the image. 

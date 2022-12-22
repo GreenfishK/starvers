@@ -8,10 +8,9 @@ script_dir=/starvers_eval/scripts
 #jenatdb2_port=$((3030))
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
-export FUSEKI_HOME=/jena-fuseki
-export #JAVA_OPTIONS="-Xmx90g -Xms90g"
-export _JAVA_OPTIONS="-Xmx90g -Xms90g"
-export ADMIN_PASSWORD=starvers
+#export FUSEKI_HOME=/jena-fuseki
+#export _JAVA_OPTIONS="-Xmx90g -Xms90g"
+#export ADMIN_PASSWORD=starvers
 
 # Clean directories
 rm -rf /starvers_eval/databases/preprocessing/

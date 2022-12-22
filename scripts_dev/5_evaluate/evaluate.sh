@@ -18,9 +18,9 @@ for triple_store in ${triple_stores[@]}; do
                 # Export variables
                 export JAVA_HOME=/usr/local/openjdk-11
                 export PATH=/usr/local/openjdk-11/bin:$PATH
-                export FUSEKI_HOME=/jena-fuseki
-                export JAVA_OPTIONS="-Xmx5g -Xms5g"
-                export ADMIN_PASSWORD=starvers
+                #export FUSEKI_HOME=/jena-fuseki
+                #export JAVA_OPTIONS="-Xmx90g -Xms90g"
+                #export ADMIN_PASSWORD=starvers
 
                 # Start database server and run in background
                 cp /starvers_eval/configs/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration

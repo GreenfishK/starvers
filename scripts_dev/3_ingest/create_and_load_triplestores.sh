@@ -137,7 +137,7 @@ fi
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     export JAVA_HOME=/usr/local/openjdk-11
     export PATH=/usr/local/openjdk-11/bin:$PATH
-    export FUSEKI_HOME=/jena-fuseki
+    # export FUSEKI_HOME=/jena-fuseki
     > /starvers_eval/output/logs/ingest/ingestion_jenatdb2_logs.txt
     rm -rf /starvers_eval/configs/*
 
