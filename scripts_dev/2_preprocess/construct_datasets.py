@@ -18,6 +18,10 @@ class AnnotationStyle(Enum):
     HIERARCHICAL = 1
     FLAT = 2
 
+class TripleStore(Enum):
+    GRAPHDB = 1
+    JENATDB2 = 2
+
 def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename_length: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
@@ -74,7 +78,8 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, dataset:str):
+def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int,
+ init_timestamp: datetime, dataset:str, triple_store: TripleStore = TripleStore.JENATDB2):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
@@ -82,22 +87,27 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
+
+    triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/2_preprocess/start_graphdb.sh',
+                                        'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset),
+                                        'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format("tb_rs", dataset),
+                                        'shutdown_process': '/opt/java/openjdk/bin/java'},
+                            'jenatdb2': {'start_script': '/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh',
+                                        'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset),
+                                        'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format("tb_rs", dataset),
+                                        'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
+    configs = triple_store_configs[triple_store.name.lower()]
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
-    #logging.info("Ingest empty file into GraphDB repository and start GraphDB.")
-    #subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_graphdb.sh {0} {1}'.format("tb_rs", dataset)))
-    logging.info("Ingest empty file into JenaTDB2 repository and start JenaTDB2.")
-    subprocess.call(shlex.split('/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh {0} {1}'.format("tb_rs", dataset)))
+    logging.info("Ingest empty file into {0} repository and start JenaTDB2.".format(triple_store.name))
+    subprocess.call(shlex.split('{0} {1} {2}'.format(configs['start_script'], "tb_rs", dataset)))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    #rdf_star_engine = TripleStoreEngine('http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset),
-    #                                    'http://Starvers:7200/repositories/{0}_{1}/statements'.format("tb_rs", dataset))
-    rdf_star_engine = TripleStoreEngine('http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset),
-                                        'http://Starvers:3030/{0}_{1}/update'.format("tb_rs", dataset))
+    rdf_star_engine = TripleStoreEngine(configs['query_endpoint'],configs['update_endpoint'])
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=5000)
 
@@ -129,10 +139,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
             rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=5000)
 
-    #logging.info("Extract the whole dataset from the GraphDB repository.")
-    #sparql_engine = SPARQLWrapper('http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset))
     logging.info("Extract the whole dataset from the JenaTDB2 repository.")
-    sparql_engine = SPARQLWrapper('http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset))
+    sparql_engine = SPARQLWrapper(configs['query_endpoint'])
+    
     sparql_engine.setReturnFormat(JSON)
     sparql_engine.setOnlyConneg(True)
     sparql_engine.setQuery("""
@@ -184,10 +193,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
-    #logging.info("Shutting down GraphDB server.")
-    #subprocess.run(["pkill", "-f", "'/opt/java/openjdk/bin/java'"])
-    logging.info("Shutting down JenaTDB2 server and removing database files.")
-    subprocess.run(["pkill", "-f", "'/jena-fuseki/fuseki-server.jar'"])
+    logging.info("Shutting down {0} server and removing database files.".format(triple_store.name))
+    subprocess.run(["pkill", "-f", "'{0}'".format(configs['shutdown_process'])])
+    
     shutil.rmtree("/starvers_eval/databases/preprocessing/")
     shutil.rmtree("/run/configuration")
 
@@ -346,7 +354,8 @@ for dataset in datasets:
                         destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
-                        dataset=dataset)    
+                        dataset=dataset,
+                        triple_store=TripleStore.JENATDB2)    
     
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
