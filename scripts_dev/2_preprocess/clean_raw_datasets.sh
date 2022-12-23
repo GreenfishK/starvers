@@ -52,7 +52,7 @@ for dataset in ${datasets[@]}; do
             if [[ -z $yn_skolemized_sub ]]; then
                 cnt_b_sub=`grep -c -E '(^_:[a-zA-Z0-9]+)' $raw_ds`
                 sed -i -r 's/(^_:[a-zA-Z0-9]+)/<\1>/g' $raw_ds
-                sed -i "2s/^/# skolemized_blank_nodes_in_subject_position: ${cnt_b_sub}\n/" $raw_ds
+                sed -i "1s/^/# skolemized_blank_nodes_in_subject_position: ${cnt_b_sub}\n/" $raw_ds
                 echo "${raw_ds}: skolemized blank nodes in subject position: $cnt_b_sub" >> /starvers_eval/output/logs/preprocessing/skolemize_blank_nodes.txt
             else
                 echo "${raw_ds}: skolemized blank nodes in subject position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> /starvers_eval/output/logs/preprocessing/skolemize_blank_nodes.txt
@@ -63,7 +63,7 @@ for dataset in ${datasets[@]}; do
             if [[ -z $yn_skolemized_obj ]]; then
                 cnt_b_obj=`grep -c -E '(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)' $raw_ds`
                 sed -i -r 's/(^[^#].*)(_:[a-zA-Z0-9]+)(\s*(<[a-zA-Z0-9_/:.]+>){0,1}\s*\.$)/\1<\2>\3/g' $raw_ds
-                sed -i "2s/^/# skolemized_blank_nodes_in_object_position: ${cnt_b_obj}\n/" $raw_ds
+                sed -i "1s/^/# skolemized_blank_nodes_in_object_position: ${cnt_b_obj}\n/" $raw_ds
                 echo "${raw_ds}: skolemized blank nodes in object position: $cnt_b_obj" >> /starvers_eval/output/logs/preprocessing/skolemize_blank_nodes.txt
             else
                 echo "${raw_ds}: skolemized blank nodes in object position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> /starvers_eval/output/logs/preprocessing/skolemize_blank_nodes.txt
@@ -78,6 +78,7 @@ for dataset in ${datasets[@]}; do
                 java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
                 mv $clean_ds $raw_ds
                 excluded_lines=`grep -c '^# ' ${raw_ds}`
+                excluded_lines=$(($excluded_lines - 2))
                 sed -i "1s/^/# invalid_lines_excluded: ${excluded_lines}\n/" $raw_ds
                 echo "${raw_ds}: $excluded_lines" >> /starvers_eval/output/logs/preprocessing/exclude_invalid_triples.txt
             else
