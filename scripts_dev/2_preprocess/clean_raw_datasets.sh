@@ -47,21 +47,6 @@ for dataset in ${datasets[@]}; do
             raw_ds=`eval echo /starvers_eval/rawdata/$dataset/${ds_rel_path}`
             clean_ds=${raw_ds/${base_name}./${base_name}_clean.}
 
-            # Read dataset $raw_ds line by line. 
-            # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
-            # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
-            echo "Validating $raw_ds"
-            first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`
-            if [[ -z "$first_line" ]]; then
-                java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
-                mv $clean_ds $raw_ds
-                excluded_lines=`grep -c '^# ' ${raw_ds}`
-                sed -i "1s/^/# invalid_lines_excluded: ${excluded_lines}\n/" $raw_ds
-                echo "${raw_ds}: $excluded_lines" >> /starvers_eval/output/logs/preprocessing/exclude_invalid_triples.txt
-            else
-                echo "${raw_ds}: 0 in this run. Previously excluded lines: see first comment in ${raw_ds}" >> /starvers_eval/output/logs/preprocessing/exclude_invalid_triples.txt
-            fi
-
             # Skolemize blank nodes in subject position
             yn_skolemized_sub=`head -3 $raw_ds | grep -E -m 1 '^# skolemized_blank_nodes_in_subject_position'`
             if [[ -z $yn_skolemized_sub ]]; then
@@ -83,6 +68,22 @@ for dataset in ${datasets[@]}; do
             else
                 echo "${raw_ds}: skolemized blank nodes in object position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> /starvers_eval/output/logs/preprocessing/skolemize_blank_nodes.txt
             fi
+
+            # Read dataset $raw_ds line by line. 
+            # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
+            # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
+            echo "Validating $raw_ds"
+            first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`
+            if [[ -z "$first_line" ]]; then
+                java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
+                mv $clean_ds $raw_ds
+                excluded_lines=`grep -c '^# ' ${raw_ds}`
+                sed -i "1s/^/# invalid_lines_excluded: ${excluded_lines}\n/" $raw_ds
+                echo "${raw_ds}: $excluded_lines" >> /starvers_eval/output/logs/preprocessing/exclude_invalid_triples.txt
+            else
+                echo "${raw_ds}: 0 in this run. Previously excluded lines: see first comment in ${raw_ds}" >> /starvers_eval/output/logs/preprocessing/exclude_invalid_triples.txt
+            fi
+
         done
     done
 done
