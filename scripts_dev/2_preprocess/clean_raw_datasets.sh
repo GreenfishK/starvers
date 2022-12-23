@@ -33,8 +33,8 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) ds_rel_path='alldata.IC.nt/${c}.nt' base_name='${c}.nt';;
-            tb) ds_rel_path='alldata.TB.nq' versions=1 base_name='alldata.TB';;
+            ic) ds_rel_path='alldata.IC.nt/${c}.nt' base_name_tmpl='${c}.nt';;
+            tb) ds_rel_path='alldata.TB.nq' versions=1 base_name_tmpl='alldata.TB';;
             *)
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
@@ -43,7 +43,7 @@ for dataset in ${datasets[@]}; do
         echo "Correcting $dataset for $policy policy"
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
-            base_name=`eval echo $base_name`
+            base_name=`eval echo $base_name_tmpl`
             raw_ds=`eval echo /starvers_eval/rawdata/$dataset/${ds_rel_path}`
             clean_ds=${raw_ds/${base_name}/${base_name}_clean}
 
