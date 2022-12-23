@@ -33,8 +33,8 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) ds_rel_path='alldata.IC.nt/${c}.nt' ds_segment='_${c}' base_name='${c}';;
-            tb) ds_rel_path='alldata.TB.nq' versions=1 ds_segment='' base_name='alldata.TB';;
+            ic) ds_rel_path='alldata.IC.nt/${c}.nt' base_name='${c}.nt';;
+            tb) ds_rel_path='alldata.TB.nq' versions=1 base_name='alldata.TB';;
             *)
                 echo "Policy must be in ic or tb, which are the policies of the raw datasets."
                 exit 2
@@ -45,7 +45,7 @@ for dataset in ${datasets[@]}; do
         do
             base_name=`eval echo $base_name`
             raw_ds=`eval echo /starvers_eval/rawdata/$dataset/${ds_rel_path}`
-            clean_ds=${raw_ds/${base_name}./${base_name}_clean.}
+            clean_ds=${raw_ds/${base_name}/${base_name}_clean}
 
             # Skolemize blank nodes in subject position
             yn_skolemized_sub=`head -3 $raw_ds | grep -E -m 1 '^# skolemized_blank_nodes_in_subject_position'`
