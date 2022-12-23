@@ -99,7 +99,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     configs = triple_store_configs[triple_store.name.lower()]
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
-    logging.info("Ingest empty file into {0} repository and start JenaTDB2.".format(triple_store.name))
+    logging.info("Ingest empty file into {0} repository and start {0}.".format(triple_store.name))
     subprocess.call(shlex.split('{0} {1} {2}'.format(configs['start_script'], "tb_rs", dataset)))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
@@ -127,7 +127,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Read positive changeset {0} into memory.".format(filename))
             added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
             added_triples_raw = list(filter(None, added_triples_raw))
-            
+
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
             rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, batch_size=5000)
         
