@@ -14,7 +14,7 @@ export PATH=/usr/local/openjdk-11/bin:$PATH
 #export _JAVA_OPTIONS="-Xmx90g -Xms90g"
 #export ADMIN_PASSWORD=starvers
 
-if [ $reset == "true"]; then
+if [ $reset == "true" ]; then
     echo "Clean repositories..."
     rm -rf /starvers_eval/databases/preprocessing/
     rm -rf /run/configuration
