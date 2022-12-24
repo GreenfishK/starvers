@@ -100,7 +100,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
     logging.info("Ingest empty file into {0} repository and start {0}.".format(triple_store.name))
-    subprocess.call(shlex.split('{0} {1} {2}'.format(configs['start_script'], "tb_rs", dataset)))
+    subprocess.call(shlex.split('{0} {1} {2} {3} {4}'.format(
+        configs['start_script'], "tb_rs", dataset, "true", "true")))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
