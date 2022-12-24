@@ -123,9 +123,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # Apply changesets to RDF-star dataset
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
-        logging.info("Shutting down {0} server.".format(triple_store.name))
+        logging.info("Restarting {0} server.".format(triple_store.name))
         subprocess.run(["pkill", "-f", "'{0}'".format(configs['shutdown_process'])])
-        logging.info("Starting {0} server".format(triple_store.name))
         subprocess.call(shlex.split('{0} {1} {2} {3} {4}'.format(
             configs['start_script'], "tb_rs", dataset, "false", "false")))
         
