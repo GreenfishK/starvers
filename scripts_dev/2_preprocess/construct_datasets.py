@@ -123,6 +123,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     # Apply changesets to RDF-star dataset
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
+        logging.info("Shutting down {0} server.".format(triple_store.name))
+        subprocess.run(["pkill", "-f", "'{0}'".format(configs['shutdown_process'])])
+        logging.info("Starting {0} server".format(triple_store.name))
+        subprocess.call(shlex.split('{0} {1} {2} {3} {4}'.format(
+            configs['start_script'], "tb_rs", dataset, "false", "false")))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
@@ -206,7 +211,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     TODO: write docu
     """
 
-    print("Constructing change-based datasets with the initial IC and changesets as named graphs.")
+    logging.info("Constructing CBNG dataset: The initial IC and changesets are stored as named graphs.")
 
     def split_prefixes_dataset(dataset: str) -> list:
         """
