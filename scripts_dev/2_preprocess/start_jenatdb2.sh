@@ -2,6 +2,8 @@
 # Input parametrers
 policy=$1
 dataset=$2
+ingest=$3
+reset=$4
 
 # Set variables
 script_dir=/starvers_eval/scripts
@@ -12,13 +14,15 @@ export PATH=/usr/local/openjdk-11/bin:$PATH
 #export _JAVA_OPTIONS="-Xmx90g -Xms90g"
 #export ADMIN_PASSWORD=starvers
 
-# Clean directories
-rm -rf /starvers_eval/databases/preprocessing/
-rm -rf /run/configuration
+if [ $reset == "true"]; then
+    echo "Clean repositories..."
+    rm -rf /starvers_eval/databases/preprocessing/
+    rm -rf /run/configuration
 
-# Create directories
-mkdir -p /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}
-mkdir -p /run/configuration
+    echo "Create directories..."
+    mkdir -p /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}
+    mkdir -p /run/configuration
+fi
 
 # Parametrize and copy config file
 repositoryID=${policy}_${dataset}
@@ -27,8 +31,10 @@ sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocessing
 sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 
-# Ingest empty dataset
-/jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
+if [ $ingest == "true" ]; then
+    echo "Ingest empty dataset..."
+    /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
+fi
 
 # Start database server and run in background
 cp /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
