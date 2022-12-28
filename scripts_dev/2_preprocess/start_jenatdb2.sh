@@ -2,8 +2,9 @@
 # Input parametrers
 policy=$1
 dataset=$2
-ingest=$3
-reset=$4
+reset=$3
+ingest_empty=$4
+shutdown=$5
 
 # Set variables
 script_dir=/starvers_eval/scripts
@@ -33,13 +34,15 @@ if [ $reset == "true" ]; then
     sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 fi
 
-if [ $ingest == "true" ]; then
+if [ $ingest_empty == "true" ]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
-echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
-pkill -f '/jena-fuseki/fuseki-server.jar'
+if [ $shutdown == "true" ]; then
+    echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
+    pkill -f '/jena-fuseki/fuseki-server.jar'
+fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
 cp /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
