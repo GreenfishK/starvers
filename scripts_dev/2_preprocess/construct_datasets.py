@@ -101,7 +101,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
     logging.info("Ingest empty file into {0} repository and start {0}.".format(triple_store.name))
     subprocess.call(shlex.split('{0} {1} {2} {3} {4}'.format(
-        configs['start_script'], "tb_rs", dataset, "true", "true")))
+        configs['start_script'], "tb_rs", dataset, "true", "true", "false")))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -124,9 +124,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
         vers_ts = init_timestamp + timedelta(seconds=version)
         logging.info("Restarting {0} server.".format(triple_store.name))
-        #subprocess.run(["pkill", "-f", "'{0}'".format(configs['shutdown_process'])])
         subprocess.call(shlex.split('{0} {1} {2} {3} {4}'.format(
-            configs['start_script'], "tb_rs", dataset, "false", "false")))
+            configs['start_script'], "tb_rs", dataset, "false", "false", "true")))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
