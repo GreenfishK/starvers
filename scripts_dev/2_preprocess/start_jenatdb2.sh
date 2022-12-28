@@ -17,7 +17,7 @@ export PATH=/usr/local/openjdk-11/bin:$PATH
 
 if [ $reset == "true" ]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf /starvers_eval/databases/preprocessing/
+    rm -rf /starvers_eval/databases/preprocessing/*
     rm -rf /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}
     rm -rf /run/configuration
 
