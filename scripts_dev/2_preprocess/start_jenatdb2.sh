@@ -38,6 +38,9 @@ if [ $ingest == "true" ]; then
     /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
+echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
+pkill -f '/jena-fuseki/fuseki-server.jar'
+
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
 cp /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
