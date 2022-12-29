@@ -60,7 +60,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} --force) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -76,7 +76,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                     2>&1 1>> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -106,7 +106,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd} --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt
@@ -119,7 +119,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     sed -i "s/{{repositoryID}}/$repositoryIDDel/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/preload -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel} --force) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel}) \
                                     2>&1 1>> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt     
