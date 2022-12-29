@@ -41,11 +41,7 @@ if [[ "$shutdown" == "true" ]]; then
 fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
-echo "$(log_timestamp) ${log_level}:$PATH"
 /opt/graphdb/dist/bin/graphdb -d -s
-echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
-echo "$(log_timestamp) ${log_level}:$PATH"
 
 # Wait until server is up
 # GraphDB doesn't deliver HTTP code 200 for some reason ...
