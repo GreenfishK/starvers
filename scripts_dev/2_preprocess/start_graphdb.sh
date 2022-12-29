@@ -16,6 +16,10 @@ export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
+# Print java home and path
+echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
+echo "$(log_timestamp) ${log_level}:$PATH"
+
 if [ $reset == "true" ]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/preprocessing/*
