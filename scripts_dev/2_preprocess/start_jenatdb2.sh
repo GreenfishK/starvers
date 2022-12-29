@@ -15,7 +15,7 @@ log_level="root:INFO"
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
-if [ $reset == "true" ]; then
+if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/preprocessing/*
     rm -rf /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}
@@ -31,12 +31,12 @@ if [ $reset == "true" ]; then
     sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 fi
 
-if [ $ingest_empty == "true" ]; then
+if [[ "$ingest_empty" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/preprocessing/jenatdb2_${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
-if [ $shutdown == "true" ]; then
+if [[ "$shutdown" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
     pkill -f '/jena-fuseki/fuseki-server.jar'
 fi
