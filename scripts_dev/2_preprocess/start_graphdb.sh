@@ -12,10 +12,8 @@ log_file=/starvers_eval/output/logs/preprocessing/construct_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 #graphdb_port=$((7200))
-#export JAVA_HOME=/opt/java/openjdk
-#export PATH=/opt/java/openjdk/bin:$PATH
-export JAVA_HOME=/usr/local/openjdk-11
-export PATH=/usr/local/openjdk-11/bin:$PATH
+export JAVA_HOME=/opt/java/openjdk
+export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
 
