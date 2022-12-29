@@ -32,7 +32,7 @@ fi
 
 if [ $ingest_empty == "true" ]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /opt/graphdb/dist/bin/preload -c /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt --force
+    /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
 if [ $shutdown == "true" ]; then
