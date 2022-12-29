@@ -6,8 +6,6 @@ RUN git clone https://github.com/GreenfishK/starvers.git
 # Install starvers based on setup.py and modules based on requirements.txt
 FROM python:3.8.15-slim as install_python_modules
 COPY --from=base /starvers /starvers
-# COPY --from=base /starvers_eval /starvers_eval
-
 RUN python3 -m venv /starvers_eval/python_venv
 RUN . /starvers_eval/python_venv/bin/activate
 WORKDIR /starvers
