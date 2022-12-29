@@ -359,7 +359,7 @@ for dataset in datasets:
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp,
                         dataset=dataset,
-                        triple_store=TripleStore.JENATDB2)    
+                        triple_store=TripleStore.GRAPHDB)    
     
     construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                       source_cs=data_dir + "/alldata.CB_computed." + in_frm,
