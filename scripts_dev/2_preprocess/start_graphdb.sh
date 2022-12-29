@@ -16,11 +16,7 @@ export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
-# Print java home and path
-echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
-echo "$(log_timestamp) ${log_level}:$PATH"
-
-if [ $reset == "true" ]; then
+if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/preprocessing/*
     rm -rf /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
@@ -34,18 +30,22 @@ if [ $reset == "true" ]; then
     sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl
 fi
 
-if [ $ingest_empty == "true" ]; then
+if [[ "$ingest_empty" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
-if [ $shutdown == "true" ]; then
+if [[ "$shutdown" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Kill process /opt/java/openjdk/bin/java to shutdown GraphDB" >> $log_file
     pkill -f /opt/java/openjdk/bin/java
 fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
+echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
+echo "$(log_timestamp) ${log_level}:$PATH"
 /opt/graphdb/dist/bin/graphdb -d -s
+echo "$(log_timestamp) ${log_level}:$JAVA_HOME"
+echo "$(log_timestamp) ${log_level}:$PATH"
 
 # Wait until server is up
 # GraphDB doesn't deliver HTTP code 200 for some reason ...
