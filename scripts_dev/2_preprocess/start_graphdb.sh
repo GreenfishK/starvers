@@ -16,6 +16,10 @@ export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
+JAVA="$JAVA_HOME/bin/java"
+JAVA_VERSION=$("$JAVA" -version 2>&1 | awk 'sub(/^[^"]+"|"[^"]+$/, "") && gsub(/^1\.|\..+|".+/, "")')
+echo `"$JAVA" -version 2>&1` 
+echo "$JAVA_VERSION"
 
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
