@@ -18,7 +18,7 @@ export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/database
 
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf /starvers_eval/databases/preprocessing/*
+    rm -rf /starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}
     rm -rf /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
