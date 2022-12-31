@@ -336,6 +336,8 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 
 ############################################# Parameters and function calls #############################################
 datasets = sys.argv[1].split(" ")
+no_cs_const = sys.argv[2]
+
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
@@ -351,7 +353,8 @@ for dataset in datasets:
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
-    construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
+    if not no_cs_const == "--no-cs-const":
+        construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                         source_cs=data_dir + "/alldata.CB_computed." + in_frm,
