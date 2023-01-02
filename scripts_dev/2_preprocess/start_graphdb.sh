@@ -16,6 +16,10 @@ export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}/data"
 
+# Comment out JAVA environment variable check due to an issue with the ontotext/graphdb:10.1.2 docker image
+# https://stackoverflow.com/questions/68290316/graphdb-docker-container-fails-to-run-adoptopenjdk-openjdk12alpine
+sed -E -i '32,35s/^.*$/#/g' /opt/graphdb/dist/bin/setvars.in.sh 
+
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}
@@ -41,9 +45,6 @@ if [[ "$shutdown" == "true" ]]; then
 fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-# Comment out JAVA environment variable check due to an issue with the ontotext/graphdb:10.1.2 docker image
-# https://stackoverflow.com/questions/68290316/graphdb-docker-container-fails-to-run-adoptopenjdk-openjdk12alpine
-sed -E -i '32,35s/^(.*)$/# \1/g' /opt/graphdb/dist/bin/setvars.in.sh 
 /opt/graphdb/dist/bin/graphdb -d -s
 
 # Wait until server is up
