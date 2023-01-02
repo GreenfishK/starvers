@@ -341,11 +341,11 @@ skip_cs = sys.argv[2]
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4}
-ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6}
+dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4, 'beart2': 4}
+ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6, 'beart2': 6}
+allowed_datasts = list(dataset_versions.keys())
 
 for dataset in datasets:
-    allowed_datasts = ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2']
     if dataset not in allowed_datasts:
         print("Dataset must be one of: ", allowed_datasts, "but is: {0}".format(dataset))
         break
