@@ -36,7 +36,7 @@ RUN mkdir -p /starvers_eval/scripts/6_visualization
 COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
 COPY --from=stain/jena-fuseki:4.0.0 /usr/local/openjdk-11 /usr/local/openjdk-11
 COPY --from=ontotext/graphdb:10.1.2 /opt/graphdb /opt/graphdb
-COPY --from=amazoncorretto:11.0.17 /usr/lib/jvm/java-11-amazon-corretto /opt/java
+COPY --from=eclipse-temurin:11.0.17_8-jdk /opt/java/openjdk /opt/java
 COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/python_venv 
 
 # Copy raw queries and scripts to /starvers_eval 
