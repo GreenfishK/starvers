@@ -345,8 +345,9 @@ dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, '
 ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6}
 
 for dataset in datasets:
-    if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2']:
-        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2'], "but is: {0}".format(dataset))
+    allowed_datasts = ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2']
+    if dataset not in allowed_datasts:
+        print("Dataset must be one of: ", allowed_datasts, "but is: {0}".format(dataset))
         break
 
     data_dir = "/starvers_eval/rawdata/" + dataset
