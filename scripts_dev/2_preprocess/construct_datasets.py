@@ -336,7 +336,7 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 
 ############################################# Parameters and function calls #############################################
 datasets = sys.argv[1].split(" ")
-no_cs_const = sys.argv[2]
+skip_cs = sys.argv[2]
 
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -346,14 +346,14 @@ ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 
 
 for dataset in datasets:
     if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart']:
-        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart'])
+        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2'])
         break
 
     data_dir = "/starvers_eval/rawdata/" + dataset
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
-    if not no_cs_const == "--no-cs-const":
+    if skip_cs == "True":
         construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
