@@ -14,11 +14,11 @@ log_level="root:INFO"
 #graphdb_port=$((7200))
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
-export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing"
+export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb"
 
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf /starvers_eval/databases/preprocessing/graphdb_${policy}_${dataset}
+    rm -rf /starvers_eval/databases/preprocessing/graphdb/repositories/${policy}_${dataset}
     rm -rf /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
