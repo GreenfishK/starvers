@@ -87,28 +87,28 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
-
+    policy = "tb_rs_sr"
     triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/2_preprocess/start_graphdb.sh',
-                                        'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format("tb_rs", dataset),
-                                        'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format("tb_rs", dataset),
+                                        'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+                                        'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
                                         'shutdown_process': '/opt/java/openjdk/bin/java'},
                             'jenatdb2': {'start_script': '/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh',
-                                        'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format("tb_rs", dataset),
-                                        'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format("tb_rs", dataset),
+                                        'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
+                                        'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
                                         'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
     configs = triple_store_configs[triple_store.name.lower()]
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
-    logging.info("Ingest empty file into {0} repository and start {0}.".format(triple_store.name))
+    logging.info("Ingest empty file into {0} repository and start {1}.".format(policy, triple_store.name))
     subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-        configs['start_script'], "tb_rs", dataset, "true", "true", "false")))
+        configs['start_script'], policy, dataset, "true", "true", "false")))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
     added_triples_raw = list(filter(None, added_triples_raw))
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-    rdf_star_engine = TripleStoreEngine(configs['query_endpoint'],configs['update_endpoint'])
+    rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=5000)
 
@@ -125,7 +125,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         vers_ts = init_timestamp + timedelta(seconds=version)
         logging.info("Restarting {0} server.".format(triple_store.name))
         subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-            configs['start_script'], "tb_rs", dataset, "false", "false", "true")))
+            configs['start_script'], policy, dataset, "false", "false", "true")))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
