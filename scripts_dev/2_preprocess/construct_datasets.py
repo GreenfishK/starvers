@@ -88,6 +88,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
     """
     policy = "tb_rs_sr"
+    repository = policy + "_" + dataset
     triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/2_preprocess/start_graphdb.sh',
                                         'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
@@ -99,7 +100,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     configs = triple_store_configs[triple_store.name.lower()]
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
-    logging.info("Ingest empty file into {0} repository and start {1}.".format(policy, triple_store.name))
+    logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
     subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
         configs['start_script'], policy, dataset, "true", "true", "false")))
 
