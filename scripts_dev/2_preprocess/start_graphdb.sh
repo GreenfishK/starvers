@@ -41,6 +41,9 @@ if [[ "$shutdown" == "true" ]]; then
 fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
+# Comment out JAVA environment variable check due to an issue with the ontotext/graphdb:10.1.2 docker image
+# https://stackoverflow.com/questions/68290316/graphdb-docker-container-fails-to-run-adoptopenjdk-openjdk12alpine
+sed -E -i '32,35s/^(.*)$/# \1/g' setvars.in.sh 
 /opt/graphdb/dist/bin/graphdb -d -s
 
 # Wait until server is up
