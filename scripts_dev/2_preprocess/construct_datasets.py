@@ -346,7 +346,7 @@ ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 
 
 for dataset in datasets:
     if dataset not in ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart']:
-        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2'])
+        print("Dataset must be one of: ", ['beara', 'bearb_day', 'bearb_hour', 'bearc', 'beart', 'beart2'], "but is: {0}".format(dataset))
         break
 
     data_dir = "/starvers_eval/rawdata/" + dataset
