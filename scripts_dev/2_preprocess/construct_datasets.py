@@ -353,7 +353,7 @@ for dataset in datasets:
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
-    if skip_cs == "True":
+    if not skip_cs == "True":
         construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
