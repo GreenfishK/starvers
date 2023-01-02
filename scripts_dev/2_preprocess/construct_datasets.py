@@ -199,7 +199,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
     logging.info("Shutting down {0} server and removing database files.".format(triple_store.name))
-    subprocess.run(["pkill", "-f", "'{0}'".format(configs['shutdown_process'])])
+    subprocess.run(["pkill", "-f", "{0}".format(configs['shutdown_process'])])
     shutil.rmtree("/starvers_eval/databases/preprocessing/", ignore_errors=True)
     shutil.rmtree("/starvers_eval/databases/preprocessing/graphdb/repositories/lock")
     shutil.rmtree("/run/configuration", ignore_errors=True)
