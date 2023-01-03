@@ -14,10 +14,6 @@ from rdflib.term import URIRef
 from starvers.starvers import TripleStoreEngine
 
 
-class AnnotationStyle(Enum):
-    HIERARCHICAL = 1
-    FLAT = 2
-
 class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
@@ -323,7 +319,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.write(template.format(str(i), ic) + "\n")
         f.close()
 
-############################################# Logging ###################################################################
+############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/preprocessing'):
     os.makedirs('/starvers_eval/output/logs/preprocessing')
 with open('/starvers_eval/output/logs/preprocessing/construct_datasets.txt', "w") as log_file:
@@ -334,7 +330,7 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
                     datefmt="%F %A %T", 
                     level=logging.INFO)
 
-############################################# Parameters and function calls #############################################
+############################################# Parameters #############################################
 datasets = sys.argv[1].split(" ")
 skip_cs = sys.argv[2]
 
@@ -343,11 +339,12 @@ LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4, 'beart2': 4}
 ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6, 'beart2': 6}
-allowed_datasts = list(dataset_versions.keys())
+allowed_datasets = list(dataset_versions.keys())
 
+############################################# Start procedure #############################################
 for dataset in datasets:
-    if dataset not in allowed_datasts:
-        print("Dataset must be one of: ", allowed_datasts, "but is: {0}".format(dataset))
+    if dataset not in allowed_datasets:
+        print("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
     data_dir = "/starvers_eval/rawdata/" + dataset
