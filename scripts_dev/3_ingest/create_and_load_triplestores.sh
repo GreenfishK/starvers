@@ -77,7 +77,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >>  $log_file_graphdb
                 file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
 
@@ -93,7 +92,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >>  $log_file_graphdb
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done  
@@ -123,7 +121,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >> $log_file_graphdb
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
 
@@ -136,7 +133,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel}) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >> $log_file_graphdb     
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
                 done
@@ -215,7 +211,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                echo "\n\n" >> $log_file_jena
                 file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
                 total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
 
@@ -233,7 +228,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >> $log_file_jena
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
                 done
@@ -264,7 +258,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDAdd} /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >> $log_file_jena
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
@@ -278,7 +271,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDDel} /starvers_eval/rawdata/${dataset}/${filedel}) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "\n\n" >> $log_file_jena 
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
                 done
