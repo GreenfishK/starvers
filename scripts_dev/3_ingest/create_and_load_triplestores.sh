@@ -90,8 +90,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     sed -i "s/{{repositoryID}}/$repositoryID/g"  $configs_dir/${repositoryID}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c  $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
-                                    2>&1 1>>  $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
+                                    2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >>  $log_file_graphdb
                     file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
@@ -120,7 +120,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c  $configs_dir/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_graphdb
@@ -184,7 +184,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
         for dataset in ${datasets[@]}; do
             # Set variables
-            data_dir=$db_dir/${policy}_${datasaet}
+            data_dir=$db_dir/${policy}_${dataset}
 
             case $dataset in 
                 beara) versions=58 file_name_struc="%01g";;
