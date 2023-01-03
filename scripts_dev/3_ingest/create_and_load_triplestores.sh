@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set variables
-SCRIPT_DIR=/starvers_eval/scripts
+script_dir=/starvers_eval/scripts
 datasets=("${datasets}") 
 triple_stores=("${triple_stores}")
 policies=("${policies}") 
@@ -58,7 +58,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
-                cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                 # Load data into GraphDB
@@ -74,7 +74,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 do
                     # Replace repositoryID in config template
                     repositoryID=${policy}_${dataset}_$((10#$c))
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
 
                     # Load data into GraphDB
@@ -104,7 +104,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Add
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
@@ -117,7 +117,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Delete
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDDel/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
 
                     # Load data into GraphDB
@@ -184,7 +184,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
                 
-                cp ${SCRIPT_DIR}/2_preprocess/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                 sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
@@ -202,7 +202,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 do
                     repositoryID=${policy}_${dataset}_$((10#$c))
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                     sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
@@ -233,7 +233,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     fi
 
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
                     sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDAdd}.ttl
@@ -247,7 +247,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
                     # Replace repositoryID in config template
-                    cp ${SCRIPT_DIR}/2_preprocess/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
+                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDDel/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
                     sed -i "s/{{policy}}/$policy/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" /starvers_eval/configs/jenatdb2_${policy}_${dataset}/${repositoryIDDel}.ttl
