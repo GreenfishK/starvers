@@ -6,7 +6,6 @@ import org.apache.jena.riot.Lang;
 import org.apache.jena.query.ARQ;
 import org.apache.jena.riot.RiotException;
 
-import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.rio.RDFParserFactory;
 import org.eclipse.rdf4j.rio.RDFParserRegistry;
 import org.eclipse.rdf4j.rio.RDFParser;
