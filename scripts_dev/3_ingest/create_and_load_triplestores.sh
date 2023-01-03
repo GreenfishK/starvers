@@ -21,12 +21,19 @@ echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Set variables
+    configs_dir=/starvers_eval/configs/graphdb
+    db_dir=/starvers_eval/databases/graphdb
     export JAVA_HOME=/opt/java/openjdk
     export PATH=/opt/java/openjdk/bin:$PATH
-    export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/graphdb"
+    GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
     # Clean database directory
-    rm -rf /starvers_eval/databases/graphdb/repositories
+    rm -rf $configs_dir
+    rm -rf $db_dir
+
+    # Create directories
+    mkdir -p $configs_dir
+    mkdir -p $db_dir
 
     > $log_file_graphdb
     for policy in ${policies[@]}; do
@@ -44,6 +51,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
         esac
 
         for dataset in ${datasets[@]}; do
+            export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
+
             case $dataset in 
                 beara) versions=58 file_name_struc="%01g";;
                 bearb_hour) versions=1299 file_name_struc="%06g";; 
@@ -61,11 +70,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
-                cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
-                sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
 
                 # Load data into GraphDB
-                ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >>  $log_file_graphdb
@@ -77,11 +86,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 do
                     # Replace repositoryID in config template
                     repositoryID=${policy}_${dataset}_$((10#$c))
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryID/g"  $configs_dir/${repositoryID}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c  $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                     2>&1 1>>  $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >>  $log_file_graphdb
@@ -107,11 +116,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Add
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c  $configs_dir/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_graphdb
@@ -120,11 +129,11 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Delete
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryIDDel/g" /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl
+                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
+                    sed -i "s/{{repositoryID}}/$repositoryIDDel/g" $configs_dir/${repositoryIDDel}.ttl
 
                     # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/graphdb_${policy}_${dataset}/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel}) \
+                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel}) \
                                     2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_graphdb     
@@ -136,8 +145,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             echo "$(log_timestamp) ${log_level}:Kill process /opt/java/openjdk/bin/java to shutdown GraphDB" >> $log_file_graphdb
             pkill -f /opt/java/openjdk/bin/java
 
-            cat /starvers_eval/output/logs/ingest/ingestion_graphdb_logs.txt | grep -v "\[.*\] DEBUG"
-            disk_usage=`du -s --block-size=M --apparent-size /starvers_eval/databases/graphdb_${policy}_${dataset}/data/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+            cat $log_file_graphdb | grep -v "\[.*\] DEBUG"
+            disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
             echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
         done
     done
@@ -145,14 +154,18 @@ fi
 
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     # Set variables
-    configs_dir_tmp='/starvers_eval/configs/jenatdb2_${policy}_${dataset}'
-    db_dir='/starvers_eval/databases/jenatdb2'
+    configs_dir=/starvers_eval/configs/jenatdb2
+    db_dir=/starvers_eval/databases/jenatdb2
     export JAVA_HOME=/usr/local/openjdk-11
     export PATH=/usr/local/openjdk-11/bin:$PATH
 
     # Clean database directory
-    rm -rf $db_dir/*
-    rm -rf /starvers_eval/configs/*
+    rm -rf $db_dir
+    rm -rf $configs_dir
+
+    # Create directories
+    mkdir -p $db_dir
+    mkdir -p $configs_dir
 
     > $log_file_jena
     for policy in ${policies[@]}; do
@@ -171,7 +184,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
         for dataset in ${datasets[@]}; do
             # Set variables
-            configs_dir=`eval echo $configs_dir_tmp`
+            data_dir=$db_dir/${policy}_${datasaet}
 
             case $dataset in 
                 beara) versions=58 file_name_struc="%01g";;
@@ -199,7 +212,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
                 
                 # Load data into Jena
-                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $db_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
+                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                 2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                 total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                 echo "\n\n" >> $log_file_jena
@@ -217,7 +230,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
                     
                     # Load data into Jena
-                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $db_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
+                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_jena
@@ -248,7 +261,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDAdd}.ttl
 
                     # Load data into Jena TDB2
-                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $db_dir/${repositoryIDAdd} /starvers_eval/rawdata/${dataset}/${fileadd}) \
+                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDAdd} /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_jena
@@ -262,7 +275,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDDel}.ttl
 
                     # Load data into Jena TDB2
-                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $db_dir/${repositoryIDDel} /starvers_eval/rawdata/${dataset}/${filedel}) \
+                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDDel} /starvers_eval/rawdata/${dataset}/${filedel}) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
                     echo "\n\n" >> $log_file_jena 
@@ -271,7 +284,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 done
             fi
             cat $log_file_jena | grep -v "\[.*\] DEBUG"
-            disk_usage=`du -s --block-size=M --apparent-size $db_dir | awk '{print substr($1, 1, length($1)-1)}'`
+            disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
             echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
         done
     done
