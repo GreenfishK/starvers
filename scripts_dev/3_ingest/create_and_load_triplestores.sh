@@ -37,8 +37,6 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
         esac
 
         for dataset in ${datasets[@]}; do
-            echo $dataset
-
             # Clean database directory
             rm -rf /starvers_eval/databases/graphdb_${policy}_${dataset}
 
@@ -54,7 +52,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             esac
             export GDB_JAVA_OPTS="$graphdb_evns -Dgraphdb.home.data=/starvers_eval/databases/graphdb_${policy}_${dataset}/data"
             
-            echo "Process is $policy, $dataset for GraphDB"
+            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB"
             total_ingestion_time=0
             total_file_size=0
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
@@ -163,8 +161,6 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
         esac
 
         for dataset in ${datasets[@]}; do
-            echo $dataset
-
             # Clean database directory
             rm -rf /starvers_eval/databases/jenatdb2_${policy}_${dataset}
 
@@ -179,7 +175,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 ;;
             esac
 
-            echo "Process is $policy, $dataset for JenaTDB2"
+            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2"
             total_ingestion_time=0
             total_file_size=0
             mkdir -p /starvers_eval/configs/jenatdb2_${policy}_${dataset}
