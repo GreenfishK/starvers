@@ -45,7 +45,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
             tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
             *)
-                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs"
+                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_graphdb
                 exit 2
             ;;
         esac
@@ -59,12 +59,12 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 bearb_day) versions=89 file_name_struc="%06g";;
                 bearc) versions=33 file_name_struc="%01g";;
                 *)
-                    echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc"
+                    echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_graphdb
                     exit 2
                 ;;
             esac
 
-            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB"
+            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB" >> $log_file_graphdb
             total_ingestion_time=0
             total_file_size=0
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
@@ -173,7 +173,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
             tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
             *)
-                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs"
+                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_jena
                 exit 2
             ;;
         esac
@@ -188,12 +188,12 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 bearb_day) versions=89 file_name_struc="%06g";;
                 bearc) versions=33 file_name_struc="%01g";;
                 *)
-                    echo "jenatdb2: Dataset must be in beara bearb_hour bearb_day bearc"
+                    echo "jenatdb2: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_jena
                     exit 2
                 ;;
             esac
 
-            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2"
+            echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2" >> $log_file_jena
             total_ingestion_time=0
             total_file_size=0
             mkdir -p $configs_dir
@@ -275,6 +275,9 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
                 done
             fi
+            echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file_jena
+            pkill -f '/jena-fuseki/fuseki-server.jar'
+
             cat $log_file_jena | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
             echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
