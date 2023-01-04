@@ -72,6 +72,7 @@ services:
     image: starvers_eval
     volumes:
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ./scripts_dev/4_generate_queries:/starvers_eval/scripts/4_generate_queries # move to image after development has finished
     environment:
       - policies=${policies}    
