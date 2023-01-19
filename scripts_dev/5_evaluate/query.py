@@ -32,58 +32,58 @@ port = sys.argv[4]
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
 ds_queries_map={'ic_mr_tr': {
-                    'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic_mr_tr/queries_beara/high',
-                                                            'ic_mr_tr/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic_mr_tr/queries_bearb_day/lookup',
-                                                                'ic_mr_tr/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic_mr_tr/queries_bearb_hour/lookup',
-                                                                'ic_mr_tr/queries_bearb_hour/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 33, 'query_sets': ['ic_mr_tr/queries_bearc/complex']}       
+                    'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic_mr_tr/beara/high',
+                                                            'ic_mr_tr/beara/low']}, 
+                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic_mr_tr/bearb_day/lookup',
+                                                                'ic_mr_tr/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic_mr_tr/bearb_hour/lookup',
+                                                                'ic_mr_tr/bearb_hour/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 33, 'query_sets': ['ic_mr_tr/bearc/complex']}       
                 }, 
                 'cb_mr_tr': {
-                    'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb_mr_tr/queries_beara/high',
-                                                            'cb_mr_tr/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb_mr_tr/queries_bearb_day/lookup',
-                                                                'cb_mr_tr/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb_mr_tr/queries_bearb_hour/lookup',
-                                                                'cb_mr_tr/queries_bearb_hour/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 66, 'query_sets': ['cb_mr_tr/queries_bearc/complex']}       
+                    'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb_mr_tr/beara/high',
+                                                            'cb_mr_tr/beara/low']}, 
+                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb_mr_tr/bearb_day/lookup',
+                                                                'cb_mr_tr/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb_mr_tr/bearb_hour/lookup',
+                                                                'cb_mr_tr/bearb_hour/join']},
+                    'bearc': {'query_versions': 1, 'repositories': 66, 'query_sets': ['cb_mr_tr/bearc/complex']}       
                 },     
                 'ic_sr_ng': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['ic_sr_ng/queries_beara/high',
-                                                            'ic_sr_ng/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 89,'repositories': 1, 'query_sets': ['ic_sr_ng/queries_bearb_day/lookup',
-                                                                'ic_sr_ng/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['ic_sr_ng/queries_bearb_hour/lookup',
-                                                                'ic_sr_ng/queries_bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['ic_sr_ng/queries_bearc/complex']}       
+                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['ic_sr_ng/beara/high',
+                                                            'ic_sr_ng/beara/low']}, 
+                    'bearb_day': {'query_versions': 89,'repositories': 1, 'query_sets': ['ic_sr_ng/bearb_day/lookup',
+                                                                'ic_sr_ng/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['ic_sr_ng/bearb_hour/lookup',
+                                                                'ic_sr_ng/bearb_hour/join']},
+                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['ic_sr_ng/bearc/complex']}       
                 },  
                 'cb_sr_ng': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['cb_sr_ng/queries_beara/high',
-                                                            'cb_sr_ng/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['cb_sr_ng/queries_bearb_day/lookup',
-                                                                'cb_sr_ng/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['cb_sr_ng/queries_bearb_hour/lookup',
-                                                                'cb_sr_ng/queries_bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['cb_sr_ng/queries_bearc/complex']}       
+                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['cb_sr_ng/beara/high',
+                                                            'cb_sr_ng/beara/low']}, 
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearb_day/lookup',
+                                                                'cb_sr_ng/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearb_hour/lookup',
+                                                                'cb_sr_ng/bearb_hour/join']},
+                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearc/complex']}       
                 },     
                 'tb_sr_ng':{
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_ng/queries_beara/high',
-                                                            'tb_sr_ng/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_ng/queries_bearb_day/lookup',
-                                                                'tb_sr_ng/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_ng/queries_bearb_hour/lookup',
-                                                                'tb_sr_ng/queries_bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_ng/queries_bearc/complex']}       
+                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_ng/beara/high',
+                                                            'tb_sr_ng/beara/low']}, 
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearb_day/lookup',
+                                                                'tb_sr_ng/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearb_hour/lookup',
+                                                                'tb_sr_ng/bearb_hour/join']},
+                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearc/complex']}       
                 },
                 'tb_sr_rs': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_rs/queries_beara/high',
-                                                            'tb_sr_rs/queries_beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_rs/queries_bearb_day/lookup',
-                                                                'tb_sr_rs/queries_bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_rs/queries_bearb_day/lookup',
-                                                                'tb_sr_rs/queries_bearb_day/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_rs/queries_bearc/complex']}       
+                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_rs/beara/high',
+                                                            'tb_sr_rs/beara/low']}, 
+                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearb_day/lookup',
+                                                                'tb_sr_rs/bearb_day/join']}, 
+                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearb_day/lookup',
+                                                                'tb_sr_rs/bearb_day/join']},
+                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearc/complex']}       
                 }
 }
 
