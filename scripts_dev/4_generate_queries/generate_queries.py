@@ -19,12 +19,13 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
                     level=logging.INFO)
 
 ############################################# Parameters ################################################################
-
+# Directory contained in docker image
 raw_queries_dir="/starvers_eval/queries/raw_queries/"
+# Mounted directory
 output_queries_dir="/starvers_eval/queries/final_queries/"
+
 policies_cmd = sys.argv[1]
 policies = policies_cmd.split(" ")
-
 queries={
     "ic_mr_tr":{
         "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
@@ -79,18 +80,19 @@ for policy in policies:
         # create directories
         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
             for query_version in range(query_versions):
-                query_dir = Path(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version))
+                query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
                 if query_dir.exists():
                     shutil.rmtree(query_dir)
                 query_dir.mkdir(parents=True, exist_ok=True)
+                logging.info("Create directory: {0}".format(query_dir.name))
 
         # Create query files
-        pathToQueries = raw_queries_dir + "queries_" + querySet
-        for k, queriesFile in enumerate(os.listdir(raw_queries_dir + "queries_" + querySet)):
+        logging.info("Create queries for {0}, {1}".format(policy, querySet))
+        pathToQueries = raw_queries_dir + querySet
+        for k, queriesFile in enumerate(os.listdir(raw_queries_dir + querySet)):
             if os.path.isfile(pathToQueries + "/" + queriesFile):
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
                     relativeTempLoc = queries[policy][querySet]['template']
-                    logging.info("Create queries for {0} and {1}".format(policy, querySet))
                     if relativeTempLoc.split('/')[1] == 'ts':
                         raw_queries = file.readlines()
                     else:
@@ -109,7 +111,7 @@ for policy in policies:
                                     else:
                                         output_query = template.format(prefixes, str(query_version), raw_query)
                                     templateFile.close()
-                                with open(output_queries_dir + policy + "/queries_" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
+                                with open(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     if policy in ["tb_sr_rs"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
                                         output_file.write(timestamped_output_query[0])
