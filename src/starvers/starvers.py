@@ -33,7 +33,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
     :param version_timestamp:
     :return: A query string extended with the given timestamp
     """
-    logging.info("Creating timestamped query ...")
+    logger.info("Creating timestamped query ...")
     prefixes, query = split_prefixes_query(query)
     query_vers = prefixes + "\n" + query
 
@@ -147,9 +147,9 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
                 algebra.traverse(node.graph, visitPre=resolve_paths)
             
     try:
-        logging.info("Resolving SPARQL paths to normal triple statements ...")
+        logger.info("Resolving SPARQL paths to normal triple statements ...")
         algebra.traverse(query_algebra.algebra, visitPre=resolve_paths)
-        logging.info("Injecting versioning extensions into query ...")
+        logger.info("Injecting versioning extensions into query ...")
         algebra.traverse(query_algebra.algebra, visitPre=inject_versioning_extensions)
     except ExpressionNotCoveredException as e:
         err = "Query will not be timestamped because of following error: {0}".format(e)
@@ -168,7 +168,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
         ver_block = ""
         for i, triple in enumerate(triples):
             triple_stmts_cnt = triple_stmts_cnt + 1
-            logging.debug(triple_stmts_cnt)
+            logger.debug(triple_stmts_cnt)
             templ = ver_block_template
             triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
             ver_block += templ.format(triple_n3,
@@ -282,10 +282,10 @@ class TripleStoreEngine:
                 raise RDFStarNotSupported("Your RDF-star store might not support the 'star' extension. "
                                           "Make sure that it is a RDF* store.")
 
-            logging.info("Connection to RDF-star query and update endpoints "
+            logger.info("Connection to RDF-star query and update endpoints "
                          "{0} and {1} established".format(query_endpoint, update_endpoint))
         else:
-            logging.info("Connection test has been skipped")
+            logger.info("Connection test has been skipped")
 
 
     def _delete_triples(self, triples: list, prefixes: dict = None):
@@ -323,11 +323,11 @@ class TripleStoreEngine:
                 delete_statement = statement.format(sparql_prefixes, s, p, o)
                 self.sparql_post.setQuery(delete_statement)
                 self.sparql_post.query()
-                logging.info("Triple {0} successfully deleted: ".format(triple))
+                logger.info("Triple {0} successfully deleted: ".format(triple))
             else:
                 e = "Please provide either a list of lists with three elements - subject, predicate and object or a " \
                     "single list with aforementioned three elements in n3 syntax. "
-                logging.error(e)
+                logger.error(e)
                 raise WrongInputFormatException(e)
 
     def _reset_all_versions(self):
@@ -343,7 +343,7 @@ class TripleStoreEngine:
         self.sparql_post.setQuery(delete_statement)
         self.sparql_post.query()
 
-        logging.info("All annotations have been removed.")
+        logger.info("All annotations have been removed.")
 
 
     def version_all_rows(self, initial_timestamp: datetime = None):
@@ -370,7 +370,7 @@ class TripleStoreEngine:
 
         self.sparql_post.setQuery(update_statement)
         self.sparql_post.query()
-        logging.info("All rows have been annotated with start date {0} " \
+        logger.info("All rows have been annotated with start date {0} " \
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
@@ -391,19 +391,19 @@ class TripleStoreEngine:
         if yn_timestamp_query:
             timestamped_query, version_timestamp = timestamp_query(query=select_statement, version_timestamp=timestamp)
 
-            logging.info("Timestamped query with timestamp {0} being executed:"
+            logger.info("Timestamped query with timestamp {0} being executed:"
                          " \n {1}".format(version_timestamp, timestamped_query))
             self.sparql_get_with_post.setQuery(timestamped_query)
         else:
-            logging.info("Query being executed: \n {0}".format(select_statement))
+            logger.info("Query being executed: \n {0}".format(select_statement))
             self.sparql_get_with_post.setQuery(select_statement)
         
         # The query sometimes gets recognized as LOAD even though it is a SELECT statement. this results into
         # a failed execution as we are using an get endpoint which is not allowed with LOAD
         self.sparql_get_with_post.queryType = 'SELECT'
-        logging.info("Retrieving results ...")
+        logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
-        logging.info("Converting results ... ")
+        logger.info("Converting results ... ")
         df = _to_df(result)
 
         return df
@@ -435,7 +435,7 @@ class TripleStoreEngine:
         """
 
         if len(triples) == 0:
-            logging.info("List is empty. No triples will be outdated.")
+            logger.info("List is empty. No triples will be outdated.")
             return
 
         if prefixes:
@@ -443,22 +443,22 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = add_versioning_prefixes("")
 
-        logging.info("Creating insert statement.")
+        logger.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
 
         if isinstance(triples, list):
-            logging.info("Creating insert statement: Build insert block.")
+            logger.info("Creating insert statement: Build insert block.")
             for i, line in enumerate(triples):
                 triples[i] = line[:-2]
             insert_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
             insert_block = list(map(' '.join, insert_list))
         elif isinstance(triples, str):
-            logging.info("Creating insert statement: Build insert block.")
+            logger.info("Creating insert statement: Build insert block.")
             insert_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
 
-        logging.info("Inserting triples as batches of {0} triples.".format(batch_size))
+        logger.info("Inserting triples as batches of {0} triples.".format(batch_size))
         for i in range(0, len(insert_block), batch_size):
             insert_batch = "\n".join(insert_block[i:min(i+batch_size, len(insert_block))])
             if timestamp:
@@ -468,7 +468,7 @@ class TripleStoreEngine:
                 insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
             self.sparql_post.setQuery(insert_statement)
             self.sparql_post.query()
-        logging.info("Triples inserted.")
+        logger.info("Triples inserted.")
 
 
     def update(self, old_triples: list, new_triples: list, prefixes: dict = None):
@@ -493,7 +493,7 @@ class TripleStoreEngine:
         """
 
         if len(old_triple) == 0:
-            logging.info("List is empty. No triples will be outdated.")
+            logger.info("List is empty. No triples will be outdated.")
             return
 
         if len(old_triples) != len(new_triples):
@@ -521,7 +521,7 @@ class TripleStoreEngine:
         update_statement = template.format(sparql_prefixes, update_block)
         self.sparql_post.setQuery(update_statement)
         self.sparql_post.query()
-        logging.info("Triples updated.")
+        logger.info("Triples updated.")
 
 
 
@@ -550,7 +550,7 @@ class TripleStoreEngine:
         """
 
         if len(triples) == 0:
-            logging.info("List is empty. No triples will be outdated.")
+            logger.info("List is empty. No triples will be outdated.")
             return
 
         if prefixes:
@@ -558,22 +558,22 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = add_versioning_prefixes("")
 
-        logging.info("Creating outdate statement.")
+        logger.info("Creating outdate statement.")
         statement = open(self._template_location + "/outdate_triples.txt", "r").read()
 
         if isinstance(triples, list):
-            logging.info("Creating outdate statement:Build outdate block.")
+            logger.info("Creating outdate statement:Build outdate block.")
             for i, line in enumerate(triples):
                 triples[i] = line[:-2]
             outdate_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
             outdate_block = list(map(' '.join, outdate_list))
         elif isinstance(triples, str):
-            logging.info("Creating outdate statement: Build outdate block.")
+            logger.info("Creating outdate statement: Build outdate block.")
             outdate_block = triples.splitlines()
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
         
-        logging.info("Outdating triples as batches of {0} triples.".format(batch_size))
+        logger.info("Outdating triples as batches of {0} triples.".format(batch_size))
         for i in range(0, len(outdate_block), batch_size):
             outdate_batch = "\n".join(outdate_block[i:min(i+batch_size, len(outdate_block))])
             if timestamp:
@@ -583,6 +583,6 @@ class TripleStoreEngine:
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, "NOW()")
             self.sparql_post.setQuery(outdate_statement)
             self.sparql_post.query()
-        logging.info("Triples outdated.")
+        logger.info("Triples outdated.")
 
     
