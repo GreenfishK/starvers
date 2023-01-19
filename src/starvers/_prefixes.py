@@ -1,5 +1,4 @@
 from ._exceptions import ReservedPrefixError
-from ._helper import template_path
 import re
 
 
