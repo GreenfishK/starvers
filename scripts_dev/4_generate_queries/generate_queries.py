@@ -8,64 +8,63 @@ import shutil
 import logging
 
 
-
-############################################# Parameters ################################################################
-# Directory contained in docker image
-raw_queries_dir="/starvers_eval/queries/raw_queries/"
-# Mounted directory
-output_queries_dir="/starvers_eval/queries/final_queries/"
-
-policies_cmd = sys.argv[1]
-policies = policies_cmd.split(" ")
-queries={
-    "ic_mr_tr":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
-        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ictr/ts"},
-        "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
-    },
-    "cb_mr_tr":{
-        "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
-        "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
-        "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "ictr/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "ic/sparql"},
-    },
-    "ic_sr_ng":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "icng/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "icng/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "icng/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "icng/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "icng/sparql"},
-    },
-    "cb_sr_ng":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ictr/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
-    },
-    "tb_sr_ng":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tb/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tb/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "tb/sparql"},
-    },
-    "tb_sr_rs":{
-        "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
-        "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
-        "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ictr/bgp"},
-        "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
-        "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
-    }
-}
-LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
-init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-vers_ts = init_version_timestamp
-
 def main():
+    ############################################# Parameters ################################################################
+    # Directory contained in docker image
+    raw_queries_dir="/starvers_eval/queries/raw_queries/"
+    # Mounted directory
+    output_queries_dir="/starvers_eval/queries/final_queries/"
+
+    policies_cmd = sys.argv[1]
+    policies = policies_cmd.split(" ")
+    queries={
+        "ic_mr_tr":{
+            "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ictr/ts"},
+            "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
+        },
+        "cb_mr_tr":{
+            "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
+            "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "ictr/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "ic/sparql"},
+        },
+        "ic_sr_ng":{
+            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "icng/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "icng/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "icng/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "icng/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "icng/sparql"},
+        },
+        "cb_sr_ng":{
+            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ictr/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
+        },
+        "tb_sr_ng":{
+            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tb/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tb/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "tb/sparql"},
+        },
+        "tb_sr_rs":{
+            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "ictr/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "ictr/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
+        }
+    }
+    LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+    init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
+    vers_ts = init_version_timestamp
+    
     ############################################# Logging ###############################################################
     if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
         os.makedirs('/starvers_eval/output/logs/generate_queries')
