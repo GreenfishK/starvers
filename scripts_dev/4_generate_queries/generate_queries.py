@@ -47,11 +47,11 @@ def main():
             "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
         },
         "tb_sr_ng":{
-            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tb/ts"},
-            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tb/ts"},
-            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tb/bgp"},
-            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tb/ts"},
-            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "tb/sparql"},
+            "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "tbng/ts"},
+            "beara/low": {'output_dirs':{"beara/low": 58}, 'template': "tbng/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 89, "bearb_hour/join": 1299}, 'template': "tbng/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 89, "bearb_hour/lookup": 1299}, 'template': "tbng/ts"},
+            "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "tbng/sparql"},
         },
         "tb_sr_rs":{
             "beara/high": {'output_dirs':{"beara/high": 58}, 'template': "ictr/ts"},
