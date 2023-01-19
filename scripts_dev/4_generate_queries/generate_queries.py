@@ -64,7 +64,7 @@ def main():
     LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
     init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
     vers_ts = init_version_timestamp
-    
+
     ############################################# Logging ###############################################################
     if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
         os.makedirs('/starvers_eval/output/logs/generate_queries')
@@ -75,8 +75,8 @@ def main():
                         format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                         datefmt="%F %A %T", 
                         level=logging.INFO)
-    timestamp_query_log = logging.getLogger("{0}.{1}".format( __name__, "timestamp_query"))
-    timestamp_query_log.setLevel(logging.ERROR)
+    starvers_log = logging.getLogger("starvers.starvers")
+    starvers_log.setLevel(logging.ERROR)
 
     ################################################## Generate queries ################################################# 
     for policy in policies:
