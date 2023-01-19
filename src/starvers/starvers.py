@@ -1,5 +1,5 @@
 from ._helper import _template_path, _versioning_timestamp_format, _to_df
-from ._prefixes import versioning_prefixes, split_prefixes_query
+from ._prefixes import add_versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
 import re
@@ -183,7 +183,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
         ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
         query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
-    query_vers_out = versioning_prefixes("") + "\n" + query_vers_out
+    query_vers_out = add_versioning_prefixes("") + "\n" + query_vers_out
     
     return query_vers_out, timestamp
 
@@ -259,7 +259,7 @@ class TripleStoreEngine:
                                              "Check whether your RDF-star store is running.")
 
             try:
-                test_prefixes = versioning_prefixes("")
+                test_prefixes = add_versioning_prefixes("")
                 template = open(self._template_location +
                                 "/test_connection/test_connection_nested_select.txt", "r").read()
                 select_statement = template.format(test_prefixes)
@@ -302,9 +302,9 @@ class TripleStoreEngine:
         statement = open(self._template_location + "/_delete_triples.txt", "r").read()
 
         if prefixes:
-            sparql_prefixes = versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         # Handling input format
         trpls = []
@@ -339,7 +339,7 @@ class TripleStoreEngine:
         """
 
         template = open(self._template_location + "/_reset_all_versions.txt", "r").read()
-        delete_statement = template.format(versioning_prefixes(""))
+        delete_statement = template.format(add_versioning_prefixes(""))
         self.sparql_post.setQuery(delete_statement)
         self.sparql_post.query()
 
@@ -356,7 +356,7 @@ class TripleStoreEngine:
         :return:
         """
 
-        final_prefixes = versioning_prefixes("")
+        final_prefixes = add_versioning_prefixes("")
 
         if initial_timestamp is not None:
             version_timestamp = _versioning_timestamp_format(initial_timestamp)
@@ -439,9 +439,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         logging.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
@@ -500,9 +500,9 @@ class TripleStoreEngine:
             raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
 
         if prefixes:
-            sparql_prefixes = versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         template = open(self._template_location + "/update_triples.txt", "r").read()
         update_block = ""
@@ -554,9 +554,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         logging.info("Creating outdate statement.")
         statement = open(self._template_location + "/outdate_triples.txt", "r").read()
