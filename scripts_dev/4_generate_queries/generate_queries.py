@@ -7,16 +7,7 @@ from datetime import datetime, timezone, timedelta
 import shutil
 import logging
 
-############################################# Logging ###################################################################
-if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
-    os.makedirs('/starvers_eval/output/logs/generate_queries')
-with open('/starvers_eval/output/logs/generate_queries/generate_queries.txt', "w") as log_file:
-    log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/generate_queries/generate_queries.txt", 
-                                                  encoding='utf-8', mode='a+')],
-                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
-                    datefmt="%F %A %T", 
-                    level=logging.INFO)
+
 
 ############################################# Parameters ################################################################
 # Directory contained in docker image
@@ -74,52 +65,69 @@ LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 vers_ts = init_version_timestamp
 
-################################################## Generate queries #####################################################
-for policy in policies:
-    for querySet in queries[policy].keys():
-        # create directories
-        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
-            logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_versions))
-            for query_version in range(query_versions):
-                query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
-                if query_dir.exists():
-                    shutil.rmtree(query_dir)
-                query_dir.mkdir(parents=True, exist_ok=True)
+def main():
+    ############################################# Logging ###############################################################
+    if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
+        os.makedirs('/starvers_eval/output/logs/generate_queries')
+    with open('/starvers_eval/output/logs/generate_queries/generate_queries.txt', "w") as log_file:
+        log_file.write("")
+    logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/generate_queries/generate_queries.txt", 
+                                                    encoding='utf-8', mode='a+')],
+                        format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                        datefmt="%F %A %T", 
+                        level=logging.INFO)
+    timestamp_query_log = logging.getLogger("{0}.{1}".format( __name__, "timestamp_query"))
+    timestamp_query_log.setLevel(logging.ERROR)
 
-        # Create query files
-        logging.info("Create queries for {0}, {1}".format(policy, querySet))
-        pathToQueries = raw_queries_dir + querySet
-        for k, queriesFile in enumerate(os.listdir(raw_queries_dir + querySet)):
-            if os.path.isfile(pathToQueries + "/" + queriesFile):
-                with open(pathToQueries + "/" + queriesFile, 'r') as file:
-                    relativeTempLoc = queries[policy][querySet]['template']
-                    if relativeTempLoc.split('/')[1] == 'ts':
-                        raw_queries = file.readlines()
-                    else:
-                        raw_queries = [file.read()]
-                    for i, raw_query in enumerate(raw_queries):
-                        prefixes, raw_query = split_prefixes_query(raw_query)
-                        queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
-                        output_query = ""
-                        for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
-                            for query_version in range(query_versions):
-                                with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
-                                    template = templateFile.read()
-                                    if policy == "cb_sr_ng":
-                                        max_version_digits = len(str(query_versions))
-                                        output_query = template.format(prefixes, str(query_version).zfill(max_version_digits), raw_query)
-                                    else:
-                                        output_query = template.format(prefixes, str(query_version), raw_query)
-                                    templateFile.close()
-                                with open(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
-                                    if policy in ["tb_sr_rs"]:
-                                        timestamped_output_query = timestamp_query(output_query, vers_ts)
-                                        output_file.write(timestamped_output_query[0])
-                                        vers_ts = vers_ts + timedelta(seconds=1)
-                                    else:
-                                        output_file.write(output_query)
-                                    output_file.close()
-                            vers_ts = init_version_timestamp
+    ################################################## Generate queries ################################################# 
+    for policy in policies:
+        for querySet in queries[policy].keys():
+            # create directories
+            for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+                logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_versions))
+                for query_version in range(query_versions):
+                    query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
+                    if query_dir.exists():
+                        shutil.rmtree(query_dir)
+                    query_dir.mkdir(parents=True, exist_ok=True)
 
-                file.close()
+            # Create query files
+            logging.info("Create queries for {0}, {1}".format(policy, querySet))
+            pathToQueries = raw_queries_dir + querySet
+            for k, queriesFile in enumerate(os.listdir(raw_queries_dir + querySet)):
+                if os.path.isfile(pathToQueries + "/" + queriesFile):
+                    with open(pathToQueries + "/" + queriesFile, 'r') as file:
+                        relativeTempLoc = queries[policy][querySet]['template']
+                        if relativeTempLoc.split('/')[1] == 'ts':
+                            raw_queries = file.readlines()
+                        else:
+                            raw_queries = [file.read()]
+                        for i, raw_query in enumerate(raw_queries):
+                            prefixes, raw_query = split_prefixes_query(raw_query)
+                            queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
+                            output_query = ""
+                            for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+                                for query_version in range(query_versions):
+                                    with open(os.path.join(sys.path[0]) +"/templates/" + relativeTempLoc + ".txt", 'r') as templateFile:
+                                        template = templateFile.read()
+                                        if policy == "cb_sr_ng":
+                                            max_version_digits = len(str(query_versions))
+                                            output_query = template.format(prefixes, str(query_version).zfill(max_version_digits), raw_query)
+                                        else:
+                                            output_query = template.format(prefixes, str(query_version), raw_query)
+                                        templateFile.close()
+                                    with open(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
+                                        if policy in ["tb_sr_rs"]:
+                                            timestamped_output_query = timestamp_query(output_query, vers_ts)
+                                            output_file.write(timestamped_output_query[0])
+                                            vers_ts = vers_ts + timedelta(seconds=1)
+                                        else:
+                                            output_file.write(output_query)
+                                        output_file.close()
+                                vers_ts = init_version_timestamp
 
+                    file.close()
+
+
+if __name__ == "__main__":
+    main()
