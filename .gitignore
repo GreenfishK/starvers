@@ -3,3 +3,4 @@ build/
 .pytest_cache/
 tests/__pycache__/
 src/starvers/__pycache__/
+src/starvers.egg-info/
