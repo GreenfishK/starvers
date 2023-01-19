@@ -5,11 +5,13 @@ from SPARQLWrapper import Wrapper
 import logging
 from rdflib.plugins.sparql.parserutils import CompValue
 
-def template_path(template_rel_path: str):
+logger = logging.getLogger(__name__)
+
+def _template_path(template_rel_path: str):
     return os.path.join(os.path.dirname(__file__), template_rel_path)
 
 
-def versioning_timestamp_format(version_timestamp: datetime) -> str:
+def _versioning_timestamp_format(version_timestamp: datetime) -> str:
     """
     This format is taken from the result set of GraphDB's queries.
     :param version_timestamp:
@@ -21,7 +23,7 @@ def versioning_timestamp_format(version_timestamp: datetime) -> str:
         return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
-def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
+def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     """
 
     :param result:
@@ -61,7 +63,7 @@ def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
 
     return df
 
-def pprintAlgebra(q):
+def _pprintAlgebra(q):
     def pp(p, ind="    "):
         if not isinstance(p, CompValue):
             logging.info(p)

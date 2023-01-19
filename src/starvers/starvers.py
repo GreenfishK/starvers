@@ -1,4 +1,4 @@
-from ._helper import template_path, versioning_timestamp_format, to_df
+from ._helper import _template_path, _versioning_timestamp_format, _to_df
 from ._prefixes import versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
@@ -20,10 +20,7 @@ import rdflib.plugins.sparql.parser
 from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPath, MulPath, ZeroOrOne, \
     ZeroOrMore, OneOrMore
 
-class VersioningMode(Enum):
-    Q_PERF = 1
-    SAVE_MEM = 2
-
+logger = logging.getLogger(__name__)
 
 def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str]:
     """
@@ -44,9 +41,9 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
         current_datetime = datetime.now()
         timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
         execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
-        timestamp = versioning_timestamp_format(execution_datetime)
+        timestamp = _versioning_timestamp_format(execution_datetime)
     else:
-        timestamp = versioning_timestamp_format(version_timestamp)  # -> str
+        timestamp = _versioning_timestamp_format(version_timestamp)  # -> str
 
     query_tree = parser.parseQuery(query_vers)
     query_algebra = algebra.translateQuery(query_tree)
@@ -166,7 +163,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
     triple_stmts_cnt = 0
     for bgp_identifier, triples in bgp_triples.items():
         ver_block_template = \
-            open(template_path("templates/versioning_query_extensions.txt"), "r").read()
+            open(_template_path("templates/versioning_query_extensions.txt"), "r").read()
 
         ver_block = ""
         for i, triple in enumerate(triples):
@@ -221,7 +218,7 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = template_path("templates")
+        self._template_location = _template_path("templates")
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -362,11 +359,11 @@ class TripleStoreEngine:
         final_prefixes = versioning_prefixes("")
 
         if initial_timestamp is not None:
-            version_timestamp = versioning_timestamp_format(initial_timestamp)
+            version_timestamp = _versioning_timestamp_format(initial_timestamp)
         else:
             LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
             system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
-            version_timestamp = versioning_timestamp_format(system_timestamp)
+            version_timestamp = _versioning_timestamp_format(system_timestamp)
 
         temp = open(self._template_location + "/version_all_rows.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
@@ -407,7 +404,7 @@ class TripleStoreEngine:
         logging.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
         logging.info("Converting results ... ")
-        df = to_df(result)
+        df = _to_df(result)
 
         return df
 
@@ -465,7 +462,7 @@ class TripleStoreEngine:
         for i in range(0, len(insert_block), batch_size):
             insert_batch = "\n".join(insert_block[i:min(i+batch_size, len(insert_block))])
             if timestamp:
-                version_timestamp = versioning_timestamp_format(timestamp)
+                version_timestamp = _versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
             else:
                 insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
@@ -580,7 +577,7 @@ class TripleStoreEngine:
         for i in range(0, len(outdate_block), batch_size):
             outdate_batch = "\n".join(outdate_block[i:min(i+batch_size, len(outdate_block))])
             if timestamp:
-                version_timestamp = versioning_timestamp_format(timestamp)
+                version_timestamp = _versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_batch, "NOW()")
