@@ -84,7 +84,7 @@ for policy in policies:
                 if query_dir.exists():
                     shutil.rmtree(query_dir)
                 query_dir.mkdir(parents=True, exist_ok=True)
-                logging.info("Create directory: {0}".format(query_dir.name))
+                logging.info("For {0}, {1} create directory: {2}".format(policy, querySet, query_dir.name))
 
         # Create query files
         logging.info("Create queries for {0}, {1}".format(policy, querySet))
