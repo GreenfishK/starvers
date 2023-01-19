@@ -2,6 +2,7 @@ from ._helper import _template_path, _versioning_timestamp_format, _to_df
 from ._prefixes import add_versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
+    
 import re
 from urllib.error import URLError
 from enum import Enum

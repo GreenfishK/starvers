@@ -7,6 +7,9 @@ from rdflib.plugins.sparql.parserutils import CompValue
 
 logger = logging.getLogger(__name__)
 
+__all__ = ['_template_path', '_versioning_timestamp_format', '_to_df', '_pprintAlgebra']
+
+
 def _template_path(template_rel_path: str):
     return os.path.join(os.path.dirname(__file__), template_rel_path)
 
