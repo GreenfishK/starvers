@@ -79,12 +79,12 @@ for policy in policies:
     for querySet in queries[policy].keys():
         # create directories
         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
+            logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_version))
             for query_version in range(query_versions):
                 query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
                 if query_dir.exists():
                     shutil.rmtree(query_dir)
                 query_dir.mkdir(parents=True, exist_ok=True)
-                logging.info("For {0}, {1} create directory: {2}".format(policy, querySet, query_dir.name))
 
         # Create query files
         logging.info("Create queries for {0}, {1}".format(policy, querySet))
