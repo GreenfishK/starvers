@@ -18,16 +18,23 @@ def _prefixes_to_sparql(prefixes: dict) -> str:
     return sparql_prefixes
 
 
-def versioning_prefixes(prefixes: dict or str) -> str:
+def add_versioning_prefixes(prefixes: dict or str) -> str:
     """
-    Extends the given prefixes by citing: <http://ontology.ontotext.com/citing/>
-    and xsd: <http://www.w3.org/2001/XMLSchema#>. While citing is reserved and cannot be overwritten by a user prefix
-    xsd will be overwritten if a prefix 'xsd' exists in 'prefixes'.
-    :param prefixes:
-    :return:
+    Extends the given prefixes by 
+        vers: <https://github.com/GreenfishK/DataCitation/versioning/
+        xsd: <http://www.w3.org/2001/XMLSchema#>. 
+        
+    If vers is already contained in :prefixes it will raise an error. If xsd is already 
+    contained in :prefixes the returned prologue string will contain the existing xsd prefix and its URI namespace.
+    
+    :param prefixes: prologue either as dict or str. Every entry of a dict must contain 
+    the prefix name as key and the namespace URI as value. If :prefixes is a string 
+    it must follow the SPARQL 1.1 prologue syntax.
+    :return: The prologue string with the given :prefixes extended by vers and xsd and their corresponding namespace URIs.
     """
+
     error_message = 'The prefix "citing" is reserved. Please choose another one.'
-    prefix_citing = 'PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>'
+    prefix_vers = 'PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>'
     prefix_xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>'
 
     if isinstance(prefixes, dict):
@@ -35,9 +42,9 @@ def versioning_prefixes(prefixes: dict or str) -> str:
         if "vers" in prefixes:
             raise ReservedPrefixError(error_message)
         if "xsd" in prefixes:
-            vers_prfx = prefix_citing + "\n"
+            vers_prfx = prefix_vers + "\n"
         else:
-            vers_prfx = prefix_citing + "\n" + prefix_xsd + "\n"
+            vers_prfx = prefix_vers + "\n" + prefix_xsd + "\n"
         return sparql_prefixes + "\n" + vers_prfx
 
     if isinstance(prefixes, str):
@@ -45,9 +52,9 @@ def versioning_prefixes(prefixes: dict or str) -> str:
         if prefixes.find("vers:") > -1:
             raise ReservedPrefixError(error_message)
         if prefixes.find("xsd:") > -1:
-            vers_prfx = prefix_citing + "\n"
+            vers_prfx = prefix_vers + "\n"
         else:
-            vers_prfx = prefix_citing + "\n" + prefix_xsd + "\n"
+            vers_prfx = prefix_vers + "\n" + prefix_xsd + "\n"
         return sparql_prefixes + "\n" + vers_prfx
 
 
