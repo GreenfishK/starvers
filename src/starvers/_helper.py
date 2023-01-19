@@ -66,15 +66,15 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
 def _pprintAlgebra(q):
     def pp(p, ind="    "):
         if not isinstance(p, CompValue):
-            logging.info(p)
+            logger.info(p)
             return
-        logging.info("{0}(".format(p.name))
+        logger.info("{0}(".format(p.name))
 
         for k in p:
-            logging.info("{0}{1} =".format(str(ind), str(k)))
-            logging.info(' ')
+            logger.info("{0}{1} =".format(str(ind), str(k)))
+            logger.info(' ')
             pp(p[k], ind + "    ")
-        logging.info("{0})".format(ind))
+        logger.info("{0})".format(ind))
 
     try:
         pp(q.algebra)
