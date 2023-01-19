@@ -79,7 +79,7 @@ for policy in policies:
     for querySet in queries[policy].keys():
         # create directories
         for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
-            logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_version))
+            logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_versions))
             for query_version in range(query_versions):
                 query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
                 if query_dir.exists():
