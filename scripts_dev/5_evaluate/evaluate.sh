@@ -6,9 +6,10 @@ triple_stores=("${triple_stores}")
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
 
-# Start containers with their respective policy, dataset and triple store
-# > /starvers_eval/output/logs/queries.txt
-# > /starvers_eval/output/measurements/time.csv
+# Init log and measurement files
+> /starvers_eval/output/logs/queries.txt
+> /starvers_eval/output/measurements/time.csv
+
 for triple_store in ${triple_stores[@]}; do
 
     if [ ${triple_store} == "jenatdb2" ]; then
@@ -31,7 +32,7 @@ for triple_store in ${triple_stores[@]}; do
                 echo "Fuseki server is up"
 
                 # Clean output directory
-                rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
+                rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
                 # Evaluate
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/5_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
@@ -64,7 +65,7 @@ for triple_store in ${triple_stores[@]}; do
                 echo "GraphDB server is up"
 
                 # Clean output directory
-                rm -rf /starvers_eval/output/result_sets/${triple_store}_${policy}_${dataset}
+                rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
                 # Evaluate
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/5_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
