@@ -8,31 +8,31 @@ shutdown=$5
 
 # Set variables
 script_dir=/starvers_eval/scripts
-log_file=/starvers_eval/output/logs/preprocessing/construct_datasets.txt
+log_file=/starvers_eval/output/logs/preprocess/construct_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 #graphdb_port=$((7200))
 export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
-export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocessing/graphdb"
+export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/preprocess/graphdb"
 
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf /starvers_eval/databases/preprocessing/graphdb/repositories/${policy}_${dataset}
-    rm -rf /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
+    rm -rf /starvers_eval/databases/preprocess/graphdb/repositories/${policy}_${dataset}
+    rm -rf /starvers_eval/configs/preprocess/graphdb_${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}
+    mkdir -p /starvers_eval/configs/preprocess/graphdb_${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
     repositoryID=${policy}_${dataset}
-    cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl
-    sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl
+    cp ${script_dir}/2_preprocess/configs/graphdb-config_template.ttl /starvers_eval/configs/preprocess/graphdb_${policy}_${dataset}/graphdb-config.ttl
+    sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/preprocess/graphdb_${policy}_${dataset}/graphdb-config.ttl
 fi
 
 if [[ "$ingest_empty" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/preprocessing/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
+    /opt/graphdb/dist/bin/importrdf preload --force -c /starvers_eval/configs/preprocess/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
 if [[ "$shutdown" == "true" ]]; then

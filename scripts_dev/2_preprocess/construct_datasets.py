@@ -196,7 +196,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     logging.info("Shutting down {0} server and removing database files.".format(triple_store.name))
     subprocess.run(["pkill", "-f", "{0}".format(configs['shutdown_process'])])
-    shutil.rmtree("/starvers_eval/databases/preprocessing/", ignore_errors=True)
+    shutil.rmtree("/starvers_eval/databases/preprocess/", ignore_errors=True)
     shutil.rmtree("/run/configuration", ignore_errors=True)
 
   
@@ -320,11 +320,11 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.close()
 
 ############################################# Logging #############################################
-if not os.path.exists('/starvers_eval/output/logs/preprocessing'):
-    os.makedirs('/starvers_eval/output/logs/preprocessing')
-with open('/starvers_eval/output/logs/preprocessing/construct_datasets.txt', "w") as log_file:
+if not os.path.exists('/starvers_eval/output/logs/preprocess'):
+    os.makedirs('/starvers_eval/output/logs/preprocess')
+with open('/starvers_eval/output/logs/preprocess/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocessing/construct_datasets.txt", 
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocess/construct_datasets.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 

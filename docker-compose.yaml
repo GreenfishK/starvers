@@ -37,7 +37,7 @@ services:
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-      - ${base_host_dir}/databases/preprocessing:/starvers_eval/databases/preprocessing
+      - ${base_host_dir}/databases/preprocess:/starvers_eval/databases/preprocess
       - ./scripts_dev/2_preprocess:/starvers_eval/scripts/2_preprocess # move to image after development has finished
     environment:
       - datasets=${datasets}
@@ -105,8 +105,19 @@ services:
     entrypoint: ["/starvers_eval/scripts/5_evaluate/evaluate.sh"]
     
   visualize:
-    build:
-
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: final_stage
+    image: starvers_eval
+    volumes:            
+      - ${base_host_dir}/output/logs:/starvers_eval/output/figures
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
+      - ./scripts_dev/6_visualize:/starvers_eval/scripts/6_visualize # move to image after development has finished
+    environment:
+      - policies=${policies}  
+      - datasets=${datasets}
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
 
