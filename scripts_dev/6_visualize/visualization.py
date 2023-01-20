@@ -5,16 +5,21 @@ from datetime import datetime
 from datetime import timezone
 import os
 from pathlib import Path
+import sys
 
 
-work_dir = str(Path.home()) + "/starvers_eval"
-figures_out = work_dir + "/output/figures/"
+work_dir = "/starvers_eval/"
+measurements_in = work_dir + "output/measurements/"
+figures_out = work_dir + "output/figures/"
+policies = sys.argv[1].split(" ")
+datasets = sys.argv[2].split(" ")
+
 
 if not os.path.exists(figures_out):
     os.makedirs(figures_out)
 
 
-def plot_mat_lookup_queries(timestamp: datetime, triple_store: str, triple_patterns: list):
+def plot_lookup_queries(timestamp: datetime, triple_store: str, triple_patterns: list):
     """
     Version materialisation queries with simple lookups for IC, CB and TB approaches.
     :param timestamp: Timestamp of evaluation. Can be derived from the folder where the output of the evaluation is
@@ -28,8 +33,8 @@ def plot_mat_lookup_queries(timestamp: datetime, triple_store: str, triple_patte
 
     hostname = os.uname().nodename
     ts_formatted = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-    policies = ['tb', 'tb_star_f', 'tb_star_h']
-    df = pd.DataFrame(columns=['policy', 'tripleStore', 'triple_pattern', 'ver', 'min', 'mean', 'max', 'stddev', 'count', 'sum'])
+    df = pd.DataFrame(columns=['triplestore','dataset','policy','query_set','snapshot','query',
+    'execution_time','snapshot_creation_time'])
     for policy in policies:
         output_dir = work_dir + "/output/time/bearb_hour/{hostname}-{timestamp}".format(hostname=hostname,
                                                                                     timestamp=ts_formatted)
@@ -80,7 +85,7 @@ ts = datetime(2022, 1, 21, 10, 36, 39)
 
 # Jena
 # simple lookups, 49 p-queries and 13 po-queries
-plot_mat_lookup_queries(ts, "JenaTDB", ["p", "po"])
-plot_mat_lookup_queries(ts, "GraphDB", ["p", "po"])
+plot_lookup_queries(ts, "JenaTDB", ["p", "po"])
+plot_lookup_queries(ts, "GraphDB", ["p", "po"])
 
 

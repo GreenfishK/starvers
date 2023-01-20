@@ -103,5 +103,11 @@ services:
       - graphdb_port=${graphdb_port}
       - jenatdb2_port=${jenatdb2_port}
     entrypoint: ["/starvers_eval/scripts/5_evaluate/evaluate.sh"]
+    
+  visualize:
+    build:
+
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_visualize/visualize.py"]
+    command: ["$policies", "$datasets"]
 
 
