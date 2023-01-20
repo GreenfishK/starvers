@@ -256,6 +256,7 @@ for query_set in query_sets:
                 result_set_dir = result_sets_dir + "/" + triple_store + "_" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
+                
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
             
             elif policy == "ic_mr_tr":
@@ -276,7 +277,6 @@ for query_set in query_sets:
                     write.writerows(to_list(result))
 
                     df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
-                
 
             elif policy == "cb_mr_tr":
                 logger.info("To be implemented")
