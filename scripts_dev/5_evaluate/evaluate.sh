@@ -9,6 +9,8 @@ jenatdb2_port=$((3030))
 # Init log and measurement files
 > /starvers_eval/output/logs/queries.txt
 > /starvers_eval/output/measurements/time.csv
+log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
+log_level="root:INFO"
 
 for triple_store in ${triple_stores[@]}; do
 
@@ -25,11 +27,11 @@ for triple_store in ${triple_stores[@]}; do
                 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up
-                echo "Waiting..."
+                echo "$(log_timestamp) ${log_level}:Waiting..."
                 while [[ $(curl -I http://Starvers:${jenatdb2_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
                     sleep 1s
                 done
-                echo "Fuseki server is up"
+                echo "$(log_timestamp) ${log_level}:Fuseki server is up"
 
                 # Clean output directory
                 rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
@@ -38,7 +40,7 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/5_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
 
                 # Stop database server
-                echo "Shutting down fuseki server"
+                echo "$(log_timestamp) ${log_level}:Shutting down fuseki server"
                 pkill -f '/jena-fuseki/fuseki-server.jar'
                 
             done
@@ -58,11 +60,11 @@ for triple_store in ${triple_stores[@]}; do
                 
                 # Wait until server is up
                 # GraphDB doesn't deliver HTTP code 200 for some reason ...
-                echo "Waiting..."
+                echo "$(log_timestamp) ${log_level}:Waiting..."
                 while [[ $(curl -I http://Starvers:${graphdb_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
                     sleep 1s
                 done
-                echo "GraphDB server is up"
+                echo "$(log_timestamp) ${log_level}:GraphDB server is up"
 
                 # Clean output directory
                 rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
@@ -71,7 +73,7 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/5_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
 
                 # Stop database server
-                echo "Shutting down GraphDB server"
+                echo "$(log_timestamp) ${log_level}:Shutting down GraphDB server"
                 pkill -f '/opt/java/openjdk/bin/java'
 
             done
