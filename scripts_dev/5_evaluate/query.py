@@ -188,7 +188,7 @@ for query_set in query_sets:
                 # Create output directory and save result set
                 result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
+                file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
                 write = csv.writer(file, delimiter=";")
                 write.writerows(to_list(result))
 
@@ -365,7 +365,7 @@ for query_set in query_sets:
                     # TODO: format output
                     result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(repository)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                    file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
+                    file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
                     write = csv.writer(file, delimiter=";")
                     write.writerows(header)
                     write.writerows(list_result)
