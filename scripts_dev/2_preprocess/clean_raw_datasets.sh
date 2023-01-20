@@ -4,21 +4,21 @@
 SCRIPT_DIR=/starvers_eval/scripts
 policies=("ic" "tb") # only raw datasets. Don't change order!
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
-log_file=/starvers_eval/output/logs/preprocessing/clean_datasets.txt
+log_file=/starvers_eval/output/logs/preprocess/clean_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
 # Clean directories and files
-rm -rf /starvers_eval/databases/preprocessing
-rm -rf /starvers_eval/configs/preprocessing
-rm -rf /starvers_eval/output/logs/preprocessing
+rm -rf /starvers_eval/databases/preprocess
+rm -rf /starvers_eval/configs/preprocess
+rm -rf /starvers_eval/output/logs/preprocess
 
 # Create directories and files
-mkdir -p /starvers_eval/configs/preprocessing
-mkdir -p /starvers_eval/databases/preprocessing
-mkdir -p /starvers_eval/output/logs/preprocessing
+mkdir -p /starvers_eval/configs/preprocess
+mkdir -p /starvers_eval/databases/preprocess
+mkdir -p /starvers_eval/output/logs/preprocess
 > $log_file
 
 echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
