@@ -42,15 +42,15 @@ for triple_store in ${triple_stores[@]}; do
                 
             done
         done
-
+    
+    GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
     elif [ ${triple_store} == "graphdb" ]; then
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
                 # Export variables
                 export JAVA_HOME=/opt/java/openjdk
                 export PATH=/opt/java/openjdk/bin:$PATH
-                export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
-                echo $GDB_JAVA_OPTS
+                export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
 
                 # Start database server and run in background
                 /opt/graphdb/dist/bin/graphdb -d -s
