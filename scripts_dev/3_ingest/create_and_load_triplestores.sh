@@ -11,12 +11,6 @@ log_file_jena=/starvers_eval/output/logs/ingest/ingestion_jena.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
-# Clean directories
-rm -rf /starvers_eval/output/logs/ingest/
-
-# Create directories
-mkdir -p /starvers_eval/output/logs/ingest/
-
 echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
@@ -30,6 +24,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Clean database directory
     rm -rf $configs_dir
     rm -rf $db_dir
+    rm -rf $log_file_graphdb
 
     # Create directories
     mkdir -p $configs_dir
@@ -158,6 +153,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     # Clean database directory
     rm -rf $db_dir
     rm -rf $configs_dir
+    rm -rf $log_file_jena
 
     # Create directories
     mkdir -p $db_dir
@@ -195,7 +191,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
             echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2" >> $log_file_jena
             total_ingestion_time=0
-            total_file_size=0           
+            total_file_size=0            
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
