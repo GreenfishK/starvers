@@ -166,7 +166,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                   .replace("\\","\\\\") \
                   .replace(r'"', r'\"') \
                   .replace("\n","\\n") \
-                  .replace("\t", "\\t")
+                  .replace("\t", "\\t") \
+                  .replace("\r", "\\r")
             p = URIRef(r['p']['value'])
             if r['o']['type']  == "uri":
                 o = "<" + r['o']['value'] + ">"
@@ -177,7 +178,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                   .replace("\\","\\\\") \
                   .replace(r'"', r'\"') \
                   .replace("\n","\\n") \
-                  .replace("\t", "\\t")
+                  .replace("\t", "\\t") \
+                  .replace("\r", "\\r")
                 lang = r['o'].get("xml:lang", None)
                 datatype = r['o'].get("datatype", None)
                 o = '"' + value + '"'
