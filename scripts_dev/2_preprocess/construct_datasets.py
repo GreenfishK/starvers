@@ -342,8 +342,8 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 
 ############################################# Parameters #############################################
 datasets = sys.argv[1].split(" ")
-skip_change_sets = sys.argv[3]
-skip_tb_star_ds = sys.argv[2]
+skip_change_sets = sys.argv[2]
+skip_tb_star_ds = sys.argv[3]
 skip_cbng_ds = sys.argv[4]
 skip_icng_ds = sys.argv[5]
 
