@@ -342,7 +342,10 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 
 ############################################# Parameters #############################################
 datasets = sys.argv[1].split(" ")
-skip_cs = sys.argv[2]
+skip_change_sets = sys.argv[3]
+skip_tb_star_ds = sys.argv[2]
+skip_cbng_ds = sys.argv[4]
+skip_icng_ds = sys.argv[5]
 
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -361,23 +364,26 @@ for dataset in datasets:
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
-    if not skip_cs == "True":
+    if not skip_change_sets == "True":
         construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
-    construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                        destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
-                        last_version=total_versions,
-                        init_timestamp=init_version_timestamp,
-                        dataset=dataset,
-                        triple_store=TripleStore.GRAPHDB)    
+    if not skip_tb_star_ds == "True":
+        construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                            source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                            destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
+                            last_version=total_versions,
+                            init_timestamp=init_version_timestamp,
+                            dataset=dataset,
+                            triple_store=TripleStore.GRAPHDB)    
     
-    construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                      source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                      destination=data_dir + "/alldata.CBNG.trig",
-                      last_version=total_versions)
-
-    construct_icng_ds(source=data_dir + "/alldata.IC.nt",
-                      destination=data_dir + "/alldata.ICNG.trig",
-                      last_version=total_versions,
-                      basename_length=ic_basename_lengths[dataset])
+    if not skip_cbng_ds == "True":
+        construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
+                        destination=data_dir + "/alldata.CBNG.trig",
+                        last_version=total_versions)
+    
+    if not skip_icng_ds == "True":
+        construct_icng_ds(source=data_dir + "/alldata.IC.nt",
+                        destination=data_dir + "/alldata.ICNG.trig",
+                        last_version=total_versions,
+                        basename_length=ic_basename_lengths[dataset])
