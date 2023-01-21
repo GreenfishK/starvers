@@ -41,9 +41,12 @@ services:
       - ./scripts_dev/2_preprocess:/starvers_eval/scripts/2_preprocess # move to image after development has finished
     environment:
       - datasets=${datasets}
-      - skip_cs=${skip_cs}
+      - skip_change_sets=${skip_change_sets}
+      - skip_tb_star_ds=${skip_tb_star_ds}
+      - skip_cbng_ds=${skip_cbng_ds}
+      - skip_icng_ds=${skip_icng_ds}
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/2_preprocess/construct_datasets.py"]
-    command: ["$datasets", "$skip_cs"]
+    command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds"]
   
   ingest:
     build: 
