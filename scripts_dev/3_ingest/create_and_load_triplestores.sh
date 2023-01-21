@@ -53,6 +53,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 bearb_hour) versions=1299 file_name_struc="%06g";; 
                 bearb_day) versions=89 file_name_struc="%06g";;
                 bearc) versions=33 file_name_struc="%01g";;
+                beart) versions=4 file_name_struc="%06g";;
                 *)
                     echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_graphdb
                     exit 2
@@ -183,6 +184,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 bearb_hour) versions=1299 file_name_struc="%06g";; 
                 bearb_day) versions=89 file_name_struc="%06g";;
                 bearc) versions=33 file_name_struc="%01g";;
+                beart) versions=4 file_name_struc="%06g";;
                 *)
                     echo "jenatdb2: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_jena
                     exit 2
