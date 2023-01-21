@@ -195,9 +195,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
             echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2" >> $log_file_jena
             total_ingestion_time=0
-            total_file_size=0
-            mkdir -p $configs_dir
-            
+            total_file_size=0           
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
