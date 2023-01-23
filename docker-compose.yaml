@@ -135,6 +135,6 @@ services:
       - policies=${policies}  
       - datasets=${datasets}
       - db_dir=/starvers_eval/databases/jenatdb2
-      - JVM_ARGS="-Xmx90g -Xms90g"
+      - JVM_ARGS='-Xmx90g -Xms90g'
     ports:
       - 3030:3030
