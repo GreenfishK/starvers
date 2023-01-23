@@ -11,13 +11,9 @@ export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
 # Clean directories and files
-rm -rf /starvers_eval/databases/clean_raw_datasets
-rm -rf /starvers_eval/configs/clean_raw_datasets
 rm -rf /starvers_eval/output/logs/clean_raw_datasets
 
 # Create directories and files
-mkdir -p /starvers_eval/configs/clean_raw_datasets
-mkdir -p /starvers_eval/databases/clean_raw_datasets
 mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 > $log_file
 

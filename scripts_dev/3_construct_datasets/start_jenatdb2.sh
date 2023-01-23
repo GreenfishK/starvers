@@ -23,6 +23,7 @@ if [[ "$reset" == "true" ]]; then
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}
+    mkdir -p /starvers_eval/databases/construct_datasets/jenatdb2
     mkdir -p /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
