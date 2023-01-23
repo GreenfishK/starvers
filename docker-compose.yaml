@@ -123,11 +123,10 @@ services:
       - datasets=${datasets}
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
-
-
+  
+  # Standalone service only for testing.
   start_jena:
     image: stain/jena-fuseki:4.0.0
-    #container_name: jena
     restart: unless-stopped
     volumes: 
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -137,4 +136,3 @@ services:
       - datasets=${datasets}
     ports:
       - 3030:3030
-    # entrypoint: []
