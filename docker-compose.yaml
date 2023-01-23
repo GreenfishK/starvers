@@ -134,5 +134,6 @@ services:
     environment:
       - policies=${policies}  
       - datasets=${datasets}
+      - db_dir=/starvers_eval/databases/jenatdb2
     ports:
       - 3030:3030
