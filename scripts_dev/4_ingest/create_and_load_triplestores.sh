@@ -66,7 +66,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
                 # Replace repositoryID in config template
                 repositoryID=${policy}_${dataset}
-                cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
+                cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
 
                 # Load data into GraphDB
@@ -81,7 +81,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                 do
                     # Replace repositoryID in config template
                     repositoryID=${policy}_${dataset}_$((10#$c))
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
+                    cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryID/g"  $configs_dir/${repositoryID}.ttl
 
                     # Load data into GraphDB
@@ -110,7 +110,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Add
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
+                    cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
 
                     # Load data into GraphDB
@@ -122,7 +122,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                     # Delete
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
+                    cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDDel/g" $configs_dir/${repositoryIDDel}.ttl
 
                     # Load data into GraphDB
@@ -198,7 +198,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 repositoryID=${policy}_${dataset}
                 # Replace repositoryID in config template
                 
-                cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
+                cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
                 sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
                 sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryID}.ttl
                 sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
@@ -215,7 +215,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                 do
                     repositoryID=${policy}_${dataset}_$((10#$c))
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
+                    cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
                     sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryID}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
@@ -245,7 +245,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     fi
 
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
+                    cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
                     sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryIDAdd}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDAdd}.ttl
@@ -258,7 +258,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
 
                     # Replace repositoryID in config template
-                    cp ${script_dir}/3_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
+                    cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
                     sed -i "s/{{repositoryID}}/$repositoryIDDel/g" $configs_dir/${repositoryIDDel}.ttl
                     sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryIDDel}.ttl
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDDel}.ttl
