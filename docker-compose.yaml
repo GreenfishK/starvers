@@ -125,3 +125,16 @@ services:
     command: ["$policies", "$datasets"]
 
 
+  start_jena:
+    image: stain/jena-fuseki:4.0.0
+    #container_name: jena
+    restart: unless-stopped
+    volumes: 
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/databases:/starvers_eval/databases
+    environment:
+      - policies=${policies}  
+      - datasets=${datasets}
+    ports:
+      - 3030:3030
+    # entrypoint: []
