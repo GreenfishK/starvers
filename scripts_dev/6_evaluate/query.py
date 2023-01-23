@@ -12,6 +12,8 @@ import multiprocessing
 import shutil
 import csv
 import logging as logger
+from datetime import datetime
+from datetime import timedelta, timezone
 
 ############################################# Logging ###################################################################
 if not os.path.exists('/starvers_eval/output/logs/evaluate'):
@@ -90,7 +92,9 @@ ds_queries_map={'ic_mr_tr': {
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
                         'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
             'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
-                        'post': 'http://{hostname}:{port}/{repository_name}/update'}}                        
+                        'post': 'http://{hostname}:{port}/{repository_name}/update'}}    
+LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
+init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
@@ -141,7 +145,7 @@ def to_list(result: Wrapper.QueryResult) -> list:
     return [header] + values
 
 
-df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'query', 'execution_time', 'snapshot_creation_time'])
+df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
 
 query_sets = ds_queries_map[policy][dataset]['query_sets']
 query_versions = ds_queries_map[policy][dataset]['query_versions']
@@ -166,6 +170,8 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
 for query_set in query_sets:
     for query_version in range(query_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
+        snapshot_ts = init_version_timestamp + timedelta(seconds=query_version)
+
         for query_file_name in os.listdir(query_set_version):
             logger.info("Processing query {0}".format(query_file_name))
             execution_time = 0
@@ -192,7 +198,7 @@ for query_set in query_sets:
                 write = csv.writer(file, delimiter=";")
                 write.writerows(to_list(result))
 
-                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
+                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
             
             elif policy == "cb_sr_ng":
                 _set_endpoints(dataset, policy, endpoints, engine)   
@@ -257,7 +263,7 @@ for query_set in query_sets:
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
                 
-                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
+                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
             
             elif policy == "ic_mr_tr":
                 for repository in range(1, int(repositories)+1):
@@ -276,7 +282,8 @@ for query_set in query_sets:
                     write = csv.writer(file, delimiter=";")
                     write.writerows(to_list(result))
 
-                    df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
+                    snapshot_ts = init_version_timestamp + timedelta(seconds=repository-1)
+                    df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
 
             elif policy == "cb_mr_tr":
                 logger.info("To be implemented")
