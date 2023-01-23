@@ -24,11 +24,12 @@ RUN mkdir -p /starvers_eval/output/figures
 RUN mkdir -p /starvers_eval/rawdata
 RUN mkdir -p /starvers_eval/configs
 RUN mkdir -p /starvers_eval/scripts/1_download
-RUN mkdir -p /starvers_eval/scripts/2_preprocess
-RUN mkdir -p /starvers_eval/scripts/3_ingest
-RUN mkdir -p /starvers_eval/scripts/4_construct_queries
-RUN mkdir -p /starvers_eval/scripts/5_evaluation
-RUN mkdir -p /starvers_eval/scripts/6_visualization
+RUN mkdir -p /starvers_eval/scripts/2_clean_raw_datasaets
+RUN mkdir -p /starvers_eval/scripts/3_construct_datasets
+RUN mkdir -p /starvers_eval/scripts/4_ingest
+RUN mkdir -p /starvers_eval/scripts/5_construct_queries
+RUN mkdir -p /starvers_eval/scripts/6_evaluation
+RUN mkdir -p /starvers_eval/scripts/7_visualization
 
 # copy from other images
 COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
