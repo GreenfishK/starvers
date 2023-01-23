@@ -4,21 +4,21 @@
 SCRIPT_DIR=/starvers_eval/scripts
 policies=("ic" "tb") # only raw datasets. Don't change order!
 datasets=("${datasets}") # beara bearb_hour bearb_day bearc
-log_file=/starvers_eval/output/logs/preprocess/clean_datasets.txt
+log_file=/starvers_eval/output/logs/clean_raw_datasets/clean_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
 # Clean directories and files
-rm -rf /starvers_eval/databases/preprocess
-rm -rf /starvers_eval/configs/preprocess
-rm -rf /starvers_eval/output/logs/preprocess
+rm -rf /starvers_eval/databases/clean_raw_datasets
+rm -rf /starvers_eval/configs/clean_raw_datasets
+rm -rf /starvers_eval/output/logs/clean_raw_datasets
 
 # Create directories and files
-mkdir -p /starvers_eval/configs/preprocess
-mkdir -p /starvers_eval/databases/preprocess
-mkdir -p /starvers_eval/output/logs/preprocess
+mkdir -p /starvers_eval/configs/clean_raw_datasets
+mkdir -p /starvers_eval/databases/clean_raw_datasets
+mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 > $log_file
 
 echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
@@ -75,11 +75,11 @@ for dataset in ${datasets[@]}; do
 
             # Read dataset $raw_ds line by line. 
             # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
-            # TODO: change path to $SCRIPT_DIR/2_preprocess/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
+            # TODO: change path to $SCRIPT_DIR/2_clean_raw_datasets/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             echo "$(log_timestamp) ${log_level}:Validating $raw_ds" >> $log_file
             first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`
             if [[ -z "$first_line" ]]; then
-                java -jar $SCRIPT_DIR/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
+                java -jar $SCRIPT_DIR/2_clean_raw_datasets/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
                 mv $clean_ds $raw_ds
                 excluded_lines=`grep -c '^# ' ${raw_ds}`
                 excluded_lines=$(($excluded_lines - 2))

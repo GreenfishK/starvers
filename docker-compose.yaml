@@ -23,10 +23,10 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/configs:/starvers_eval/configs
       - ${base_host_dir}/databases:/starvers_eval/databases
-      - ./scripts_dev/2_preprocess:/starvers_eval/scripts/2_preprocess # move to image after development has finished
+      - ./scripts_dev/2_clean_raw_datasets:/starvers_eval/scripts/2_clean_raw_datasets # move to image after development has finished
     environment:
       - datasets=${datasets}
-    entrypoint: [/starvers_eval/scripts/2_preprocess/clean_raw_datasets.sh]
+    entrypoint: [/starvers_eval/scripts/2_clean_raw_datasets/clean_raw_datasets.sh]
   
   construct_datasets:
     build: 
@@ -38,14 +38,14 @@ services:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/databases/preprocess:/starvers_eval/databases/preprocess
-      - ./scripts_dev/2_preprocess:/starvers_eval/scripts/2_preprocess # move to image after development has finished
+      - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
       - datasets=${datasets}
       - skip_change_sets=${skip_change_sets}
       - skip_tb_star_ds=${skip_tb_star_ds}
       - skip_cbng_ds=${skip_cbng_ds}
       - skip_icng_ds=${skip_icng_ds}
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/2_preprocess/construct_datasets.py"]
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
     command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds"]
   
   ingest:
@@ -60,14 +60,14 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/configs:/starvers_eval/configs
-      - ./scripts_dev/3_ingest:/starvers_eval/scripts/3_ingest # move to image after development has finished
+      - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
     environment:
       - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
-    entrypoint: ["/starvers_eval/scripts/3_ingest/create_and_load_triplestores.sh"]
+    entrypoint: ["/starvers_eval/scripts/4_ingest/create_and_load_triplestores.sh"]
   
-  generate_queries:
+  construct_queries:
     build: 
       context: .
       dockerfile: Dockerfile
@@ -76,10 +76,10 @@ services:
     volumes:
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-      - ./scripts_dev/4_generate_queries:/starvers_eval/scripts/4_generate_queries # move to image after development has finished
+      - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
       - policies=${policies}    
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/4_generate_queries/generate_queries.py", "$policies"]
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies"]
 
   evaluate:
     build: 
@@ -94,7 +94,7 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
-      - ./scripts_dev/5_evaluate:/starvers_eval/scripts/5_evaluate # move to image after development has finished
+      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
     hostname: Starvers
     ports:
       - 7200:7200
@@ -105,7 +105,7 @@ services:
       - policies=${policies}
       - graphdb_port=${graphdb_port}
       - jenatdb2_port=${jenatdb2_port}
-    entrypoint: ["/starvers_eval/scripts/5_evaluate/evaluate.sh"]
+    entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
     
   visualize:
     build: 
@@ -117,24 +117,9 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/figures
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
-      - ./scripts_dev/6_visualize:/starvers_eval/scripts/6_visualize # move to image after development has finished
+      - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
     environment:
       - policies=${policies}  
       - datasets=${datasets}
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_visualize/visualize.py"]
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
-  
-  # Standalone service only for testing.
-  start_jena:
-    image: stain/jena-fuseki:4.0.0
-    restart: unless-stopped
-    volumes: 
-      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ${base_host_dir}/databases:/starvers_eval/databases
-    environment:
-      - policies=${policies}  
-      - datasets=${datasets}
-      - db_dir=/starvers_eval/databases/jenatdb2
-      - JVM_ARGS='-Xmx90g -Xms90g'
-    ports:
-      - 3030:3030

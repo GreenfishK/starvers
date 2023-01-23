@@ -26,7 +26,7 @@ RUN mkdir -p /starvers_eval/configs
 RUN mkdir -p /starvers_eval/scripts/1_download
 RUN mkdir -p /starvers_eval/scripts/2_preprocess
 RUN mkdir -p /starvers_eval/scripts/3_ingest
-RUN mkdir -p /starvers_eval/scripts/4_generate_queries
+RUN mkdir -p /starvers_eval/scripts/4_construct_queries
 RUN mkdir -p /starvers_eval/scripts/5_evaluation
 RUN mkdir -p /starvers_eval/scripts/6_visualization
 
@@ -42,18 +42,17 @@ COPY raw_queries /starvers_eval/queries/raw_queries
 
 #COPY scripts_dev/1_download/download_data.sh /starvers_eval/scripts/1_download
 
-#COPY scripts_dev/2_preprocess/start_graphdb.sh /starvers_eval/scripts/2_preprocess
-#COPY scripts_dev/2_preprocess/start_jenatdb2.sh /starvers_eval/scripts/2_preprocess
-#COPY scripts_dev/2_preprocess/construct_datasets.py /starvers_eval/scripts/2_preprocess
-#COPY scripts_dev/2_preprocess/clean_raw_datasets.sh /starvers_eval/scripts/2_preprocess
-#COPY scripts_dev/2_preprocess/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/2_preprocess
+#COPY scripts_dev/2_clean_raw_datasaets/clean_raw_datasets.sh /starvers_eval/scripts/2_clean_raw_datasaets
+#COPY scripts_dev/2_clean_raw_datasaets/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /starvers_eval/scripts/2_clean_raw_datasaets
 
-#COPY scripts_dev/3_ingest /starvers_eval/scripts/3_ingest
+#COPY scripts_dev/3_construct_datasets /starvers_eval/scripts/3_construct_datasets
 
-#COPY scripts_dev/4_generate_queries /starvers_eval/scripts/4_generate_queries
+#COPY scripts_dev/4_ingest /starvers_eval/scripts/4_ingest
 
-#COPY scripts_dev/5_evaluate/query.py /starvers_eval/scripts/5_evaluate
-#COPY scripts_dev/5_evaluate/evaluate.sh /starvers_eval/scripts/5_evaluate
+#COPY scripts_dev/5_construct_queries /starvers_eval/scripts/5_construct_queries
+
+#COPY scripts_dev/6_evaluate/query.py /starvers_eval/scripts/6_evaluate
+#COPY scripts_dev/6_evaluate/evaluate.sh /starvers_eval/scripts/6_evaluate
 
 # TODO: add visualization
 
