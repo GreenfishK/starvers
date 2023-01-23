@@ -78,7 +78,8 @@ ENV GDB_JAVA_OPTS='\
 
 # Set jenatdb2 environment variables
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JAVA_OPTIONS="-Xmx90g -Xms90g"
+# ENV _JAVA_OPTIONS="-Xmx90g -Xms90g"
+ENV JVM_ARGS='-Xms90g -Xmx90g'
 ENV ADMIN_PASSWORD=starvers
 
 # Docker knowledge
