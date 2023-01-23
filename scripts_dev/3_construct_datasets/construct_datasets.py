@@ -85,11 +85,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     """
     policy = "tb_rs_sr"
     repository = policy + "_" + dataset
-    triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/2_preprocess/start_graphdb.sh',
+    triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_graphdb.sh',
                                         'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
                                         'shutdown_process': '/opt/java/openjdk/bin/java'},
-                            'jenatdb2': {'start_script': '/starvers_eval/scripts/2_preprocess/start_jenatdb2.sh',
+                            'jenatdb2': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_jenatdb2.sh',
                                         'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
                                         'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
@@ -206,7 +206,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     logging.info("Shutting down {0} server and removing database files.".format(triple_store.name))
     subprocess.run(["pkill", "-f", "{0}".format(configs['shutdown_process'])])
-    shutil.rmtree("/starvers_eval/databases/preprocess/", ignore_errors=True)
+    shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
     shutil.rmtree("/run/configuration", ignore_errors=True)
 
   
@@ -240,7 +240,7 @@ def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version
     sub_prefixes, ic0 = split_prefixes_dataset(ic0_raw)
     max_version_digits = len(str(last_version))
 
-    template = open("/starvers_eval/scripts/2_preprocess/templates/cbng.txt", "r").read()
+    template = open("/starvers_eval/scripts/3_construct_datasets/templates/cbng.txt", "r").read()
     cbng_dataset = cbng_dataset + template.format(str(0).zfill(max_version_digits), ic0, "")
 
     # build list (version, filename_added, filename_deleted)
@@ -311,7 +311,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
     """
 
     logging.info("Constructing the ICNG dataset with ICs as named graphs.")
-    template = open("/starvers_eval/scripts/2_preprocess/templates/icng.txt", "r").read()
+    template = open("/starvers_eval/scripts/3_construct_datasets/templates/icng.txt", "r").read()
     if not os.path.exists(source):
         os.makedirs(source)
 
@@ -330,11 +330,11 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.close()
 
 ############################################# Logging #############################################
-if not os.path.exists('/starvers_eval/output/logs/preprocess'):
-    os.makedirs('/starvers_eval/output/logs/preprocess')
-with open('/starvers_eval/output/logs/preprocess/construct_datasets.txt', "w") as log_file:
+if not os.path.exists('/starvers_eval/output/logs/construct_datasets'):
+    os.makedirs('/starvers_eval/output/logs/construct_datasets')
+with open('/starvers_eval/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/preprocess/construct_datasets.txt", 
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/construct_datasets/construct_datasets.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 

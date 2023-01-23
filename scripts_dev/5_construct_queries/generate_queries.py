@@ -66,11 +66,11 @@ def main():
     vers_ts = init_version_timestamp
 
     ############################################# Logging ###############################################################
-    if not os.path.exists('/starvers_eval/output/logs/generate_queries'):
-        os.makedirs('/starvers_eval/output/logs/generate_queries')
-    with open('/starvers_eval/output/logs/generate_queries/generate_queries.txt', "w") as log_file:
+    if not os.path.exists('/starvers_eval/output/logs/construct_queries'):
+        os.makedirs('/starvers_eval/output/logs/construct_queries')
+    with open('/starvers_eval/output/logs/construct_queries/construct_queries.txt', "w") as log_file:
         log_file.write("")
-    logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/generate_queries/generate_queries.txt", 
+    logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/construct_queries/construct_queries.txt", 
                                                     encoding='utf-8', mode='a+')],
                         format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                         datefmt="%F %A %T", 
