@@ -21,8 +21,6 @@ services:
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-      - ${base_host_dir}/configs:/starvers_eval/configs
-      - ${base_host_dir}/databases:/starvers_eval/databases
       - ./scripts_dev/2_clean_raw_datasets:/starvers_eval/scripts/2_clean_raw_datasets # move to image after development has finished
     environment:
       - datasets=${datasets}
@@ -37,6 +35,7 @@ services:
     volumes:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/configs:/starvers_eval/configs
       - ${base_host_dir}/databases/construct_datasets:/starvers_eval/databases/construct_datasets
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
