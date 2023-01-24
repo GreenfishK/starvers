@@ -105,6 +105,22 @@ services:
       - graphdb_port=${graphdb_port}
       - jenatdb2_port=${jenatdb2_port}
     entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
+
+  verify_results:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: final_stage
+    image: starvers_eval
+    volumes:
+      - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
+      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
+    environment:
+      - triple_stores=${triple_stores}
+      - policies=${policies}
+      - datasets=${datasets}
+    entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
+    command: ["$triple_stores", "$policies", "$datasets"]
     
   visualize:
     build: 
