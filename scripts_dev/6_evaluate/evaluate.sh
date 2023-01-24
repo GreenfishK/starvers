@@ -11,7 +11,7 @@ log_file=/starvers_eval/output/logs/evaluate/query.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 mkdir -p /starvers_eval/output/logs/evaluate/
-> log_file
+> $log_file
 > /starvers_eval/output/measurements/time.csv
 
 # main loop
