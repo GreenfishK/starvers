@@ -11,7 +11,7 @@ log_file_jena=/starvers_eval/output/logs/ingest/ingestion_jena.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
-echo "triple_store;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
+echo "triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Set variables
@@ -139,7 +139,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
             cat $log_file_graphdb | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
-            echo "GraphDB;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+            echo "graphdb;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
         done
     done
 fi
@@ -276,7 +276,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
             cat $log_file_jena | grep -v "\[.*\] DEBUG"
             disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
-            echo "JenaTDB2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+            echo "Jenatdb2;${policy};${dataset};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
         done
     done
 fi
