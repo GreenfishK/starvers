@@ -16,10 +16,6 @@ from datetime import datetime
 from datetime import timedelta, timezone
 
 ############################################# Logging ###################################################################
-if not os.path.exists('/starvers_eval/output/logs/evaluate'):
-    os.makedirs('/starvers_eval/output/logs/evaluate')
-with open('/starvers_eval/output/logs/evaluate/query.txt', "w") as log_file:
-    log_file.write("")
 logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/evaluate/query.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
