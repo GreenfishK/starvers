@@ -167,6 +167,7 @@ for query_set in query_sets:
     for query_version in range(query_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
         snapshot_ts = init_version_timestamp + timedelta(seconds=query_version)
+        current_query_version = query_version
 
         for query_file_name in os.listdir(query_set_version):
             logger.info("Processing query {0}".format(query_file_name))
@@ -253,11 +254,13 @@ for query_set in query_sets:
                 
                 # Query all changesets from the triplestore until version :query_version 
                 # ordered by change set versions
-                start = time.time()
-                result = engine.query()
-                snapshot_g = build_snapshot(change_sets=result.convert())
-                end = time.time()
-                snapshot_creation_time = end - start
+                if current_query_version == query_version:
+                    start = time.time()
+                    result = engine.query()
+                    snapshot_g = build_snapshot(change_sets=result.convert())
+                    end = time.time()
+                    snapshot_creation_time = end - start
+                    current_query_version = None
 
                 # Query from in-memory snapshot at version :query_version
                 start = time.time()
