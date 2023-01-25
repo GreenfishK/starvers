@@ -209,12 +209,11 @@ for query_set in query_sets:
                                     }} order by ?graph""".format(str(query_version).zfill(len(str(query_versions))))
                 engine.setQuery(change_sets_until_v)
                 
-                start = time.time()
-                # Query all changesets until version :query_version ordered by change set versions
-                result = engine.query()
-                
-                # Build the snapshot at version :query_version by adding triples from the add-set and deleting triples from the del-set consecutively 
                 def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
+                    """
+                    Build the snapshot at version :query_version by adding triples from the add-set 
+                    and deleting triples from the del-set, consecutively.
+                    """
                     graph = Graph()
 
                     if not "head" in change_sets or not "vars" in change_sets["head"]:
@@ -224,11 +223,16 @@ for query_set in query_sets:
                         return graph
 
                     for r in change_sets["results"]["bindings"]:
+                        # parse subject
                         if r['s']['type'] == "uri":
                             s = URIRef(r['s']['value'])
                         else:
                             s = BNode(r['s']['value'])
+
+                        # parse predicate
                         p = URIRef(r['p']['value'])
+
+                        # parse object
                         if r['o']['type']  == "uri":
                             o = URIRef(r['o']['value'])
                         elif r['o']['type'] == "blank":
@@ -238,17 +242,24 @@ for query_set in query_sets:
                             lang = r['o'].get("xml:lang", None)
                             datatype = r['o'].get("datatype", None)
                             o = Literal(value, lang=lang, datatype=datatype)
+                        
+                        # Add or remove from graph, depending on which change set the triple comes from
                         if r['graph']['value'].split('/')[-1].startswith('added'):
                             graph.add((s, p, o))
                         else:
                             graph.remove((s, p, o))
+
                     return graph
                 
+                # Query all changesets from the triplestore until version :query_version 
+                # ordered by change set versions
+                start = time.time()
+                result = engine.query()
                 snapshot_g = build_snapshot(change_sets=result.convert())
                 end = time.time()
-                snapshot_creation_time = end - start # Actually snapshot construction time
+                snapshot_creation_time = end - start
 
-                # Query from snapshot at version :query_version
+                # Query from in-memory snapshot at version :query_version
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
                 end = time.time()
