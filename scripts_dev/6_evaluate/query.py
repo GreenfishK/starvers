@@ -95,7 +95,7 @@ init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
-logger.info("Query " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
+logger.info("Evaluate " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
 
 def to_list(result: Wrapper.QueryResult) -> list:
     """
