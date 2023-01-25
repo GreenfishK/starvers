@@ -261,12 +261,14 @@ for query_set in query_sets:
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
+                logger.info("Snapshot creation time: " + str(snapshot_creation_time))
 
                 # Query from in-memory snapshot at version :query_version
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
                 end = time.time()
                 execution_time = end - start
+                logger.info("Eecution time: " + str(execution_time))
 
                 # Create output directory and save result set
                 result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
