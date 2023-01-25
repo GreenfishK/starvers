@@ -159,6 +159,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             # Further potential replacements: 
             # replace(r"\"", '\\"')
             # replace(r"\x", r"\\x")
+
+            # Parse subject at nesting level 2
             if r['s']['type'] == "uri":
                 s = "<" + r['s']['value'] + ">"
             else:
@@ -168,7 +170,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                   .replace("\n","\\n") \
                   .replace("\t", "\\t") \
                   .replace("\r", "\\r")
+            # Parse predicate at nesting level 2
             p = URIRef(r['p']['value'])
+
+            # Parse object at nesting level 2
             if r['o']['type']  == "uri":
                 o = "<" + r['o']['value'] + ">"
             elif r['o']['type'] == "blank":
@@ -188,15 +193,22 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 elif datatype:
                     o+="^^" + "<" + datatype + ">"
             
+            # Parse predicate at nesting level 1
             x = URIRef(r['x']['value'])
+
+            # Parse object at nesting level 1
             value = r['y']["value"]
             datatype = r['y'].get("datatype", None)
             y = '"' + value + '"^^' + "<" + datatype + ">"
             
+            # Parse predicate at nesting level 0
             a = URIRef(r['a']['value'])
+
+            # Parse object at nesting level 0
             value = r['b']["value"]
             datatype = r['b'].get("datatype", None)
             b = '"' + value + '"^^' + "<" + datatype + ">"
+            
             rdf_star_ds_file.write("<< << " + s + " " + p.n3() + " " + o  + ">>" + x.n3()  + " " + y  + " >>" + a.n3()  + " " + b + " .\n")
     
     cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
