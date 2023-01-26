@@ -6,6 +6,8 @@ import sys
 from datetime import datetime, timezone, timedelta
 import shutil
 import logging
+import re
+
 
 def split_solution_modifiers_query(query: str) -> list:
     """
@@ -14,8 +16,9 @@ def split_solution_modifiers_query(query: str) -> list:
     * Offset
     * Limit
     """
-    return ["", query]
-    # TODO: implement this
+    query_without_solution_modifiers = re.sub(r'(ORDER BY.*|LIMIT.*|OFFSET.*)', '', query, flags=re.DOTALL)
+    solution_modifiers = ' '.join(re.findall(r'(ORDER BY.*|LIMIT.*|OFFSET.*)', query, flags=re.DOTALL))
+    return query_without_solution_modifiers, solution_modifiers
 
 
 
@@ -114,7 +117,7 @@ def main():
                             raw_queries = [file.read()]
                         for i, raw_query in enumerate(raw_queries):
                             prefixes, raw_query = split_prefixes_query(raw_query)
-
+                            modifiers, raw_query = split_solution_modifiers_query(raw_query)
                             queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
                             output_query = ""
                             for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
@@ -123,9 +126,11 @@ def main():
                                         template = templateFile.read()
                                         if policy == "cb_sr_ng":
                                             max_version_digits = len(str(query_versions))
-                                            output_query = template.format(prefixes, str(query_version).zfill(max_version_digits), raw_query)
+                                            output_query = template.format(prefixes, str(query_version).zfill(max_version_digits),
+                                                raw_query, modifiers)
                                         else:
-                                            output_query = template.format(prefixes, str(query_version), raw_query)
+                                            output_query = template.format(prefixes, str(query_version),
+                                                raw_query, modifiers)
                                         templateFile.close()
                                     with open(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                         if policy in ["tb_sr_rs"]:
