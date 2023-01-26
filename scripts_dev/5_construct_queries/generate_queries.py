@@ -21,15 +21,15 @@ def main():
         "ic_mr_tr":{
             "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
             "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
-            "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
-            "bearb/lookup": {'output_dirs':{"bearb/lookup": 1}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 1, "bearb_hour/join": 1}, 'template': "ic/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 1, "bearb_hour/lookup": 1}, 'template': "ictr/ts"},
             "bearc": {'output_dirs':{ "bearc/complex": 1}, 'template': "ic/sparql"},
         },
         "cb_mr_tr":{
             "beara/high": {'output_dirs':{"beara/high": 1}, 'template': "ictr/ts"},
             "beara/low": {'output_dirs':{"beara/low": 1}, 'template': "ictr/ts"},
-            "bearb/join": {'output_dirs':{ "bearb/join": 1}, 'template': "ic/bgp"},
-            "bearb/lookup": {'output_dirs':{ "bearb/lookup": 1}, 'template': "ictr/ts"},
+            "bearb/join": {'output_dirs':{"bearb_day/join": 1, "bearb_hour/join": 1}, 'template': "ic/bgp"},
+            "bearb/lookup": {'output_dirs':{"bearb_day/lookup": 1, "bearb_hour/lookup": 1}, 'template': "ictr/ts"},
             "bearc": {'output_dirs':{"bearc/complex": 1}, 'template': "ic/sparql"},
         },
         "ic_sr_ng":{
