@@ -18,7 +18,7 @@ def split_solution_modifiers_query(query: str) -> list:
     """
     query_without_solution_modifiers = re.sub(r'(ORDER BY.*|LIMIT.*|OFFSET.*)', '', query, flags=re.DOTALL)
     solution_modifiers = ' '.join(re.findall(r'(ORDER BY.*|LIMIT.*|OFFSET.*)', query, flags=re.DOTALL))
-    return query_without_solution_modifiers, solution_modifiers
+    return solution_modifiers, query_without_solution_modifiers
 
 
 
