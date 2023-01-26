@@ -7,6 +7,17 @@ from datetime import datetime, timezone, timedelta
 import shutil
 import logging
 
+def split_solution_modifiers_query(query: str) -> list:
+    """
+    Separates following solution modifiers from the query:
+    * Order by
+    * Offset
+    * Limit
+    """
+    return ["", query]
+    # TODO: implement this
+
+
 
 def main():
     ############################################# Parameters ################################################################
@@ -103,6 +114,7 @@ def main():
                             raw_queries = [file.read()]
                         for i, raw_query in enumerate(raw_queries):
                             prefixes, raw_query = split_prefixes_query(raw_query)
+
                             queryCounter =  i if relativeTempLoc.split('/')[1] == 'ts' else k
                             output_query = ""
                             for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
