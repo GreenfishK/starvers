@@ -264,7 +264,7 @@ for query_set in query_sets:
                     current_query_version = None
 
                 # Query from in-memory snapshot at version :query_version
-                logger.info("Querying snapshot (rdflib graph object) with query {1}". format(query_file_name))
+                logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
                 end = time.time()
