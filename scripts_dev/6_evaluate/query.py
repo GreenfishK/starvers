@@ -254,7 +254,7 @@ for query_set in query_sets:
                 # Query all changesets from the triplestore until version :query_version 
                 # ordered by change set versions
                 if current_query_version == query_version:
-                    logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions)))),
+                    logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
                                                                                        engine.endpoint)
                     start = time.time()
                     result = engine.query()
