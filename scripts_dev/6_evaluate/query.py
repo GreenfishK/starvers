@@ -192,10 +192,10 @@ for query_set in query_sets:
         current_query_version = query_version
 
         for query_file_name in os.listdir(query_set_version):
-            logger.info("Processing query {0}".format(query_file_name))
             execution_time = 0
             result_set_creation_time = 0
 
+            logger.info("Read query file {0} and pass it to the engine.".format(query_file_name))
             file = open(query_set_version + "/" + query_file_name, "r")
             query_text = file.read()
             engine.setQuery(query_text)
