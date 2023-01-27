@@ -210,7 +210,7 @@ for query_set in query_sets:
                 end = time.time()
                 execution_time = end - start
                     
-                # Create output directory and save result set
+                logger.info("Serializing results.")
                 result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
@@ -280,10 +280,7 @@ for query_set in query_sets:
                                                                                        engine.endpoint))
                     start = time.time()
                     result = engine.query()
-                    snapshot_tmp = build_snapshot(change_sets=result.convert())
-                    snapshot_tmp.serialize("snapshot.nt", format="nt")
-                    snapshot_g = Graph()
-                    snapshot_g.parse("snapshot.nt")
+                    snapshot_g = build_snapshot(change_sets=result.convert())
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
@@ -298,7 +295,7 @@ for query_set in query_sets:
                 end = time.time()
                 execution_time = end - start
 
-                # Create output directory and save result set
+                logger.info("Serializing results.")
                 result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
                 Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                 query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
@@ -315,7 +312,7 @@ for query_set in query_sets:
                     end = time.time()
                     execution_time = end - start
                     
-                    # Create output directory and save result set
+                    logger.info("Serializing results.")
                     result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(repository)
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
