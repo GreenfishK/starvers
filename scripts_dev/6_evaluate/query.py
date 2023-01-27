@@ -280,19 +280,17 @@ for query_set in query_sets:
                                                                                        engine.endpoint))
                     start = time.time()
                     result = engine.query()
-                    snapshot_g = build_snapshot(change_sets=result.convert())
+                    snapshot_tmp = build_snapshot(change_sets=result.convert())
+                    snapshot_tmp.serialize("snapshot.nt", format="nt")
+                    snapshot_g = Graph()
+                    snapshot_g.parse("snapshot.nt")
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
-                    
-                    # only for debugging
-                    cnt_triples_result = snapshot_g.query("Select (count(*) as ?cnt) {?s ?p ?o}")
-                    for row in cnt_triples_result:
-                        logger.info(row.cnt)
 
-                if query_text.startswith("# Exclude"):
-                    logger.info("Exclude query {0}". format(query_file_name))
-                    continue
+                #if query_text.startswith("# Exclude"):
+                #    logger.info("Exclude query {0}". format(query_file_name))
+                #    continue
 
                 logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
                 start = time.time()
