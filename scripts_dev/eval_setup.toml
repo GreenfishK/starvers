@@ -129,7 +129,7 @@
 
 [bearc]
     snapshot_versions = 33
-    [bearb_day.repositories]
+    [bearc.repositories]
         ic_mr_tr = 33
         cb_mr_tr = 66
         ic_sr_ng = 1
