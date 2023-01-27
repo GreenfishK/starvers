@@ -112,7 +112,7 @@ for i, query_set_dir in enumerate(os.listdir(final_queries + "/" + "cb_sr_ng/bea
     if not query_9_text.startswith("# Exclude"):
         query_9_text = "# Exclude\n" + query_9_text
         with open(base_dir + "/" + query_set_dir + "/" + query_9_file_name, "w") as query_9_file:
-            query_8_file.write(query_9_text)
+            query_9_text.write(query_9_text)
 
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
