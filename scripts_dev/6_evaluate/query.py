@@ -92,6 +92,27 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
+###################################### Preprocess ######################################
+# Queries query8_q5_v0.txt and query9_q0_v0.txt of BEARC's complex query set get stuck during execution against 
+# rdflib's Graph() for the change-based policy (cb_sr_ng). That's why we exclude them only for this policy.
+base_dir = final_queries + "/" + "cb_sr_ng/bearc/complex"
+for i, query_set_dir in enumerate(os.listdir(final_queries + "/" + "cb_sr_ng/bearc/complex")):
+    query_8_file_name = "query8_q5_v{0}.txt".format(str(i), "r")
+    with open(base_dir + "/" + query_set_dir + "/" + query_8_file_name) as query_8_file:
+        query_8_text = query_8_file.read()
+    if not query_8_text.startswith("# Exclude"):
+        query_8_text = "# Exclude\n" + query_8_text
+        with open(base_dir + "/" + query_set_dir + "/" + query_8_file_name, "w") as query_8_file:
+            query_8_file.write(query_8_text)
+
+    query_9_file_name = "query9_q0_v{0}.txt".format(str(i), "r")
+    with open(base_dir + "/" + query_set_dir + "/" + query_9_file_name) as query_9_file:
+        query_9_text = query_9_file.read()
+    if not query_9_text.startswith("# Exclude"):
+        query_9_text = "# Exclude\n" + query_9_text
+        with open(base_dir + "/" + query_set_dir + "/" + query_9_file_name, "w") as query_9_file:
+            query_8_file.write(query_9_text)
+
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
@@ -263,7 +284,10 @@ for query_set in query_sets:
                     snapshot_creation_time = end - start
                     current_query_version = None
 
-                # Query from in-memory snapshot at version :query_version
+                if query_text.startswith("# Exclude"):
+                    logger.info("Exclude query {0}". format(query_file_name))
+                    continue
+
                 logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
