@@ -200,7 +200,6 @@ for query_set in query_sets:
             elif policy == "cb_sr_ng":
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
-                logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
                                         graph ?graph 
                                         {{
@@ -255,6 +254,7 @@ for query_set in query_sets:
                 # Query all changesets from the triplestore until version :query_version 
                 # ordered by change set versions
                 if current_query_version == query_version:
+                    logger.info("Build snapshot version {0}". format(str(query_version).zfill(len(str(query_versions)))))
                     start = time.time()
                     result = engine.query()
                     snapshot_g = build_snapshot(change_sets=result.convert())
@@ -263,6 +263,7 @@ for query_set in query_sets:
                     current_query_version = None
 
                 # Query from in-memory snapshot at version :query_version
+                logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
                 end = time.time()
