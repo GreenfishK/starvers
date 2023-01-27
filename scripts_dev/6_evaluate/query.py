@@ -255,7 +255,7 @@ for query_set in query_sets:
                 # ordered by change set versions
                 if current_query_version == query_version:
                     logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
-                                                                                       engine.endpoint)
+                                                                                       engine.endpoint))
                     start = time.time()
                     result = engine.query()
                     snapshot_g = build_snapshot(change_sets=result.convert())
