@@ -287,7 +287,7 @@ for query_set in query_sets:
                     # only for debugging
                     cnt_triples_result = snapshot_g.query("Select (count(*) as ?cnt) {?s ?p ?o}")
                     for row in cnt_triples_result:
-                        print(row.cnt)
+                        logger.info(row.cnt)
 
                 if query_text.startswith("# Exclude"):
                     logger.info("Exclude query {0}". format(query_file_name))
