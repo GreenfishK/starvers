@@ -283,6 +283,11 @@ for query_set in query_sets:
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
+                    
+                    # only for debugging
+                    cnt_triples_result = snapshot_g.query("Select (count(*) as ?cnt) {?s ?p ?o}")
+                    for row in cnt_triples_result:
+                        print(row.cnt)
 
                 if query_text.startswith("# Exclude"):
                     logger.info("Exclude query {0}". format(query_file_name))
