@@ -95,6 +95,7 @@ init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 ###################################### Preprocess ######################################
 # Queries query8_q5_v0.txt and query9_q0_v0.txt of BEARC's complex query set get stuck during execution against 
 # rdflib's Graph() for the change-based policy (cb_sr_ng). That's why we exclude them only for this policy.
+logger.info("Exclude queries query8 and query9 from the BEARC complex query set for the cb_sr_ng policy.")
 base_dir = final_queries + "/" + "cb_sr_ng/bearc/complex"
 for i, query_set_dir in enumerate(os.listdir(final_queries + "/" + "cb_sr_ng/bearc/complex")):
     query_8_file_name = "query8_q5_v{0}.txt".format(str(i), "r")
