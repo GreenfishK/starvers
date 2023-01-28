@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 import shutil
 import logging
 import re
+import tomli
 
 
 def split_solution_modifiers_query(query: str) -> list:
@@ -75,6 +76,8 @@ def main():
             "bearc": {'output_dirs':{"bearc/complex": 33}, 'template': "ictr/sparql"},
         }
     }
+    #with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    #    queries = tomli.load(config_file)
     LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
     init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
     vers_ts = init_version_timestamp
