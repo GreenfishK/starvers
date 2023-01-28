@@ -92,28 +92,6 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-###################################### Preprocess ######################################
-# Queries query8_q5_v0.txt and query9_q0_v0.txt of BEARC's complex query set get stuck during execution against 
-# rdflib's Graph() for the change-based policy (cb_sr_ng). That's why we exclude them only for this policy.
-logger.info("Exclude queries query8 and query9 from the BEARC complex query set for the cb_sr_ng policy.")
-base_dir = final_queries + "/" + "cb_sr_ng/bearc/complex"
-for i, query_set_dir in enumerate(os.listdir(final_queries + "/" + "cb_sr_ng/bearc/complex")):
-    query_8_file_name = "query8_q5_v{0}.txt".format(str(i), "r")
-    with open(base_dir + "/" + query_set_dir + "/" + query_8_file_name) as query_8_file:
-        query_8_text = query_8_file.read()
-    if not query_8_text.startswith("# Exclude"):
-        query_8_text = "# Exclude\n" + query_8_text
-        with open(base_dir + "/" + query_set_dir + "/" + query_8_file_name, "w") as query_8_file:
-            query_8_file.write(query_8_text)
-
-    query_9_file_name = "query9_q0_v{0}.txt".format(str(i), "r")
-    with open(base_dir + "/" + query_set_dir + "/" + query_9_file_name) as query_9_file:
-        query_9_text = query_9_file.read()
-    if not query_9_text.startswith("# Exclude"):
-        query_9_text = "# Exclude\n" + query_9_text
-        with open(base_dir + "/" + query_set_dir + "/" + query_9_file_name, "w") as query_9_file:
-            query_9_file.write(query_9_text)
-
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
 # aggregation on tripleStore and version level
@@ -277,7 +255,7 @@ for query_set in query_sets:
                 # ordered by change set versions
                 if current_query_version == query_version:
                     logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
-                                                                                       engine.endpoint))
+                                                           engine.endpoint))
                     start = time.time()
                     result = engine.query()
                     snapshot_g = build_snapshot(change_sets=result.convert())
@@ -285,20 +263,19 @@ for query_set in query_sets:
                     snapshot_creation_time = end - start
                     current_query_version = None
 
-                #if query_text.startswith("# Exclude"):
-                #    logger.info("Exclude query {0}". format(query_file_name))
-                #    continue
-
                 logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
                 start = time.time()
                 query_result = snapshot_g.query(query_text)
                 end = time.time()
                 execution_time = end - start
 
-                logger.info("Serializing results.")
-                result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
-                Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
+                if query_text.startswith("# Exclude"):
+                    logger.info("Dont serialize query results due to issue in rdflib's serializer with this query: {0}". format(query_file_name))
+                else:
+                    logger.info("Serializing results.")
+                    result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
+                    Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                    query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
                 
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
             

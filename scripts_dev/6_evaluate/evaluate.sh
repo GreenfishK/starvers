@@ -14,6 +14,20 @@ mkdir -p /starvers_eval/output/logs/evaluate/
 > $log_file
 > /starvers_eval/output/measurements/time.csv
 
+# Exclude queries
+echo "Tag queries query8 and query9 from the BEARC complex query set 
+for the cb_sr_ng policy for excluding their result sets 
+from serialization." >> $log_file
+root_dir="/starvers_eval/queries/final_queries/cb_sr_ng/bearc/complex"
+
+for subdir in $(ls -d ${root_dir}/*); do
+    for file in ${subdir}/query8_q5_v* ${subdir}/query9_q0_v*; do
+        if ! head -n 1 ${file} | grep -q "# Exclude"; then
+            sed -i '1i\# Exclude' ${file}
+        fi
+    done
+done
+
 # main loop
 for triple_store in ${triple_stores[@]}; do
 
