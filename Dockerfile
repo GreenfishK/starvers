@@ -40,6 +40,7 @@ COPY --from=install_python_modules /starvers_eval/python_venv /starvers_eval/pyt
 
 # Copy raw queries and scripts to /starvers_eval 
 COPY raw_queries /starvers_eval/queries/raw_queries
+COPY scripts_dev/eval_setup.toml /starvers_eval/configs
 
 #COPY scripts_dev/1_download/download_data.sh /starvers_eval/scripts/1_download
 
