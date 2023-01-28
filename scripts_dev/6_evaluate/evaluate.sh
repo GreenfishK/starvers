@@ -40,7 +40,7 @@ for triple_store in ${triple_stores[@]}; do
                 export PATH=/usr/local/openjdk-11/bin:$PATH
 
                 # Start database server and run in background
-                cp /starvers_eval/configs/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
+                cp /starvers_eval/configs/jenatdb2/${policy}_${dataset}.ttl /run/configuration
                 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up
