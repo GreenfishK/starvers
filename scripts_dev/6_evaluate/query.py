@@ -204,8 +204,9 @@ for query_set in query_sets:
                                         graph ?graph 
                                         {{
                                             ?s ?p ?o .
-                                            filter (str(?graph) <= "http://starvers_eval/v{0}/added" || str(?graph) <= "http://starvers_eval/v{0}/deleted")
                                         }}
+                                        filter (str(?graph) <= "http://starvers_eval/v{0}/added" || str(?graph) <= "http://starvers_eval/v{0}/deleted")
+
                                     }} order by ?graph""".format(str(query_version).zfill(len(str(query_versions))))
                 engine.setQuery(change_sets_until_v)
                 
