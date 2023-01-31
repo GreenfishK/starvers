@@ -11,36 +11,22 @@
     [beara.query_sets]
         [beara.query_sets.high]
             output_dir = "beara/high"
-            [beara.query_sets.high.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 58
-                cb_sr_ng = 58
-                tb_sr_ng = 58
-                tb_sr_rs = 58
-            [beara.query_sets.high.templates]
-                ic_mr_tr = "ictr/ts"
-                cb_mr_tr = "ictr/ts"
-                ic_sr_ng = "icng/ts"
-                cb_sr_ng = "ictr/ts"
-                tb_sr_ng = "tbng/ts"
-                tb_sr_rs = "ictr/ts"
+            [beara.query_sets.high.policies]
+                ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                ic_sr_ng = {versions = 58, template = "icng/ts"}
+                cb_sr_ng = {versions = 58, template = "ictr/ts"}
+                tb_sr_ng = {versions = 58, template = "tbng/ts"}
+                tb_sr_rs = {versions = 58, template = "ictr/ts"}
         [beara.query_sets.low]
             output_dir = "beara/low"
-            [beara.query_sets.low.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 58
-                cb_sr_ng = 58
-                tb_sr_ng = 58
-                tb_sr_rs = 58
-            [beara.query_sets.low.templates]
-                ic_mr_tr = "ictr/ts"
-                cb_mr_tr = "ictr/ts"
-                ic_sr_ng = "icng/ts"
-                cb_sr_ng = "ictr/ts"
-                tb_sr_ng = "tbng/ts"
-                tb_sr_rs = "ictr/ts"
+            [beara.query_sets.low.policies]
+                ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                ic_sr_ng = {versions = 58, template = "icng/ts"}
+                cb_sr_ng = {versions = 58, template = "ictr/ts"}
+                tb_sr_ng = {versions = 58, template = "tbng/ts"}
+                tb_sr_rs = {versions = 58, template = "ictr/ts"}
 
 [bearb_hour]
     snapshot_versions = 1299
@@ -54,36 +40,22 @@
     [bearb_hour.query_sets]
         [bearb_hour.query_sets.join]
             output_dir = "bearb_hour/join"
-            [bearb_hour.query_sets.join.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 1299
-                cb_sr_ng = 1299
-                tb_sr_ng = 1299
-                tb_sr_rs = 1299
-            [bearb_hour.query_sets.join.templates]
-                ic_mr_tr = "ic/bgp"
-                cb_mr_tr = "ic/bgp"
-                ic_sr_ng = "icng/bgp"
-                cb_sr_ng = "ictr/bgp"
-                tb_sr_ng = "tbng/bgp"
-                tb_sr_rs = "ictr/bgp"
+            [bearb_hour.query_sets.join.policies]
+                ic_mr_tr = {versions = 1, template = "ic/bgp"}
+                cb_mr_tr = {versions = 1, template = "ic/bgp"}
+                ic_sr_ng = {versions = 1299, template = "icng/bgp"}
+                cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
+                tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
+                tb_sr_rs = {versions = 1299, template = "ictr/bgp"}
         [bearb_hour.query_sets.lookup]
             output_dir = "bearb_hour/lookup"
-            [bearb_hour.query_sets.lookup.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 1299
-                cb_sr_ng = 1299
-                tb_sr_ng = 1299
-                tb_sr_rs = 1299
-            [bearb_hour.query_sets.lookup.templates]
-                ic_mr_tr = "ictr/ts"
-                cb_mr_tr = "ictr/ts"
-                ic_sr_ng = "icng/ts"
-                cb_sr_ng = "ictr/ts"
-                tb_sr_ng = "tbng/ts"
-                tb_sr_rs = "ictr/ts"
+            [bearb_hour.query_sets.lookup.policies]
+                ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                ic_sr_ng = {versions = 1299, template = "icng/ts"}
+                cb_sr_ng = {versions = 1299, template = "ictr/ts"}
+                tb_sr_ng = {versions = 1299, template = "tbng/ts"}
+                tb_sr_rs = {versions = 1299, template = "ictr/ts"}
 
 [bearb_day]
     snapshot_versions = 89
@@ -97,36 +69,22 @@
     [bearb_day.query_sets]
         [bearb_day.query_sets.join]
             output_dir = "bearb_day/join"
-            [bearb_day.query_sets.join.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 89
-                cb_sr_ng = 89
-                tb_sr_ng = 89
-                tb_sr_rs = 89
-            [bearb_day.query_sets.join.templates]
-                ic_mr_tr = "ic/bgp"
-                cb_mr_tr = "ic/bgp"
-                ic_sr_ng = "icng/bgp"
-                cb_sr_ng = "ictr/bgp"
-                tb_sr_ng = "tbng/bgp"
-                tb_sr_rs = "ictr/bgp"
+            [bearb_day.query_sets.join.policies]
+                ic_mr_tr = {versions = 1, template = "ic/bgp"}
+                cb_mr_tr = {versions = 1, template = "ic/bgp"}
+                ic_sr_ng = {versions = 1299, template = "icng/bgp"}
+                cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
+                tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
+                tb_sr_rs = {versions = 1299, template = "ictr/bgp"}
         [bearb_day.query_sets.lookup]
             output_dir = "bearb_day/lookup"
-            [bearb_day.query_sets.lookup.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 89
-                cb_sr_ng = 89
-                tb_sr_ng = 89
-                tb_sr_rs = 89
-            [bearb_day.query_sets.lookup.templates]
-                ic_mr_tr = "ictr/ts"
-                cb_mr_tr = "ictr/ts"
-                ic_sr_ng = "icng/ts"
-                cb_sr_ng = "ictr/ts"
-                tb_sr_ng = "tbng/ts"
-                tb_sr_rs = "ictr/ts"
+            [bearb_day.query_sets.lookup.policies]
+                ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                ic_sr_ng = {versions = 1299, template = "icng/ts"}
+                cb_sr_ng = {versions = 1299, template = "ictr/ts"}
+                tb_sr_ng = {versions = 1299, template = "tbng/ts"}
+                tb_sr_rs = {versions = 1299, template = "ictr/ts"}
 
 [bearc]
     snapshot_versions = 33
@@ -140,18 +98,11 @@
     [bearc.query_sets]
         [bearc.query_sets.complex]
             output_dir = "bearc/complex"
-            [bearc.query_sets.complex.query_set_versions]
-                ic_mr_tr = 1
-                cb_mr_tr = 1
-                ic_sr_ng = 33
-                cb_sr_ng = 33
-                tb_sr_ng = 33
-                tb_sr_rs = 33
-            [bearc.query_sets.complex.templates]
-                ic_mr_tr = "ic/sparql"
-                cb_mr_tr = "ic/sparql"
-                ic_sr_ng = "icng/sparql"
-                cb_sr_ng = "ictr/sparql"
-                tb_sr_ng = "tbng/sparql"
-                tb_sr_rs = "ictr/sparql"
+            [bearc.query_sets.complex.policies]
+                ic_mr_tr = {versions = 1, template = "ic/sparql"}
+                cb_mr_tr = {versions = 1, template = "ic/sparql"}
+                ic_sr_ng = {versions = 33, template = "icng/sparql"}
+                cb_sr_ng = {versions = 33, template = "ictr/sparql"}
+                tb_sr_ng = {versions = 33, template = "tbng/sparql"}
+                tb_sr_rs = {versions = 33, template = "ictr/sparql"}
        
