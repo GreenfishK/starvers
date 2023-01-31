@@ -1,3 +1,4 @@
+# TODO: Link all scripts to this golden source
 [beara]
     snapshot_versions = 58
     [beara.repositories]
