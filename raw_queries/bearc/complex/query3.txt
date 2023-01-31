@@ -1,0 +1,12 @@
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX vcard: <http://www.w3.org/2006/vcard/ns#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+{
+    ?dataset rdf:type dcat:Dataset .
+    ?dataset dcat:contactPoint ?contact .
+    ?contact vcard:fn ?name. 
+    OPTIONAL{
+        ?contact vcard:hasEmail ?email .
+  }
+}

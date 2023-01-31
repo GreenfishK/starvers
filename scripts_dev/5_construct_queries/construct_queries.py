@@ -26,9 +26,9 @@ def split_solution_modifiers_query(query: str) -> list:
 def main():
     ############################################# Parameters ################################################################
     # Directory contained in docker image
-    raw_queries_dir="/starvers_eval/queries/raw_queries/"
+    raw_queries_base="/starvers_eval/queries/raw_queries/"
     # Mounted directory
-    output_queries_dir="/starvers_eval/queries/final_queries/"
+    output_queries_base="/starvers_eval/queries/final_queries/"
 
     policies_cmd = sys.argv[1]
     policies = policies_cmd.split(" ")
@@ -97,43 +97,79 @@ def main():
     starvers_log.setLevel(logging.ERROR)
 
     ################################################## Generate queries ################################################# 
+
+    # Create directories from toml config file
+    # TODO: replace this out commented code with the code below once it is ready.
+    #
+    #for dataset, dataset_infos in queries_toml.items():
+    #    query_sets = dataset_infos['query_sets'].items()
+    #    for query_set_name, query_set in query_sets:
+    #        policy_infos = query_set['policies'].items()
+    #        for policy, infos in policy_infos:
+    #            for query_set_version in range(infos['versions']:
+    #                output_queries_dir_path = Path(output_queries_base + policy + "/" + dataset + "/" + query_set_name + "/" + str(query_set_version))
+    #                if output_queries_dir_path.exists():
+    #                    shutil.rmtree(output_queries_dir_path)
+    #                logging.info("Create directory {0}".format(output_queries_dir_path))
+    #                output_queries_dir_path.mkdir(parents=True, exist_ok=True)
+
+    #                logging.info("Create queries in {0} for {1}, {2}, {3}".format(output_queries_dir_path, policy, dataset, query_set_name))
+    #                raw_queries_dir_path = raw_queries_base + dataset + "/" + query_set_name
+    #                for k, queriesFile in enumerate(os.listdir(raw_queries_base + dataset + "/" + query_set_name)):
+    #                    if not os.path.isfile(raw_queries_dir_path + "/" + queriesFile):
+    #                        logging.error("No such file: " + raw_queries_dir_path + "/" + queriesFile)
+    #                    with open(raw_queries_dir_path + "/" + queriesFile, 'r') as file:
+    #                        template_relative_path = infos['template']
+    #                        if template_relative_path.split('/')[1] == 'ts':
+    #                            raw_queries = file.readlines()
+    #                        else:
+    #                            raw_queries = [file.read()]    
+    #                        # Iterate over file that holds multiple raw queries.
+    #                        for i, raw_query in enumerate(raw_queries):
+    #                            prefixes, raw_query = split_prefixes_query(raw_query)
+    #                            modifiers, raw_query = split_solution_modifiers_query(raw_query)
+    #                            queryCounter =  i if template_relative_path.split('/')[1] == 'ts' else k
+    #                            output_query = ""    
+    #                            # Read template and create query string
+    #                            with open(os.path.join(sys.path[0]) +"/templates/" + template_relative_path + ".txt", 'r') as templateFile:
+    #                                template = templateFile.read()
+    #                                if policy == "cb_sr_ng":
+    #                                    max_version_digits = len(str(query_versions))
+    #                                    output_query = template.format(prefixes, str(query_version).zfill(max_version_digits),
+    #                                        raw_query, modifiers)
+    #                                else:
+    #                                    output_query = template.format(prefixes, str(query_version),
+    #                                        raw_query, modifiers)
+    #                            # Write query string to file. For tb_sr_rs transform it to a timestamp-based rdfstar query first
+    #                            with open(output_queries_base + policy + "/" + dataset + "/" + query_set_name + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
+    #                                if policy in ["tb_sr_rs"]:
+    #                                    timestamped_output_query = timestamp_query(output_query, vers_ts)
+    #                                    output_file.write(timestamped_output_query[0])
+    #                                    vers_ts = vers_ts + timedelta(seconds=1)
+    #                                else:
+    #                                    output_file.write(output_query)            
+    #                   
+    #                
+    #
+
     for policy in policies:
         for querySet in queries[policy].keys():
             # create directories
             for output_dir, query_versions in queries[policy][querySet]['output_dirs'].items():
                 logging.info("For {0}, {1} create {2} directories.".format(policy, querySet, query_versions))
                 for query_version in range(query_versions):
-                    query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version))
+                    query_dir = Path(output_queries_base + policy + "/" + output_dir + "/" + str(query_version))
                     if query_dir.exists():
                         shutil.rmtree(query_dir)
                     query_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Create directories from toml config file
-            # TODO: replace the code above with this code once "Create query files" (code below) 
-            # is also linked to eval_setup.toml .
-            #
-            #for dataset_infos in queries_toml.values():
-            #    query_sets = dataset_infos['query_sets'].values()
-            #    for query_set in query_sets:
-            #        output_dir = query_set['output_dir']
-
-            #        policy_infos = query_set['policies'].items()
-            #        for policy, infos in policy_infos:
-            #            for query_set_version in range(infos['versions']:
-            #                query_dir = Path(output_queries_dir + policy + "/" + output_dir + "/" + str(query_set_version))
-            #                if query_dir.exists():
-            #                    shutil.rmtree(query_dir)
-            #                query_dir.mkdir(parents=True, exist_ok=True)
-            #                
-            #
-
 
             # Create query files
             logging.info("Create queries for {0}, {1}".format(policy, querySet))
-            pathToQueries = raw_queries_dir + querySet
-            for k, queriesFile in enumerate(os.listdir(raw_queries_dir + querySet)):
+            pathToQueries = raw_queries_base + querySet
+            for k, queriesFile in enumerate(os.listdir(raw_queries_base + querySet)):
                 if not os.path.isfile(pathToQueries + "/" + queriesFile):
                     logging.error("No such file: " + pathToQueries + "/" + queriesFile)
+                    continue
 
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
                     relativeTempLoc = queries[policy][querySet]['template']
@@ -157,7 +193,7 @@ def main():
                                     else:
                                         output_query = template.format(prefixes, str(query_version),
                                             raw_query, modifiers)
-                                with open(output_queries_dir + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
+                                with open(output_queries_base + policy + "/" + output_dir + "/" + str(query_version) + "/" + queriesFile.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_version) + ".txt", 'w') as output_file:
                                     if policy in ["tb_sr_rs"]:
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
                                         output_file.write(timestamped_output_query[0])
