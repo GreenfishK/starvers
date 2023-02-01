@@ -200,6 +200,56 @@ for query_set in query_sets:
             elif policy == "cb_sr_ng":
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
+                def build_snapshot2(snapshot: Graph):
+                    """
+                    Build the snapshot at version :query_version by adding triples from the add-set 
+                    to :snapshot and deleting triples from the del-set from :snapshot, consecutively.
+                    """
+                    def parse_triple(row) -> tuple(object, object, object):
+                        # parse subject
+                        if row['s']['type'] == "uri":
+                            s = URIRef(row['s']['value'])
+                        else:
+                            s = BNode(row['s']['value'])
+
+                        # parse predicate
+                        p = URIRef(row['p']['value'])
+
+                        # parse object
+                        if row['o']['type']  == "uri":
+                            o = URIRef(row['o']['value'])
+                        elif row['o']['type'] == "blank":
+                            o = BNode(row['o']['value'])
+                        else:
+                            value = row['o']["value"]
+                            lang = row['o'].get("xml:lang", None)
+                            datatype = row['o'].get("datatype", None)
+                            o = Literal(value, lang=lang, datatype=datatype)
+                        return (s, p, o)
+
+                    for cs_version in range(query_version):
+                        add_sets_v = """ Select ?graph ?s ?p ?o WHERE {{
+                                graph <http://starvers_eval/v{0}/added> 
+                                {{
+                                    ?s ?p ?o .
+                                }}
+                            }} """.format(str(cs_version).zfill(len(str(query_versions))))
+                        engine.setQuery(add_sets_v)
+                        add_set = engine.query().convert()
+                        for r in add_set["results"]["bindings"]:                        
+                            snapshot.add(parse_triple(r))
+
+                        del_sets_v = """ Select ?graph ?s ?p ?o WHERE {{
+                            graph <http://starvers_eval/v{0}/deleted> 
+                            {{
+                                ?s ?p ?o .
+                            }}
+                        }} """.format(str(cs_version).zfill(len(str(query_versions))))
+                        engine.setQuery(del_sets_v)
+                        add_set = engine.query().convert()
+                        for r in add_set["results"]["bindings"]:                        
+                            snapshot.delete(parse_triple(r))
+
                 change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
                                         graph ?graph 
                                         {{
@@ -258,8 +308,10 @@ for query_set in query_sets:
                     logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
                                                            engine.endpoint))
                     start = time.time()
-                    result = engine.query()
-                    snapshot_g = build_snapshot(change_sets=result.convert())
+                    #result = engine.query()
+                    #snapshot_g = build_snapshot(change_sets=result.convert())
+                    snapshot_g = Graph()
+                    build_snapshot2(snapshot_g)
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
