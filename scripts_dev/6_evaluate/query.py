@@ -3,6 +3,7 @@ from rdflib import Graph
 from rdflib.term import URIRef, Literal, BNode
 from rdflib.query import Result
 import pandas as pd
+from typing import Tuple
 
 from pathlib import Path
 import os
@@ -205,7 +206,7 @@ for query_set in query_sets:
                     Build the snapshot at version :query_version by adding triples from the add-set 
                     to :snapshot and deleting triples from the del-set from :snapshot, consecutively.
                     """
-                    def parse_triple(row) -> tuple(object, object, object):
+                    def parse_triple(row) -> Tuple[object, object, object]:
                         # parse subject
                         if row['s']['type'] == "uri":
                             s = URIRef(row['s']['value'])
