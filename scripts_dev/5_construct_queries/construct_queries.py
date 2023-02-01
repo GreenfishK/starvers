@@ -168,7 +168,7 @@ def main():
             pathToQueries = raw_queries_base + querySet
             for k, queriesFile in enumerate(os.listdir(raw_queries_base + querySet)):
                 if not os.path.isfile(pathToQueries + "/" + queriesFile):
-                    logging.error("No such file: " + pathToQueries + "/" + queriesFile)
+                    logging.warning("No such file: " + pathToQueries + "/" + queriesFile)
                     continue
 
                 with open(pathToQueries + "/" + queriesFile, 'r') as file:
