@@ -114,7 +114,7 @@ def create_ingest_plots(triple_store: str, dataset: str):
 
     """
     # Read data for ingestion measures
-    ingestion_data = pd.read_csv(measurements_in + "ingest.csv", delimiter=";", decimal=".")
+    ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
 
     # Define the colors for the measures 
     measures = {"ingestion_time": "red", "raw_file_size_MiB": "blue", "db_files_disk_usage_MiB": "green"}
