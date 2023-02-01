@@ -1,6 +1,7 @@
 # TODO: Link all scripts to this golden source
 [beara]
     snapshot_versions = 58
+    superset = "beara"
     [beara.repositories]
         ic_mr_tr = 58
         cb_mr_tr = 116
@@ -28,6 +29,7 @@
 
 [bearb_hour]
     snapshot_versions = 1299
+    superset = "bearb"
     [bearb_hour.repositories]
         ic_mr_tr = 1299
         cb_mr_tr = 2598
@@ -38,8 +40,8 @@
     [bearb_hour.query_sets]
         [bearb_hour.query_sets.join]
             [bearb_hour.query_sets.join.policies]
-                ic_mr_tr = {versions = 1, template = "ic/bgp"}
-                cb_mr_tr = {versions = 1, template = "ic/bgp"}
+                ic_mr_tr = {versions = 1, template = "ictr/bgp"}
+                cb_mr_tr = {versions = 1, template = "ictr/bgp"}
                 ic_sr_ng = {versions = 1299, template = "icng/bgp"}
                 cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
                 tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
@@ -55,6 +57,7 @@
 
 [bearb_day]
     snapshot_versions = 89
+    superset = "bearb"
     [bearb_day.repositories]
         ic_mr_tr = 89
         cb_mr_tr = 178
@@ -65,8 +68,8 @@
     [bearb_day.query_sets]
         [bearb_day.query_sets.join]
             [bearb_day.query_sets.join.policies]
-                ic_mr_tr = {versions = 1, template = "ic/bgp"}
-                cb_mr_tr = {versions = 1, template = "ic/bgp"}
+                ic_mr_tr = {versions = 1, template = "ictr/bgp"}
+                cb_mr_tr = {versions = 1, template = "ictr/bgp"}
                 ic_sr_ng = {versions = 1299, template = "icng/bgp"}
                 cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
                 tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
@@ -82,6 +85,7 @@
 
 [bearc]
     snapshot_versions = 33
+    superset = "bearc"
     [bearc.repositories]
         ic_mr_tr = 33
         cb_mr_tr = 66
@@ -92,8 +96,8 @@
     [bearc.query_sets]
         [bearc.query_sets.complex]
             [bearc.query_sets.complex.policies]
-                ic_mr_tr = {versions = 1, template = "ic/sparql"}
-                cb_mr_tr = {versions = 1, template = "ic/sparql"}
+                ic_mr_tr = {versions = 1, template = "ictr/sparql"}
+                cb_mr_tr = {versions = 1, template = "ictr/sparql"}
                 ic_sr_ng = {versions = 33, template = "icng/sparql"}
                 cb_sr_ng = {versions = 33, template = "ictr/sparql"}
                 tb_sr_ng = {versions = 33, template = "tbng/sparql"}
