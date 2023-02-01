@@ -18,49 +18,6 @@ datasets = sys.argv[2].split(" ")
 if not os.path.exists(figures_out):
     os.makedirs(figures_out)
 
-# ChatGPT text
-"""
-Write a python function create_ingest_plots(triple_store: str, dataset: str) that takes a csv file called ingestion.csv 
-as an input (see the content of ingestion.csv below) and reads it into a dataframe called ingestion_data. 
-It then creates a bar plot of grouped bars. Each group represents one of the four policies ic_sr_ng, cb_sr_ng, tb_sr_ng and tb_sr_rs.  
-Each group consists of three bars. One bar represents the values of the ingestion_time column and is shown on the left y-axis.
-The other two bars represent the values of the raw_file_size_MiB and db_files_disk_usage_MiB columns. Latter two bars 
-are plotted on the same position in each group, i.e. they are overlapping. db_files_disk_usage_MiB is slightly narrower than raw_file_size_MiB. 
-Thus, db_files_disk_usage_MiB fits into raw_file_size_MiB and they are not plotted next to each other.
-The groups are labeled with the policy names. Thus, there are four ticks on the x-axis.
-Within each group each bar has a different color. 
-Across the groups each measure/column has the same color. The measures and their colors are shown in a legend, 
-which means that the legend has three entries and there is only one legend for both axes. 
-The number of bars is equal to the number of policies times the number of measures/columns (three measures/columns). 
-There should be two y-axis. The title of the plot carries the name of the given :triple_store and :dataset parameters. 
-The plots are saved to /starvers_eval/output/figures/ingestion_{triple_store}_{dataset}.png.
-
-triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
-graphdb;tb_sr_rs;bearc;270.39;4688;3318
-graphdb;tb_sr_rs;bearb_hour;19.80;79;192
-graphdb;tb_sr_rs;bearb_day;17.03;37;158
-graphdb;ic_sr_ng;bearc;207.88;3639;1643
-graphdb;ic_sr_ng;bearb_hour;523.92;8312;3186
-graphdb;ic_sr_ng;bearb_day;54.51;556;330
-graphdb;cb_sr_ng;bearc;229.70;3912;1677
-graphdb;cb_sr_ng;bearb_hour;18.23;50;164
-graphdb;cb_sr_ng;bearb_day;15.81;20;143
-graphdb;tb_sr_ng;bearc;138.36;2256;1151 
-graphdb;tb_sr_ng;bearb_hour;290.24;9184;1323
-graphdb;tb_sr_ng;bearb_day;14.19;33;142
-jenatdb2;tb_sr_rs;bearc;803.91;4688;5250
-jenatdb2;tb_sr_rs;bearb_hour;16.92;79;255
-jenatdb2;tb_sr_rs;bearb_day;10.05;37;219
-jenatdb2;ic_sr_ng;bearc;689.93;3639;6162
-jenatdb2;ic_sr_ng;bearb_hour;3740.87;8312;17196
-jenatdb2;ic_sr_ng;bearb_day;105.02;556;1171
-jenatdb2;cb_sr_ng;bearc;679.32;3912;5242
-jenatdb2;cb_sr_ng;bearb_hour;9.39;50;276
-jenatdb2;cb_sr_ng;bearb_day;7.06;20;195
-jenatdb2;tb_sr_ng;bearc;362.41;2256;3386
-jenatdb2;tb_sr_ng;bearb_hour;835.02;9184;6787
-jenatdb2;tb_sr_ng;bearb_day;5.57;33;195
-"""
 
 # Plots for query performance measurements
 # Plot1: filters: graphdb, bearb_day, lookup
@@ -171,14 +128,11 @@ def create_ingest_plots(triple_store: str):
     plt.close()
 
 
-#create_ingest_plots("graphdb", "beara")
-#create_ingest_plots("graphdb", "bearb_hour")
-#create_ingest_plots("graphdb", "bearb_day")
-#create_ingest_plots("graphdb", "bearc")
-#create_ingest_plots("jenatdb2", "beara")
-#create_ingest_plots("jenatdb2", "bearb_hour")
-#create_ingest_plots("jenatdb2", "bearb_day")
-#create_ingest_plots("jenatdb2", "bearc")
+def create_query_performance_plots(triple_store: str):
+    pass
+
 
 create_ingest_plots("graphdb")
 create_ingest_plots("jenatdb2")
+create_query_performance_plots("graphdb")
+create_query_performance_plots("jenatdb2")
