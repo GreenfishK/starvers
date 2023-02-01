@@ -247,9 +247,9 @@ for query_set in query_sets:
                             }}
                         }} """.format(str(cs_version).zfill(len(str(query_versions))))
                         engine.setQuery(del_sets_v)
-                        add_set = engine.query().convert()
-                        for r in add_set["results"]["bindings"]:                        
-                            snapshot.delete(parse_triple(r))
+                        del_set = engine.query().convert()
+                        for r in del_set["results"]["bindings"]:                        
+                            snapshot.remove(parse_triple(r))
 
                 change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
                                         graph ?graph 
