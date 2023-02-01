@@ -201,10 +201,10 @@ for query_set in query_sets:
             elif policy == "cb_sr_ng":
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
-                def build_snapshot2(snapshot: Graph):
+                def build_snapshot(snapshot: Graph):
                     """
-                    Build the snapshot at version :query_version by adding triples from the add-set 
-                    to :snapshot and deleting triples from the del-set from :snapshot, consecutively.
+                    Build the snapshot at version :query_version by populating :snapshot with triples from the add-set 
+                    to :snapshot and depopulating :snapshot by removing triples that match the ones in the del-set, consecutively.
                     """
                     def parse_triple(row) -> Tuple[object, object, object]:
                         # parse subject
@@ -250,58 +250,6 @@ for query_set in query_sets:
                         del_set = engine.query().convert()
                         for r in del_set["results"]["bindings"]:                        
                             snapshot.remove(parse_triple(r))
-
-                change_sets_until_v = """ Select ?graph ?s ?p ?o WHERE {{
-                                        graph ?graph 
-                                        {{
-                                            ?s ?p ?o .
-                                        }}
-                                        filter (str(?graph) <= "http://starvers_eval/v{0}/added" || str(?graph) <= "http://starvers_eval/v{0}/deleted")
-
-                                    }} order by ?graph""".format(str(query_version).zfill(len(str(query_versions))))
-                engine.setQuery(change_sets_until_v)
-                
-                def build_snapshot(change_sets: Wrapper.QueryResult) -> Graph: 
-                    """
-                    Build the snapshot at version :query_version by adding triples from the add-set 
-                    and deleting triples from the del-set, consecutively.
-                    """
-                    graph = Graph()
-
-                    if not "head" in change_sets or not "vars" in change_sets["head"]:
-                        return graph
-
-                    if not "results" in change_sets or not "bindings" in change_sets["results"]:
-                        return graph
-
-                    for r in change_sets["results"]["bindings"]:
-                        # parse subject
-                        if r['s']['type'] == "uri":
-                            s = URIRef(r['s']['value'])
-                        else:
-                            s = BNode(r['s']['value'])
-
-                        # parse predicate
-                        p = URIRef(r['p']['value'])
-
-                        # parse object
-                        if r['o']['type']  == "uri":
-                            o = URIRef(r['o']['value'])
-                        elif r['o']['type'] == "blank":
-                            o = BNode(r['o']['value'])
-                        else:
-                            value = r['o']["value"]
-                            lang = r['o'].get("xml:lang", None)
-                            datatype = r['o'].get("datatype", None)
-                            o = Literal(value, lang=lang, datatype=datatype)
-                        
-                        # Add or remove from graph, depending on which change set the triple comes from
-                        if r['graph']['value'].split('/')[-1].startswith('added'):
-                            graph.add((s, p, o))
-                        else:
-                            graph.remove((s, p, o))
-
-                    return graph
                 
                 # Query all changesets from the triplestore until version :query_version 
                 # ordered by change set versions
@@ -309,10 +257,8 @@ for query_set in query_sets:
                     logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
                                                            engine.endpoint))
                     start = time.time()
-                    #result = engine.query()
-                    #snapshot_g = build_snapshot(change_sets=result.convert())
                     snapshot_g = Graph()
-                    build_snapshot2(snapshot_g)
+                    build_snapshot(snapshot_g)
                     end = time.time()
                     snapshot_creation_time = end - start
                     current_query_version = None
