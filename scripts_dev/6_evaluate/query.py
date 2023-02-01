@@ -228,7 +228,7 @@ for query_set in query_sets:
                             o = Literal(value, lang=lang, datatype=datatype)
                         return (s, p, o)
 
-                    for cs_version in range(query_version):
+                    for cs_version in range(query_version + 1):
                         add_sets_v = """ Select ?graph ?s ?p ?o WHERE {{
                                 graph <http://starvers_eval/v{0}/added> 
                                 {{
