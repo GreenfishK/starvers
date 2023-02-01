@@ -14,9 +14,9 @@ figures_out = work_dir + "output/figures/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
-
 if not os.path.exists(figures_out):
     os.makedirs(figures_out)
+
 
 # Plots
 # Plot1: filters: graphdb, bearb_day, lookup
@@ -99,73 +99,46 @@ if not os.path.exists(figures_out):
 # Plot16: x-axis: policy
 # Plot16: type: bars
 
-def plot_lookup_queries(timestamp: datetime, triple_store: str, triple_patterns: list):
-    """
-    Version materialisation queries with simple lookups for IC, CB and TB approaches.
-    :param timestamp: Timestamp of evaluation. Can be derived from the folder where the output of the evaluation is
-    stored.
-    :param triple_pattern: (s), p, (o), (sp), po, (so), (spo)
-    :param triple_store: JenaTDB, GraphDB
-    :return:
-    """
-    # TODO: make a list of policies as argument and pass tb and tb_star.
-    #  For each policy a curve should be plotted for the respective set of queries.
 
-    hostname = os.uname().nodename
-    ts_formatted = timestamp.strftime("%Y-%m-%dT%H:%M:%S")
-    df = pd.DataFrame(columns=['triplestore','dataset','policy','query_set','snapshot','query',
-    'execution_time','snapshot_creation_time'])
+
+def create_ingest_plots(triple_store: str, dataset: str):
+    """
+    Creates for the dataset ingestion. 
+    
+    The plot for the dataset ingestion is a bar plot of grouped bars. Each group represents one of the four policies
+    ic_sr_ng, cb_sr_ng, tb_sr_ng and tb_sr_rs and consits of three bars - one for each of the measures 
+    ingestion_time, raw_file_size_MiB and db_files_disk_usage_MiB. 
+    The groups of bars are labeled with the policy names. Each measure is assigned to one color. This color is 
+    shown in a legend in the plot and the respective bar of the measure in each group has that very same color. The measure 
+    values are displayed inside the bars. the title of the plot carries the name of the given :triple_store and :dataset parameters.
+
+    """
+    # Read data for ingestion measures
+    ingestion_data = pd.read_csv(measurements_in + "ingest.csv", delimiter=";", decimal=".")
+
+    # Define the colors for the measures 
+    measures = {"ingestion_time": "red", "raw_file_size_MiB": "blue", "db_files_disk_usage_MiB": "green"}
+    
+    # Create the plot
+    fig, ax = plt.subplots()
     for policy in policies:
-        output_dir = work_dir + "/output/time/bearb_hour/{hostname}-{timestamp}".format(hostname=hostname,
-                                                                                    timestamp=ts_formatted)
-
-        for pattern in triple_patterns:
-            filename = "time-{policy}-mat-lookup_queries_{triple_pattern}.txt.csv".format(policy=policy,
-                                                                                          triple_pattern=pattern)
-            df_temp = pd.read_csv("{dir}/{fn}".format(dir=output_dir, fn=filename), delimiter=",")
-            df_temp.insert(0, 'policy', policy, True)
-            df_temp.insert(2, 'triple_pattern', pattern, True)
-            df = df.append(df_temp, ignore_index=True)
-
-    df.rename(columns={'count': 'cnt_queries', 'sum': 'total_time_in_ms'}, inplace=True)
-
-    fig, (ax1, ax2) = plt.subplots(2)
-    fig.set_size_inches(24, 13.5, forward=True)
-    fig.text(0.08, 0.5, 'Mean query time (in ms)', va='center', rotation='vertical', size=20)
-    ax1.tick_params(axis='both', which='major', labelsize=14)
-    ax2.tick_params(axis='both', which='major', labelsize=14)
-    ax1.xaxis.label.set_size(20)
-    ax2.xaxis.label.set_size(20)
-
-    # ax1 = plt.gca()
-    df1_grouped = df[(df.tripleStore == triple_store) & (df.triple_pattern == 'p')].groupby('policy')
-    for name, group in df1_grouped:
-        plt1 = group.plot(kind="line", x='ver', y='mean', label=name, ax=ax1)
-        color1 = plt1.lines[-1].get_color()
-        ax1.axhline(group['mean'].mean(), color=color1)
-    ax1.set_xlabel("Version")
-
-    df2_grouped = df[(df.tripleStore == triple_store) & (df.triple_pattern == 'po')].groupby('policy')
-    for name, group in df2_grouped:
-        plt2 = group.plot(kind="line", x='ver', y='mean', label=name, ax=ax2)
-        color2 = plt2.lines[-1].get_color()
-        ax2.axhline(group['mean'].mean(), color=color2)
-    ax2.set_xlabel("Version")
-
-    handles, labels = ax1.get_legend_handles_labels()
-    labels = ["named graphs", "flat RDF*", "hierarchical RDF*"]
-    ax1.get_legend().remove()
-    ax2.get_legend().remove()
-    plt.figlegend(handles, labels, loc='lower center', ncol=5, labelspacing=0. ,fontsize=16)
-
-    plt.savefig(fname=figures_out + triple_store + "_TB_lookup.png", format='png', dpi='figure')
+        policy_data = ingestion_data[ingestion_data["policy"] == policy]
+        x = policy_data["measure"]
+        for measure, color in measures.items():
+            y = policy_data[measure]
+            ax.bar(x, y, color=color, label=measure)
+    ax.legend()
+    ax.set_xlabel("Policy")
+    ax.set_ylabel("Measure Value")
+    ax.set_title(f"{triple_store} - {dataset} Ingestion Plot")
+    plt.savefig(f"/starvers_eval/output/figures/ingestion_{triple_store}_{dataset}.png")
 
 
-ts = datetime(2022, 1, 21, 10, 36, 39)
-
-# Jena
-# simple lookups, 49 p-queries and 13 po-queries
-plot_lookup_queries(ts, "JenaTDB", ["p", "po"])
-plot_lookup_queries(ts, "GraphDB", ["p", "po"])
-
-
+create_ingest_plots("graphdb", "beara")
+create_ingest_plots("graphdb", "bearb_hour")
+create_ingest_plots("graphdb", "bearb_day")
+create_ingest_plots("graphdb", "bearc")
+create_ingest_plots("jenatdb2", "beara")
+create_ingest_plots("jenatdb2", "bearb_hour")
+create_ingest_plots("jenatdb2", "bearb_day")
+create_ingest_plots("jenatdb2", "bearc")
