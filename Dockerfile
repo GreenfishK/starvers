@@ -28,8 +28,8 @@ RUN mkdir -p /starvers_eval/scripts/2_clean_raw_datasaets
 RUN mkdir -p /starvers_eval/scripts/3_construct_datasets
 RUN mkdir -p /starvers_eval/scripts/4_ingest
 RUN mkdir -p /starvers_eval/scripts/5_construct_queries
-RUN mkdir -p /starvers_eval/scripts/6_evaluation
-RUN mkdir -p /starvers_eval/scripts/7_visualization
+RUN mkdir -p /starvers_eval/scripts/6_evaluate
+RUN mkdir -p /starvers_eval/scripts/7_visualize
 
 # copy from other images
 COPY --from=stain/jena-fuseki:4.0.0 /jena-fuseki /jena-fuseki
@@ -55,6 +55,8 @@ COPY scripts_dev/eval_setup.toml /starvers_eval/configs
 
 #COPY scripts_dev/6_evaluate/query.py /starvers_eval/scripts/6_evaluate
 #COPY scripts_dev/6_evaluate/evaluate.sh /starvers_eval/scripts/6_evaluate
+
+#COPY scripts_dev/7_visualize/visualize.sh /starvers_eval/scripts/7_visualize
 
 # TODO: add visualization
 
