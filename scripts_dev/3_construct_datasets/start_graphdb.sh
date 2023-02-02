@@ -15,7 +15,7 @@ export JAVA_HOME=/opt/java/openjdk
 export PATH=/opt/java/openjdk/bin:$PATH
 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/databases/construct_datasets/graphdb"
 
-# Other variables variables
+# Path variables
 script_dir=/starvers_eval/scripts
 
 

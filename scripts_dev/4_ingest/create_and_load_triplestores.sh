@@ -15,28 +15,28 @@ policies=("${policies}")
 measurements=/starvers_eval/output/measurements/ingestion.csv
 echo "triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
 
-# Other variables
+# Path variables
 script_dir=/starvers_eval/scripts
 
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
-    # Set variables
-    configs_dir=/starvers_eval/configs/graphdb
-    db_dir=/starvers_eval/databases/graphdb
+    # Bash arguments and environment variables
     export JAVA_HOME=/opt/java/openjdk
     export PATH=/opt/java/openjdk/bin:$PATH
     GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
-    # Clean database directory
+    # Path variables
+    configs_dir=/starvers_eval/configs/graphdb
+    db_dir=/starvers_eval/databases/graphdb
+
+    # Prepare directories and files
     rm -rf $configs_dir
     rm -rf $db_dir
-    rm -rf $log_file_graphdb
-
-    # Create directories
     mkdir -p $configs_dir
     mkdir -p $db_dir
-
     > $log_file_graphdb
+
+
     for policy in ${policies[@]}; do
         case $policy in 
             ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;
@@ -151,22 +151,22 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 fi
 
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
-    # Set variables
-    configs_dir=/starvers_eval/configs/jenatdb2
-    db_dir=/starvers_eval/databases/jenatdb2
+    # Bash arguments and environment variables
     export JAVA_HOME=/usr/local/openjdk-11
     export PATH=/usr/local/openjdk-11/bin:$PATH
 
-    # Clean database directory
+    # Path variables
+    configs_dir=/starvers_eval/configs/jenatdb2
+    db_dir=/starvers_eval/databases/jenatdb2
+
+    # Prepare directories and files
     rm -rf $db_dir
     rm -rf $configs_dir
-    rm -rf $log_file_jena
-
-    # Create directories
     mkdir -p $db_dir
     mkdir -p $configs_dir
-
     > $log_file_jena
+
+
     for policy in ${policies[@]}; do
         case $policy in 
             ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;

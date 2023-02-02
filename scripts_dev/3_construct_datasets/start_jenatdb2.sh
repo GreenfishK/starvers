@@ -14,7 +14,7 @@ shutdown=$5
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
-# Other variables
+# Path variables
 script_dir=/starvers_eval/scripts
 
 
