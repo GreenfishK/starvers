@@ -1,19 +1,22 @@
 #!/bin/bash
-# Input parametrers
+
+# Logging variables
+log_file=/starvers_eval/output/logs/construct_datasets/construct_datasets.txt
+log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
+log_level="root:INFO"
+
+# Bash arguments and environment variables
 policy=$1
 dataset=$2
 reset=$3
 ingest_empty=$4
 shutdown=$5
-
-# Set variables
-script_dir=/starvers_eval/scripts
-log_file=/starvers_eval/output/logs/construct_datasets/construct_datasets.txt
-log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
-log_level="root:INFO"
-#jenatdb2_port=$((3030))
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
+
+# Other variables
+script_dir=/starvers_eval/scripts
+
 
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file

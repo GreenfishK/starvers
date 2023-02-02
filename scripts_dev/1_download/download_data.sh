@@ -1,15 +1,17 @@
 #!/bin/bash
+
+# Logging variables
 log_file=/starvers_eval/output/logs/download/downloads.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
-# Clean directories and files
+# Prepare directories and files
 rm -rf /starvers_eval/output/logs/download
-
-# Create directories and files
 mkdir -p /starvers_eval/output/logs/download
 > $log_file
 
+
+# Download
 echo "$(log_timestamp) ${log_level}: Downloading BEARA datasets..." >> $log_file
 wget -t 3 -c -P /starvers_eval/rawdata/beara https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/datasets/IC/alldata.IC.nt.tar.gz
 mkdir -p /starvers_eval/rawdata/beara/alldata.IC.nt
