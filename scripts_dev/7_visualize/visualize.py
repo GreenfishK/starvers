@@ -16,67 +16,6 @@ figures_out = work_dir + "output/figures/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
-if not os.path.exists(figures_out):
-    os.makedirs(figures_out)
-
-"""
-Consider the following header of a .csv file: triplestore;dataset;policy;query_set;snapshot;query;execution_time_total
-
-write a python function def create_query_performance_plots(triplestore: str, query_set: str) that creates a figure with 4 subplots. Each subplot should be dedicated to one dataset. dataset is a categorical variable from the csv file and there are 4 datasets bearb_hour, bearb_day, bearc and beara. The title of each subplot should also be the name of the dataset. On the x-axis of each subplot the snapshot variable should be plotted. snapshot is a numerical variable with natural numbers. Each plot should be a line-plot. The y-axis should show the mean value for all queries (=query variable in the csv file) of execution_time_total. For each policy there should be a line. policy is a categorical variable and there are 4 policies, namely, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs. Add a legend to the figure which contains 4 entries, one for each policy. Each line in the plot/each policy should have a different color. Across the subplots the colors for each policy should be the same. The title of the figure should be derived from query_set and triplestore. 
-"""
-# Plots for query performance measurements
-# Plot1: filters: graphdb, bearb_day, lookup
-# Plot1: measures: query execution time + snapshot creation time
-# Plot1: x-axis: snapshots
-# Plot1: lines: policy
-
-# Plot2: filters: graphdb, bearb_day, join 
-# Plot2: measures: query execution time + snapshot creation time
-# Plot2: x-axis: snapshots
-# Plot2: lines: policy
-
-# Plot3: filters: graphdb, bearb_hour, lookup 
-# Plot3: measures: query execution time + snapshot creation time
-# Plot3: x-axis: snapshots
-# Plot3: lines: policy
-
-# Plot4: filters: graphdb, bearb_hour, join 
-# Plot4: measures: query execution time + snapshot creation time
-# Plot4: x-axis: snapshots
-# Plot4: lines: policy
-
-# Plot5: filters: graphdb, bearc, complex
-# Plot5: measures: query execution time + snapshot creation time
-# Plot5: x-axis: snapshots
-# Plot5: lines: policy
-
-# Plot6: filters: jenatdb2, bearb_day, lookup
-# Plot6: measures: query execution time + snapshot creation time
-# Plot6: x-axis: snapshots
-# Plot6: lines: policy
-
-# Plot7: filters: jenatdb2, bearb_day, join 
-# Plot7: measures: query execution time + snapshot creation time
-# Plot7: x-axis: snapshots
-# Plot7: lines: policy
-
-# Plot8: filters: jenatdb2, bearb_hour, lookup 
-# Plot8: measures: query execution time + snapshot creation time
-# Plot8: x-axis: snapshots
-# Plot8: lines: policy
-
-# Plot9: filters: jenatdb2, bearb_hour, join 
-# Plot9: measures: query execution time + snapshot creation time
-# Plot9: x-axis: snapshots
-# Plot9: lines: policy
-
-# Plot10: filters: jenatdb2, bearc, complex
-# Plot10: measures: query execution time + snapshot creation time
-# Plot10: x-axis: snapshots
-# Plot10: lines: policy
-
-
-
 
 def create_ingest_plots(triplestore: str):
     """
@@ -190,10 +129,9 @@ def create_query_performance_plots(triplestore: str):
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
     plt.savefig(f"/starvers_eval/output/figures/time_{triplestore}.png")
     plt.close()
-
     
 
-#create_ingest_plots("graphdb")
-#create_ingest_plots("jenatdb2")
+create_ingest_plots("graphdb")
+create_ingest_plots("jenatdb2")
 create_query_performance_plots("graphdb")
 create_query_performance_plots("jenatdb2")

@@ -87,7 +87,7 @@ def main():
                             else:
                                 raw_queries = [raw_query_file.read()]    
                             
-                            # Iterate over file that holds multiple raw queries.
+                            # Iterate over file that holds one or more raw queries.
                             for i, raw_query in enumerate(raw_queries):
                                 prefixes, raw_query = split_prefixes_query(raw_query)
                                 modifiers, raw_query = split_solution_modifiers_query(raw_query)

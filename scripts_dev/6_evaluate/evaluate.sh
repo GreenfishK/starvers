@@ -13,6 +13,7 @@ log_level="root:INFO"
 mkdir -p /starvers_eval/output/logs/evaluate/
 > $log_file
 > /starvers_eval/output/measurements/time.csv
+echo "triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time" >> /starvers_eval/output/measurements/time.csv
 
 # Exclude queries
 echo "Tag queries query8 and query9 from the BEARC complex query set 
