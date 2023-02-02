@@ -16,7 +16,7 @@ rm -rf /starvers_eval/output/logs/clean_raw_datasets
 mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 > $log_file
 
-# Other variables
+# Path variables
 SCRIPT_DIR=/starvers_eval/scripts
 
 
