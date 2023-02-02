@@ -4,6 +4,7 @@ from rdflib.term import URIRef, Literal, BNode
 from rdflib.query import Result
 import pandas as pd
 from typing import Tuple
+import tomli
 
 from pathlib import Path
 import os
@@ -30,61 +31,8 @@ dataset = sys.argv[3]
 port = sys.argv[4]
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
-ds_queries_map={'ic_mr_tr': {
-                    'beara': {'query_versions': 1, 'repositories': 58, 'query_sets': ['ic_mr_tr/beara/high',
-                                                            'ic_mr_tr/beara/low']}, 
-                    'bearb_day': {'query_versions': 1,'repositories': 89, 'query_sets': ['ic_mr_tr/bearb_day/lookup',
-                                                                'ic_mr_tr/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 1299, 'query_sets': ['ic_mr_tr/bearb_hour/lookup',
-                                                                'ic_mr_tr/bearb_hour/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 33, 'query_sets': ['ic_mr_tr/bearc/complex']}       
-                }, 
-                'cb_mr_tr': {
-                    'beara': {'query_versions': 1, 'repositories': 116, 'query_sets': ['cb_mr_tr/beara/high',
-                                                            'cb_mr_tr/beara/low']}, 
-                    'bearb_day': {'query_versions': 1, 'repositories': 178, 'query_sets': ['cb_mr_tr/bearb_day/lookup',
-                                                                'cb_mr_tr/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1, 'repositories': 2598, 'query_sets': ['cb_mr_tr/bearb_hour/lookup',
-                                                                'cb_mr_tr/bearb_hour/join']},
-                    'bearc': {'query_versions': 1, 'repositories': 66, 'query_sets': ['cb_mr_tr/bearc/complex']}       
-                },     
-                'ic_sr_ng': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['ic_sr_ng/beara/high',
-                                                            'ic_sr_ng/beara/low']}, 
-                    'bearb_day': {'query_versions': 89,'repositories': 1, 'query_sets': ['ic_sr_ng/bearb_day/lookup',
-                                                                'ic_sr_ng/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['ic_sr_ng/bearb_hour/lookup',
-                                                                'ic_sr_ng/bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['ic_sr_ng/bearc/complex']}       
-                },  
-                'cb_sr_ng': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['cb_sr_ng/beara/high',
-                                                            'cb_sr_ng/beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearb_day/lookup',
-                                                                'cb_sr_ng/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearb_hour/lookup',
-                                                                'cb_sr_ng/bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['cb_sr_ng/bearc/complex']}       
-                },     
-                'tb_sr_ng':{
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_ng/beara/high',
-                                                            'tb_sr_ng/beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearb_day/lookup',
-                                                                'tb_sr_ng/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearb_hour/lookup',
-                                                                'tb_sr_ng/bearb_hour/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_ng/bearc/complex']}       
-                },
-                'tb_sr_rs': {
-                    'beara': {'query_versions': 58, 'repositories': 1, 'query_sets': ['tb_sr_rs/beara/high',
-                                                            'tb_sr_rs/beara/low']}, 
-                    'bearb_day': {'query_versions': 89, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearb_day/lookup',
-                                                                'tb_sr_rs/bearb_day/join']}, 
-                    'bearb_hour': {'query_versions': 1299, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearb_day/lookup',
-                                                                'tb_sr_rs/bearb_day/join']},
-                    'bearc': {'query_versions': 33, 'repositories': 1, 'query_sets': ['tb_sr_rs/bearc/complex']}       
-                }
-}
+with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
 
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
                         'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
@@ -92,6 +40,20 @@ endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{reposito
                         'post': 'http://{hostname}:{port}/{repository_name}/update'}}    
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
+
+# Parse the relative locations of the query sets, number of repositories and number of query set versions 
+query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup[dataset]['query_sets'].keys()]
+# The query set versions are the same for every query set within a dataset. There is just some redundancy in the eval_setup.toml
+# E.g. there are 58 versions for beara and ic_sr_ng for both - high and low query sets
+first_query_set = next(iter(eval_setup[dataset]['query_sets']))
+query_versions = eval_setup[dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
+repositories = eval_setup[dataset]['repositories'][policy]
+
+# Global configurations for the SPARQL engine
+engine = SPARQLWrapper(endpoint="dummy")
+engine.setReturnFormat(JSON)
+engine.setOnlyConneg(True)
+engine.setMethod(POST)
 
 ###################################### Evaluation ######################################
 # header: tripleStore,snapshot,min,mean,max,stddev,count,sum
@@ -143,15 +105,6 @@ def to_list(result: Wrapper.QueryResult) -> list:
 
 
 df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
-
-query_sets = ds_queries_map[policy][dataset]['query_sets']
-query_versions = ds_queries_map[policy][dataset]['query_versions']
-repositories = ds_queries_map[policy][dataset]['repositories']
-
-engine = SPARQLWrapper(endpoint="dummy")
-engine.setReturnFormat(JSON)
-engine.setOnlyConneg(True)
-engine.setMethod(POST)
 
 def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWrapper, repository_suffix: str = None):
     if repository_suffix:
