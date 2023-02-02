@@ -40,8 +40,8 @@ for triple_store in ${triple_stores[@]}; do
                 export PATH=/usr/local/openjdk-11/bin:$PATH
 
                 # Start database server and run in background
-                echo "$(log_timestamp) ${log_level}:Starting Fuseki server..." >> $log_file
-                cp /starvers_eval/configs/jenatdb2/${policy}_${dataset}.ttl /run/configuration
+                echo "$(log_timestamp) ${log_level}:Starting Fuseki server for the evaluation of ${policy}_${dataset}..." >> $log_file
+                cp /starvers_eval/configs/jenatdb2/${policy}_${dataset}.ttl /run/configuration/config.ttl
                 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up
@@ -58,7 +58,7 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
 
                 # Stop database server
-                echo "$(log_timestamp) ${log_level}:Shutting down fuseki server." >> $log_file
+                echo "$(log_timestamp) ${log_level}:Shutting down fuseki server and finishing evaluation of ${policy}_${dataset}." >> $log_file
                 pkill -f '/jena-fuseki/fuseki-server.jar'
                 
             done
