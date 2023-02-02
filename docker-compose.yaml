@@ -119,7 +119,7 @@ services:
       - triple_stores=${triple_stores}
       - policies=${policies}
       - datasets=${datasets}
-    entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_evaluate/verify_results.py"]
     command: ["$triple_stores", "$policies", "$datasets"]
     
   visualize:
