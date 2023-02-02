@@ -75,7 +75,10 @@ if not os.path.exists(figures_out):
 
 def create_ingest_plots(triple_store: str):
     """
-
+    Create a figure with 4 subplots, one for each dataset. Each subplot shows three measures - 
+    ingestion_time, raw_file_size_MiB and db_files_disk_usage_MiB as a grouped bars. Each group represents 
+    one policy and the groups are visually separated. Each plot has two y-axes, one for the ingestion time and 
+    one for the storage consumption.
 
     """
     # Read data for ingestion measures
@@ -108,8 +111,7 @@ def create_ingest_plots(triple_store: str):
         #ax.set_xlabel("Policy")
         ax.set_ylabel("Ingestion Time (s)")
 
-        
-        ax2.set_ylabel("File Size (MiB) and DB File Size (MiB)")
+        ax2.set_ylabel("Storage Consumption (MiB)")
         ax2.yaxis.label.set_color('darkgreen')
 
 
