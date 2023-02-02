@@ -7,6 +7,7 @@ from datetime import timezone
 import os
 from pathlib import Path
 import sys
+import math
 
 
 work_dir = "/starvers_eval/"
@@ -136,10 +137,11 @@ def create_ingest_plots(triplestore: str):
 
 def create_query_performance_plots(triplestore: str):
     """
-    
+    Create a figure with 4 subplots, one for each dataset. Each subplot shows 4 lines, one for each policy. 
+    On the x-axis the snapshots are shown and on the y-axis the mean total execution time aggregated 
+    on policy and snapshot level.
+
     """
-    # Read data for query performance measures and add one column for the total execution time
-    # triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time
     performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
                             dtype={"triple_store": "category", "dataset": "category", "policy": "category",
                             "query_set": "category", "snapshot": "string", "query": "string",
@@ -169,6 +171,10 @@ def create_query_performance_plots(triplestore: str):
         ax.set_title(dataset)
         ax.set_xlabel('snapshot')
         ax.set_ylabel('execution_time_total')
+        tick_steps = max(math.floor(len(policy_df['snapshot'])/10), 1)
+        ax.set_xticks(ticks=range(0, len(policy_df['snapshot']), tick_steps),
+                      labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
+
     
     # Add legend
     red_patch = mpatches.Patch(color='red', label='ic_sr_ng')
@@ -187,8 +193,7 @@ def create_query_performance_plots(triplestore: str):
 
     
 
-
-create_ingest_plots("graphdb")
-create_ingest_plots("jenatdb2")
+#create_ingest_plots("graphdb")
+#create_ingest_plots("jenatdb2")
 create_query_performance_plots("graphdb")
 create_query_performance_plots("jenatdb2")
