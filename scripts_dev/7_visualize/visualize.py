@@ -18,7 +18,11 @@ datasets = sys.argv[2].split(" ")
 if not os.path.exists(figures_out):
     os.makedirs(figures_out)
 
+"""
+Consider the following header of a .csv file: triplestore;dataset;policy;query_set;snapshot;query;execution_time_total
 
+write a python function def create_query_performance_plots(triplestore: str, query_set: str) that creates a figure with 4 subplots. Each subplot should be dedicated to one dataset. dataset is a categorical variable from the csv file and there are 4 datasets bearb_hour, bearb_day, bearc and beara. The title of each subplot should also be the name of the dataset. On the x-axis of each subplot the snapshot variable should be plotted. snapshot is a numerical variable with natural numbers. Each plot should be a line-plot. The y-axis should show the mean value for all queries (=query variable in the csv file) of execution_time_total. For each policy there should be a line. policy is a categorical variable and there are 4 policies, namely, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs. Add a legend to the figure which contains 4 entries, one for each policy. Each line in the plot/each policy should have a different color. Across the subplots the colors for each policy should be the same. The title of the figure should be derived from query_set and triplestore. 
+"""
 # Plots for query performance measurements
 # Plot1: filters: graphdb, bearb_day, lookup
 # Plot1: measures: query execution time + snapshot creation time
@@ -45,35 +49,35 @@ if not os.path.exists(figures_out):
 # Plot5: x-axis: snapshots
 # Plot5: lines: policy
 
-# Plot9: filters: jenatdb2, bearb_day, lookup
+# Plot6: filters: jenatdb2, bearb_day, lookup
+# Plot6: measures: query execution time + snapshot creation time
+# Plot6: x-axis: snapshots
+# Plot6: lines: policy
+
+# Plot7: filters: jenatdb2, bearb_day, join 
+# Plot7: measures: query execution time + snapshot creation time
+# Plot7: x-axis: snapshots
+# Plot7: lines: policy
+
+# Plot8: filters: jenatdb2, bearb_hour, lookup 
+# Plot8: measures: query execution time + snapshot creation time
+# Plot8: x-axis: snapshots
+# Plot8: lines: policy
+
+# Plot9: filters: jenatdb2, bearb_hour, join 
 # Plot9: measures: query execution time + snapshot creation time
 # Plot9: x-axis: snapshots
 # Plot9: lines: policy
 
-# Plot10: filters: jenatdb2, bearb_day, join 
+# Plot10: filters: jenatdb2, bearc, complex
 # Plot10: measures: query execution time + snapshot creation time
 # Plot10: x-axis: snapshots
 # Plot10: lines: policy
 
-# Plot11: filters: jenatdb2, bearb_hour, lookup 
-# Plot11: measures: query execution time + snapshot creation time
-# Plot11: x-axis: snapshots
-# Plot11: lines: policy
-
-# Plot12: filters: jenatdb2, bearb_hour, join 
-# Plot12: measures: query execution time + snapshot creation time
-# Plot12: x-axis: snapshots
-# Plot12: lines: policy
-
-# Plot13: filters: jenatdb2, bearc, complex
-# Plot13: measures: query execution time + snapshot creation time
-# Plot13: x-axis: snapshots
-# Plot13: lines: policy
 
 
 
-
-def create_ingest_plots(triple_store: str):
+def create_ingest_plots(triplestore: str):
     """
     Create a figure with 4 subplots, one for each dataset. Each subplot shows three measures - 
     ingestion_time, raw_file_size_MiB and db_files_disk_usage_MiB as a grouped bars. Each group represents 
@@ -121,20 +125,66 @@ def create_ingest_plots(triple_store: str):
     blue_patch = mpatches.Patch(color='blue', label='Ingestion Time')
     fig.legend(loc='upper right', handles={limegreen_patch, darkgreen_patch, blue_patch})
     
-    fig.suptitle(f"{triple_store}", fontsize=32)
+    fig.suptitle(f"{triplestore}", fontsize=32)
     fig.set_figheight(9)
     fig.set_figwidth(16)
 
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
-    plt.savefig(f"/starvers_eval/output/figures/ingestion_{triple_store}.png")
+    plt.savefig(f"/starvers_eval/output/figures/ingestion_{triplestore}.png")
     plt.close()
 
 
-def create_query_performance_plots(triple_store: str):
+def create_query_performance_plots(triplestore: str):
     """
     
     """
-    pass
+    # Read data for query performance measures and add one column for the total execution time
+    # triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time
+    performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
+                            dtype={"triple_store": "category", "dataset": "category", "policy": "category",
+                            "query_set": "category", "snapshot": "string", "query": "string",
+                            "execution_time": "float", "snapshot_creation_time": "float"})
+    performance_data['snapshot_ts'] = pd.to_datetime(performance_data['snapshot_ts'])
+    performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
+    performance_data = performance_data[['dataset', 'policy', 'snapshot', 'execution_time_total']]
+
+    datasets = ['bearb_hour', 'bearb_day', 'bearc', 'beara']
+    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
+    colors = ['red', 'blue', 'green', 'purple']
+    color_map = dict(zip(policies, colors))
+    
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
+    axs = axs.flatten()
+    
+    for i, dataset in enumerate(datasets):
+        ax = axs[i]
+        dataset_df = performance_data[performance_data['dataset'] == dataset]
+        means = dataset_df.groupby(['policy', 'snapshot']).mean()
+        means = means.reset_index()
+        
+        for policy in policies:
+            policy_df = means[means['policy'] == policy]
+            ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], label=policy, color=color_map[policy])
+        
+        ax.set_title(dataset)
+        ax.set_xlabel('snapshot')
+        ax.set_ylabel('execution_time_total')
+    
+    # Add legend
+    red_patch = mpatches.Patch(color='red', label='ic_sr_ng')
+    blue_patch = mpatches.Patch(color='blue', label='cb_sr_ng')
+    green_patch = mpatches.Patch(color='green', label='tb_sr_ng')
+    purple_patch = mpatches.Patch(color='purple', label='tb_sr_rs')
+    fig.legend(loc="upper right", handles={red_patch, blue_patch, green_patch, purple_patch})
+
+    fig.suptitle(f"{triplestore} query performance plots", fontsize=32)
+    fig.set_figheight(9)
+    fig.set_figwidth(16)
+
+    plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
+    plt.savefig(f"/starvers_eval/output/figures/time_{triplestore}.png")
+    plt.close()
+
     
 
 
