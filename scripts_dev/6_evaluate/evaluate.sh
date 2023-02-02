@@ -1,15 +1,19 @@
 #!/bin/bash
 
+# Logging variables
+log_file=/starvers_eval/output/logs/evaluate/query.txt
+log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
+log_level="root:INFO"
+
+# Bash arguments and environment variables
 policies=("${policies}") 
 datasets=("${datasets}") 
 triple_stores=("${triple_stores}")
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
 
-# Init log and measurement files and setup logging
-log_file=/starvers_eval/output/logs/evaluate/query.txt
-log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
-log_level="root:INFO"
+# Prepare directories and files
+rm -rf /starvers_eval/output/logs/evaluate/
 mkdir -p /starvers_eval/output/logs/evaluate/
 > $log_file
 > /starvers_eval/output/measurements/time.csv
@@ -28,6 +32,7 @@ for subdir in $(ls -d ${root_dir}/*); do
         fi
     done
 done
+
 
 # main loop
 for triple_store in ${triple_stores[@]}; do

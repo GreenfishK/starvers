@@ -1,21 +1,24 @@
 #!/bin/bash
 
-# Set variables
-SCRIPT_DIR=/starvers_eval/scripts
-policies=("ic" "tb") # only raw datasets. Don't change order!
-datasets=("${datasets}") # beara bearb_hour bearb_day bearc
+# Logging variables
 log_file=/starvers_eval/output/logs/clean_raw_datasets/clean_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
+
+# Bash arguments and environment variables
+policies=("ic" "tb") # only raw datasets. Don't change order!
+datasets=("${datasets}") # beara bearb_hour bearb_day bearc
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
-# Clean directories and files
+# Prepare directories and files
 rm -rf /starvers_eval/output/logs/clean_raw_datasets
-
-# Create directories and files
 mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 > $log_file
+
+# Other variables
+SCRIPT_DIR=/starvers_eval/scripts
+
 
 echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
 for dataset in ${datasets[@]}; do
