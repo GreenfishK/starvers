@@ -25,14 +25,19 @@ logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/
                     level=logger.INFO)
 
 ###################################### Parameters ######################################
+# Bash arguments and directory paths
 triple_store = sys.argv[1]
 policy = sys.argv[2]
 dataset = sys.argv[3]
 port = sys.argv[4]
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
-with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
-    eval_setup = tomli.load(config_file)
+
+# Global configurations for the SPARQL engine
+engine = SPARQLWrapper(endpoint="dummy")
+engine.setReturnFormat(JSON)
+engine.setOnlyConneg(True)
+engine.setMethod(POST)
 
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
                         'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
@@ -42,6 +47,8 @@ LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
 # Parse the relative locations of the query sets, number of repositories and number of query set versions 
+with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
 query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup[dataset]['query_sets'].keys()]
 # The query set versions are the same for every query set within a dataset. There is just some redundancy in the eval_setup.toml
 # E.g. there are 58 versions for beara and ic_sr_ng for both - high and low query sets
@@ -49,17 +56,7 @@ first_query_set = next(iter(eval_setup[dataset]['query_sets']))
 query_versions = eval_setup[dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
 repositories = eval_setup[dataset]['repositories'][policy]
 
-# Global configurations for the SPARQL engine
-engine = SPARQLWrapper(endpoint="dummy")
-engine.setReturnFormat(JSON)
-engine.setOnlyConneg(True)
-engine.setMethod(POST)
-
-###################################### Evaluation ######################################
-# header: tripleStore,snapshot,min,mean,max,stddev,count,sum
-# aggregation on tripleStore and version level
-logger.info("Evaluate " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
-
+###################################### Helper functions ######################################
 def to_list(result: Wrapper.QueryResult) -> list:
     """
 
@@ -104,8 +101,6 @@ def to_list(result: Wrapper.QueryResult) -> list:
     return [header] + values
 
 
-df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
-
 def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWrapper, repository_suffix: str = None):
     if repository_suffix:
         # For multi repository (mr) storage management policy
@@ -117,6 +112,9 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
+###################################### Evaluation ######################################
+logger.info("Evaluate " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
+df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
 for query_set in query_sets:
     for query_version in range(query_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
