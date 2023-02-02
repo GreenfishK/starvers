@@ -60,6 +60,10 @@ for triple_store in ${triple_stores[@]}; do
                 # Stop database server
                 echo "$(log_timestamp) ${log_level}:Shutting down fuseki server and finishing evaluation of ${policy}_${dataset}." >> $log_file
                 pkill -f '/jena-fuseki/fuseki-server.jar'
+                while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
+                    sleep 1
+                done
+                echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
                 
             done
         done
@@ -74,7 +78,7 @@ for triple_store in ${triple_stores[@]}; do
                 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
 
                 # Start database server and run in background
-                echo "$(log_timestamp) ${log_level}:Starting GraphDB server..." >> $log_file
+                echo "$(log_timestamp) ${log_level}:Starting GraphDB server for the evaluation of ${policy}_${dataset}..." >> $log_file
                 /opt/graphdb/dist/bin/graphdb -d -s
                 
                 # Wait until server is up
@@ -92,8 +96,12 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
 
                 # Stop database server
-                echo "$(log_timestamp) ${log_level}:Shutting down GraphDB server." >> $log_file
+                echo "$(log_timestamp) ${log_level}:Shutting down GraphDB server and finishing evaluation of ${policy}_${dataset}." >> $log_file
                 pkill -f '/opt/java/openjdk/bin/java'
+                while ps -ef | grep -q '[o]pt/java/openjdk/bin/java'; do
+                    sleep 1
+                done
+                echo "$(log_timestamp) ${log_level}:/opt/java/openjdk/bin/java killed." >> $log_file
 
             done
         done

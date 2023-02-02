@@ -131,7 +131,11 @@ def create_ingest_plots(triple_store: str):
 
 
 def create_query_performance_plots(triple_store: str):
+    """
+    
+    """
     pass
+    
 
 
 create_ingest_plots("graphdb")
