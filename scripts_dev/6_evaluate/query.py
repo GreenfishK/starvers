@@ -34,7 +34,8 @@ final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
 
 # Global configurations for the SPARQL engine
-engine = SPARQLWrapper(endpoint="dummy")
+timeout=60
+engine = SPARQLWrapper(endpoint="dummy", timeout=timeout)
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
@@ -132,13 +133,19 @@ for query_set in query_sets:
             file.close()
 
             if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
+                engine.timeout = timeout
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                start = time.time()
-                result = engine.query()
-                end = time.time()
-                execution_time = end - start
+                try:
+                    start = time.time()
+                    result = engine.query()
+                    end = time.time()
+                    execution_time = end - start
+                except Exception as e:
+                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. The execution_time will be set to -1.")
+                    execution_time = -1
+
                     
                 logger.info("Serializing results.")
                 result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
@@ -150,6 +157,7 @@ for query_set in query_sets:
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
             
             elif policy == "cb_sr_ng":
+                engine.timeout = None
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 def build_snapshot(snapshot: Graph):
@@ -215,10 +223,14 @@ for query_set in query_sets:
                     current_query_version = None
 
                 logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
-                start = time.time()
-                query_result = snapshot_g.query(query_text)
-                end = time.time()
-                execution_time = end - start
+                try:
+                    start = time.time()
+                    query_result = snapshot_g.query(query_text)
+                    end = time.time()
+                    execution_time = end - start
+                except Exception as e:
+                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. The execution_time will be set to -1.")
+                    execution_time = -1
 
                 if query_text.startswith("# Exclude"):
                     logger.info("Dont serialize query results due to issue in rdflib's serializer with this query: {0}". format(query_file_name))
