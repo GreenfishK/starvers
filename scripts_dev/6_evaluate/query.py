@@ -35,7 +35,8 @@ result_sets_dir = "/starvers_eval/output/result_sets"
 
 # Global configurations for the SPARQL engine
 timeout=60
-engine = SPARQLWrapper(endpoint="dummy", timeout=timeout)
+engine = SPARQLWrapper(endpoint="dummy")
+engine.setTimeout(timeout)
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
