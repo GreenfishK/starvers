@@ -8,13 +8,28 @@ import os
 from pathlib import Path
 import sys
 import math
+import logging
 
 
+############################################# Logging #############################################
+if not os.path.exists('/starvers_eval/output/logs/visualize'):
+    os.makedirs('/starvers_eval/output/logs/visualize')
+with open('/starvers_eval/output/logs/visualize/visualize.txt', "w") as log_file:
+    log_file.write("")
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/visualize/visualize.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+
+############################################# Parameters #############################################
 work_dir = "/starvers_eval/"
 measurements_in = work_dir + "output/measurements/"
 figures_out = work_dir + "output/figures/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
+
+############################################# Visualize #############################################
 
 
 def create_ingest_plots(triplestore: str):
