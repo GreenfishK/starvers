@@ -151,8 +151,8 @@ for query_set in query_sets:
                     write = csv.writer(file, delimiter=";")
                     write.writerows(to_list(result))
                 except Exception as e:
-                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. \
-                    The execution_time will be set to -1. The results will not be serialized.")
+                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " +\
+                    "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
 
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
@@ -238,8 +238,8 @@ for query_set in query_sets:
                         Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                         query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
                 except Exception as e:
-                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. \
-                    The execution_time will be set to -1. The results will not be serialized.")
+                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " + \
+                    "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
                 
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
@@ -262,8 +262,8 @@ for query_set in query_sets:
                         write = csv.writer(file, delimiter=";")
                         write.writerows(to_list(result))
                     except Exception as e:
-                        logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. \
-                        The execution_time will be set to -1. The results will not be serialized.")
+                        logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " + \
+                        "The execution_time will be set to -1. The results will not be serialized.")
                         execution_time = -1
                     snapshot_ts = init_version_timestamp + timedelta(seconds=repository-1)
                     df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
