@@ -47,7 +47,7 @@ for triple_store in ${triple_stores[@]}; do
 
                 # Start database server and run in background
                 echo "$(log_timestamp) ${log_level}:Starting Fuseki server for the evaluation of ${policy}_${dataset}..." >> $log_file
-                cp /starvers_eval/configs/jenatdb2/${policy}_${dataset}.ttl /run/configuration/config.ttl
+                cp /starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}.ttl /run/configuration/config.ttl
                 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
                 # Wait until server is up

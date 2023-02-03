@@ -26,7 +26,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
     # Path variables
-    configs_dir=/starvers_eval/configs/graphdb
+    configs_dir=/starvers_eval/configs/ingest/graphdb
     db_dir=/starvers_eval/databases/graphdb
 
     # Prepare directories and files
@@ -156,7 +156,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     export PATH=/usr/local/openjdk-11/bin:$PATH
 
     # Path variables
-    configs_dir=/starvers_eval/configs/jenatdb2
+    configs_dir=/starvers_eval/configs/ingest/jenatdb2
     db_dir=/starvers_eval/databases/jenatdb2
 
     # Prepare directories and files
