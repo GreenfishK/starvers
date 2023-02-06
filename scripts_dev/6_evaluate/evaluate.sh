@@ -54,6 +54,7 @@ for triple_store in ${triple_stores[@]}; do
                 echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
                 counter=0
                 while [[ $(curl -I http://Starvers:${jenatdb2_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                    sleep 1s
                     counter=$((counter + 1))
                     if [[ counter -ge 60 ]]; then
                         echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
