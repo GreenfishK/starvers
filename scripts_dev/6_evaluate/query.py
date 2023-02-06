@@ -115,7 +115,7 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
 ###################################### Evaluation ######################################
-logger.info(f"Evaluate {triple_store}, {policy}, {dataset}" +
+logger.info(f"Evaluate {triple_store}, {policy}, {dataset} " +
 f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
 df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
 for query_set in query_sets:
