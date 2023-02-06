@@ -55,7 +55,7 @@ query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_set
 # The query set versions are the same for every query set within a dataset. There is just some redundancy in the eval_setup.toml
 # E.g. there are 58 versions for beara and ic_sr_ng for both - high and low query sets
 first_query_set = next(iter(eval_setup[dataset]['query_sets']))
-query_versions = eval_setup[dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
+query_set_versions = eval_setup[dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
 repositories = eval_setup[dataset]['repositories'][policy]
 
 ###################################### Helper functions ######################################
@@ -115,10 +115,11 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
 ###################################### Evaluation ######################################
-logger.info("Evaluate " + triple_store + ", " + policy + ", " + dataset + " on port: " + port)
+logger.info(f"Evaluate {triple_store}, {policy}, {dataset}" +
+f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
 df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
 for query_set in query_sets:
-    for query_version in range(query_versions):
+    for query_version in range(query_set_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
         snapshot_ts = init_version_timestamp + timedelta(seconds=query_version)
         current_query_version = query_version
@@ -194,7 +195,7 @@ for query_set in query_sets:
                                 {{
                                     ?s ?p ?o .
                                 }}
-                            }} """.format(str(cs_version).zfill(len(str(query_versions))))
+                            }} """.format(str(cs_version).zfill(len(str(query_set_versions))))
                         engine.setQuery(add_sets_v)
                         add_set = engine.query().convert()
                         for r in add_set["results"]["bindings"]:                        
@@ -205,7 +206,7 @@ for query_set in query_sets:
                             {{
                                 ?s ?p ?o .
                             }}
-                        }} """.format(str(cs_version).zfill(len(str(query_versions))))
+                        }} """.format(str(cs_version).zfill(len(str(query_set_versions))))
                         engine.setQuery(del_sets_v)
                         del_set = engine.query().convert()
                         for r in del_set["results"]["bindings"]:                        
@@ -214,7 +215,7 @@ for query_set in query_sets:
                 # Query all changesets from the triplestore until version :query_version 
                 # ordered by change set versions
                 if current_query_version == query_version:
-                    logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_versions))),
+                    logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_set_versions))),
                                                            engine.endpoint))
                     start = time.time()
                     snapshot_g = Graph()
