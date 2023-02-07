@@ -93,18 +93,18 @@
                 [datasets.bearb_day.query_sets.join.policies]
                     ic_mr_tr = {versions = 1, template = "ictr/bgp"}
                     cb_mr_tr = {versions = 1, template = "ictr/bgp"}
-                    ic_sr_ng = {versions = 1299, template = "icng/bgp"}
-                    cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
-                    tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
-                    tb_sr_rs = {versions = 1299, template = "ictr/bgp"}
+                    ic_sr_ng = {versions = 89, template = "icng/bgp"}
+                    cb_sr_ng = {versions = 89, template = "ictr/bgp"}
+                    tb_sr_ng = {versions = 89, template = "tbng/bgp"}
+                    tb_sr_rs = {versions = 89, template = "ictr/bgp"}
             [datasets.bearb_day.query_sets.lookup]
                 [datasets.bearb_day.query_sets.lookup.policies]
                     ic_mr_tr = {versions = 1, template = "ictr/ts"}
                     cb_mr_tr = {versions = 1, template = "ictr/ts"}
-                    ic_sr_ng = {versions = 1299, template = "icng/ts"}
-                    cb_sr_ng = {versions = 1299, template = "ictr/ts"}
-                    tb_sr_ng = {versions = 1299, template = "tbng/ts"}
-                    tb_sr_rs = {versions = 1299, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 89, template = "icng/ts"}
+                    cb_sr_ng = {versions = 89, template = "ictr/ts"}
+                    tb_sr_ng = {versions = 89, template = "tbng/ts"}
+                    tb_sr_rs = {versions = 89, template = "ictr/ts"}
 
     [datasets.bearc]
         snapshot_versions = 33
