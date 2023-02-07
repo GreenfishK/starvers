@@ -6,8 +6,9 @@ log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
 # Bash arguments and environment variables
-policies=("ic" "tb") # only raw datasets. Don't change order!
-datasets=("${datasets}") # beara bearb_hour bearb_day bearc
+# only raw independent copies/snapshots and timestamp- and "named graphs"-based datasets are cleaned. Don't change order!
+policies=("ic" "tb") 
+datasets=("${datasets}") 
 export JAVA_HOME=/usr/local/openjdk-11
 export PATH=/usr/local/openjdk-11/bin:$PATH
 
