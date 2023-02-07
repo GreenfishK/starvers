@@ -11,9 +11,7 @@ mkdir -p /starvers_eval/output/logs/download
 > $log_file
 
 # Path variables
-snapshot_dir=`grep -A 2 '\[general\]' /starvers_eval/configs/eval_setup.toml | grep 'snapshot_dir' | awk '{print $3}'`
-change_sets_dir=`grep -A 2 '\[general\]' /starvers_eval/configs/eval_setup.toml | grep 'change_sets_dir' | awk '{print $3}'`
-
+snapshot_dir=`grep -A 2 '[General]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 
 # Download
 echo "$(log_timestamp) ${log_level}: Downloading BEARA datasets..." >> $log_file
