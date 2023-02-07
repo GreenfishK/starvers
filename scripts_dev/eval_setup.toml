@@ -9,7 +9,9 @@
         ic_basename_length = 1
         superset = "beara"
         download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/datasets/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
         download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/datasets/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
         yn_nested_archives = "false"
         [datasets.beara.repositories]
             ic_mr_tr = 58
@@ -41,7 +43,9 @@
         ic_basename_length = 6
         superset = "bearb"
         download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/hour/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
         download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/hour/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
         yn_nested_archives = "true"
         [datasets.bearb_hour.repositories]
             ic_mr_tr = 1299
@@ -73,7 +77,9 @@
         ic_basename_length = 6
         superset = "bearb"
         download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/day/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
         download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/day/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
         yn_nested_archives = "true"
         [datasets.bearb_day.repositories]
             ic_mr_tr = 89
@@ -105,7 +111,9 @@
         ic_basename_length = 1
         superset = "datasets.bearc"
         download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/datasets/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
         download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/datasets/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
         yn_nested_archives = "true"
         [datasets.bearc.repositories]
             ic_mr_tr = 33
