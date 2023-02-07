@@ -256,16 +256,10 @@ def create_plots2(triplestore: str, dataset: str):
     policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
     colors = ['red', 'blue', 'green', 'purple']
     color_map = dict(zip(policies, colors))
-    
-    # Plot variables
-    #fig, axs = plt.subplots(2, 2, figsize=(15, 10))
-    #axs = axs.flatten()
 
+    # Figure and axes
     fig = plt.figure()
-    gs = fig.add_gridspec(2,2)
-
-    ax3 = fig.add_subplot(gs[1, :])
-    
+    gs = fig.add_gridspec(2,2)    
        
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
@@ -292,7 +286,7 @@ def create_plots2(triplestore: str, dataset: str):
         ax1 = fig.add_subplot(gs[0, 0])
         plot_performance(query_set=query_sets[0], ax=ax1)
         ax2 = fig.add_subplot(gs[0, 1])
-        plot_performance(query_set=query_sets[0], ax=ax2)
+        plot_performance(query_set=query_sets[1], ax=ax2)
 
 
     def plot_ingestion(ax):
@@ -308,7 +302,7 @@ def create_plots2(triplestore: str, dataset: str):
             raw_size = policy_data["raw_file_size_MiB"].mean()
             db_size = policy_data["db_files_disk_usage_MiB"].mean()
             
-            ax.bar(i - bar_width, ing_time, bar_width, alpha=opacity, color='blue', label="Ingestion Time")
+            ax.bar(i - bar_width, ing_time, bar_width, alpha=opacity, color='coral', label="Ingestion Time")
             ax2.bar(i, raw_size, bar_width, alpha=opacity, color='limegreen', label="Raw File Size")
             ax2.bar(i, db_size, bar_width * 0.6, alpha=opacity, color='darkgreen', label="DB File Size")
         
@@ -316,22 +310,28 @@ def create_plots2(triplestore: str, dataset: str):
         ax.yaxis.label.set_color('blue')
         ax.set_xticklabels(policies)
         #ax.set_title("")
-        #ax.set_xlabel("Policy")
+        ax.set_xlabel("Policies")
         ax.set_ylabel("Ingestion Time (s)")
         ax2.set_ylabel("Storage Consumption (MiB)")
         ax2.yaxis.label.set_color('darkgreen')
 
+    ax3 = fig.add_subplot(gs[1, :])
     plot_ingestion(ax=ax3)
 
     
     # Add legend
-    #red_patch = mpatches.Patch(color='red', label='ic_sr_ng')
-    #blue_patch = mpatches.Patch(color='blue', label='cb_sr_ng')
-    #green_patch = mpatches.Patch(color='green', label='tb_sr_ng')
-    #purple_patch = mpatches.Patch(color='purple', label='tb_sr_rs')
-    #fig.legend(loc="upper right", handles={red_patch, blue_patch, green_patch, purple_patch})
+    red_patch = mpatches.Patch(color='red', label='ic_sr_ng')
+    blue_patch = mpatches.Patch(color='blue', label='cb_sr_ng')
+    green_patch = mpatches.Patch(color='green', label='tb_sr_ng')
+    purple_patch = mpatches.Patch(color='purple', label='tb_sr_rs')
 
-    fig.suptitle(f"Query performance and data ingestion & storage plots for {triplestore} and {dataset}", fontsize=32)
+    limegreen_patch = mpatches.Patch(color='limegreen', label='Raw File Size')
+    darkgreen_patch = mpatches.Patch(color='darkgreen', label='DB File Size')
+    coral_patch = mpatches.Patch(color='coral', label='Ingestion Time')
+    fig.legend(loc="lower center", ncol=2, handles={red_patch, blue_patch, green_patch, purple_patch, 
+                                                    limegreen_patch, darkgreen_patch, coral_patch})
+
+    fig.suptitle(f"Query performance and data ingestion & storage plots for {triplestore} and {dataset}", fontsize=24)
     fig.set_figheight(9)
     fig.set_figwidth(16)
 
@@ -339,13 +339,6 @@ def create_plots2(triplestore: str, dataset: str):
     plt.savefig(f"/starvers_eval/output/figures/time_{triplestore}_{dataset}.png")
     plt.close()
 
-
-
-#create_plots("bearb_hour", "lookup")
-#create_plots("bearb_hour", "join")
-#create_plots("bearb_day", "lookup")
-#create_plots("bearb_day", "join")
-#create_plots("bearbc", "complex")
 
 create_plots2("graphdb", "bearb_hour")
 create_plots2("graphdb", "bearb_day")
