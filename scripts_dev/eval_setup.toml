@@ -1,4 +1,8 @@
 # TODO: Link all scripts to this golden source
+[general]
+    snapshot_dir = "alldata.IC.nt"
+    change_sets_dir = "alldata.CB_computed"
+
 [beara]
     snapshot_versions = 58
     ic_basename_length = 1
