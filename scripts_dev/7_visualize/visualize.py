@@ -331,7 +331,7 @@ def create_plots2(triplestore: str, dataset: str):
     fig.legend(loc="upper right", ncol=1, handles={red_patch, blue_patch, green_patch, purple_patch})
     fig.legend(loc="lower right", ncol=3, handles={limegreen_patch, darkgreen_patch, coral_patch})
 
-    fig.suptitle(f"Query performance and data ingestion & storage plots for {triplestore} and {dataset}", fontsize=24)
+    fig.suptitle(f"Query performance and data ingestion & storage plots \nfor {triplestore} and {dataset}", fontsize=24)
     fig.set_figheight(9)
     fig.set_figwidth(16)
 
