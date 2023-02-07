@@ -284,9 +284,7 @@ def create_plots2(triplestore: str, dataset: str):
         ax.set_xticks(ticks=range(0, len(policy_df['snapshot']), tick_steps),
                     labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
 
-    query_sets = performance_data[performance_data['dataset'] == dataset]['query_set']
-    query_sets.to_csv("/starvers_eval/output/figures/query_sets.csv")
-    query_sets = query_sets.value_counts().keys()
+    query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].unique()
     print(query_sets)
 
     plot_performance(query_set="lookup", ax=ax1)
