@@ -39,7 +39,7 @@ if triple_store == "jenatdb2" and policy == "tb_sr_rs" and dataset == "bearc":
 else:
     timeout = None
 engine = SPARQLWrapper(endpoint="dummy")
-engine.setTimeout(timeout)
+engine.timeout = timeout
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
