@@ -17,9 +17,9 @@ snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk
 datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/eval_setup.toml | awk -F "." '{print $2}' | sed 's/.$//')
 
 for dataset in ${datasets[@]}; do
-    download_link_snapshots=`grep -A 5 -E "\[datasets\.${dataset}\]"/starvers_eval/configs/eval_setup.toml | grep 'download_link_snapshots' | awk '{print $3}' | sed 's/"//g'`
-    download_link_ng_dataset=`grep -A 5 -E "\[datasets\.${dataset}\]"/starvers_eval/configs/eval_setup.toml | grep 'download_link_ng_dataset' | awk '{print $3}' | sed 's/"//g'`
-    yn_nested_archives=`grep -A 5 -E "\[datasets\.${dataset}\]"/starvers_eval/configs/eval_setup.toml | grep 'yn_nested_archives' | awk '{print $3}' | sed 's/"//g'`
+    download_link_snapshots=`grep -A 5 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'download_link_snapshots' | awk '{print $3}' | sed 's/"//g'`
+    download_link_ng_dataset=`grep -A 5 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'download_link_ng_dataset' | awk '{print $3}' | sed 's/"//g'`
+    yn_nested_archives=`grep -A 5 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'yn_nested_archives' | awk '{print $3}' | sed 's/"//g'`
 
     # Download
     echo "$(log_timestamp) ${log_level}: Downloading ${dataset} snapshots..." >> $log_file
