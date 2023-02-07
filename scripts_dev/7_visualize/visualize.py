@@ -328,7 +328,7 @@ def create_plots2(triplestore: str, dataset: str):
     limegreen_patch = mpatches.Patch(color='limegreen', label='Raw File Size')
     darkgreen_patch = mpatches.Patch(color='darkgreen', label='DB File Size')
     coral_patch = mpatches.Patch(color='coral', label='Ingestion Time')
-    fig.legend(loc="lower left", ncol=4, handles={red_patch, blue_patch, green_patch, purple_patch})
+    fig.legend(loc="upper right", ncol=1, handles={red_patch, blue_patch, green_patch, purple_patch})
     fig.legend(loc="lower right", ncol=3, handles={limegreen_patch, darkgreen_patch, coral_patch})
 
     fig.suptitle(f"Query performance and data ingestion & storage plots for {triplestore} and {dataset}", fontsize=24)
