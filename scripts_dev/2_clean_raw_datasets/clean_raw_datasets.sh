@@ -23,10 +23,10 @@ SCRIPT_DIR=/starvers_eval/scripts
 echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
 for dataset in ${datasets[@]}; do
     case $dataset in 
-        beara) versions=58 file_name_struc="%01g";; 
-        bearb_hour) versions=1299 file_name_struc="%06g";; 
-        bearb_day) versions=89 file_name_struc="%06g";;
-        bearc) versions=33 file_name_struc="%01g";;
+        beara) versions=`grep -A 2 '\[beara\]' /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'` file_name_struc="%01g";; 
+        bearb_hour) versions=`grep -A 2 '\[bearb_hour\]' /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'` file_name_struc="%06g";; 
+        bearb_day) versions=`grep -A 2 '\[bearb_day\]' /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'` file_name_struc="%06g";;
+        bearc) versions=`grep -A 2 '\[bearc\]' /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'` file_name_struc="%01g";;
         beart) versions=4 file_name_struc="%06g";;
         *)
             echo "$(log_timestamp) ${log_level}:graphdb: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file
