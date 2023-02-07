@@ -159,7 +159,7 @@ def create_plots(dataset: str, query_set: str):
                             "execution_time": "float", "snapshot_creation_time": "float"})
     performance_data['snapshot_ts'] = pd.to_datetime(performance_data['snapshot_ts'])
     performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
-    performance_data = performance_data[['triplestore', 'dataset', 'policy', 'snapshot', 'execution_time_total']]
+    performance_data = performance_data[['triplestore', 'dataset', 'policy', 'snapshot', 'query_set', 'execution_time_total']]
 
     ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
 
@@ -182,7 +182,7 @@ def create_plots(dataset: str, query_set: str):
             policy_df = means[means['policy'] == policy]
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], label=policy, color=color_map[policy])
         
-        ax.set_title(dataset)
+        ax.set_title(f"{triplestore}")
         ax.set_xlabel('snapshot')
         ax.set_ylabel('execution_time_total')
         tick_steps = max(math.floor(len(policy_df['snapshot'])/10), 1)
@@ -212,10 +212,9 @@ def create_plots(dataset: str, query_set: str):
         ax.set_xticks(index)
         ax.yaxis.label.set_color('blue')
         ax.set_xticklabels(policies)
-        ax.set_title(dataset)
+        ax.set_title(f"{triplestore}")
         #ax.set_xlabel("Policy")
         ax.set_ylabel("Ingestion Time (s)")
-
         ax2.set_ylabel("Storage Consumption (MiB)")
         ax2.yaxis.label.set_color('darkgreen')
 
