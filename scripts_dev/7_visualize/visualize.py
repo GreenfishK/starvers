@@ -154,12 +154,12 @@ def create_plots(dataset: str, query_set: str):
     """
     # Data
     performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
-                            dtype={"triple_store": "category", "dataset": "category", "policy": "category",
+                            dtype={"triplestore": "category", "dataset": "category", "policy": "category",
                             "query_set": "category", "snapshot": "string", "query": "string",
                             "execution_time": "float", "snapshot_creation_time": "float"})
     performance_data['snapshot_ts'] = pd.to_datetime(performance_data['snapshot_ts'])
     performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
-    performance_data = performance_data[['dataset', 'policy', 'snapshot', 'execution_time_total']]
+    performance_data = performance_data[['triplestore', 'dataset', 'policy', 'snapshot', 'execution_time_total']]
 
     ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
 
