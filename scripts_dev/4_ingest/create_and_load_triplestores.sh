@@ -18,6 +18,9 @@ echo "triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_
 # Path variables
 script_dir=/starvers_eval/scripts
 
+# Functions
+get_snapshot_version() { echo "`grep -A 2 "\[$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`"; }
+
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Bash arguments and environment variables
@@ -55,11 +58,10 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
 
             case $dataset in 
-                beara) versions=58 file_name_struc="%01g";;
-                bearb_hour) versions=1299 file_name_struc="%06g";; 
-                bearb_day) versions=89 file_name_struc="%06g";;
-                bearc) versions=33 file_name_struc="%01g";;
-                beart) versions=4 file_name_struc="%06g";;
+                beara) versions=`get_snapshot_version "beara"` file_name_struc="%01g";;
+                bearb_hour) versions=`get_snapshot_version "bearb_hour"`  file_name_struc="%06g";; 
+                bearb_day) versions=`get_snapshot_version "bearb_day"`  file_name_struc="%06g";;
+                bearc) versions=`get_snapshot_version "bearc"`  file_name_struc="%01g";;
                 *)
                     echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_graphdb
                     exit 2
@@ -186,11 +188,10 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             data_dir=$db_dir/${policy}_${dataset}
 
             case $dataset in 
-                beara) versions=58 file_name_struc="%01g";;
-                bearb_hour) versions=1299 file_name_struc="%06g";; 
-                bearb_day) versions=89 file_name_struc="%06g";;
-                bearc) versions=33 file_name_struc="%01g";;
-                beart) versions=4 file_name_struc="%06g";;
+                beara) versions=`get_snapshot_version "beara"` file_name_struc="%01g";;
+                bearb_hour) versions=`get_snapshot_version "bearb_hour"` file_name_struc="%06g";; 
+                bearb_day) versions=`get_snapshot_version "bearb_day"` file_name_struc="%06g";;
+                bearc) versions=`get_snapshot_version "bearc"` file_name_struc="%01g";;
                 *)
                     echo "jenatdb2: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_jena
                     exit 2
