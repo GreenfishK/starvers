@@ -34,7 +34,7 @@ final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
 
 # Global configurations for the SPARQL engine
-timeout=60
+timeout=1
 engine = SPARQLWrapper(endpoint="dummy")
 engine.setTimeout(timeout)
 engine.setReturnFormat(JSON)
@@ -135,7 +135,10 @@ for query_set in query_sets:
             file.close()
 
             if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
-                engine.timeout = timeout
+                if triple_store == "jenatdb2" and policy == "tb_sr_rs":
+                    engine.timeout = timeout
+                else:
+                    engine.timeout = None
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
