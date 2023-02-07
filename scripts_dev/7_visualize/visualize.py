@@ -263,8 +263,7 @@ def create_plots2(triplestore: str, dataset: str):
 
     fig = plt.figure()
     gs = fig.add_gridspec(2,2)
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[0, 1])
+
     ax3 = fig.add_subplot(gs[1, :])
     
        
@@ -285,10 +284,16 @@ def create_plots2(triplestore: str, dataset: str):
                     labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
 
     query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].unique()
-    print(query_sets)
+    if len(query_sets) == 1:
+        ax = fig.add_subplot(gs[0, :])
+        plot_performance(query_set=query_sets[0], ax=ax)
+    else:
+        assert len(query_sets) == 2
+        ax1 = fig.add_subplot(gs[0, 0])
+        plot_performance(query_set=query_sets[0], ax=ax1)
+        ax2 = fig.add_subplot(gs[0, 1])
+        plot_performance(query_set=query_sets[0], ax=ax2)
 
-    plot_performance(query_set="lookup", ax=ax1)
-    plot_performance(query_set="join", ax=ax2)
 
     def plot_ingestion(ax):
         ax2 = ax.twinx()
@@ -343,3 +348,8 @@ def create_plots2(triplestore: str, dataset: str):
 #create_plots("bearbc", "complex")
 
 create_plots2("graphdb", "bearb_hour")
+create_plots2("graphdb", "bearb_day")
+create_plots2("graphdb", "bearc")
+create_plots2("jenatdb2", "bearb_hour")
+create_plots2("jenatdb2", "bearb_day")
+create_plots2("jenatdb2", "bearc")
