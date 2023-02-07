@@ -17,6 +17,8 @@ echo "triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_
 
 # Path variables
 script_dir=/starvers_eval/scripts
+snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
+change_sets_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/change_sets_dir/ {print $2}'`
 
 # Functions
 get_snapshot_version() { echo "`grep -A 2 "\[$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`"; }
@@ -42,8 +44,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;
-            cb_mr_tr) datasetDirOrFile=alldata.CB_computed.nt;;
+            ic_mr_tr) datasetDirOrFile=${snapshot_dir};;
+            cb_mr_tr) datasetDirOrFile=${change_sets_dir};;
             ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
             cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
             tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
@@ -105,7 +107,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
                     ve=$(echo $v+1 | bc)
                     if [ $v -eq 0 ]; then
                         file_name=`printf "$file_name_struc" +1`.nt
-                        fileadd="alldata.IC.nt/$file_name"
+                        fileadd="$snapshot_dir/$file_name"
                         filedel="empty.nt"
                         repositoryIDAdd=${policy}_${dataset}_ic1
                         repositoryIDDel=${policy}_${dataset}_empty
@@ -171,8 +173,8 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic_mr_tr) datasetDirOrFile=alldata.IC.nt;;
-            cb_mr_tr) datasetDirOrFile=alldata.CB_computed.nt;;
+            ic_mr_tr) datasetDirOrFile=${snapshot_dir};;
+            cb_mr_tr) datasetDirOrFile=${change_sets_dir};;
             ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
             cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
             tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
@@ -240,7 +242,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     ve=$(echo $v+1 | bc)
                     if [ $v -eq 0 ]; then
                         file_name=`printf "$file_name_struc" +1`.nt
-                        fileadd="alldata.IC.nt/$file_name"
+                        fileadd="$snapshot_dir/$file_name"
                         filedel="empty.nt"
                         repositoryIDAdd=${policy}_${dataset}_ic1
                         repositoryIDDel=${policy}_${dataset}_empty

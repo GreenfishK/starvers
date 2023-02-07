@@ -19,6 +19,7 @@ mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 
 # Path variables
 SCRIPT_DIR=/starvers_eval/scripts
+snapshot_dir=`grep -A 2 '[General]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 
 # Functions
 get_snapshot_version() { echo "`grep -A 2 "\[$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`"; }
@@ -39,7 +40,7 @@ for dataset in ${datasets[@]}; do
 
     for policy in ${policies[@]}; do
         case $policy in 
-            ic) ds_rel_path='alldata.IC.nt/${c}.nt' base_name_tmpl='${c}.nt';;
+            ic) ds_rel_path='${snapshot_dir}/${c}.nt' base_name_tmpl='${c}.nt';;
             tb) ds_rel_path='alldata.TB.nq' versions=1 base_name_tmpl='alldata.TB';;
             *)
                 echo "$(log_timestamp) ${log_level}:Policy must be in ic or tb, which are the policies of the raw datasets." >> $log_file
