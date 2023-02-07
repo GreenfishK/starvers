@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import pandas as pd
+import tomli
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/evaluate'):
@@ -19,11 +20,10 @@ triple_stores = sys.argv[1].split(" ")
 policies = sys.argv[2].split(" ")
 datasets = sys.argv[3].split(" ")
 result_sets_dir = "/starvers_eval/output/result_sets"
-
-result_set_org={'beara': {'snapshots': 58, 'query_sets': ['high', 'low']}, 
-                'bearb_day': {'snapshots': 89, 'query_sets': ['lookup', 'join']}, 
-                'bearb_hour': { 'snapshots': 1299, 'query_sets': ['lookup', 'join']},
-                'bearc': { 'snapshots': 33, 'query_sets': ['complex']}}
+with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
+result_set_org={dataset: {'snapshots': infos['snapshot_versions'], 'query_sets': list(infos['query_sets'].keys())} 
+                for dataset, infos in eval_setup.items()}
 df_cnt_rows = pd.DataFrame(columns=['triple_store', 'dataset', 'query_set', 'snapshot', 'result_set', 'policy', 'cnt_rows'])
 
 ###################################### Verify results ##############################################
