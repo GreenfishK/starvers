@@ -19,7 +19,7 @@ class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
 
-def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename_length: int):
+def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: int, format: str, basename_length: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
     in the dataset_dir.
@@ -28,7 +28,7 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     """
 
     logging.info("Constructing changesets.")
-    cb_comp_dir = dataset_dir + "/alldata.CB_computed." + format
+    cb_comp_dir = f"{change_sets_dir}.{format}"
     if not os.path.exists(cb_comp_dir):
         logging.info("Create directory: " + cb_comp_dir)
         os.makedirs(cb_comp_dir)
@@ -38,8 +38,8 @@ def construct_change_sets(dataset_dir: str, end_vers: int, format: str, basename
     cnt_valid_triples_last_ic = 0
 
     for i in range(1, end_vers):
-        ic1_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i).zfill(basename_length))
-        ic2_ds_path = "{0}/alldata.IC.nt/{1}.nt".format(dataset_dir, str(i+1).zfill(basename_length))
+        ic1_ds_path = "{0}/{1}.nt".format(snapshots_dir, str(i).zfill(basename_length))
+        ic2_ds_path = "{0}/{1}.nt".format(snapshots_dir, str(i+1).zfill(basename_length))
         logging.info("Calculating changesets between snapshots {0}.nt and {1}.nt".format(str(i).zfill(basename_length), str(i+1).zfill(basename_length)))
 
 
@@ -368,6 +368,8 @@ with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
 dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in eval_setup.items()}
 ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in eval_setup.items()}
 allowed_datasets = list(dataset_versions.keys())
+snapshot_dir = eval_setup['general']['snapshot_dir']
+change_sets_dir = eval_setup['general']['change_sets_dir']
 
 ############################################# Start procedure #############################################
 for dataset in datasets:
@@ -375,30 +377,31 @@ for dataset in datasets:
         print("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
-    data_dir = "/starvers_eval/rawdata/" + dataset
+    data_dir = f"/starvers_eval/rawdata/{dataset}"
     total_versions = dataset_versions[dataset]
     print("Constructing datasets for {0}".format(dataset))
 
     if not skip_change_sets == "True":
-        construct_change_sets(dataset_dir=data_dir, end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
+        construct_change_sets(snapshots_dir=f"{data_dir}/{snapshot_dir}", change_sets_dir=f"{data_dir}/{change_sets_dir}",
+                                end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     if not skip_tb_star_ds == "True":
-        construct_tb_star_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                            source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                            destination=data_dir + "/alldata.TB_star_hierarchical" + ".ttl",
+        construct_tb_star_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                            source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
+                            destination=f"{data_dir}/alldata.TB_star_hierarchical.ttl",
                             last_version=total_versions,
                             init_timestamp=init_version_timestamp,
                             dataset=dataset,
                             triple_store=TripleStore.GRAPHDB)    
     
     if not skip_cbng_ds == "True":
-        construct_cbng_ds(source_ic0=data_dir + "/alldata.IC.nt/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                        source_cs=data_dir + "/alldata.CB_computed." + in_frm,
-                        destination=data_dir + "/alldata.CBNG.trig",
+        construct_cbng_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                        source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
+                        destination=f"{data_dir}/alldata.CBNG.trig",
                         last_version=total_versions)
     
     if not skip_icng_ds == "True":
-        construct_icng_ds(source=data_dir + "/alldata.IC.nt",
-                        destination=data_dir + "/alldata.ICNG.trig",
+        construct_icng_ds(source=f"{data_dir}/{snapshot_dir}/",
+                        destination=f"{data_dir}/alldata.ICNG.trig",
                         last_version=total_versions,
                         basename_length=ic_basename_lengths[dataset])
