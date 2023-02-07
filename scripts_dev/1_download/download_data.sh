@@ -28,7 +28,7 @@ for dataset in ${datasets[@]}; do
     echo "$(log_timestamp) ${log_level}: Extracting ${dataset} snapshots..." >> $log_file
     tar -xf /starvers_eval/rawdata/beara/alldata.IC.nt.tar.gz -C /starvers_eval/rawdata/${dataset}/${snapshot_dir}
     
-    if [[ $yn_nested_archives == "true" ]]   
+    if [[ $yn_nested_archives == "true" ]]; then
         cd /starvers_eval/rawdata/bearb_hour/${snapshot_dir}
         for f in *.gz ; do gzip -d < "$f" > /starvers_eval/rawdata/bearb_hour/${snapshot_dir}/"${f%.*}" ; done
         rm *.gz
