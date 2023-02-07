@@ -23,7 +23,7 @@ result_sets_dir = "/starvers_eval/output/result_sets"
 with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
     eval_setup = tomli.load(config_file)
 result_set_org={dataset: {'snapshots': infos['snapshot_versions'], 'query_sets': list(infos['query_sets'].keys())} 
-                for dataset, infos in eval_setup.items()}
+                for dataset, infos in eval_setup['datasets'].items()}
 df_cnt_rows = pd.DataFrame(columns=['triple_store', 'dataset', 'query_set', 'snapshot', 'result_set', 'policy', 'cnt_rows'])
 
 ###################################### Verify results ##############################################

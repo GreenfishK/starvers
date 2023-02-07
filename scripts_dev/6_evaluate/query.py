@@ -51,12 +51,12 @@ init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 # Parse the relative locations of the query sets, number of repositories and number of query set versions 
 with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
     eval_setup = tomli.load(config_file)
-query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup[dataset]['query_sets'].keys()]
+query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup['datasets'][dataset]['query_sets'].keys()]
 # The query set versions are the same for every query set within a dataset. There is just some redundancy in the eval_setup.toml
 # E.g. there are 58 versions for beara and ic_sr_ng for both - high and low query sets
-first_query_set = next(iter(eval_setup[dataset]['query_sets']))
-query_set_versions = eval_setup[dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
-repositories = eval_setup[dataset]['repositories'][policy]
+first_query_set = next(iter(eval_setup['datasets'][dataset]['query_sets']))
+query_set_versions = eval_setup['datasets'][dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
+repositories = eval_setup['datasets'][dataset]['repositories'][policy]
 
 ###################################### Helper functions ######################################
 def to_list(result: Wrapper.QueryResult) -> list:

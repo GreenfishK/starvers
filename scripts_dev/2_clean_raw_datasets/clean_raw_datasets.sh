@@ -19,7 +19,7 @@ mkdir -p /starvers_eval/output/logs/clean_raw_datasets
 
 # Path variables
 SCRIPT_DIR=/starvers_eval/scripts
-snapshot_dir=`grep -A 2 '[General]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
+snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 
 # Functions
 get_snapshot_version() { echo "`grep -A 2 "\[$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`"; }
