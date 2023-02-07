@@ -270,7 +270,7 @@ def create_plots2(triplestore: str, dataset: str):
             policy_df = means[means['policy'] == policy]
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], label=policy, color=color_map[policy])
         
-        ax.set_title(f"{query_set}")
+        ax.set_title(f"Query set: {query_set}")
         ax.set_xlabel('snapshots')
         ax.set_ylabel('Execution time (s)')
         tick_steps = max(math.floor(len(policy_df['snapshot'])/10), 1)
@@ -307,7 +307,7 @@ def create_plots2(triplestore: str, dataset: str):
             ax2.bar(i, db_size, bar_width * 0.6, alpha=opacity, color='darkgreen', label="DB File Size")
         
         ax.set_xticks(index)
-        ax.yaxis.label.set_color('blue')
+        ax.yaxis.label.set_color('coral')
         ax.set_xticklabels(policies)
         #ax.set_title("")
         ax.set_xlabel("Policies")
