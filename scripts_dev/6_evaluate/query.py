@@ -34,7 +34,10 @@ final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
 
 # Global configurations for the SPARQL engine
-timeout=1
+if triple_store == "jenatdb2" and policy == "tb_sr_rs" and dataset == "bearc":
+    timeout = 1
+else:
+    timeout = None
 engine = SPARQLWrapper(endpoint="dummy")
 engine.setTimeout(timeout)
 engine.setReturnFormat(JSON)
@@ -135,10 +138,6 @@ for query_set in query_sets:
             file.close()
 
             if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
-                if triple_store == "jenatdb2" and policy == "tb_sr_rs":
-                    engine.timeout = timeout
-                else:
-                    engine.timeout = None
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
@@ -162,7 +161,6 @@ for query_set in query_sets:
                 df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
             
             elif policy == "cb_sr_ng":
-                engine.timeout = None
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 def build_snapshot(snapshot: Graph):
