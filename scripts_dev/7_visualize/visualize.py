@@ -277,13 +277,16 @@ def create_plots2(triplestore: str, dataset: str):
             policy_df = means[means['policy'] == policy]
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], label=policy, color=color_map[policy])
         
-        ax.set_title(f"{triplestore}")
+        ax.set_title(f"{query_set}")
         ax.set_xlabel('snapshots')
         ax.set_ylabel('Execution time (s)')
         tick_steps = max(math.floor(len(policy_df['snapshot'])/10), 1)
         ax.set_xticks(ticks=range(0, len(policy_df['snapshot']), tick_steps),
                     labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
 
+    query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].value_counts().keys()
+    print(query_sets)
+    
     plot_performance(query_set="lookup", ax=ax1)
     plot_performance(query_set="join", ax=ax2)
 
