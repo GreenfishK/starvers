@@ -25,9 +25,7 @@ def split_solution_modifiers_query(query: str) -> list:
 
 def main():
     ############################################# Parameters ################################################################
-    # Directory contained in docker image
     raw_queries_base="/starvers_eval/queries/raw_queries/"
-    # Mounted directory
     output_queries_base="/starvers_eval/queries/final_queries/"
 
     policies_cmd = sys.argv[1]
