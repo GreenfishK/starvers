@@ -21,8 +21,24 @@ snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk
 change_sets_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/change_sets_dir/ {print $2}'`
 
 # Functions
-get_snapshot_version() { echo "`grep -A 2 "\[$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`"; }
+get_snapshot_version() {
+  result=`grep -A 2 "\[datasets\.$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`
+  if [ -z "$result" ]; then
+    echo "$(log_timestamp) ${log_level}:graphdb: Dataset must be in one of the datasets configured in the eval_setup.toml" >> $log_file
+    return 2
+  else
+    echo "$result"
+  fi
+}
 
+get_snapshot_filename_struc() { 
+  snapshot_filename_struc=`grep -A 2 "\[datasets\.$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*ic_basename_length\s*=' | awk '{print $3}'`
+  if [ -z "$snapshot_filename_struc" ]; then
+    echo "Error: snapshot filename structure returned empty." >&2
+    return 2
+  fi
+  echo "%0${snapshot_filename_struc}g";
+}
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Bash arguments and environment variables
@@ -58,17 +74,8 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
         for dataset in ${datasets[@]}; do
             export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
-
-            case $dataset in 
-                beara) versions=`get_snapshot_version "beara"` file_name_struc="%01g";;
-                bearb_hour) versions=`get_snapshot_version "bearb_hour"`  file_name_struc="%06g";; 
-                bearb_day) versions=`get_snapshot_version "bearb_day"`  file_name_struc="%06g";;
-                bearc) versions=`get_snapshot_version "bearc"`  file_name_struc="%01g";;
-                *)
-                    echo "graphdb: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_graphdb
-                    exit 2
-                ;;
-            esac
+            versions=`get_snapshot_version "${dataset}"`
+            file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
             echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB" >> $log_file_graphdb
             total_ingestion_time=0
@@ -188,17 +195,8 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
         for dataset in ${datasets[@]}; do
             # Set variables
             data_dir=$db_dir/${policy}_${dataset}
-
-            case $dataset in 
-                beara) versions=`get_snapshot_version "beara"` file_name_struc="%01g";;
-                bearb_hour) versions=`get_snapshot_version "bearb_hour"` file_name_struc="%06g";; 
-                bearb_day) versions=`get_snapshot_version "bearb_day"` file_name_struc="%06g";;
-                bearc) versions=`get_snapshot_version "bearc"` file_name_struc="%01g";;
-                *)
-                    echo "jenatdb2: Dataset must be in beara bearb_hour bearb_day bearc" >> $log_file_jena
-                    exit 2
-                ;;
-            esac
+            versions=`get_snapshot_version "${dataset}"`
+            file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
             echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2" >> $log_file_jena
             total_ingestion_time=0
