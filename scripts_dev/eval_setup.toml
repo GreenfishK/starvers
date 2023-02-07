@@ -1,6 +1,7 @@
 # TODO: Link all scripts to this golden source
 [beara]
     snapshot_versions = 58
+    ic_basename_length = 1
     superset = "beara"
     [beara.repositories]
         ic_mr_tr = 58
@@ -29,6 +30,7 @@
 
 [bearb_hour]
     snapshot_versions = 1299
+    ic_basename_length = 6
     superset = "bearb"
     [bearb_hour.repositories]
         ic_mr_tr = 1299
@@ -57,6 +59,7 @@
 
 [bearb_day]
     snapshot_versions = 89
+    ic_basename_length = 6
     superset = "bearb"
     [bearb_day.repositories]
         ic_mr_tr = 89
@@ -85,6 +88,7 @@
 
 [bearc]
     snapshot_versions = 33
+    ic_basename_length = 1
     superset = "bearc"
     [bearc.repositories]
         ic_mr_tr = 33

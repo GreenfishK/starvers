@@ -12,6 +12,7 @@ import shutil
 from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef
 from starvers.starvers import TripleStoreEngine
+import tomli
 
 
 class TripleStore(Enum):
@@ -362,8 +363,10 @@ skip_icng_ds = sys.argv[5]
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-dataset_versions = {'beara':58, 'bearb_day':89, 'bearb_hour':1299, 'bearc':33, 'beart': 4, 'beart2': 4}
-ic_basename_lengths = {'beara': 1, 'bearb_hour': 6, 'bearb_day': 6, 'bearc': 1, 'beart': 6, 'beart2': 6}
+with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
+dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in eval_setup.items()}
+ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in eval_setup.items()}
 allowed_datasets = list(dataset_versions.keys())
 
 ############################################# Start procedure #############################################
