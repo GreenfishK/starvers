@@ -1,8 +1,5 @@
 version: "3.4"
 
-volumes:
-  - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-
 services:
   download:
     build: 
@@ -11,6 +8,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ./scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
     entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
@@ -22,6 +20,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ./scripts_dev/2_clean_raw_datasets:/starvers_eval/scripts/2_clean_raw_datasets # move to image after development has finished
     environment:
@@ -35,6 +34,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
       - ${base_host_dir}/databases/construct_datasets:/starvers_eval/databases/construct_datasets
@@ -55,6 +55,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/databases:/starvers_eval/databases
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
@@ -73,6 +74,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
@@ -86,6 +88,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
       - ${base_host_dir}/databases:/starvers_eval/databases
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
@@ -111,6 +114,7 @@ services:
       target: final_stage
     image: starvers_eval
     volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
     environment:
@@ -126,7 +130,8 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    volumes:            
+    volumes:   
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
