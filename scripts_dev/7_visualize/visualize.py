@@ -137,5 +137,5 @@ def create_plots(triplestore: str, dataset: str):
 
 
 args = itertools.product(['graphdb', 'jenatdb2'], datasets)
-map(create_plots, *args)
+list(map(lambda x: create_plots(*x), args))
 
