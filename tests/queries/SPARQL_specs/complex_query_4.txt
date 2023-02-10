@@ -1,0 +1,16 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX : <http://example.com/>
+SELECT ?s ?page ?type WHERE
+{
+    ?s foaf:page ?page .
+    {
+        ?s rdfs:label "Microsoft"@en .
+        BIND ("A" as ?type) 
+    }
+    UNION
+    {
+        ?s rdfs:label "Apple"@en .
+        BIND ("B" as ?type) 
+    }
+}
