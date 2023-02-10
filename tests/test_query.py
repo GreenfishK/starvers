@@ -49,6 +49,17 @@ def test_complex_query_3():
     assert len(df.index) == 16
 
 
+def test_complex_query_4():
+    with open(sparql_specs_queries_path + "complex_query_4.txt", "r") as file:
+        query = file.read()
+    file.close()
+    try:
+        df = engine.query(query)
+    except Exception as e:
+        raise Exception("Malformed query due to mess up with the BINDs. The BINDs in the two sub-BGPs get moved to the " \
+        "Select clause in an invalid way.")
+  
+
 def test_functions__functional_forms_not_exists():
     with open(sparql_specs_queries_path + "functions__functional_forms_not_exists.txt", "r") as file:
         query = file.read()
@@ -67,6 +78,7 @@ def test_functions__functions_on_dates_and_time():
     assert len(df.index) == 1
     assert len(df.columns) == 9
 
+
 def test_functions__functions_on_numerics():
     with open(sparql_specs_queries_path + "functions__functions_on_numerics.txt", "r") as file:
         query = file.read()
@@ -75,6 +87,7 @@ def test_functions__functions_on_numerics():
     df = engine.query(query)
     assert len(df.index) == 1
     assert len(df.columns) == 5
+
 
 def test_functions__functions_on_rdf_terms():
     with open(sparql_specs_queries_path + "functions__functions_on_rdf_terms.txt", "r") as file:
