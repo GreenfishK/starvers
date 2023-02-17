@@ -64,12 +64,12 @@ def create_plots(triplestore: str, dataset: str):
         
         for policy in policies:
             policy_df = means[means['policy'] == policy]
+            ax.set_yscale('log')
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], label=policy, color=color_map[policy])
         
         ax.set_title(f"Query set: {query_set}")
         ax.set_xlabel('snapshots')
         ax.set_ylabel('Execution time (s)')
-        ax.set_yscale('log')
         tick_steps = max(math.floor(len(policy_df['snapshot'])/10), 1)
         ax.set_xticks(ticks=range(0, len(policy_df['snapshot']), tick_steps),
                     labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
