@@ -30,8 +30,8 @@ for dataset in ${datasets[@]}; do
     tar -xf /starvers_eval/rawdata/${dataset}/${archive_name_snapshots} -C /starvers_eval/rawdata/${dataset}/${snapshot_dir}
     
     if [[ $yn_nested_archives == "true" ]]; then
-        cd /starvers_eval/rawdata/bearb_hour/${snapshot_dir}
-        for f in *.gz ; do gzip -d < "$f" > /starvers_eval/rawdata/bearb_hour/${snapshot_dir}/"${f%.*}" ; done
+        cd /starvers_eval/rawdata/${dataset}/${snapshot_dir}
+        for f in *.gz ; do gzip -d < "$f" > /starvers_eval/rawdata/${dataset}/${snapshot_dir}/"${f%.*}" ; done
         rm *.gz
     fi
     
