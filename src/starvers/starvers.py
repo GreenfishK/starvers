@@ -399,8 +399,6 @@ class TripleStoreEngine:
             logger.info("Query being executed: \n {0}".format(select_statement))
             self.sparql_get_with_post.setQuery(select_statement)
         
-        # The query sometimes gets recognized as LOAD even though it is a SELECT statement. this results into
-        # a failed execution as we are using an get endpoint which is not allowed with LOAD
         self.sparql_get_with_post.queryType = 'SELECT'
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
