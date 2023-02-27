@@ -491,7 +491,7 @@ class TripleStoreEngine:
         :param prefixes: Prefixes that are used within :old_triples and :new_triples.
         """
 
-        if len(old_triple) == 0:
+        if len(old_triples) == 0:
             logger.info("List is empty. No triples will be outdated.")
             return
 
