@@ -43,8 +43,8 @@ engine.version_all_rows(initial_timestamp)
 To insert new triples we first need to prepare a list of triples and then pass them to the insert function. The triples must already be in n3 syntax, i.e. in case of an IRI, include the pointy brackets < > in the string.
 
 ```
-new_triples = [['<http://example.com/Brad_Pitt>', '<http://example.com/occupation>' ,'<http://example.com/Limo_Driver>'],
-        ['<http://example.com/Frank_Sinatra>', '<http://example.com/occupation>', '<http://example.com/Singer>']]
+new_triples = ['<http://example.com/Brad_Pitt> <http://example.com/occupation> <http://example.com/Limo_Driver> .',
+               '<http://example.com/Frank_Sinatra> <http://example.com/occupation> <http://example.com/Singer> .']
 engine.insert(new_triples)
 ```
 
@@ -63,7 +63,7 @@ new_triples=[['<http://example.com/Donald_Trump>', None, None],
 ## Delete (Outdate) triples
 To outdate triples we need to provide a list of valid triples which should be deleted. The valid_until timestamp of any matched triple will be replaced by the current system timestamp of python's datetime.now() function.
 ```
-engine.outdate([['<http://example.com/Donald_Trump>', '<http://example.com/occupation>' ,'<http://example.com/President>']])
+engine.outdate(['<http://example.com/Donald_Trump> <http://example.com/occupation> <http://example.com/President> .'])
 ```
 
 
