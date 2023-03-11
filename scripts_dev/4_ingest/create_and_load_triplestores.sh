@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Logging variables
-log_file_graphdb=/starvers_eval/output/logs/ingest/ingestion_graphdb.txt
-log_file_jena=/starvers_eval/output/logs/ingest/ingestion_jena.txt
+ingest_logs=/starvers_eval/output/logs/ingest
+log_file_graphdb=${ingest_logs}/ingestion_graphdb.txt
+log_file_jena=${ingest_logs}/ingestion_jena.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
@@ -14,6 +15,7 @@ policies=("${policies}")
 # Prepare directories and files
 measurements=/starvers_eval/output/measurements/ingestion.csv
 echo "triplestore;policy;dataset;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
+mkdir -p $ingest_logs
 
 # Path variables
 script_dir=/starvers_eval/scripts
