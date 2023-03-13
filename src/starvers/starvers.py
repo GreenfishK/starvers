@@ -349,7 +349,6 @@ class TripleStoreEngine:
 
 
     def version_all_triples(self, initial_timestamp: datetime = None):
-        # TODO: Rename to version all triples
         """
         Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
         and an end date that lies far in the future as valid_until date. 
