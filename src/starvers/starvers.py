@@ -100,6 +100,7 @@ def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str
                     if isinstance(path, NegatedPath):
                         raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
                     if isinstance(path, AlternativePath):
+                        # TODO resolve path
                         raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
                                                             "Path will not be resolved. Instead of alternative paths "
                                                             "try using the following expression: "
@@ -348,6 +349,7 @@ class TripleStoreEngine:
 
 
     def version_all_rows(self, initial_timestamp: datetime = None):
+        # TODO: Rename to version all triples
         """
         Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
         and an end date that lies far in the future as valid_until date. 
@@ -470,7 +472,7 @@ class TripleStoreEngine:
         logger.info("Triples inserted.")
 
 
-    def update(self, old_triples: list, new_triples: list, prefixes: dict = None):
+    def update(self, old_triples: list, new_triples: list, prefixes: dict = None, batch_size: int = 1000):
         """
         Updates a list of triples by another list of triples. Both lists need to have the same dimensions. The first list 
         should contain triples in n3 syntax that are also present in the triple store and currently valid. Each triple in the 
@@ -503,26 +505,25 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = add_versioning_prefixes("")
 
+        logger.info("Create update statement")
         template = open(self._template_location + "/update_triples.txt", "r").read()
-        update_block = ""
-        for i, old_triple in enumerate(old_triples):
-            new_triple = new_triples[i]
-            if isinstance(old_triple, list) and isinstance(new_triple, list) \
-            and len(old_triple) == 3 and len(new_triple) == 3:
-                newS = new_triple[0] if new_triple[0] != None else "UNDEF"
-                newP = new_triple[1] if new_triple[1] != None else "UNDEF"
-                newO = new_triple[2] if new_triple[2] != None else "UNDEF"
 
-                update_block = update_block + "({0} {1} {2} {3} {4} {5})\n".format(old_triple[0],old_triple[1],old_triple[2],
-                newS, newP, newO)
-            else:
+        update_block = []
+        for old_triple, new_triple in zip(old_triples, new_triples):
+            if not (isinstance(old_triple, list) and isinstance(new_triple, list) 
+                    and len(old_triple) == 3 and len(new_triple) == 3):
                 raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
-        update_statement = template.format(sparql_prefixes, update_block)
-        self.sparql_post.setQuery(update_statement)
-        self.sparql_post.query()
+            newS, newP, newO = ["UNDEF" if v is None else v for v in new_triple]
+            update_block.append(f"({old_triple[0]} {old_triple[1]} {old_triple[2]} {newS} {newP} {newO})")
+        
+        logger.info("Updating triples as batches of {0} triples.".format(batch_size))
+        for i in range(0, len(update_block), batch_size):
+            update_batch = "\n".join(update_block[i:min(i+batch_size, len(update_block))])
+            update_statement = template.format(sparql_prefixes, update_batch)
+            self.sparql_post.setQuery(update_statement)
+            self.sparql_post.query()
         logger.info("Triples updated.")
-
-
+        
 
     def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, batch_size: int = 1000):
         """
