@@ -18,7 +18,7 @@ engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
 ```
 
-## Version all rows - initialize dataset
+## Version all triples - initialize dataset
 First, we need to initialize our dataset and wrap every triple with a valid\_from and a valid\_until timestamp. Consider following example RDF dataset:
 
 | Subject      | Predicate | Object |
@@ -29,8 +29,8 @@ First, we need to initialize our dataset and wrap every triple with a valid\_fro
 Now we can choose whether we want to timestamp the data with the execution timestamp or with a custom one. For this example, we chose a custom timestamp in order to make the example reproducible. By executing ...
 ```
 initial_timestamp = datetime(2022, 10, 12, 14, 43, 21, 941000, timezone(timedelta(hours=2)))
-engine.version_all_rows(initial_timestamp)
-# alternatively: engine.version_all_rows()
+engine.version_all_triples(initial_timestamp)
+# alternatively: engine.version_all_triples()
 ```
 ... our dataset turns into:
 

@@ -348,7 +348,7 @@ class TripleStoreEngine:
         logger.info("All annotations have been removed.")
 
 
-    def version_all_rows(self, initial_timestamp: datetime = None):
+    def version_all_triples(self, initial_timestamp: datetime = None):
         # TODO: Rename to version all triples
         """
         Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
@@ -368,7 +368,7 @@ class TripleStoreEngine:
             system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
             version_timestamp = _versioning_timestamp_format(system_timestamp)
 
-        temp = open(self._template_location + "/version_all_rows.txt", "r").read()
+        temp = open(self._template_location + "/version_all_triples.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
 
         self.sparql_post.setQuery(update_statement)
