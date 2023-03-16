@@ -101,7 +101,12 @@ def create_plots(triplestore: str, dataset: str):
             
             ax.bar(i - bar_width, ing_time, bar_width, alpha=opacity, color='coral', label="Ingestion Time")
             ax2.bar(i, raw_size, bar_width, alpha=opacity, color='limegreen', label="Raw File Size")
-            ax2.bar(i, db_size, bar_width * 0.6, alpha=opacity, color='darkgreen', label="DB File Size")
+            ax2.bar(i + bar_width, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
+
+            # Add measurements as text to bars
+            ax.text(i - bar_width, ing_time, "{:.2f}".format(ing_time), ha='center', va='bottom')
+            ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
+            ax2.text(i + bar_width, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
         
         ax.set_xticks(index)
         ax.yaxis.label.set_color('coral')
@@ -125,8 +130,14 @@ def create_plots(triplestore: str, dataset: str):
     limegreen_patch = mpatches.Patch(color='limegreen', label='Raw File Size')
     darkgreen_patch = mpatches.Patch(color='darkgreen', label='DB File Size')
     coral_patch = mpatches.Patch(color='coral', label='Ingestion Time')
-    fig.legend(loc="upper right", ncol=1, handles={red_patch, blue_patch, green_patch, purple_patch})
-    fig.legend(loc="lower right", ncol=3, handles={limegreen_patch, darkgreen_patch, coral_patch})
+
+    handles1 = [red_patch, blue_patch, green_patch, purple_patch]
+    handles2 = [coral_patch, limegreen_patch, darkgreen_patch]
+    fixed_labels = ['coral_patch', 'limegreen_patch', 'darkgreen_patch']
+
+
+    fig.legend(loc="upper right", ncol=1, handles=sorted(handles1, key=lambda x: x.get_label()))
+    fig.legend(loc="lower right", ncol=3, handles=sorted(handles2, key=lambda x: fixed_labels.index(x.get_label()) if x.get_label() in fixed_labels else len(fixed_labels)))
 
     fig.suptitle(f"Query performance and data ingestion & storage plots \nfor {triplestore} and {dataset}", fontsize=24)
     fig.set_figheight(9)
