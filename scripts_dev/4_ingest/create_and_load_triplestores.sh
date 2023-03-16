@@ -80,7 +80,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
 
-            for $run in {1..10}; do
+            for run in {1..10}; do
                 echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB; run: $run" >> $log_file_graphdb
                 total_ingestion_time=0
                 total_file_size=0
@@ -160,7 +160,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                 cat $log_file_graphdb | grep -v "\[.*\] DEBUG"
                 disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
-                echo "graphdb;${policy};${dataset};${run};{total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+                echo "graphdb;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
             done
         done
     done
@@ -203,7 +203,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             versions=`get_snapshot_version "${dataset}"`
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
-            for $run in {1..10}; do
+            for run in {1..10}; do
                 echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2; run: $run" >> $log_file_jena
                 total_ingestion_time=0
                 total_file_size=0            
