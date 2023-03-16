@@ -136,10 +136,10 @@ def create_plots(triplestore: str, dataset: str):
     fixed_labels = ['coral_patch', 'limegreen_patch', 'darkgreen_patch']
 
 
-    fig.legend(loc="upper right", ncol=1, handles=sorted(handles1, key=lambda x: x.get_label()))
+    fig.legend(loc="upper right", ncol=4, handles=sorted(handles1, key=lambda x: x.get_label()))
     fig.legend(loc="lower right", ncol=3, handles=sorted(handles2, key=lambda x: fixed_labels.index(x.get_label()) if x.get_label() in fixed_labels else len(fixed_labels)))
 
-    fig.suptitle(f"Query performance and data ingestion & storage plots \nfor {triplestore} and {dataset}", fontsize=24)
+    #fig.suptitle(f"Query performance and data ingestion & storage plots \nfor {triplestore} and {dataset}", fontsize=24)
     fig.set_figheight(9)
     fig.set_figwidth(16)
 
