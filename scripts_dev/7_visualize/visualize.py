@@ -47,6 +47,7 @@ def create_plots(triplestore: str, dataset: str):
     performance_data = performance_data[['triplestore', 'dataset', 'policy', 'snapshot', 'query_set', 'execution_time_total']]
 
     ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
+    ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
     # Parameters
     policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']

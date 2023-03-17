@@ -289,7 +289,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
                 cat $log_file_jena | grep -v "\[.*\] DEBUG"
                 disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
-                echo "Jenatdb2;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+                echo "jenatdb2;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
             done
         done
     done
