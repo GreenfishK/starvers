@@ -117,6 +117,12 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
+###################################### Dry run ########################################
+logger.info("Execute simple SPARQL query to warm up the RDF store and prevent the initial hike during the evaluation.")
+dry_run_query = "select ?s ?p ?o {?s ?p ?o .}"
+engine.setQuery(dry_run_query)
+result = engine.query()
+
 ###################################### Evaluation ######################################
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
 f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
