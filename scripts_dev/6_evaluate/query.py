@@ -155,7 +155,8 @@ for query_set in query_sets:
                     write = csv.writer(file, delimiter=";")
                     write.writerows(to_list(result))
                 except Exception as e:
-                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " +\
+                    logger.error(e)
+                    logger.warning(f"The query execution {query_file_name} might have reached the timeout of {timeout} seconds. " +\
                     "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
 
