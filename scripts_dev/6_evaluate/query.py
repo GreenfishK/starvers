@@ -119,9 +119,9 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
 
 ###################################### Dry run ########################################
 logger.info("Execute simple SPARQL query to warm up the RDF store and prevent the initial hike during the evaluation.")
-dry_run_query = "select ?s ?p ?o {?s ?p ?o .}"
+dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
 engine.setQuery(dry_run_query)
-result = engine.query()
+dry_run_result = engine.query()
 
 ###################################### Evaluation ######################################
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
