@@ -142,7 +142,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
                     logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
                     start = time.time()
-                    rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, batch_size=chunk_size)
+                    rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                     end = time.time()
                     execution_time_insert = end - start
                     df = df.append(pd.Series([triple_store, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
@@ -155,7 +155,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
                     logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
                     start = time.time()
-                    rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=chunk_size)
+                    rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                     end = time.time()
                     execution_time_outdate = end - start
                     df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
