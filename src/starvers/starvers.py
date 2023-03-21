@@ -409,7 +409,7 @@ class TripleStoreEngine:
         return df
 
 
-    def insert(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, batch_size: int = 1000):
+    def insert(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
         """
         Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from (NOW()) and 
         "artificial" valid_until timestamp using the RDF-star paradigm. Each inserted triple has the following form 
@@ -428,9 +428,9 @@ class TripleStoreEngine:
         :param triples: A list of list of triples in n3 syntax (including the dot) or a string in the SPARQL syntax for the VALUES block.
         :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the inserted triples will be annotated with this timestamp.
-        :param batch_size: The maximal number of triples that are inserted per batch. If the dataset is greater than :batch_size 
-        the SPARQL updates are split into batches where one batch has maximum :batch_size triples. It can be useful to experiment 
-        with this parameter and find the optimal batch size for the target triple store.
+        :param chunk_size: The maximum number of triples that are inserted during each iteration. If the dataset is greater than :chunk_size 
+        the SPARQL updates are split into chunks where one chunk has maximum :chunk_size triples. It can be useful to experiment 
+        with this parameter and find the optimal chunk size for the target triple store.
         :return:
         """
 
@@ -458,20 +458,20 @@ class TripleStoreEngine:
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
 
-        logger.info("Inserting triples as batches of {0} triples.".format(batch_size))
-        for i in range(0, len(insert_block), batch_size):
-            insert_batch = "\n".join(insert_block[i:min(i+batch_size, len(insert_block))])
+        logger.info("Inserting triples as chunks of {0} triples.".format(chunk_size))
+        for i in range(0, len(insert_block), chunk_size):
+            insert_chunk = "\n".join(insert_block[i:min(i+chunk_size, len(insert_block))])
             if timestamp:
                 version_timestamp = _versioning_timestamp_format(timestamp)
-                insert_statement = statement.format(sparql_prefixes, insert_batch, '"' + version_timestamp + '"')
+                insert_statement = statement.format(sparql_prefixes, insert_chunk, '"' + version_timestamp + '"')
             else:
-                insert_statement = statement.format(sparql_prefixes, insert_batch, "NOW()")
+                insert_statement = statement.format(sparql_prefixes, insert_chunk, "NOW()")
             self.sparql_post.setQuery(insert_statement)
             self.sparql_post.query()
         logger.info("Triples inserted.")
 
 
-    def update(self, old_triples: list, new_triples: list, prefixes: dict = None, batch_size: int = 1000):
+    def update(self, old_triples: list, new_triples: list, prefixes: dict = None, chunk_size: int = 1000):
         """
         Updates a list of triples by another list of triples. Both lists need to have the same dimensions. The first list 
         should contain triples in n3 syntax that are also present in the triple store and currently valid. Each triple in the 
@@ -515,16 +515,16 @@ class TripleStoreEngine:
             newS, newP, newO = ["UNDEF" if v is None else v for v in new_triple]
             update_block.append(f"({old_triple[0]} {old_triple[1]} {old_triple[2]} {newS} {newP} {newO})")
         
-        logger.info("Updating triples as batches of {0} triples.".format(batch_size))
-        for i in range(0, len(update_block), batch_size):
-            update_batch = "\n".join(update_block[i:min(i+batch_size, len(update_block))])
-            update_statement = template.format(sparql_prefixes, update_batch)
+        logger.info("Updating triples as chunks of {0} triples.".format(chunk_size))
+        for i in range(0, len(update_block), chunk_size):
+            update_chunk = "\n".join(update_block[i:min(i+chunk_size, len(update_block))])
+            update_statement = template.format(sparql_prefixes, update_chunk)
             self.sparql_post.setQuery(update_statement)
             self.sparql_post.query()
         logger.info("Triples updated.")
         
 
-    def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, batch_size: int = 1000):
+    def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function) or the given :timestamp.
@@ -542,9 +542,9 @@ class TripleStoreEngine:
         :param triples: A list of list of triples in n3 syntax (including the dot) or a string in the SPARQL syntax for the VALUES block.
         :param prefixes: Prefixes that are used within :param triples.
         :param timestamp: If a timestamp is given, the outdated triples will be annotated with this timestamp.
-        :param batch_size: The maximal number of triples that are inserted per batch. If the dataset is greater than :batch_size 
-        the SPARQL updates are split into batches where one batch has maximum :batch_size triples. It can be useful to experiment 
-        with this parameter and find the optimal batch size for the target triple store.
+        :param chunk_size: The maximum number of triples that are outdated during each iteration. If the dataset is greater than :chunk_size 
+        the SPARQL updates are split into chunks where one chunk has maximum :chunk_size triples. It can be useful to experiment 
+        with this parameter and find the optimal chunk size for the target triple store.
         :return:
         """
 
@@ -572,14 +572,14 @@ class TripleStoreEngine:
         else:
             raise Exception("Type of triples must be either list or string. See doc of this function.")
         
-        logger.info("Outdating triples as batches of {0} triples.".format(batch_size))
-        for i in range(0, len(outdate_block), batch_size):
-            outdate_batch = "\n".join(outdate_block[i:min(i+batch_size, len(outdate_block))])
+        logger.info("Outdating triples as chunks of {0} triples.".format(chunk_size))
+        for i in range(0, len(outdate_block), chunk_size):
+            outdate_chunk = "\n".join(outdate_block[i:min(i+chunk_size, len(outdate_block))])
             if timestamp:
                 version_timestamp = _versioning_timestamp_format(timestamp)
-                outdate_statement = statement.format(sparql_prefixes, outdate_batch, '"' + version_timestamp + '"')
+                outdate_statement = statement.format(sparql_prefixes, outdate_chunk, '"' + version_timestamp + '"')
             else:
-                outdate_statement = statement.format(sparql_prefixes, outdate_batch, "NOW()")
+                outdate_statement = statement.format(sparql_prefixes, outdate_chunk, "NOW()")
             self.sparql_post.setQuery(outdate_statement)
             self.sparql_post.query()
         logger.info("Triples outdated.")
