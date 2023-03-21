@@ -21,18 +21,18 @@ script_dir=/starvers_eval/scripts
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}
-    rm -rf /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}
+    rm -rf /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}
     rm -rf /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}
-    mkdir -p /starvers_eval/databases/construct_datasets/jenatdb2
+    mkdir -p /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}
+    mkdir -p /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}
     mkdir -p /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
     repositoryID=${policy}_${dataset}
-    cp ${script_dir}/3_construct_datasets/configs/jenatdb2-config_template.ttl /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}/${repositoryID}.ttl
-    sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}/${repositoryID}.ttl
+    cp ${script_dir}/3_construct_datasets/configs/jenatdb2-config_template.ttl /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+    sed -i "s/{{repositoryID}}/$repositoryID/g" /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
 fi
 
 if [[ "$ingest_empty" == "true" ]]; then
@@ -46,7 +46,7 @@ if [[ "$shutdown" == "true" ]]; then
 fi
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-cp /starvers_eval/configs/construct_datasets/jenatdb2/${policy}_${dataset}/*.ttl /run/configuration
+cp /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
 nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
 
 # Wait until server is up
