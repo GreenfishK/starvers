@@ -5,9 +5,11 @@ from enum import Enum
 import re
 import sys
 import re
+import time
 import logging
 import subprocess
 import shlex
+import pandas as pd
 import shutil
 from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef
@@ -76,7 +78,7 @@ def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: in
 
 
 def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int,
- init_timestamp: datetime, dataset:str, triple_store: TripleStore = TripleStore.JENATDB2):
+ init_timestamp: datetime, dataset:str, triple_store: TripleStore = TripleStore.JENATDB2, chunk_size:int = 5000):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
@@ -95,6 +97,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                         'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
                                         'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
     configs = triple_store_configs[triple_store.name.lower()]
+    df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'])
     
     logging.info("Constructing timestamped RDF-star dataset from ICs and changesets.")
     logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
@@ -108,7 +111,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
     rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=5000)
+    start = time.time()
+    rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, batch_size=chunk_size)
+    end = time.time()
+    execution_time_insert = end - start
+    df = df.append(pd.Series([triple_store, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -131,7 +138,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             added_triples_raw = list(filter(None, added_triples_raw))
 
             logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
-            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, batch_size=5000)
+            start = time.time()
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, batch_size=chunk_size)
+            end = time.time()
+            execution_time_insert = end - start
+            df = df.append(pd.Series([triple_store, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
+
         
         if filename.startswith("data-deleted"):
             logging.info("Read negative changeset {0} into memory.".format(filename))
@@ -139,7 +151,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             deleted_triples_raw = list(filter(None, deleted_triples_raw))
 
             logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))
-            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=5000)
+            start = time.time()
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, batch_size=chunk_size)
+            end = time.time()
+            execution_time_outdate = end - start
+            df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
+
 
     logging.info("Extract the whole dataset from the JenaTDB2 repository.")
     sparql_engine = SPARQLWrapper(configs['query_endpoint'])
@@ -221,6 +238,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     subprocess.run(["pkill", "-f", "{0}".format(configs['shutdown_process'])])
     shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
     shutil.rmtree("/run/configuration", ignore_errors=True)
+
+    logging.info("Writing performance measurements to disk ...")            
+    df.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='a', header=False)
+
+
 
   
 def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
@@ -386,13 +408,15 @@ for dataset in datasets:
                                 end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     if not skip_tb_star_ds == "True":
-        construct_tb_star_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                            source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
-                            destination=f"{data_dir}/alldata.TB_star_hierarchical.ttl",
-                            last_version=total_versions,
-                            init_timestamp=init_version_timestamp,
-                            dataset=dataset,
-                            triple_store=TripleStore.GRAPHDB)    
+        for chunk_size in range(1000, 10000, 1000):
+            construct_tb_star_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                                source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
+                                destination=f"{data_dir}/alldata.TB_star_hierarchical.ttl",
+                                last_version=total_versions,
+                                init_timestamp=init_version_timestamp,
+                                dataset=dataset,
+                                triple_store=TripleStore.GRAPHDB,
+                                chunk_size=chunk_size)    
     
     if not skip_cbng_ds == "True":
         construct_cbng_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
