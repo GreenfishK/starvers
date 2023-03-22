@@ -89,6 +89,7 @@ def create_plots(triplestore: str, dataset: str):
 
     def plot_ingestion(ax, ax2):
         bar_width = 0.2
+        spacing = 0.1
         opacity = 1
         index = range(len(policies))
 
@@ -100,9 +101,9 @@ def create_plots(triplestore: str, dataset: str):
             ax.boxplot(policy_data["ingestion_time"], positions=[i], widths=0.8)
 
             ax2.bar(i, raw_size, bar_width, alpha=opacity, color='limegreen', label="Raw File Size")
-            ax2.bar(i + bar_width, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
+            ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
             ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
-            ax2.text(i + bar_width, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
+            ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
         
         ax.set_xticks(index)
         ax.set_xticklabels(policies)
@@ -111,7 +112,7 @@ def create_plots(triplestore: str, dataset: str):
         ax.set_ylabel("Ingestion Time (s)")
         ax.yaxis.label.set_color('coral')
 
-        ax2.set_xticks([bar_width/2 + x for x in range(len(policies))])
+        ax2.set_xticks([bar_width/2 + spacing/2 + x for x in range(len(policies))])
         ax2.set_xticklabels(policies)
         ax2.set_xlabel("Policies")
         ax2.set_ylabel("Storage Consumption (MiB)")
