@@ -166,7 +166,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         chunk_sizes = range(2000, 20000, 2000)
         map(lambda x: construct_ds_in_db(x[0], x[1]), product(triple_stores, chunk_sizes))
     else:
-        construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, measure_time=False)
+        construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000)
 
     # TODO: run construct_ds_in_db for each triple store in triple_stores and for each chunk size in chunk_sizes without using for loops but using partial from functools
     
