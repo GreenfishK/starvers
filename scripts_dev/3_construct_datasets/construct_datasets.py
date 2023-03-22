@@ -101,10 +101,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'])
 
     for triple_store in [TripleStore.GRAPHDB, TripleStore.JENATDB2]:
+        configs = triple_store_configs[triple_store.name.lower()]
+        rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
+
         for chunk_size in range(2000, 20000, 2000):
-            configs = triple_store_configs[triple_store.name.lower()]
-            
             logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
+            
             logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
             subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
                 configs['start_script'], policy, dataset, "true", "true", "false")))
@@ -114,7 +116,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             added_triples_raw = list(filter(None, added_triples_raw))
             added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
-            rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
             logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
             start = time.time()
             rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
