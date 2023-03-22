@@ -131,4 +131,16 @@
                     cb_sr_ng = {versions = 33, template = "ictr/sparql"}
                     tb_sr_ng = {versions = 33, template = "tbng/sparql"}
                     tb_sr_rs = {versions = 33, template = "ictr/sparql"}
+    [datasets.beart]
+        snapshot_versions = 4
+        ic_basename_length = 1
+        superset = "beart"
+        [datasets.beart.repositories]
+            ic_mr_tr = 4
+            cb_mr_tr = 8
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+
         
