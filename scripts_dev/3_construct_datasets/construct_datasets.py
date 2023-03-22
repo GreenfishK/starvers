@@ -17,7 +17,7 @@ from starvers.starvers import TripleStoreEngine
 import tomli
 from itertools import product
 from functools import partial
-
+from urllib.error import HTTPError
 
 class TripleStore(Enum):
     GRAPHDB = 1
@@ -116,9 +116,13 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
 
         logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
         rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
-        start = time.time()
-        rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
-        end = time.time()
+        try:
+            start = time.time()
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
+            end = time.time()
+        except HTTPError:
+            logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
+            return df
         execution_time_insert = end - start
         df = df.append(pd.Series([triple_store, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
 
@@ -164,6 +168,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         return df
     
     if dataset == 'bearc':
+        # HTTPError
         triple_stores = [TripleStore.GRAPHDB, TripleStore.JENATDB2]
         chunk_sizes = range(2000, 20000, 2000)
         measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
