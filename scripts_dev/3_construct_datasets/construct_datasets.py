@@ -99,11 +99,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                                         'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
                                         'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
-    df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'])
 
-    def construct_ds_in_db(triple_store: TripleStore, chunk_size: int):
+    def construct_ds_in_db(triple_store: TripleStore, chunk_size: int, ts_configs: dict):
         logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
-        configs = triple_store_configs[triple_store.name.lower()]
+        configs = ts_configs[triple_store.name.lower()]
+        df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'])
 
         logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
         subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
@@ -160,18 +160,19 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 end = time.time()
                 execution_time_outdate = end - start
                 df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
-
+        
+        return df
+    
     if dataset == 'bearc':
         triple_stores = [TripleStore.GRAPHDB, TripleStore.JENATDB2]
         chunk_sizes = range(2000, 20000, 2000)
-        map(lambda x: construct_ds_in_db(x[0], x[1]), product(triple_stores, chunk_sizes))
-    else:
-        construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000)
+        measurements = map(lambda x: construct_ds_in_db(x[0], x[1]), product(triple_stores, chunk_sizes))
+        combined_measurements = pd.concat(measurements, join="inner")
+        logging.info("Writing performance measurements to disk ...")            
+        combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='a', header=True)
 
-    # TODO: run construct_ds_in_db for each triple store in triple_stores and for each chunk size in chunk_sizes without using for loops but using partial from functools
-    
-    logging.info("Writing performance measurements to disk ...")            
-    df.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='a', header=False)
+    else:
+        measurements = construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000)    
 
     logging.info("Extract the whole dataset from the GraphDB repository.")
     sparql_engine = SPARQLWrapper(triple_store_configs['graphdb']['query_endpoint'])
