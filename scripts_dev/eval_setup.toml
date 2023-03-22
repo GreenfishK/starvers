@@ -133,7 +133,7 @@
                     tb_sr_rs = {versions = 33, template = "ictr/sparql"}
     [datasets.beart]
         snapshot_versions = 4
-        ic_basename_length = 1
+        ic_basename_length = 6
         superset = "beart"
         [datasets.beart.repositories]
             ic_mr_tr = 4
