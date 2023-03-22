@@ -84,7 +84,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     :param: destination: The path in the filesystem to the resulting dataset.
     :param: init_timestamp: The initial timestamp that is being incremented by 1sec for each dataset version/pair of changesets.
 
-    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets.
+    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets. It constructs the dataset
+    10 times for each triple store with an initial chunk size of 2000 for the update operations and increasing the chunk size 
+    by 2000 in every iteration.
     """
     policy = "tb_rs_sr"
     repository = policy + "_" + dataset

@@ -18,7 +18,6 @@ export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=/starvers_eval/database
 # Path variables
 script_dir=/starvers_eval/scripts
 
-
 if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/construct_datasets/graphdb/repositories/${policy}_${dataset}
@@ -42,7 +41,12 @@ fi
 if [[ "$shutdown" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Kill process /opt/java/openjdk/bin/java to shutdown GraphDB" >> $log_file
     pkill -f /opt/java/openjdk/bin/java
+    while ps -ef | grep -q '[o]pt/java/openjdk/bin/java'; do
+        sleep 1
+    done
+    echo "$(log_timestamp) ${log_level}:/opt/java/openjdk/bin/java killed." >> $log_file
 fi
+
 
 echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
 /opt/graphdb/dist/bin/graphdb -d -s
