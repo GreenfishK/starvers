@@ -87,39 +87,39 @@ def create_plots(triplestore: str, dataset: str):
         plot_performance(query_set=query_sets[1], ax=ax2)
 
 
-    def plot_ingestion(ax):
-        ax2 = ax.twinx()
+    def plot_ingestion(ax, ax2):
         bar_width = 0.2
         opacity = 1
         index = range(len(policies))
 
         for i, policy in enumerate(policies):
-            
             policy_data = ingestion_data[(ingestion_data['triplestore'] == triplestore) & (ingestion_data["policy"] == policy) & (ingestion_data['dataset'] == dataset)]
-            ing_time = policy_data["ingestion_time"].mean()
             raw_size = policy_data["raw_file_size_MiB"].mean()
             db_size = policy_data["db_files_disk_usage_MiB"].mean()
             
-            ax.bar(i - bar_width, ing_time, bar_width, alpha=opacity, color='coral', label="Ingestion Time")
+            ax.boxplot(policy_data["ingestion_time"], positions=[i], widths=0.8)
+
             ax2.bar(i, raw_size, bar_width, alpha=opacity, color='limegreen', label="Raw File Size")
             ax2.bar(i + bar_width, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
-
-            # Add measurements as text to bars
-            ax.text(i - bar_width, ing_time, "{:.2f}".format(ing_time), ha='center', va='bottom')
             ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
             ax2.text(i + bar_width, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
         
         ax.set_xticks(index)
-        ax.yaxis.label.set_color('coral')
         ax.set_xticklabels(policies)
         #ax.set_title("")
         ax.set_xlabel("Policies")
         ax.set_ylabel("Ingestion Time (s)")
+        ax.yaxis.label.set_color('coral')
+
+        ax2.set_xticks([bar_width/2 + x for x in range(len(policies))])
+        ax2.set_xticklabels(policies)
+        ax2.set_xlabel("Policies")
         ax2.set_ylabel("Storage Consumption (MiB)")
         ax2.yaxis.label.set_color('darkgreen')
 
-    ax3 = fig.add_subplot(gs[1, :])
-    plot_ingestion(ax=ax3)
+    ax3 = fig.add_subplot(gs[1, 0])
+    ax4 = fig.add_subplot(gs[1, 1])
+    plot_ingestion(ax=ax3, ax2=ax4)
 
     
     # Add legend
