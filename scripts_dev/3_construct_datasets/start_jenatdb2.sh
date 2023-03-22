@@ -17,7 +17,20 @@ export PATH=/usr/local/openjdk-11/bin:$PATH
 # Path variables
 script_dir=/starvers_eval/scripts
 
+shutdown() {
+    echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
+    pkill -f '/jena-fuseki/fuseki-server.jar'
+    while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
+        sleep 1
+    done
+    echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
+}
+
 if [[ "$reset" == "true" ]]; then
+    if ps aux | grep '[j]ena-fuseki/fuseki-server.jar' >/dev/null; then
+        shutdown
+    fi
+    
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}
     rm -rf /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}
@@ -40,12 +53,7 @@ if [[ "$ingest_empty" == "true" ]]; then
 fi
 
 if [[ "$shutdown" == "true" ]]; then
-    echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
-    pkill -f '/jena-fuseki/fuseki-server.jar'
-    while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
-        sleep 1
-    done
-    echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
+    shutdown
 fi
 
 
