@@ -145,8 +145,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 logging.info("Read positive changeset {0} into memory.".format(filename))
                 added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
                 added_triples_raw = list(filter(None, added_triples_raw))
+                cnt_trpls = len(added_triples_raw)
 
-                logging.info("Add triples from changeset {0} as nested triples into the RDF-star dataset.".format(filename))
+                logging.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
                 start = time.time()
                 rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
@@ -157,8 +158,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 logging.info("Read negative changeset {0} into memory.".format(filename))
                 deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
                 deleted_triples_raw = list(filter(None, deleted_triples_raw))
+                cnt_trpls = len(deleted_triples_raw)
 
-                logging.info("Oudate triples in the RDF-star dataset which match the triples in {0}.".format(filename))                
+                logging.info(f"Oudate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")                
                 start = time.time()
                 rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
