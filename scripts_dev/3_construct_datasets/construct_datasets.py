@@ -171,8 +171,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     
     if dataset == 'bearc':
         # HTTPError
-        triple_stores = [TripleStore.GRAPHDB, TripleStore.JENATDB2]
-        chunk_sizes = range(2000, 20000, 2000)
+        triple_stores = [TripleStore.GRAPHDB]
+        chunk_sizes = range(1000, 20000, 1000)
         measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
         measurements = map(lambda x: measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes))
         combined_measurements = pd.concat(measurements, join="inner")
