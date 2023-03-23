@@ -580,6 +580,7 @@ class TripleStoreEngine:
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, '"' + version_timestamp + '"')
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, "NOW()")
+            logging.info(outdate_statement)
             self.sparql_post.setQuery(outdate_statement)
             self.sparql_post.query()
         logger.info("Triples outdated.")
