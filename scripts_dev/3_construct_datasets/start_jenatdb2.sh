@@ -49,7 +49,7 @@ fi
 
 if [[ "$ingest_empty" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
+    /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/construct_datasets/jenatdb2/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
 if [[ "$shutdown" == "true" ]]; then
