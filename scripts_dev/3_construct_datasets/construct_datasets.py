@@ -167,6 +167,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 execution_time_outdate = end - start
                 df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
         
+            df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='a', header=True)
+
         return df
     
     if dataset == 'bearc':
@@ -178,6 +180,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         combined_measurements = pd.concat(measurements, join="inner")
         logging.info("Writing performance measurements to disk ...")            
         combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='a', header=True)
+
+        # Remove temporary output files
+        dir_path = "/starvers_eval/output/measurements/"
+        files_to_remove = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.startswith("time_update_") and f.endswith(".csv")]
+        for file in files_to_remove:
+            os.remove(file)
     else:
         measurements = construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs)    
 
