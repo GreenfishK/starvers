@@ -167,7 +167,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 execution_time_outdate = end - start
                 df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
         
-            df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='a', header=True)
+            df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
         return df
     
@@ -179,7 +179,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         measurements = map(lambda x: measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes))
         combined_measurements = pd.concat(measurements, join="inner")
         logging.info("Writing performance measurements to disk ...")            
-        combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='a', header=True)
+        combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='w', header=True)
 
         # Remove temporary output files
         dir_path = "/starvers_eval/output/measurements/"
