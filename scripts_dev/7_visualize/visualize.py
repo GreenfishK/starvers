@@ -51,17 +51,18 @@ def create_plots(triplestore: str, dataset: str):
 
     # Parameters
     policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
-    colors = ['red', 'blue', 'green', 'purple']
-    color_map = dict(zip(policies, colors))
 
-    # Figure and axes
+    # Figure and axes for query performance and ingestion
     fig = plt.figure()
-    gs = fig.add_gridspec(2,2)    
+    gs = fig.add_gridspec(2,2)   
+
        
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
         means = dataset_df.groupby(['policy', 'snapshot']).mean()
         means = means.reset_index()
+            
+        color_map = dict(zip(policies, ['red', 'blue', 'green', 'purple']))
         
         for policy in policies:
             policy_df = means[means['policy'] == policy]
@@ -104,7 +105,7 @@ def create_plots(triplestore: str, dataset: str):
             ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
             ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
             ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
-        
+    
         ax.set_xticks(index)
         ax.set_xticklabels(policies)
         #ax.set_title("")
@@ -122,7 +123,10 @@ def create_plots(triplestore: str, dataset: str):
     ax4 = fig.add_subplot(gs[1, 1])
     plot_ingestion(ax=ax3, ax2=ax4)
 
-    
+    ###############################
+    # Plot tuning and export
+    ###############################
+
     # Add legend
     red_patch = mpatches.Patch(color='red', label='ic_sr_ng')
     blue_patch = mpatches.Patch(color='blue', label='cb_sr_ng')
@@ -137,7 +141,6 @@ def create_plots(triplestore: str, dataset: str):
     handles2 = [coral_patch, limegreen_patch, darkgreen_patch]
     fixed_labels = ['coral_patch', 'limegreen_patch', 'darkgreen_patch']
 
-
     fig.legend(loc="upper right", ncol=4, handles=sorted(handles1, key=lambda x: x.get_label()))
     fig.legend(loc="lower right", ncol=3, handles=sorted(handles2, key=lambda x: fixed_labels.index(x.get_label()) if x.get_label() in fixed_labels else len(fixed_labels)))
 
@@ -150,6 +153,44 @@ def create_plots(triplestore: str, dataset: str):
     plt.close()
 
 
-args = itertools.product(['graphdb', 'jenatdb2'], datasets)
-list(map(lambda x: create_plots(*x), args))
+def create_plots_update(triplestore: str, dataset: str):
+    # Data
+    performance_update_data = pd.read_csv(measurements_in + "time_update.csv", delimiter=";", decimal=".",
+                            dtype={"triplestore": "category", "dataset": "category", "batch": "category",
+                            "cnt_batch_trpls": "int", "chunk_size": "category", "execution_time": "float"})
+    
+    # Figure and axes for update performance
+    fig = plt.figure()
+    gs = fig.add_gridspec(2,2)   
+
+    def plot_performance_update(ax):
+        data = performance_update_data[(performance_update_data['triplestore'] == triplestore) & (performance_update_data['dataset'] == dataset)]
+
+        chunk_sizes = data['chunk_size'].unique().to_list()
+        print(chunk_sizes)
+        for i, chunk_size in enumerate(chunk_sizes):
+            print(i, chunk_size)
+            print(data[data['chunk_size'] == chunk_size]['execution_time'])
+            ax.boxplot(data[data['chunk_size'] == chunk_size]['execution_time'], positions = [i])
+    
+    ax1 = fig.add_subplot(gs[0,:])
+    plot_performance_update(ax1)
+
+    ###############################
+    # Plot tuning and export
+    ###############################
+
+    ax1.set_ylabel('Execution Time')
+    ax1.set_xlabel('Chunk Size')
+    fig.set_figheight(9)
+    fig.set_figwidth(16)
+    plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
+    plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore}_{dataset}.png")
+    plt.close()
+
+
+
+#args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+#list(map(lambda x: create_plots(*x), args))
+create_plots_update("TripleStore.GRAPHDB", 'bearc')
 
