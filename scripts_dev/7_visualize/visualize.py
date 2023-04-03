@@ -209,8 +209,10 @@ def create_plots_update(triplestore: str, dataset: str):
     plt.close()
 
 
-
+# Plots for query performance and ingestion
 args = itertools.product(['graphdb', 'jenatdb2'], datasets)
 list(map(lambda x: create_plots(*x), args))
+
+# Plots for update performance 
 create_plots_update("TripleStore.GRAPHDB", 'bearc')
 
