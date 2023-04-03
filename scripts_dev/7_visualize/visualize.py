@@ -210,7 +210,7 @@ def create_plots_update(triplestore: str, dataset: str):
 
 
 
-#args = itertools.product(['graphdb', 'jenatdb2'], datasets)
-#list(map(lambda x: create_plots(*x), args))
+args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+list(map(lambda x: create_plots(*x), args))
 create_plots_update("TripleStore.GRAPHDB", 'bearc')
 
