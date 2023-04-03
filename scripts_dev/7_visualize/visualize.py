@@ -161,29 +161,49 @@ def create_plots_update(triplestore: str, dataset: str):
     
     # Figure and axes for update performance
     fig = plt.figure()
-    gs = fig.add_gridspec(2,2)   
+    gs = fig.add_gridspec(2,1)   
 
-    def plot_performance_update(ax):
+    def plot_performance_update(ax1, ax2):
         data = performance_update_data[(performance_update_data['triplestore'] == triplestore) & (performance_update_data['dataset'] == dataset)]
 
         chunk_sizes = data['chunk_size'].unique().to_list()
-        print(chunk_sizes)
         for i, chunk_size in enumerate(chunk_sizes):
-            print(i, chunk_size)
-            print(data[data['chunk_size'] == chunk_size]['execution_time'])
-            ax.boxplot(data[data['chunk_size'] == chunk_size]['execution_time'], positions = [i])
-    
-    ax1 = fig.add_subplot(gs[0,:])
-    plot_performance_update(ax1)
+            data_chunk_size = data[data['chunk_size']==chunk_size]
+            data_add = data_chunk_size.query('batch.str.startswith("snapshot") | batch.str.startswith("positive")')
+            data_delete = data_chunk_size.query('batch.str.startswith("snapshot") | batch.str.startswith("negative")')
+            labels_add = data_add['batch'].str.split("_").str[-1].astype(str) + "\n" + np.floor(data_add['cnt_batch_trpls']/1000).astype(int).astype(str) + "k"
+            labels_delete = data_delete['batch'].str.split("_").str[-1].astype(str) + "\n" + np.floor(data_delete['cnt_batch_trpls']/1000).astype(int).astype(str) + "k"
+            
+            ax1.set_xticks([i for i in range(len(data_add))])
+            ax1.set_xticklabels(labels_add)
+            ax2.set_xticks([i for i in range(len(data_delete))])
+            ax2.set_xticklabels(labels_delete)
+
+            ax1.plot(labels_add, data_add['execution_time'], label=str(chunk_size)) # label=str(chunk_size)
+            ax2.plot(labels_delete, data_delete['execution_time'], label=str(chunk_size))
+
+    ax1 = fig.add_subplot(gs[0,0])
+    ax2 = fig.add_subplot(gs[1,0])
+    plot_performance_update(ax1, ax2)
 
     ###############################
     # Plot tuning and export
     ###############################
 
-    ax1.set_ylabel('Execution Time')
-    ax1.set_xlabel('Chunk Size')
+    ax1.set_ylabel('Execution Time in s')
+    ax1.set_xlabel('Batch number and number of triples in batch')
+    ax1.set_title('Insert')
+    ax1.legend(loc='upper right')
+
+    ax2.set_ylabel('Execution Time in s')
+    ax2.set_xlabel('Batch number and number of triples in batch')
+    ax2.set_title('Outdate')
+    ax2.legend(loc='upper right')
+
     fig.set_figheight(9)
     fig.set_figwidth(16)
+    fig.suptitle(f'Insert and Outdate performance for the {dataset} dataset and {triplestore}')
+    
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
     plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore}_{dataset}.png")
     plt.close()
