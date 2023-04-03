@@ -124,7 +124,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
             return df
         execution_time_insert = end - start
-        df = df.append(pd.Series([triple_store, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
+        df = df.append(pd.Series([triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
 
         # Map versions to files in chronological orders
         change_sets = {}
@@ -152,7 +152,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
                 execution_time_insert = end - start
-                df = df.append(pd.Series([triple_store, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
+                df = df.append(pd.Series([triple_store.name, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
 
             if filename.startswith("data-deleted"):
                 logging.info("Read negative changeset {0} into memory.".format(filename))
@@ -165,7 +165,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
                 execution_time_outdate = end - start
-                df = df.append(pd.Series([triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
+                df = df.append(pd.Series([triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
         
             df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
