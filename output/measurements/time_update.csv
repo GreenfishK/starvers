@@ -194,7 +194,6 @@ TripleStore.GRAPHDB;bearc;positive_change_set_31;33958;5000;22.19118618965149
 TripleStore.GRAPHDB;bearc;negative_change_set_31;33877;5000;30.58367657661438
 TripleStore.GRAPHDB;bearc;positive_change_set_32;43904;5000;28.545602083206177
 TripleStore.GRAPHDB;bearc;negative_change_set_32;43794;5000;43.88625168800354
-triplestore;dataset;batch;cnt_batch_trpls;chunk_size;execution_time
 TripleStore.GRAPHDB;bearc;snapshot_0;485178;6000;291.9673614501953
 TripleStore.GRAPHDB;bearc;positive_change_set_1;273716;6000;142.29480838775635
 TripleStore.GRAPHDB;bearc;negative_change_set_1;273294;6000;146.6879677772522
