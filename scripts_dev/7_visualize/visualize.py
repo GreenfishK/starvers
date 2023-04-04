@@ -178,7 +178,6 @@ def create_plots_update(triplestore: str, dataset: str):
             ax1.set_xticklabels(labels_add)
             ax2.set_xticks([i for i in range(len(data_delete))])
             ax2.set_xticklabels(labels_delete)
-
             ax1.plot(labels_add, data_add['execution_time'], label=str(chunk_size)) # label=str(chunk_size)
             ax2.plot(labels_delete, data_delete['execution_time'], label=str(chunk_size))
 
@@ -202,7 +201,7 @@ def create_plots_update(triplestore: str, dataset: str):
 
     fig.set_figheight(9)
     fig.set_figwidth(16)
-    fig.suptitle(f'Insert and Outdate performance for the {dataset} dataset and {triplestore}')
+    fig.suptitle(f'Insert and Outdate performance for a range of chunk sizes (1000-8000) for the {dataset} dataset and {triplestore}')
     
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
     plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore}_{dataset}.png")
@@ -214,5 +213,5 @@ args = itertools.product(['graphdb', 'jenatdb2'], datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-create_plots_update("TripleStore.GRAPHDB", 'bearc')
+create_plots_update("GRAPHDB", 'bearc')
 
