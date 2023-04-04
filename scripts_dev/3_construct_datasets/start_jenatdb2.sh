@@ -35,6 +35,7 @@ if [[ "$reset" == "true" ]]; then
     rm -rf /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}
     rm -rf /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}
     rm -rf /run/configuration
+    rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p /starvers_eval/databases/construct_datasets/jenatdb2/${policy}_${dataset}
