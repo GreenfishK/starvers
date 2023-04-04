@@ -35,6 +35,7 @@ if [[ "$reset" == "true" ]]; then
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf /starvers_eval/databases/construct_datasets/graphdb/repositories/${policy}_${dataset}
     rm -rf /starvers_eval/configs/construct_datasets/graphdb_${policy}_${dataset}
+    rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p /starvers_eval/databases/construct_datasets/graphdb
