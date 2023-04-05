@@ -40,7 +40,6 @@ services:
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
       - ${base_host_dir}/databases/construct_datasets:/starvers_eval/databases/construct_datasets
       - ${base_host_dir}/tmp:/tmp
-      - ${base_host_dir}/tmp/graphdb/dist/work/tmp:/opt/graphdb/dist/work/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
       - datasets=${datasets}
@@ -64,7 +63,6 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/configs/ingest:/starvers_eval/configs/ingest
       - ${base_host_dir}/tmp:/tmp
-      - ${base_host_dir}/tmp/graphdb/dist/work/tmp:/opt/graphdb/dist/work/tmp
       - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
     environment:
       - datasets=${datasets}
@@ -100,7 +98,6 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
       - ${base_host_dir}/tmp:/tmp
-      - ${base_host_dir}/tmp/graphdb/dist/work/tmp:/opt/graphdb/dist/work/tmp
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
     hostname: Starvers
     ports:
