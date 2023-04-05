@@ -71,6 +71,7 @@ RUN apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 ENV GDB_JAVA_OPTS='\
 -Xmx90g -Xms90g \
 -Dgraphdb.dist=/opt/graphdb/dist \
+-Dgraphdb.home.work=/tmp/graphdb/work \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
 -Dgraphdb.workbench.cors.enable=true \
 -Denable-context-index=true \
