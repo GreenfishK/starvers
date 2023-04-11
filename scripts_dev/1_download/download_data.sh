@@ -14,9 +14,19 @@ mkdir -p /starvers_eval/output/logs/download
 snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 
 # Other variables
-datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/eval_setup.toml | awk -F "." '{print $2}' | sed 's/.$//')
+datasets=("${datasets}") 
+echo "$(log_timestamp) ${log_level}: Downloaded requested for datasets ${datasets} ..." >> $log_file
+registered_datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/eval_setup.toml | awk -F "." '{print $2}' | sed 's/.$//')
+echo "$(log_timestamp) ${log_level}: Registered datasets are ${registered_datasets} ..." >> $log_file
+
 
 for dataset in ${datasets[@]}; do
+
+    if ! [[ ${registered_datasets[@]} =~ $dataset ]]; then
+        echo "$(log_timestamp) ${log_level}: Dataset ${dataset} is not within the registered datasets: ${registered_datasets} ..." >> $log_file
+        continue
+    fi
+
     download_link_snapshots=`grep -A 8 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'download_link_snapshots' | awk '{print $3}' | sed 's/"//g'`
     archive_name_snapshots=`grep -A 8 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'archive_name_snapshots' | awk '{print $3}' | sed 's/"//g'`
     download_link_ng_dataset=`grep -A 8 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'download_link_ng_dataset' | awk '{print $3}' | sed 's/"//g'`
