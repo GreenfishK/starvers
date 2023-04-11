@@ -15,13 +15,14 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef
 from starvers.starvers import TripleStoreEngine
 import tomli
-from itertools import product
+from itertools import product, takewhile
 from functools import partial
 from urllib.error import HTTPError
 
 class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
+    
 
 def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: int, format: str, basename_length: int):
     """
@@ -122,7 +123,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             end = time.time()
         except HTTPError:
             logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
-            return df
+            return False
         execution_time_insert = end - start
         df = df.append(pd.Series([triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
 
@@ -176,7 +177,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         triple_stores = [TripleStore.GRAPHDB]
         chunk_sizes = range(1000, 20000, 1000)
         measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
-        measurements = map(lambda x: measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes))
+        measurements = list(takewhile(lambda x: not measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes)))
         combined_measurements = pd.concat(measurements, join="inner")
         logging.info("Writing performance measurements to disk ...")            
         combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='w', header=True)
