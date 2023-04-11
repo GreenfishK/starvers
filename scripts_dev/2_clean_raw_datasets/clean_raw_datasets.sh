@@ -25,17 +25,16 @@ snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk
 get_snapshot_version() {
   result=`grep -A 2 "\[datasets\.$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*snapshot_versions\s*=' | awk '{print $3}'`
   if [ -z "$result" ]; then
-    echo "$(log_timestamp) ${log_level}:graphdb: Dataset must be in one of the datasets configured in the eval_setup.toml" >> $log_file
+    echo "$(log_timestamp) ${log_level}:Error: The dataset $1 is not within the registered datasets in eval_setup.toml. This dataset will be skipped" >> $log_file
     return 2
-  else
-    echo "$result"
   fi
+  echo "$result"
 }
 
 get_snapshot_filename_struc() { 
   snapshot_filename_struc=`grep -A 2 "\[datasets\.$1\]" /starvers_eval/configs/eval_setup.toml | grep -E '^\s*ic_basename_length\s*=' | awk '{print $3}'`
   if [ -z "$snapshot_filename_struc" ]; then
-    echo "Error: snapshot filename structure returned empty." >&2
+    echo "$(log_timestamp) ${log_level}:Error: The dataset $1 is not within the registered datasets in eval_setup.toml. This dataset will be skipped" >> $log_file
     return 2
   fi
   echo "%0${snapshot_filename_struc}g";
@@ -46,6 +45,10 @@ echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
 for dataset in ${datasets[@]}; do
     versions=`get_snapshot_version "${dataset}"`
     file_name_struc=`get_snapshot_filename_struc "${dataset}"`
+
+    if [ $? -eq 2 ]; then
+        continue
+    fi
 
     for policy in ${policies[@]}; do
         case $policy in 
