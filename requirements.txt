@@ -1,0 +1,4 @@
+fastapi
+uvicorn
+load_dotenv
+starvers @ git+https://github.com/GreenfishK/starvers.git
