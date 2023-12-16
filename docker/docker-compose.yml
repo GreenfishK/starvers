@@ -1,0 +1,77 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - 8080:8080
+
+
+  graphdb:
+    container_name: graphdb
+    image: ontotext/graphdb:10.5.0
+    restart: always
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx2g -Xms2g
+        -Dgraphdb.home=/opt/graphdb/home
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dreuse.vars.in.subselects=true
+    ports: 
+      - 7200:7200
+      - 7300:7300
+    volumes:
+      - ./graphdb-data:/opt/graphdb/home
+
+  # jenaTDB2:
+  #   container_name: jenaTDB2
+  #   image: stain/jena-fuseki:4.0.0
+  #   restart: unless-stopped
+  #   environment:
+  #     JVM_ARG: -Xmx8g -Xms8g
+  #     TDB: 2
+  #     ADMIN_PASSWORD: admin
+  #   ports:
+  #     - 3030:3030
+  #   extra_hosts:
+  #     - "host.docker.internal:127.0.0.1"
+  #   volumes:
+  #     - ~/.jena/fuseki-4.0.0:/fuseki
+
+  # stardog:
+  #   container_name: stardog
+  #   image: stardog/stardog:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     JVM_ARG: -Xmx8g -Xms8g
+  #   user: "1000:1000"
+  #   ports:
+  #     - 5820:5820
+  #   extra_hosts:
+  #     - "host.docker.internal:127.0.0.1"
+  #   volumes:
+  #     - ~/.stardog:/var/opt/stardog
+
+  # allegro:
+  #   container_name: allegro
+  #   image: franzinc/agraph:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     AGRAPH_SUPER_USER: admin
+  #     AGRAPH_SUPER_PASSWORD: pass
+  #   shm_size: 1gb
+  #   ports:
+  #     - 10035:10035
+  #   extra_hosts:
+  #     - "host.docker.internal:127.0.0.1"
+  #   volumes:
+  #     - ~/.agraph/data:/agraph/data
+  #     - ~/.agraph/etc:/agraph/etc
