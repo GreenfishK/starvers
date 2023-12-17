@@ -5,9 +5,11 @@ services:
     image: postgres
     restart: always
     environment:
+      POSTGRES_USER: user
       POSTGRES_PASSWORD: password
+      POSTGRES_DB: starvers_db
     ports:
-      - 8080:8080
+      - 5432:5432
 
 
   graphdb:

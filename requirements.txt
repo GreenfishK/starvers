@@ -1,4 +1,6 @@
 fastapi
 uvicorn
 load_dotenv
+sqlmodel
+psycopg2-binary
 starvers @ git+https://github.com/GreenfishK/starvers.git

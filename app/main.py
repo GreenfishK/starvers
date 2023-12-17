@@ -1,23 +1,25 @@
-from fastapi import FastAPI
-from starvers.starvers import TripleStoreEngine
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 
-app = FastAPI();
+from app.api import management_rest_service, query_rest_service
+from app.database import create_db_and_tables
+from app.services.knowledge_graph_management import KnowledgeGraphNotFoundException
 
-get_endpoint = "http://localhost:7200/repositories/Test"
-post_endpoint = "http://localhost:7200/repositories/Test/statements"
-engine = TripleStoreEngine(get_endpoint, post_endpoint)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+    yield
+    # optional action after terminatin application here
 
-new_triples = ['<http://example.com/Brad_Pitt> <http://example.com/occupation> <http://example.com/Limo_Driver> .',
-               '<http://example.com/Frank_Sinatra> <http://example.com/occupation> <http://example.com/Singer> .']
-engine.insert(new_triples)
+app = FastAPI(lifespan=lifespan);
 
-query = """
-PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+app.include_router(management_rest_service.router);
+app.include_router(query_rest_service.router);
 
-SELECT ?person ?occupation {
-    ?person <http://example.com/occupation> ?occupation .
-}
-"""
-
-actual_snapshot = engine.query(query)
-print(actual_snapshot)
+@app.exception_handler(KnowledgeGraphNotFoundException)
+async def knowledge_graph_not_found_exception_handler(request: Request, exc: KnowledgeGraphNotFoundException):
+    return JSONResponse(
+        status_code=404,
+        content={"message": f"Oops! Knowledge Graph with id {exc.id} not found!"},
+    )

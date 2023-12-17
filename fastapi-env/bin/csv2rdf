@@ -1,4 +1,4 @@
-#!/Users/mittereggerm/Development/StarVersServer/fastapi-env/bin/python3
+#!/Users/mittereggerm/Development/StarVersServer/fastapi-env/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
