@@ -6,6 +6,7 @@ from datetime import datetime
 class KnowledgeGraphBase(SQLModel):
     name: str;
     ressource_url: str;
+    poll_intervall: int;
     created_date: Optional[datetime] = Field(default=datetime.now());
     last_modified_date: Optional[datetime] = Field(default=datetime.now());
     active: Optional[bool] = Field(default=True);

@@ -5,6 +5,7 @@ from datetime import datetime
 
 from app.database import engine
 from app.models.knowledge_graph import KnowledgeGraph, KnowledgeGraphCreate
+from app.utils.graphdb.graph_database import create_repository
 
 class KnowledgeGraphNotFoundException(Exception):
     def __init__(self, id: UUID):
@@ -31,9 +32,14 @@ class KnowledgeGraphManagement():
     def add(self, knowledgeGraph: KnowledgeGraphCreate) -> List[KnowledgeGraph]:
         with Session(engine) as session:
             db_knowledge_graph = KnowledgeGraph.model_validate(knowledgeGraph)
+
             session.add(db_knowledge_graph)
             session.commit()
             session.refresh(db_knowledge_graph)
+
+            #create repository for
+            create_repository(db_knowledge_graph.name.replace(' ', '_'))
+
             return db_knowledge_graph
 
     def delete(self, id: UUID) -> KnowledgeGraph:
