@@ -12,7 +12,7 @@ pip3 install -r requirements.txt
 
 STEP3: To Run the project
 
-uvicorn app:main:app --reload
+uvicorn app:main:app --reload [--log-config=log_config.yaml]
 
 STEP4: Swagger UI available in Below path after the app is started successfully
 
