@@ -7,7 +7,9 @@ from contextlib import asynccontextmanager
 
 from app.api import management_rest_service, query_rest_service
 from app.database import create_db_and_tables
-from app.services.knowledge_graph_management import KnowledgeGraphNotFoundException
+from app.utils.exceptions.knowledge_graph_not_found_exception import KnowledgeGraphNotFoundException
+from app.utils.exceptions.graph_repository_creation_failed_exception import GraphRepositoryCreationFailedException
+import uvicorn
 
 import logging
 
@@ -45,3 +47,13 @@ async def knowledge_graph_not_found_exception_handler(request: Request, exc: Kno
         status_code=404,
         content={"message": f"Oops! Knowledge Graph with id {exc.id} not found!"},
     )
+
+@app.exception_handler(GraphRepositoryCreationFailedException)
+async def graph_creation_failed_exception_handler(request: Request, exc: GraphRepositoryCreationFailedException):
+    return JSONResponse(
+        status_code=400,
+        content={"message": f"Oops! Creation for Repository with name {exc.reposotory_name}! [{exc.error}]"},
+    )
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config='log_config.yaml')
