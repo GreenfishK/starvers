@@ -2,9 +2,9 @@
 # replace marked sections with own code if necessary
 import requests
 from functools import lru_cache
-from app.app_config import Settings
+from app.AppConfig import Settings
 import logging
-from app.utils.exceptions.graph_repository_creation_failed_exception import GraphRepositoryCreationFailedException
+from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 
 
 LOG = logging.getLogger(__name__)

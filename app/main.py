@@ -5,10 +5,13 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
-from app.api import management_rest_service, query_rest_service
-from app.database import create_db_and_tables
-from app.utils.exceptions.knowledge_graph_not_found_exception import KnowledgeGraphNotFoundException
-from app.utils.exceptions.graph_repository_creation_failed_exception import GraphRepositoryCreationFailedException
+from app.Database import Session, engine
+
+from app.api import ManagementRestService, QueryRestService
+from app.Database import create_db_and_tables
+from app.services.ManagementService import restart
+from app.utils.exceptions.GraphNotFoundException import KnowledgeGraphNotFoundException
+from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 import uvicorn
 
 import logging
@@ -18,13 +21,17 @@ LOG = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+
+    with Session(engine) as session:
+        restart(session)
     yield
-    # optional action after terminatin application here
+    # optional action after terminating application here
+
 
 app = FastAPI(lifespan=lifespan)
 
-app.include_router(management_rest_service.router);
-app.include_router(query_rest_service.router);
+app.include_router(ManagementRestService.router)
+app.include_router(QueryRestService.router)
 
 
 @app.middleware("http")

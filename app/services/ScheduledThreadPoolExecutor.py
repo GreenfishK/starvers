@@ -1,12 +1,13 @@
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
+import time
 from typing import Optional
 from uuid import UUID
 
 from delayedqueue import DelayedQueue
 
-from app.services.starvers_polling_task import StarVersPollingTask
+from app.services.PollingTask import PollingTask
 
 
 LOG = logging.getLogger(__name__)
@@ -16,27 +17,27 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers=max_workers, thread_name_prefix=name)
         self._max_workers = max_workers
         self.queue = DelayedQueue()
+
         self.shutdown = False
 
-    def schedule_polling_at_fixed_rate(self, knowledge_graph_id: UUID, period: int, *args, **kwargs) -> bool:
+    def schedule_polling_at_fixed_rate(self, knowledge_graph_id: UUID, period: int, *args, initial_run=True, **kwargs) -> bool:
         if self.shutdown:
-            raise RuntimeError(f"Cannot schedule new task after shutdown!")
+            raise RuntimeError("Cannot schedule new task after shutdown!")
         
-        task = StarVersPollingTask(knowledge_graph_id, period*1000, *args, is_fixed_rate=True, executor_ctx=self, **kwargs)
+        task = PollingTask(knowledge_graph_id, period, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
         return self._put(task, 0)
 
-    def _put(self, task: StarVersPollingTask, delay: int) -> bool:
+    def _put(self, task: PollingTask, delay: int) -> bool:
         if delay < 0:
             raise ValueError(f"Delay `{delay}` must be a non-negative number")
         LOG.info(f"Enqueuing {task} with delay of {delay}")
         return self.queue.put(task, delay)
+    
 
     def __run(self):
         while not self.shutdown:
             try:
-                print('Check Queue...')
-                task: StarVersPollingTask = self.queue.get()
-                print('Task found...')
+                task: PollingTask = self.queue.get()
                 future = super().submit(task.run)
                 future.result()
             except Exception as e:
@@ -48,5 +49,5 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
 
     def start(self):
         t = threading.Thread(target=self.__run)
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
