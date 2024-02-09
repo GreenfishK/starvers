@@ -129,3 +129,5 @@ dmypy.json
 
 # custom entries
 docker/graphdb-data/
+
+.vscode/**
