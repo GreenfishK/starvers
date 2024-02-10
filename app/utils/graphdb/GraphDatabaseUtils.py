@@ -27,3 +27,8 @@ def create_repository(name: str): # add URL and description?
 def __loadRepoConfigFile():
     with open('app/utils/graphdb/repo-config.ttl', 'r') as f:
         return f.read()
+
+def loadInsertTemplate(data: str):
+    with open('app/utils/graphdb/insert.sparql', 'r') as f:
+        template = f.read()
+        return template.replace('{:data}', data)

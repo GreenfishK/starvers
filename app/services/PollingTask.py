@@ -6,6 +6,7 @@ from uuid import UUID
 import requests
 
 from app.Database import Session, engine
+from app.services.StarVersService import StarVersService
 
 LOG = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class PollingTask():
         self.period = period
         self.args = args
         self.kwargs = kwargs
+        self.__stopped = False
         self.__time_func = time_func
         self.__is_initial = is_initial
         self.next_run = self.__time_func()
@@ -49,10 +51,14 @@ class PollingTask():
         start_time = time.time_ns()
         try:
             with Session(engine) as session:
-                self.__run(session)
+                self.__stopped = self.__run(session)
         except Exception as e:
             LOG.error(e)
         finally:
+            if self.__stopped:
+                LOG.info(f'Stopped versioning for knowledge graph with uuid={self.knowledge_graph_id}!')
+                return
+            
             end_time = time.time_ns()
             time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
             
@@ -69,24 +75,24 @@ class PollingTask():
         from app.services.ManagementService import get_by_id
         knowledgeGraph = get_by_id(id=self.knowledge_graph_id, session=session)
 
-        # retrieve dataset
-        LOG.info(f"Start fetching from {knowledgeGraph.ressource_url}")
-        
-        response = requests.get(knowledgeGraph.ressource_url, headers={"Accept": "application/n-triples"})
+        if not knowledgeGraph.active:
+            return True
 
-        LOG.info(f"Finished fetching from {knowledgeGraph.ressource_url}")
+        # retrieve dataset
+        LOG.info(f"Start fetching from {knowledgeGraph.rdf_store_url}")
+        
+        response = requests.get(knowledgeGraph.rdf_store_url, headers={"Accept": "application/n-triples"})
+
+        LOG.info(f"Finished fetching from {knowledgeGraph.rdf_store_url}")
 
         version_timestamp = datetime.now()
 
-        LOG.info("Convert from rdf to rdf star")
-        # read by line, split by space -> each line is one triple
-        rows = response.text.splitlines()
-        triples = [row.split(' ') for row in rows]
-
         if (self.__is_initial): # if initial no diff is necessary
+            self.__starvers = StarVersService(knowledgeGraph.repository_name)
+
             LOG.info(f"Initial version for knowledge graph with uuid={self.knowledge_graph_id}")
             # push triples into repository
-            # engine.version_all_triples()
+            self.__starvers.push_initial_dataset(response.text)
 
         else: # get diff to previous version using StarVers
             #TODO StarVers Diff calculation
@@ -101,3 +107,5 @@ class PollingTask():
         session.refresh(knowledgeGraph)
 
         LOG.info(f"Finished versioning task for knowledge graph with uuid={self.knowledge_graph_id}")
+
+        return False
