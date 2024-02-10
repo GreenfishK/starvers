@@ -5,8 +5,9 @@ from datetime import datetime
 
 class KnowledgeGraphBase(SQLModel):
     name: str
-    ressource_url: str
-    poll_interval: int # polling intervall in seconds
+    repository_name: str
+    rdf_store_url: str
+    polling_interval: int # polling intervall in seconds
     created_at: Optional[datetime] = Field(default_factory=datetime.now)
     last_modified: Optional[datetime] = Field(default_factory=datetime.now)
     active: Optional[bool] = Field(default=True)

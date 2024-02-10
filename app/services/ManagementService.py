@@ -55,6 +55,6 @@ def restart(session: Session):
 
 def __start(knowledgeGraph: KnowledgeGraph, initial_run=True):
     #create repository for
-    create_repository(knowledgeGraph.name.replace(' ', '_'))
+    create_repository(knowledgeGraph.repository_name)
 
-    polling_executor.schedule_polling_at_fixed_rate(knowledgeGraph.id, knowledgeGraph.poll_interval, initial_run=initial_run)
+    polling_executor.schedule_polling_at_fixed_rate(knowledgeGraph.id, knowledgeGraph.polling_interval, initial_run=initial_run)

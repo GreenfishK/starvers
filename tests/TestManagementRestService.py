@@ -98,8 +98,9 @@ def test_start_knowledge_graph_versioning(session: Session, client: TestClient):
 
     response = client.post("/management/", json={
         "name": kg_active.name,
-        "ressource_url": kg_active.ressource_url,
-        "poll_interval": kg_active.poll_interval
+        "repository_name": kg_active.repository_name,
+        "rdf_store_url": kg_active.rdf_store_url,
+        "polling_interval": kg_active.polling_interval
     })
     data = response.json()
 
@@ -152,10 +153,10 @@ def test_stop_knowledge_graph_versioning_by_id_unknown(session: Session, client:
     assert data['message'] == f"Oops! Knowledge Graph with id {unknownUuid} not found!"
 
 def __get_test_data_active() -> KnowledgeGraph:
-    return KnowledgeGraph(name="Test Active", ressource_url="www.test-active.at", poll_interval=1000)
+    return KnowledgeGraph(name="Test Active", repository_name="test_active", rdf_store_url="www.test-active.at", polling_interval=1000)
 
 def __get_test_data_inactive() -> KnowledgeGraph:
-    return KnowledgeGraph(name="Test Inactive", ressource_url="www.test-inactive.at", poll_interval=1000, active=False)
+    return KnowledgeGraph(name="Test Inactive", repository_name="test_active", rdf_store_url="www.test-inactive.at", polling_interval=1000, active=False)
 
 def __assert_equals(actual: any, expected: KnowledgeGraph, id_unknown: bool = False):
     if id_unknown:
@@ -163,6 +164,7 @@ def __assert_equals(actual: any, expected: KnowledgeGraph, id_unknown: bool = Fa
     else:
         assert actual["id"] is not None
     assert actual["name"] == expected.name
-    assert actual["ressource_url"] == expected.ressource_url
-    assert actual["poll_interval"] == expected.poll_interval
+    assert actual["repository_name"] == expected.repository_name
+    assert actual["rdf_store_url"] == expected.rdf_store_url
+    assert actual["polling_interval"] == expected.polling_interval
     assert actual["active"] == expected.active
