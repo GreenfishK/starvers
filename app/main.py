@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 
 from app.Database import Session, engine
 
-from app.api import ManagementRestService, QueryRestService
+from app.api import ManagementRestService, MockRestService, QueryRestService
 from app.Database import create_db_and_tables
 from app.services.ManagementService import restart
 from app.utils.exceptions.GraphNotFoundException import KnowledgeGraphNotFoundException
@@ -32,7 +32,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(ManagementRestService.router)
 app.include_router(QueryRestService.router)
-
+app.include_router(MockRestService.router)
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):

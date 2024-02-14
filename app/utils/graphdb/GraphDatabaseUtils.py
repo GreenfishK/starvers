@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 def create_repository(name: str): # add URL and description?
     repoConfig = __loadRepoConfigFile()
     repoConfig = repoConfig.replace('{:name}', name)
-    repoConfig = repoConfig.replace('{:description}', "Repository for versioned {name}")
+    repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + name)
 
     LOG.info(f"Create graphdb repository with name {name}")
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories", files=dict(config=repoConfig))
@@ -22,6 +22,11 @@ def create_repository(name: str): # add URL and description?
             LOG.warning(f'[{response.status_code}] {response.text}')
         else:
             raise GraphRepositoryCreationFailedException(name, response.text);
+
+def delete_repository(name: str):
+    LOG.info(f"Delete graphdb repository with name {name}")
+    response = requests.delete(f"{Settings().graph_db_url}/rest/repositories/{name}")
+    LOG.warning(f'[{response.status_code}] {response.text}')
 
 @lru_cache
 def __loadRepoConfigFile():
@@ -32,3 +37,8 @@ def loadInsertTemplate(data: str):
     with open('app/utils/graphdb/insert.sparql', 'r') as f:
         template = f.read()
         return template.replace('{:data}', data)
+    
+def loadQueryAllTemplate():
+    with open('app/utils/graphdb/query_all.sparql', 'r') as f:
+        template = f.read()
+        return template
