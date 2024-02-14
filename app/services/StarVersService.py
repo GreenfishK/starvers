@@ -1,3 +1,4 @@
+from datetime import datetime
 import logging
 from typing import List, Tuple
 from uuid import UUID
@@ -30,6 +31,10 @@ class StarVersService():
 
         self.__starvers_engine.version_all_triples()
 
+    def query(self, query: str, timestamp: datetime, query_as_timestamped: bool = True):
+        LOG.info(f"Query at timestamp={timestamp} from repository {self.repository_name} with uuid={self.knowledge_graph_id}")
+        return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+
     def get_latest_version(self):
         query = loadQueryAllTemplate()
         query_result = self.__starvers_engine.query(query)
@@ -42,12 +47,16 @@ class StarVersService():
         deletions = self.__calculate_delta(current_revision, newest_revision, False)
         
         LOG.info(f"Found {len(inserts)} inserts and {len(deletions)} deletions for knowledge graph with uuid={self.knowledge_graph_id}")
+        #TODO notify by RSS, Websocket, wenhook or whatever
+
+        self.__starvers_engine.insert(self.__convert_to_n3(inserts))
+        self.__starvers_engine.outdate(self.__convert_to_n3(deletions))
         return len(inserts) > 0 or len(deletions) > 0
     
     def __convert_df_to_triples(self, df: DataFrame) -> List[Tuple]:
         result = []
         for index in df.index:
-            result.append((df['x'][index], df['x'][index], df['z'][index]))
+            result.append((df['x'][index], df['y'][index], df['z'][index]))
         return result
     
     def __calculate_delta(self, triples1: List[Tuple], triples2: List[Tuple], respect_updates: bool = True) -> List[Tuple]:
@@ -66,6 +75,13 @@ class StarVersService():
 
         return delta
 
+    def __convert_to_n3(self, triples: List[Tuple]):
+        n3: List[str] = []
+        for triple in triples:
+            n3.append(f"<{triple[0]}> <{triple[1]}> {triple[2]} .")
+
+        print(n3)
+        return n3
             
         
         
