@@ -4,9 +4,11 @@ import logging
 from uuid import UUID
 
 import requests
+from sqlalchemy import Boolean
 
 from app.Database import Session, engine
 from app.services.StarVersService import StarVersService
+from app.utils.graphdb.GraphDatabaseUtils import create_repository, delete_repository
 
 LOG = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ class PollingTask():
         self.__time_func = time_func
         self.__is_initial = is_initial
         self.next_run = self.__time_func()
+        self.__starvers = None
 
     @property
     def is_initial_run(self) -> bool:
@@ -69,7 +72,7 @@ class PollingTask():
             else:
                 self.executor_ctx._put(self, next_delay)
 
-    def __run(self, session: Session):
+    def __run(self, session: Session) -> Boolean:
         LOG.info(f"Start versioning task for knowledge graph with uuid={self.knowledge_graph_id}")
 
         from app.services.ManagementService import get_by_id
@@ -80,23 +83,30 @@ class PollingTask():
 
         # retrieve dataset
         LOG.info(f"Start fetching from {knowledgeGraph.rdf_store_url}")
-        
         response = requests.get(knowledgeGraph.rdf_store_url, headers={"Accept": "application/n-triples"})
-
         LOG.info(f"Finished fetching from {knowledgeGraph.rdf_store_url}")
 
         version_timestamp = datetime.now()
 
-        if (self.__is_initial): # if initial no diff is necessary
-            self.__starvers = StarVersService(knowledgeGraph.repository_name)
+        if self.__starvers is None:
+            self.__starvers = StarVersService(knowledgeGraph.repository_name, knowledgeGraph.id)
 
+        if (self.__is_initial): # if initial no diff is necessary
             LOG.info(f"Initial version for knowledge graph with uuid={self.knowledge_graph_id}")
             # push triples into repository
             self.__starvers.push_initial_dataset(response.text)
 
         else: # get diff to previous version using StarVers
-            #TODO StarVers Diff calculation
-            if (True):
+            tmp_repo_name = self.__starvers.repository_name + "_tmp"
+            create_repository(tmp_repo_name)
+            starvers_tmp = StarVersService(tmp_repo_name, self.__starvers.knowledge_graph_id)
+            starvers_tmp.push_initial_dataset(response.text)
+            latest_revision = starvers_tmp.get_latest_version()
+            delete_repository(tmp_repo_name)
+
+            changes = self.__starvers.process_latest_version(latest_revision)
+
+            if (changes):
                 LOG.info(f"Changes for knowledge graph with uuid={self.knowledge_graph_id} detected")
             else:
                 LOG.info(f"No changes for knowledge graph with uuid={self.knowledge_graph_id} detected")

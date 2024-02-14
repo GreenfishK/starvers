@@ -1,0 +1,6 @@
+PREFIX onto: <http://www.ontotext.com/>
+SELECT *
+FROM onto:explicit
+WHERE {
+    ?x ?y ?z .
+}
