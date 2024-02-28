@@ -122,9 +122,6 @@ def test_stop_knowledge_graph_versioning_by_id(session: Session, client: TestCli
     response = client.delete(f"/management/{kg_active.id}")
     data = response.json()
 
-    print(data)
-    print(kg_active)
-
     assert response.status_code == 200
     __assert_equals(data, kg_active)
 

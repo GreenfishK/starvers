@@ -6,7 +6,7 @@ from sqlmodel import Session
 from app.Database import get_session
 
 from app.models.KnowledgeGraphModel import KnowledgeGraphRead, KnowledgeGraphCreate
-from app.services.ManagementService import get_all, get_by_id, add, delete
+from app.services.ManagementService import delete_all, get_all, get_by_id, add, delete
 
 router = APIRouter(
     prefix="/management",
@@ -26,6 +26,10 @@ async def get_knowledge_graph_by_id(id: UUID, session: Session = Depends(get_ses
 @router.post("/", response_model=KnowledgeGraphRead, status_code=201)
 async def start_knowledge_graph_versioning(knowledgeGraph: KnowledgeGraphCreate, session: Session = Depends(get_session)):
     return add(knowledgeGraph, session)
+
+@router.delete("/all", status_code=200)
+async def stop_all_knowledge_graph_versionings(session: Session = Depends(get_session)):
+    return delete_all(session)
 
 @router.delete("/{id}", status_code=200)
 async def stop_knowledge_graph_versioning_by_id(id: UUID, session: Session = Depends(get_session)):
