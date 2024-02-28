@@ -1,4 +1,3 @@
-import logging
 from fastapi import APIRouter, Body, Depends, Query
 
 from datetime import datetime
@@ -25,6 +24,6 @@ async def query_knowlegde_graph_by_id(
     session: Session = Depends(get_session)):
 
     kg =  get_by_id(id, session)
-    starvers = StarVersService(kg.repository_name, kg.id)
+    starvers = StarVersService(kg.repository_name, kg.id, kg.rdf_store_url, kg.id)
 
     return starvers.query(query, timestamp, query_as_timestamped)

@@ -46,6 +46,16 @@ def delete(id: UUID, session: Session) -> KnowledgeGraph:
         session.refresh(db_knowledge_graph)
     return db_knowledge_graph
 
+def delete_all(session: Session):
+    db_knowledge_graphs = get_all(session)
+
+    for db_knowledge_graph in db_knowledge_graphs:
+        if (db_knowledge_graph.active):
+            db_knowledge_graph.active = False
+            db_knowledge_graph.last_modified = datetime.now()
+            session.add(db_knowledge_graph)
+    session.commit()
+
 def restart(session: Session):
     active_graphs = get_all(session)
     LOG.info(f'Restart {len(active_graphs)} active versioning task')

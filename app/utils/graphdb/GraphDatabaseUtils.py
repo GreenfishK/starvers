@@ -9,6 +9,8 @@ from app.utils.exceptions.RepositoryCreationFailedException import GraphReposito
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'
+
 # Implementation for Graph DB
 def create_repository(name: str): # add URL and description?
     repoConfig = __loadRepoConfigFile()
@@ -21,7 +23,7 @@ def create_repository(name: str): # add URL and description?
         if (response.text.find('already exists.') > -1):
             LOG.warning(f'[{response.status_code}] {response.text}')
         else:
-            raise GraphRepositoryCreationFailedException(name, response.text);
+            raise GraphRepositoryCreationFailedException(name, response.text)
 
 def delete_repository(name: str):
     LOG.info(f"Delete graphdb repository with name {name}")
@@ -33,12 +35,17 @@ def __loadRepoConfigFile():
     with open('app/utils/graphdb/repo-config.ttl', 'r') as f:
         return f.read()
 
-def loadInsertTemplate(data: str):
+def getInsertTemplate(data: str):
     with open('app/utils/graphdb/insert.sparql', 'r') as f:
         template = f.read()
         return template.replace('{:data}', data)
     
-def loadQueryAllTemplate():
+def getQueryAllTemplate():
     with open('app/utils/graphdb/query_all.sparql', 'r') as f:
         template = f.read()
         return template
+    
+def getLoadSilentTemplate(rdf_store_url: str):
+    with open('app/utils/graphdb/load_silent.sparql', 'r') as f:
+        template = f.read()
+        return template.replace('{:rdf_store_url}', rdf_store_url)
