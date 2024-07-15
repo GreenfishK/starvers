@@ -103,9 +103,13 @@ def create_plots(triplestore: str, dataset: str):
             db_size = policy_data["db_files_disk_usage_MiB"].mean()
             
             ax.boxplot(policy_data["ingestion_time"], positions=[i], widths=0.8, medianprops=dict(color='black', linestyle='--'))
+            
+            # Raw File Size Bar (dashed filling)
+            ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black', label="Raw File Size")
 
-            ax2.bar(i, raw_size, bar_width, alpha=opacity, color='limegreen', label="Raw File Size")
-            ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='darkgreen', label="DB File Size")
+            # DB File Size Bar (solid black)
+            ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black', label="DB File Size")
+
             ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
             ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
     
@@ -118,7 +122,6 @@ def create_plots(triplestore: str, dataset: str):
         ax2.set_xticklabels(policies)
         ax2.set_xlabel("Policies")
         ax2.set_ylabel("Storage Consumption (MiB)")
-        ax2.yaxis.label.set_color('darkgreen')
 
     ax3 = fig.add_subplot(gs[1, 0])
     ax4 = fig.add_subplot(gs[1, 1])
@@ -129,17 +132,17 @@ def create_plots(triplestore: str, dataset: str):
     ###############################
 
     # Add legend
-    red_line = mlines.Line2D([], [], color='black', marker='s', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none', label='ic_sr_ng')
-    blue_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
-    green_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
-    purple_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_rs')
+    ic_sr_ng_line = mlines.Line2D([], [], color='black', marker='s', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none', label='ic_sr_ng')
+    cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
+    tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
+    tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_rs')
 
-    limegreen_patch = mpatches.Patch(color='limegreen', label='Raw File Size')
-    darkgreen_patch = mpatches.Patch(color='darkgreen', label='DB File Size')
+    raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
+    db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
 
-    handles1 = [red_line, blue_line, green_line, purple_line]
-    handles2 = [limegreen_patch, darkgreen_patch]
-    fixed_labels = ['limegreen_patch', 'darkgreen_patch']
+    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line]
+    handles2 = [raw_file_size_patch, db_file_size_path]
+    fixed_labels = ['raw_file_size_patch', 'db_file_size_path']
 
     fig.legend(loc="upper right", ncol=4, handles=sorted(handles1, key=lambda x: x.get_label()))
     fig.legend(loc="lower right", ncol=3, handles=sorted(handles2, key=lambda x: fixed_labels.index(x.get_label()) if x.get_label() in fixed_labels else len(fixed_labels)))
