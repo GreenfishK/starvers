@@ -55,6 +55,7 @@ def create_plots(triplestore: str, dataset: str):
     fig = plt.figure()
     gs = fig.add_gridspec(2, 2)   
     symbol_map = dict(zip(policies, ['s', 'o', 'v', '*']))
+    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black']))
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
@@ -69,7 +70,7 @@ def create_plots(triplestore: str, dataset: str):
                 markevery = math.ceil(len(policy_df['snapshot'])/60)
             ax.set_yscale('log')
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], linestyle='none',
-                marker=symbol_map[policy], markersize=7, markerfacecolor='none', markeredgewidth=1, drawstyle='default',
+                marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
                 label=policy, color='black', markevery=markevery)
 
         
@@ -135,7 +136,7 @@ def create_plots(triplestore: str, dataset: str):
     ic_sr_ng_line = mlines.Line2D([], [], color='black', marker='s', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none', label='ic_sr_ng')
     cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
-    tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_rs')
+    tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
 
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
     db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
