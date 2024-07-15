@@ -168,8 +168,11 @@ def create_plots_update(triplestore: str, dataset: str):
         data = performance_update_data[(performance_update_data['triplestore'] == triplestore) & (performance_update_data['dataset'] == dataset)]
 
         chunk_sizes = data['chunk_size'].unique().to_list()
-        line_styles = ['-', '--', '-.', ':']
-        
+        # Select chunk sizes 1000, 4000, and 8000:
+        chunk_sizes = [chunk_sizes[0], chunk_sizes[3], chunk_sizes[7]]
+
+        # Linestyles
+        linestyles = ['solid', 'dotted', 'dashed']
         for i, chunk_size in enumerate(chunk_sizes):
             data_chunk_size = data[data['chunk_size']==chunk_size]
             data_add = data_chunk_size.query('batch.str.startswith("snapshot") | batch.str.startswith("positive")')
@@ -177,39 +180,44 @@ def create_plots_update(triplestore: str, dataset: str):
             labels_add = data_add['batch'].str.split("_").str[-1].astype(str) + "\n" + np.floor(data_add['cnt_batch_trpls']/1000).astype(int).astype(str) + "k"
             labels_delete = data_delete['batch'].str.split("_").str[-1].astype(str) + "\n" + np.floor(data_delete['cnt_batch_trpls']/1000).astype(int).astype(str) + "k"
             
-            ax1.plot(data_add['batch'], data_add['execution_time'], label=f'Add {chunk_size}', linestyle=line_styles[i], color='blue')
-            ax1.set_xticks(range(len(labels_add)))
+            ax1.set_xticks([i for i in range(len(data_add))])
             ax1.set_xticklabels(labels_add)
-            ax1.set_title('Add Performance')
-            ax1.set_xlabel('Batches')
-            ax1.set_ylabel('Execution Time (s)')
-            
-            ax2.plot(data_delete['batch'], data_delete['execution_time'], label=f'Delete {chunk_size}', linestyle=line_styles[i], color='blue')
-            ax2.set_xticks(range(len(labels_delete)))
+            ax2.set_xticks([i for i in range(len(data_delete))])
             ax2.set_xticklabels(labels_delete)
-            ax2.set_title('Delete Performance')
-            ax2.set_xlabel('Batches')
-            ax2.set_ylabel('Execution Time (s)')
+            ax1.plot(labels_add, data_add['execution_time'], label=str(chunk_size), linestyle=linestyles[i], color='black') 
+            ax2.plot(labels_delete, data_delete['execution_time'], label=str(chunk_size), linestyle=linestyles[i], color='black')
 
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[1, 0])
-    plot_performance_update(ax1=ax1, ax2=ax2)
+    ax1 = fig.add_subplot(gs[0,0])
+    ax2 = fig.add_subplot(gs[1,0])
+    plot_performance_update(ax1, ax2)
 
     ###############################
     # Plot tuning and export
     ###############################
 
-    fig.legend(loc="upper right", ncol=4)
+    ax1.set_ylabel('Execution Time in s')
+    ax1.set_xlabel('Batch number and number of triples in batch')
+    ax1.set_title('Insert')
+    ax1.legend(loc='upper right')
+
+    ax2.set_ylabel('Execution Time in s')
+    ax2.set_xlabel('Batch number and number of triples in batch')
+    ax2.set_title('Invalidate')
+    ax2.legend(loc='upper right')
+
     fig.set_figheight(9)
     fig.set_figwidth(16)
-
+    fig.suptitle(f'Insert and Invalidate performance for a range of chunk sizes (1000-8000) for the {dataset} dataset and {triplestore}')
+    
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
-    plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore}_{dataset}.png")
+    plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore.lower()}_{dataset}.png")
     plt.close()
+
 
 # Plots for query performance and ingestion
 args = itertools.product(['graphdb', 'jenatdb2'], datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-create_plots_update("graphdb", 'bearc')
+create_plots_update("GRAPHDB", 'bearc')
+
