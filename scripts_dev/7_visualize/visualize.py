@@ -161,6 +161,8 @@ def create_plots_update(triplestore: str, dataset: str):
                             dtype={"triplestore": "category", "dataset": "category", "batch": "category",
                             "cnt_batch_trpls": "int", "chunk_size": "category", "execution_time": "float"})
     
+    triplestores_map = {'GRAPHDB': 'GraphDB', 'JENA': 'Jena'}
+    
     # Figure and axes for update performance
     fig = plt.figure()
     gs = fig.add_gridspec(2,1)   
@@ -208,7 +210,8 @@ def create_plots_update(triplestore: str, dataset: str):
 
     fig.set_figheight(9)
     fig.set_figwidth(16)
-    fig.suptitle(f'Insert and Invalidate performance for a range of chunk sizes (1000-8000) for the {dataset} dataset and {triplestore}')
+
+    fig.suptitle(f'Insert and Invalidate performance for a range of chunk sizes (1000-8000) for the {dataset.upper()} dataset and {triplestores_map[triplestore]}')
     
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
     plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore.lower()}_{dataset}.png")
