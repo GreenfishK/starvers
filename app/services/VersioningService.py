@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from uuid import UUID
 from datetime import datetime
 import logging
@@ -8,12 +9,29 @@ from SPARQLWrapper import SPARQLWrapper, POST, DIGEST
 
 from app.AppConfig import Settings
 from app.enums.DeltaQueryEnum import DeltaQuery
-from app.services.DeltaQueryService import IterativeDeltaQueryService, SparqlDeltaQueryService
+from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
 from app.utils.graphdb.GraphDatabaseUtils import getInsertTemplate, getQueryAllTemplate
 
 LOG = logging.getLogger(__name__)
 
-class StarVersService():
+class VersioningService(ABC):
+    @abstractmethod
+    def run_initial_versioning():
+        pass
+
+    @abstractmethod
+    def query():
+        pass
+    
+    @abstractmethod
+    def get_latest_version():
+        pass
+
+    @abstractmethod
+    def run_versioning():
+        pass
+
+class StarVersService(VersioningService):
     def __init__(self, repository_name: str, knowledge_graph_id: UUID, rdf_store_url: str, delta_query_type: DeltaQuery) -> None:
         self.repository_name = repository_name
         self.knowledge_graph_id = knowledge_graph_id
@@ -34,7 +52,7 @@ class StarVersService():
         self.__sparql_wrapper.setHTTPAuth(DIGEST)
         self.__sparql_wrapper.setMethod(POST)
 
-    def push_initial_dataset(self, data: str, version_timestamp):
+    def run_initial_versioning(self, data: str, version_timestamp):
         insert = getInsertTemplate(data)
         self.__sparql_wrapper.setQuery(insert)
         self.__sparql_wrapper.query()

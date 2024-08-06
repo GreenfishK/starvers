@@ -46,7 +46,7 @@ def delete(id: UUID, session: Session) -> KnowledgeGraph:
         session.refresh(db_knowledge_graph)
     return db_knowledge_graph
 
-def delete_all(session: Session):
+def delete_all(session: Session) -> List[KnowledgeGraph]:
     db_knowledge_graphs = get_all(session)
 
     for db_knowledge_graph in db_knowledge_graphs:
@@ -55,6 +55,8 @@ def delete_all(session: Session):
             db_knowledge_graph.last_modified = datetime.now()
             session.add(db_knowledge_graph)
     session.commit()
+
+    return db_knowledge_graphs
 
 def restart(session: Session):
     active_graphs = get_all(session)

@@ -2,14 +2,13 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 import logging
-from uuid import UUID
 
 import requests
 from app.utils.graphdb.GraphDatabaseUtils import create_repository, delete_repository, getLoadSilentTemplate
 
 LOG = logging.getLogger(__name__)
 
-class DeltaQueryService(ABC):
+class DeltaCalculationService(ABC):
     @abstractmethod
     def prepare():
         pass
@@ -26,12 +25,12 @@ class DeltaQueryService(ABC):
     def load_rdf_data():
         pass
 
-class IterativeDeltaQueryService(DeltaQueryService):
+class IterativeDeltaQueryService(DeltaCalculationService):
     def prepare(self, tmp_name):
         create_repository(tmp_name)
 
     def calculate_delta(self, starvers, starvers_tmp):
-        starvers_tmp.push_initial_dataset(self.load_rdf_data(starvers_tmp), None)
+        starvers_tmp.run_initial_versioning(self.load_rdf_data(starvers_tmp), None)
         
         new = starvers_tmp.get_latest_version()
         latest = starvers.get_latest_version()
@@ -64,7 +63,7 @@ class IterativeDeltaQueryService(DeltaQueryService):
 
         return delta
 
-class SparqlDeltaQueryService(DeltaQueryService):
+class SparqlDeltaQueryService(DeltaCalculationService):
     def prepare(self, tmp_name):
         create_repository(tmp_name)
 
