@@ -1,4 +1,4 @@
-fastapi
+fastapi[standard]
 uvicorn[standard]
 load_dotenv
 sqlmodel
@@ -9,3 +9,7 @@ pydantic-settings
 requests
 pytest
 httpx
+rdflib-endpoint[web]
+timeloop
+delayedqueue
+numpy==1.26.3

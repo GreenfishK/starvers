@@ -1,7 +1,6 @@
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
-import time
 from typing import Optional
 from uuid import UUID
 

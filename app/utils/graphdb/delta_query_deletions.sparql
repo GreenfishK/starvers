@@ -10,6 +10,16 @@ where {
 			bind("2024-02-27T08:24:51.863+00:00"^^xsd:dateTime as ?tsBGP_0)
         }
     }
-    minus
-    {service <repository:test> {?x ?y ?z}}
+    filter not exists
+    {select ?x ?y ?z
+        where { 
+            service <https://dbpedia.org/sparql> {
+                SELECT *
+                WHERE {
+                    VALUES ?x { <{:rdf_store_url}> }
+                    { <{:rdf_store_url}> ?y ?z }
+                }
+            }
+        }
+    }
 }

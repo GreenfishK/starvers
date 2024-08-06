@@ -149,6 +149,28 @@ def test_stop_knowledge_graph_versioning_by_id_unknown(session: Session, client:
     assert response.status_code == 404
     assert data['message'] == f"Oops! Knowledge Graph with id {unknownUuid} not found!"
 
+def test_stop_all_knowledge_graph_versionings(session: Session, client: TestClient):
+    kg_active = __get_test_data_active()
+    session.add(kg_active)
+    session.commit()
+
+    response = client.delete("/management/all")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert len(data) == 1
+
+def test_stop_all_knowledge_graph_versionings_none_active(session: Session, client: TestClient):
+    kg_inactive = __get_test_data_inactive()
+    session.add(kg_inactive)
+    session.commit()
+
+    response = client.delete("/management/all")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert len(data) == 0
+
 def __get_test_data_active() -> KnowledgeGraph:
     return KnowledgeGraph(name="Test Active", repository_name="test_active", rdf_store_url="www.test-active.at", polling_interval=1000)
 

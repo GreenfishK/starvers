@@ -9,6 +9,7 @@ from app.Database import Session, engine
 
 from app.api import ManagementRestService, MockRestService, QueryRestService
 from app.Database import create_db_and_tables
+from app.models.DeltaEventModel import DeltaEvent
 from app.services.ManagementService import restart
 from app.utils.exceptions.GraphNotFoundException import KnowledgeGraphNotFoundException
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
@@ -21,14 +22,19 @@ LOG = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    MockRestService.tl.start()
 
     with Session(engine) as session:
         restart(session)
     yield
+
     # optional action after terminating application here
+    MockRestService.tl.stop()
 
 
 app = FastAPI(lifespan=lifespan)
+
+app.openapi_tags = [ManagementRestService.tag_metadata]
 
 app.include_router(ManagementRestService.router)
 app.include_router(QueryRestService.router)
@@ -61,6 +67,13 @@ async def graph_creation_failed_exception_handler(request: Request, exc: GraphRe
         status_code=400,
         content={"message": f"Oops! Creation for Repository with name {exc.reposotory_name}! [{exc.error}]"},
     )
+
+@app.webhooks.post("delta-event")
+def delta_event_notification(body: DeltaEvent):
+    """
+    When someone subscribes to the DeltaQueryService results, the service will send a POST request to the registered URL
+    every time a delta was calculated. The request payload contains relevant data to be able to query the corresponding knowledge graph.
+    """
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000, log_config='log_config.yaml')

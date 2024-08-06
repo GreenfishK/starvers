@@ -8,8 +8,7 @@ from sqlalchemy import Boolean
 
 from app.Database import Session, engine
 from app.enums.DeltaQueryEnum import DeltaQuery
-from app.services.StarVersService import StarVersService
-from app.utils.graphdb.GraphDatabaseUtils import create_repository, delete_repository
+from app.services.VersioningService import StarVersService
 
 LOG = logging.getLogger(__name__)
 
@@ -92,12 +91,13 @@ class PollingTask():
             LOG.info(f"Initial version for knowledge graph with uuid={self.knowledge_graph_id}")
 
             # retrieve initial rdf data via http
+            # #TODO move to versioning service????
             LOG.info(f"Start fetching from {knowledgeGraph.rdf_store_url}")
             response = requests.get(knowledgeGraph.rdf_store_url, headers={"Accept": "application/n-triples"})
             LOG.info(f"Finished fetching from {knowledgeGraph.rdf_store_url}")
 
             # push triples into repository
-            self.__starvers.push_initial_dataset(response.text, version_timestamp)
+            self.__starvers.run_initial_versioning(response.text, version_timestamp)
 
         else: # get diff to previous version using StarVers
             changes = self.__starvers.run_versioning(version_timestamp)

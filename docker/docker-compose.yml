@@ -1,7 +1,21 @@
 version: "3"
 
 services:
-  postgres:
+  starversserver:
+    container_name: starversserver
+    image: starversserver
+    ports:
+      - 80:80
+    env_file: "../prod.env"
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+
+
+  db:
+    container_name: db
     image: postgres
     restart: always
     environment:
@@ -12,8 +26,8 @@ services:
       - 5432:5432
 
 
-  graphdb:
-    container_name: graphdb
+  rdfstore:
+    container_name: rdfstore
     image: ontotext/graphdb:10.5.0
     restart: always
     environment: 
