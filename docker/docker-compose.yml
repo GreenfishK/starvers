@@ -2,7 +2,7 @@ version: "3"
 
 services:
   starversserver:
-    image: starversserver
+    image: ghcr.io/martinmitteregger/starversserver:main
     restart: always
     ports:
       - 80:80
@@ -15,7 +15,6 @@ services:
 
 
   db:
-    container_name: db
     image: postgres
     restart: always
     environment:
@@ -27,7 +26,6 @@ services:
 
 
   rdfstore:
-    container_name: rdfstore
     image: ontotext/graphdb:10.5.0
     restart: always
     environment: 
