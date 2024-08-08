@@ -1,14 +1,13 @@
 FROM python:3.10
 
-WORKDIR /app
+WORKDIR /code
 
-COPY requirements.txt .
+COPY ./requirements.txt /code/requirements.txt
 
-RUN python3 -m venv fastapi-env
-RUN source fastapi-env/bin/activate
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+COPY ./app /code/app
 
-COPY /app/ .
+ENV PYTHONPATH "${PYTHONPATH}:/code/app"
 
 CMD ["fastapi", "run", "app/main.py", "--port", "80"]
