@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./app /code/app
 
-ENV PYTHONPATH "${PYTHONPATH}:/code/app"
+ENV PYTHONPATH "${PYTHONPATH}:/code"
 
 CMD ["fastapi", "run", "app/main.py", "--port", "80"]
