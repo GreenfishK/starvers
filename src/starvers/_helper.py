@@ -42,7 +42,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
         if lang is not None:
             value += "@" + lang
         if datatype is not None:
-            value += " [" + datatype + "]"
+            value = "\"" + value + "\"^^<" + datatype + ">"
         return value
 
     results = result.convert()
