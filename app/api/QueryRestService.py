@@ -19,7 +19,7 @@ router = APIRouter(
 
 tag_metadata = {
     "name": tag,
-    "description": "Perform queries against versioned knowledge graphs - latest version or at a certain point in the past",
+    "description": "Perform queries against versioned datasets - latest version or at a certain point in the past",
 }
 
 @router.get("/{id}")
@@ -30,7 +30,7 @@ async def query_knowlegde_graph_by_id(
     query_as_timestamped: Annotated[bool | None, Query()] = True,
     session: Session = Depends(get_session)):
 
-    kg =  get_by_id(id, session)
-    starvers = StarVersService(kg.repository_name, kg.id, kg.rdf_store_url, kg.id)
+    dataset =  get_by_id(id, session)
+    starvers = StarVersService(dataset.repository_name, dataset.id, dataset.rdf_dataset_url, dataset.id)
 
     return starvers.query(query, timestamp, query_as_timestamped)

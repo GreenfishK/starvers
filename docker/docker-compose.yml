@@ -7,6 +7,8 @@ services:
     ports:
       - 80:80
     env_file: "../prod.env"
+    volumes:
+      - ~/starvers-server/evaluation:./evaluation
     depends_on:
       db:
         condition: service_started
@@ -39,11 +41,15 @@ services:
         -Dhealth.max.query.time.seconds=60
         -Dgraphdb.append.request.id.headers=true
         -Dreuse.vars.in.subselects=true
+        -Dgraphdb.health.minimal.free.storage.enabled=false
+        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
     ports: 
       - 7200:7200
       - 7300:7300
     volumes:
       - ./graphdb-data:/opt/graphdb/home
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # jenaTDB2:
   #   container_name: jenaTDB2

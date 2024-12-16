@@ -1,35 +1,36 @@
-from typing import List, Tuple
+import pandas as pd
 
-def test_get_delta_for_inserts():
-    old = [("a", "a", "a"), ("b", "b", "b")]
-    new = [("a", "a", "a"), ("c", "c", "c")]
+from app.utils.HelperService import convert_df_to_n3
 
-    inserts = __calculate_delta(new, old)
-    assert len(inserts) == 1
-    assert inserts[0] == ("c", "c", "c")
+
+def test_get_delta_for_insertions():
+    old = pd.DataFrame([("a", "a", "a"), ("b", "b", "b")], columns=["s", "p", "o"])
+    new = pd.DataFrame([("a", "a", "a"), ("c", "c", "c")], columns=["s", "p", "o"])
+
+    insertions, _ = __calculate_delta(old, new)
+    insertions = convert_df_to_n3(insertions)
+
+    assert len(insertions) == 1
+    assert insertions == ["<c> <c> c ."]
 
 def test_get_delta_for_deletions():
-    old = [("a", "a", "a"), ("b", "b", "b")]
-    new = [("a", "a", "a"), ("c", "c", "c")]
+    old = pd.DataFrame([("a", "a", "a"), ("b", "b", "b")], columns=["s", "p", "o"])
+    new = pd.DataFrame([("a", "a", "a"), ("c", "c", "c")], columns=["s", "p", "o"])
 
-    inserts = __calculate_delta(old, new)
-    assert len(inserts) == 1
-    assert inserts[0] == ("b", "b", "b")
+    _, deletions = __calculate_delta(old, new)
+
+    deletions = convert_df_to_n3(deletions)
+
+    assert len(deletions) == 1
+    assert deletions == ["<b> <b> b ."]
 
 
+def __calculate_delta(df1: pd.DataFrame, df2: pd.DataFrame):
+        delta = df1.merge(df2, on=["s", "p", "o"], how="outer", indicator=True)
 
-def __calculate_delta(triples1: List[Tuple], triples2: List[Tuple], respect_updates: bool = True) -> List[Tuple]:
-    delta = []
+        # Rows only in df1 (deletions)
+        deletions = delta[delta['_merge'] == 'left_only'].drop(columns=['_merge'])
+        # Rows only in df2 (insertions)
+        insertions = delta[delta['_merge'] == 'right_only'].drop(columns=['_merge'])
 
-    for t1 in triples1:
-        for t2 in triples2:
-            if t1[0] == t2[0] and t1[1] == t2[1]:
-                if t1[2] == t2[2]:
-                    break
-                else:
-                    #TODO handle possible changes???
-                    pass
-        else:
-            delta.append(t1)
-
-    return delta
+        return insertions, deletions

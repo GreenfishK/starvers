@@ -6,6 +6,7 @@ from uuid import UUID
 
 from delayedqueue import DelayedQueue
 
+from app.enums.DeltaTypeEnum import DeltaType
 from app.services.PollingTask import PollingTask
 
 
@@ -19,11 +20,11 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
 
         self.shutdown = False
 
-    def schedule_polling_at_fixed_rate(self, knowledge_graph_id: UUID, period: int, *args, initial_run=True, **kwargs) -> bool:
+    def schedule_polling_at_fixed_rate(self, dataset_id: UUID, period: int, delta_type: DeltaType, *args, initial_run=True, **kwargs) -> bool:
         if self.shutdown:
             raise RuntimeError("Cannot schedule new task after shutdown!")
         
-        task = PollingTask(knowledge_graph_id, period, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
+        task = PollingTask(dataset_id, period, delta_type, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
         return self._put(task, 0)
 
     def _put(self, task: PollingTask, delay: int) -> bool:
