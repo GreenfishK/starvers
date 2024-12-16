@@ -4,59 +4,59 @@ from typing import List
 from datetime import datetime
 import logging
 
-from app.models.KnowledgeGraphModel import KnowledgeGraph, KnowledgeGraphCreate
+from app.models.DatasetModel import Dataset, DatasetCreate
 from app.services import ScheduledThreadPoolExecutor
 from app.utils.graphdb.GraphDatabaseUtils import create_repository
-from app.utils.exceptions.GraphNotFoundException import KnowledgeGraphNotFoundException
+from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
 
 LOG = logging.getLogger(__name__)
 
 polling_executor: ScheduledThreadPoolExecutor.ScheduledThreadPoolExecutor = ScheduledThreadPoolExecutor.ScheduledThreadPoolExecutor(10)
 polling_executor.start()
 
-def get_all(session: Session) -> List[KnowledgeGraph]:
-    knowledgeGraphs = session.exec(select(KnowledgeGraph).where(KnowledgeGraph.active)).all()
-    return knowledgeGraphs
+def get_all(session: Session) -> List[Dataset]:
+    datasets = session.exec(select(Dataset).where(Dataset.active)).all()
+    return datasets
     
-def get_by_id(id: UUID, session: Session) -> KnowledgeGraph:
-    knowledgeGraph = session.get(KnowledgeGraph, id)
+def get_by_id(id: UUID, session: Session) -> Dataset:
+    dataset = session.get(Dataset, id)
 
-    if not knowledgeGraph:
-        raise KnowledgeGraphNotFoundException(id=id)
-    return knowledgeGraph
+    if not dataset:
+        raise DatasetNotFoundException(id=id)
+    return dataset
 
-def add(knowledgeGraph: KnowledgeGraphCreate, session: Session) -> List[KnowledgeGraph]:
-    db_knowledge_graph = KnowledgeGraph.model_validate(knowledgeGraph)
+def add(dataset: DatasetCreate, session: Session) -> List[Dataset]:
+    db_dataset = Dataset.model_validate(dataset)
 
-    session.add(db_knowledge_graph)
+    session.add(db_dataset)
     session.commit()
-    session.refresh(db_knowledge_graph)
+    session.refresh(db_dataset)
 
-    __start(db_knowledge_graph)
+    __start(db_dataset)
 
-    return db_knowledge_graph
+    return db_dataset
 
-def delete(id: UUID, session: Session) -> KnowledgeGraph:
-    db_knowledge_graph = get_by_id(id, session)
-    if (db_knowledge_graph.active):
-        db_knowledge_graph.active = False
-        db_knowledge_graph.last_modified = datetime.now()
-        session.add(db_knowledge_graph)
+def delete(id: UUID, session: Session) -> Dataset:
+    db_dataset = get_by_id(id, session)
+    if (db_dataset.active):
+        db_dataset.active = False
+        db_dataset.last_modified = datetime.now()
+        session.add(db_dataset)
         session.commit()
-        session.refresh(db_knowledge_graph)
-    return db_knowledge_graph
+        session.refresh(db_dataset)
+    return db_dataset
 
-def delete_all(session: Session) -> List[KnowledgeGraph]:
-    db_knowledge_graphs = get_all(session)
+def delete_all(session: Session) -> List[Dataset]:
+    db_datasets = get_all(session)
 
-    for db_knowledge_graph in db_knowledge_graphs:
-        if (db_knowledge_graph.active):
-            db_knowledge_graph.active = False
-            db_knowledge_graph.last_modified = datetime.now()
-            session.add(db_knowledge_graph)
+    for db_dataset in db_datasets:
+        if (db_dataset.active):
+            db_dataset.active = False
+            db_dataset.last_modified = datetime.now()
+            session.add(db_dataset)
     session.commit()
 
-    return db_knowledge_graphs
+    return db_datasets
 
 def restart(session: Session):
     active_graphs = get_all(session)
@@ -65,8 +65,8 @@ def restart(session: Session):
         __start(graph, False)
         pass
 
-def __start(knowledgeGraph: KnowledgeGraph, initial_run=True):
+def __start(dataset: Dataset, initial_run=True):
     #create repository for
-    create_repository(knowledgeGraph.repository_name)
+    create_repository(dataset.repository_name)
 
-    polling_executor.schedule_polling_at_fixed_rate(knowledgeGraph.id, knowledgeGraph.polling_interval, initial_run=initial_run)
+    polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)

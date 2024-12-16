@@ -3,15 +3,16 @@ import string
 import time
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.Database import Session, engine
+from app.AppConfig import Settings
+from app.Database import Session, engine, create_db_and_tables
 
 from app.api import ManagementRestService, MockRestService, QueryRestService
-from app.Database import create_db_and_tables
 from app.models.DeltaEventModel import DeltaEvent
 from app.services.ManagementService import restart
-from app.utils.exceptions.GraphNotFoundException import KnowledgeGraphNotFoundException
+from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 import uvicorn
 
@@ -36,6 +37,14 @@ app = FastAPI(lifespan=lifespan)
 
 app.openapi_tags = [ManagementRestService.tag_metadata]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(ManagementRestService.router)
 app.include_router(QueryRestService.router)
 app.include_router(MockRestService.router)
@@ -54,11 +63,11 @@ async def log_requests(request: Request, call_next):
     
     return response
 
-@app.exception_handler(KnowledgeGraphNotFoundException)
-async def knowledge_graph_not_found_exception_handler(request: Request, exc: KnowledgeGraphNotFoundException):
+@app.exception_handler(DatasetNotFoundException)
+async def dataset_not_found_exception_handler(request: Request, exc: DatasetNotFoundException):
     return JSONResponse(
         status_code=404,
-        content={"message": f"Oops! Knowledge Graph with id {exc.id} not found!"},
+        content={"message": f"Oops! Dataset with id {exc.id} not found!"},
     )
 
 @app.exception_handler(GraphRepositoryCreationFailedException)
@@ -72,7 +81,7 @@ async def graph_creation_failed_exception_handler(request: Request, exc: GraphRe
 def delta_event_notification(body: DeltaEvent):
     """
     When someone subscribes to the DeltaQueryService results, the service will send a POST request to the registered URL
-    every time a delta was calculated. The request payload contains relevant data to be able to query the corresponding knowledge graph.
+    every time a delta was calculated. The request payload contains relevant data to be able to query the corresponding rdf dataset.
     """
 
 if __name__ == "__main__":
