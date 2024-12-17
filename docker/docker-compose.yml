@@ -8,7 +8,7 @@ services:
       - 80:80
     env_file: "../prod.env"
     volumes:
-      - ~/starvers-server/evaluation:./evaluation
+      - ~/StarVersServer/evaluation:/code/evaluation
     depends_on:
       db:
         condition: service_started
@@ -32,7 +32,7 @@ services:
     restart: always
     environment: 
       GDB_JAVA_OPTS: >-
-        -Xmx2g -Xms2g
+        -Xmx8g -Xms8g
         -Dgraphdb.home=/opt/graphdb/home
         -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
         -Dgraphdb.workbench.cors.enable=true

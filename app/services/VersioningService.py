@@ -65,55 +65,59 @@ class StarVersService(VersioningService):
     
 
     def run_versioning(self, version_timestamp) -> DeltaEvent:
-        timing_overall = time.time_ns()
+        try:
+            timing_overall = time.time_ns()
 
-        timing_prepare = time.time_ns()
-        self.__delta_query_service.prepare()
-        timing_prepare = time.time_ns() - timing_prepare
+            timing_prepare = time.time_ns()
+            self.__delta_query_service.prepare()
+            timing_prepare = time.time_ns() - timing_prepare
 
-        timing_delta = time.time_ns()
-        insertions, deletions = self.__delta_query_service.calculate_delta(version_timestamp)  
-        timing_delta = time.time_ns() - timing_delta
+            timing_delta = time.time_ns()
+            insertions, deletions = self.__delta_query_service.calculate_delta(version_timestamp)  
+            timing_delta = time.time_ns() - timing_delta
 
-        LOG.info(f"Found {len(insertions.index)} insertions and {len(deletions.index)} deletions for dataset with uuid={self.dataset_id}")
-        
-        timing_versioning = time.time_ns()
-        insertions_n3 = convert_df_to_n3(insertions)
-        deletions_n3 = convert_df_to_n3(deletions)
-        self.__starvers_engine.insert(insertions_n3, timestamp=version_timestamp)
-        self.__starvers_engine.outdate(deletions_n3, timestamp=version_timestamp)
-        timing_versioning = time.time_ns() - timing_versioning
+            LOG.info(f"Found {len(insertions.index)} insertions and {len(deletions.index)} deletions for dataset with uuid={self.dataset_id}")
+            
+            timing_versioning = time.time_ns()
+            insertions_n3 = convert_df_to_n3(insertions)
+            deletions_n3 = convert_df_to_n3(deletions)
+            self.__starvers_engine.insert(insertions_n3, timestamp=version_timestamp)
+            self.__starvers_engine.outdate(deletions_n3, timestamp=version_timestamp)
+            timing_versioning = time.time_ns() - timing_versioning
 
-        self.__delta_query_service.clean_up()
-        timing_overall = time.time_ns() - timing_overall
+            self.__delta_query_service.clean_up()
+            timing_overall = time.time_ns() - timing_overall
 
-        if (Settings().evaluation_mode):
-            path = f"./evaluation/{self.repository_name}/"
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            if (Settings().evaluation_mode):
+                path = f"./evaluation/{self.repository_name}/"
+                os.makedirs(os.path.dirname(path), exist_ok=True)
 
-            # Persist Timings
-            timestamp = int(datetime.timestamp(datetime.now()))
-            with open(f"{path}{self.repository_name}_timings.csv", "a+") as timing_file:
-                timing_file.write(f"{timestamp}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_versioning}, {timing_overall}")
-                timing_file.write('\n')
+                # Persist Timings
+                timestamp = int(datetime.timestamp(datetime.now()))
+                with open(f"{path}{self.repository_name}_timings.csv", "a+") as timing_file:
+                    timing_file.write(f"{timestamp}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_versioning}, {timing_overall}")
+                    timing_file.write('\n')
+                
+                if len(insertions_n3) > 0 or len(deletions_n3) > 0:
+                    # Persist Inserts, Deletions
+                    with open(f"{path}{self.repository_name}_{timestamp}.delta", "a+") as dump_file:
+                        dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
+                        dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-                # Persist Inserts, Deletions
-                with open(f"{path}{self.repository_name}_{timestamp}.delta", "a+") as dump_file:
-                    dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
-                    dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
-        
-        if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-            return DeltaEvent(
-                id=self.dataset_id,
-                repository_name=self.repository_name,
-                delta_type=self.delta_type,
-                totalInsertions=len(insertions_n3),
-                totalDeletions=len(deletions_n3),
-                insertions=insertions_n3,
-                deletions=deletions_n3,
-                versioning_duration_ms=timing_overall,
-                timestamp=version_timestamp
-            )
-        
-        return None
+                return DeltaEvent(
+                    id=self.dataset_id,
+                    repository_name=self.repository_name,
+                    delta_type=self.delta_type,
+                    totalInsertions=len(insertions_n3),
+                    totalDeletions=len(deletions_n3),
+                    insertions=insertions_n3,
+                    deletions=deletions_n3,
+                    versioning_duration_ms=timing_overall,
+                    timestamp=version_timestamp
+                )
+            
+            return None
+        except:
+            self.__delta_query_service.clean_up()
+            return None
