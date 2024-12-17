@@ -18,7 +18,6 @@ def convert_list_to_n3(triples: List[Tuple]) -> List[str]:
 
 def convert_df_to_n3(df: pd.DataFrame) -> List[str]:
     return [
-        f"<{row['s']}> <{row['p']}> <{row['o']}> ." if str(row['o']).startswith('http') # TODO check if correct
-        else f"<{row['s']}> <{row['p']}> {row['o']} ." 
+        f"{row['s']} {row['p']} {row['o']} ." 
         for _, row in df.iterrows()
     ]
