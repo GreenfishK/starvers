@@ -37,13 +37,15 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
 
     def format_value(res_value):
         value = res_value["value"]
-        lang = res_value.get("xml:lang", None)
-        datatype = res_value.get("datatype", None)
-        if lang is not None:
-            value += "@" + lang
-        if datatype is not None:
-            value = "\"" + value + "\"^^<" + datatype + ">"
-        return value
+        lang = res_value.get("xml:lang")
+        datatype = res_value.get("datatype")
+
+        if lang:  # Language-tagged literal
+            return f"\"{value}\"@{lang}"
+        elif datatype:  # Typed literal
+            return f"\"{value}\"^^<{datatype}>"
+        else:  # Plain string literal
+            return f"\"{value}\""
 
     results = result.convert()
 
