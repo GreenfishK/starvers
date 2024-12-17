@@ -45,7 +45,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
         elif datatype:  # Typed literal
             return f"\"{value}\"^^<{datatype}>"
         else:  # Plain string literal
-            return f"\"{value}\""
+            return f"<{value}>" if res_value["type"] == "uri" else f"\"{value}\""
 
     results = result.convert()
 
