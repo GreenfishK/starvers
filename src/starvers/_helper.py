@@ -28,25 +28,50 @@ def _versioning_timestamp_format(version_timestamp: datetime) -> str:
 
 def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     """
-
     :param result:
     :return: Dataframe
     """
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_colwidth', None)
-
+    
     def format_value(res_value):
+        """
+        Formats a SPARQL result value while handling proper escaping and selecting suitable quotes.
+        
+        :param res_value: The value to format, including optional language or datatype information.
+        :return: A properly formatted and escaped query result.
+        """
+    
+        def escape_string(value):
+            """
+            Escapes special characters and selects the appropriate quotes.
+            TODO handle escaping
+            """
+            if '\n' in value or '\r' in value or ('"' in value and "'" in value):
+                # Multi-line or contains both single and double quotes
+                return f'"""{value}"""'
+            elif '"' in value:
+                # Contains double quotes, use single quotes
+                return f"'{value}'"
+            else:
+                # Default to double quotes
+                return f'"{value}"'
+        
         value = res_value["value"]
         lang = res_value.get("xml:lang")
         datatype = res_value.get("datatype")
+
 
         if lang:  # Language-tagged literal
             return f"\"{value}\"@{lang}"
         elif datatype:  # Typed literal
             return f"\"{value}\"^^<{datatype}>"
-        else:  # Plain string literal
-            return f"<{value}>" if res_value["type"] == "uri" else f"\"{value}\""
-
+        else:  # Plain string literal or URI
+            if res_value["type"] == "uri":
+                return f"<{value}>"
+            else:
+                return escape_string(value)
+        
     results = result.convert()
 
     column_names = []
