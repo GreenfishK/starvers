@@ -1,19 +1,19 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36" version="24.8.3">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" version="25.0.3">
   <diagram name="Page-1" id="R9HQ_qKddKDX3Kk3ESWT">
-    <mxGraphModel dx="2074" dy="1155" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+    <mxGraphModel dx="984" dy="659" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="wypb3K-UbLtuRCBKsb7N-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="wypb3K-UbLtuRCBKsb7N-1" target="wypb3K-UbLtuRCBKsb7N-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="wypb3K-UbLtuRCBKsb7N-1" value="RDF Versioning" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="wypb3K-UbLtuRCBKsb7N-1" value="RDF Dataset Tracking" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="50" y="70" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="wypb3K-UbLtuRCBKsb7N-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="wypb3K-UbLtuRCBKsb7N-2" target="wypb3K-UbLtuRCBKsb7N-4" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="wypb3K-UbLtuRCBKsb7N-2" value="Start Versioning" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
+        <mxCell id="wypb3K-UbLtuRCBKsb7N-2" value="Start Tracking" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="200" y="70" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="wypb3K-UbLtuRCBKsb7N-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="wypb3K-UbLtuRCBKsb7N-4" target="fazmCxF5EDkYQtoxBGls-1" edge="1">
@@ -42,7 +42,7 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="wypb3K-UbLtuRCBKsb7N-10" value="Delta?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="wypb3K-UbLtuRCBKsb7N-10" value="Delta?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="950" y="70" width="60" height="60" as="geometry" />
         </mxCell>
         <mxCell id="wypb3K-UbLtuRCBKsb7N-11" value="Calculate Delta" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
@@ -62,10 +62,10 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="wypb3K-UbLtuRCBKsb7N-18" value="Active?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="wypb3K-UbLtuRCBKsb7N-18" value="Tracking&lt;br&gt;Active?" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fontSize=10;spacingTop=4;" parent="1" vertex="1">
           <mxGeometry x="1060" y="70" width="60" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="wypb3K-UbLtuRCBKsb7N-23" value="Stop Versioning" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;" parent="1" vertex="1">
+        <mxCell id="wypb3K-UbLtuRCBKsb7N-23" value="Stop&lt;br&gt;RDF Dataset Tracking" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="1170" y="70" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="wypb3K-UbLtuRCBKsb7N-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="wypb3K-UbLtuRCBKsb7N-18" target="wypb3K-UbLtuRCBKsb7N-23" edge="1">
@@ -99,19 +99,19 @@
         <mxCell id="wypb3K-UbLtuRCBKsb7N-29" value="&lt;i&gt;await&lt;br&gt;&lt;/i&gt;Polling Interval" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.delay;whiteSpace=wrap;" parent="1" vertex="1">
           <mxGeometry x="500" y="80" width="100" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="fazmCxF5EDkYQtoxBGls-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="fazmCxF5EDkYQtoxBGls-1" target="wypb3K-UbLtuRCBKsb7N-6">
+        <mxCell id="fazmCxF5EDkYQtoxBGls-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="fazmCxF5EDkYQtoxBGls-1" target="wypb3K-UbLtuRCBKsb7N-6" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="fazmCxF5EDkYQtoxBGls-1" value="Versioning" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="fazmCxF5EDkYQtoxBGls-1" value="Versioning" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="350" y="180" width="100" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="fazmCxF5EDkYQtoxBGls-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="fazmCxF5EDkYQtoxBGls-3" target="wypb3K-UbLtuRCBKsb7N-26">
+        <mxCell id="fazmCxF5EDkYQtoxBGls-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="fazmCxF5EDkYQtoxBGls-3" target="wypb3K-UbLtuRCBKsb7N-26" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="fazmCxF5EDkYQtoxBGls-3" value="Versioning" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" vertex="1" parent="1">
+        <mxCell id="fazmCxF5EDkYQtoxBGls-3" value="Versioning" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;" parent="1" vertex="1">
           <mxGeometry x="930" y="180" width="100" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="fazmCxF5EDkYQtoxBGls-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="fazmCxF5EDkYQtoxBGls-3" target="wypb3K-UbLtuRCBKsb7N-18">
+        <mxCell id="fazmCxF5EDkYQtoxBGls-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="fazmCxF5EDkYQtoxBGls-3" target="wypb3K-UbLtuRCBKsb7N-18" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
