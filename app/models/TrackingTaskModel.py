@@ -1,7 +1,9 @@
 from uuid import UUID
+from dataclasses import dataclass
 
 from app.enums.DeltaTypeEnum import DeltaType
 
+@dataclass
 class TrackingTaskDto:
     id: UUID
     name: str
