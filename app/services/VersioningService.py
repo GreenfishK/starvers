@@ -43,9 +43,9 @@ class StarVersService(VersioningService):
         
         match tracking_task.delta_type:
             case DeltaType.ITERATIVE:
-                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url, tracking_task.name_temp())
+                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url)
             case DeltaType.SPARQL:
-                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url, tracking_task.name_temp())
+                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url)
 
 
     def run_initial_versioning(self, version_timestamp):
