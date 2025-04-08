@@ -86,8 +86,8 @@ class PollingTask():
 
         if self.__versioning_wrapper is None:
             tracking_task = TrackingTaskDto(
-                dataset_id=dataset.id,
-                repository_name=dataset.repository_name,
+                id=dataset.id,
+                name=dataset.repository_name,
                 rdf_dataset_url=dataset.rdf_dataset_url,
                 delta_type=dataset.delta_type)
             
