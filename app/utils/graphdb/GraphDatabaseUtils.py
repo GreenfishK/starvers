@@ -1,12 +1,12 @@
 # module for used graph database
 # replace marked sections with own code if necessary
 import datetime
-from tempfile import template
 import requests
 from functools import lru_cache
 from app.AppConfig import Settings
 import logging
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
+from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
 
 LOG = logging.getLogger(__name__)
@@ -14,18 +14,37 @@ LOG = logging.getLogger(__name__)
 DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'
 
 # Implementation for Graph DB
-def create_repository(name: str): # add URL and description?
+def create_repository(repository_name: str): # add URL and description?
     repoConfig = __load_repo_config_file()
-    repoConfig = repoConfig.replace('{:name}', name)
-    repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + name)
+    repoConfig = repoConfig.replace('{:name}', repository_name)
+    repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + repository_name)
 
-    LOG.info(f"Create graphdb repository with name {name}")
+    LOG.info(f"Create graphdb repository with name {repository_name}")
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories", files=dict(config=repoConfig))
     if (response.status_code != 201):
         if (response.text.find('already exists.') > -1):
             LOG.warning(f'[{response.status_code}] {response.text}')
         else:
-            raise GraphRepositoryCreationFailedException(name, response.text)
+            raise GraphRepositoryCreationFailedException(repository_name, response.text)
+        
+def import_serverfile(file_name: str, repository_name: str, graph_name: str = None):
+    LOG.info(f"Load serverfile {file_name} into graphdb repository {repository_name}")
+    payload = {
+        "fileNames": [file_name],
+        "context": None,
+        "importSettings": {
+            "replaceGraphs": False,
+            "context": None
+        }
+    }
+
+    if graph_name: #import into named graph
+        payload["context"] = "http://example.org/" + graph_name
+        payload["importSettings"]["context"] = "http://example.org/" + graph_name
+
+    response = requests.post(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server", json=payload)
+    if (response.status_code != 200):
+        raise ServerFileImportFailedException(repository_name, response.text)
 
 
 @lru_cache
@@ -40,19 +59,6 @@ def get_query_all_template(graph_name: str = None) -> str:
     else:
         with open('app/utils/graphdb/query_all_from_graph.sparql', 'r') as f:
             template = f.read()
-            template = template.replace('{:graph_name}', graph_name)
-            return template
-
-def get_load_template(rdf_dataset_url: str, graph_name: str = None) -> str:
-    if graph_name is None:
-        with open('app/utils/graphdb/load.sparql', 'r') as f:
-            template = f.read()
-            template = template.replace('{:rdf_dataset_url}', rdf_dataset_url)
-            return template
-    else:
-        with open('app/utils/graphdb/load_into_graph.sparql', 'r') as f:
-            template = f.read()
-            template = template.replace('{:rdf_dataset_url}', rdf_dataset_url)
             template = template.replace('{:graph_name}', graph_name)
             return template
     

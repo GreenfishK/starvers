@@ -17,7 +17,10 @@ def test_wirte_delta_dump():
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     # Persist Inserts, Deletions
-    timestamp = int(datetime.timestamp(datetime.now()))
-    with open(f"{path}/test_{timestamp}.delta", "a+") as dump_file:
-        dump_file.writelines(map(lambda x: "- " + x + '\n', ['a', 'b', 'c']))
-        dump_file.writelines(map(lambda x: "+ " + x + '\n', ['a', 'b', 'c']))
+    timestamp = datetime.now()
+    timestamp_str = timestamp.strftime("%Y%m%d-%H%M%S") + f"_{timestamp.microsecond // 1000:03d}"
+
+
+    with open(f"{path}/test_{timestamp_str}.delta", "a+") as dump_file:
+        dump_file.writelines(map(lambda x: "- " + x + '\n', ['a', 'b', 'c', timestamp_str]))
+        dump_file.writelines(map(lambda x: "+ " + x + '\n', ['a', 'b', 'c', timestamp_str]))

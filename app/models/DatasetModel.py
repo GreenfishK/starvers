@@ -1,7 +1,6 @@
 from typing import Annotated, Optional
 from pydantic import AfterValidator, HttpUrl
-from pydantic_core import Url
-from sqlalchemy import Column, Enum
+from sqlalchemy import Enum
 from sqlmodel import AutoString, Field, SQLModel
 from uuid import UUID, uuid4
 from datetime import datetime
