@@ -7,6 +7,7 @@ import requests
 
 from app.Database import Session, engine
 from app.enums.DeltaTypeEnum import DeltaType
+from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
 
 LOG = logging.getLogger(__name__)
@@ -84,7 +85,12 @@ class PollingTask():
         version_timestamp = datetime.now()
 
         if self.__versioning_wrapper is None:
-            self.__versioning_wrapper = StarVersService(dataset.repository_name, dataset.id, dataset.rdf_dataset_url, self.__delta_type)
+            tracking_task = TrackingTaskDto(
+                dataset_id=dataset.id,
+                repository_name=dataset.repository_name,
+                rdf_dataset_url=dataset.rdf_dataset_url,
+                delta_type=self.__delta_type)
+            self.__versioning_wrapper = StarVersService(tracking_task)
 
         if (self.__is_initial): # if initial no diff is necessary
             LOG.info(f"Initial version for dataset with uuid={self.dataset_id}")

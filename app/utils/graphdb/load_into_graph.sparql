@@ -1,2 +1,0 @@
-LOAD <{:rdf_dataset_url}>
-INTO GRAPH <http://example.org/{:graph_name}>
