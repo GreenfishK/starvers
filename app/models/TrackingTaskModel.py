@@ -1,9 +1,9 @@
-import dataclasses
 from uuid import UUID
+from pydantic import dataclasses
 
 from app.enums.DeltaTypeEnum import DeltaType
 
-@dataclasses.dataclass
+@dataclasses.dataclass(config=dict(arbitrary_types_allowed=True))
 class TrackingTaskDto:
     id: UUID
     name: str

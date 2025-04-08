@@ -1,12 +1,14 @@
 from datetime import datetime
 from typing import List
+from uuid import UUID
+from app.enums.DeltaTypeEnum import DeltaType
 
 from pydantic import BaseModel
 
-from app.models import TrackingTaskModel
-
 class DeltaEvent(BaseModel):
-    tracking_task: TrackingTaskModel
+    id: UUID
+    repository_name: str
+    delta_type: DeltaType
 
     totalInsertions: int
     totalDeletions: int

@@ -106,7 +106,9 @@ class StarVersService(VersioningService):
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 return DeltaEvent(
-                    tracking_task=self.tracking_task,
+                    id=self.dataset_id,
+                    repository_name=self.repository_name,
+                    delta_type=self.delta_type,
                     totalInsertions=len(insertions_n3),
                     totalDeletions=len(deletions_n3),
                     insertions=insertions_n3,
