@@ -6,17 +6,18 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.AppConfig import Settings
 from app.Database import Session, engine, create_db_and_tables
 
 from app.api import ManagementRestService, MockRestService, QueryRestService
 from app.models.DeltaEventModel import DeltaEvent
 from app.services.ManagementService import restart
 from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
-from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 import uvicorn
 
 import logging
+
+from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
+from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
 LOG = logging.getLogger(__name__)
 
@@ -75,6 +76,13 @@ async def graph_creation_failed_exception_handler(request: Request, exc: GraphRe
     return JSONResponse(
         status_code=400,
         content={"message": f"Oops! Creation for Repository with name {exc.reposotory_name}! [{exc.error}]"},
+    )
+
+@app.exception_handler(ServerFileImportFailedException)
+async def serverfile_import_failed_exception_handler(request: Request, exc: ServerFileImportFailedException):
+    return JSONResponse(
+        status_code=400,
+        content={"message": f"Oops! Importing server file for Repository with name {exc.reposotory_name} failed! [{exc.error}]"},
     )
 
 @app.webhooks.post("delta-event")

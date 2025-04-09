@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import List
 from uuid import UUID
+from app.enums.DeltaTypeEnum import DeltaType
 
 from pydantic import BaseModel
-
-from app.enums.DeltaTypeEnum import DeltaType
 
 class DeltaEvent(BaseModel):
     id: UUID
