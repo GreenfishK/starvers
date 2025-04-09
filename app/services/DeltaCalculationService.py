@@ -63,7 +63,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 
     
     def clean_up(self):
-        import_path = f"/opt/graphdb/home/graphdb-import/{self.tracking_task.name}.nt"
+        import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
         os.remove(import_path)
     
         self.__starvers_engine.sparql_post.setQuery(get_drop_graph_template(self.tracking_task.name_temp()))
@@ -84,7 +84,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         skolemize_blank_nodes_in_file(snapshot_path, processed_path)
 
         #copy to graphdb server file directory
-        shutil.copy2(processed_path, f'/opt/graphdb/home/graphdb-import/{self.tracking_task.name}.nt')
+        shutil.copy2(processed_path, f'/graphdb-import/{self.tracking_task.name}.nt')
 
         #start import server file
         import_serverfile(f"{self.tracking_task.name}.nt", self.tracking_task.name, graph_name)
@@ -128,7 +128,7 @@ class SparqlDeltaQueryService(DeltaCalculationService):
 
 
     def clean_up(self):
-        import_path = f"/opt/graphdb/home/graphdb-import/{self.tracking_task.name}.nt"
+        import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
         os.remove(import_path)
 
         self.__starvers_engine.sparql_post.setQuery(get_drop_graph_template(self.tracking_task.name_temp()))
@@ -141,7 +141,7 @@ class SparqlDeltaQueryService(DeltaCalculationService):
 
         snapshot_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt"
         processed_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.nt"
-        import_path = f"/opt/graphdb/home/graphdb-import/{self.tracking_task.name}.nt"
+        import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
 
         # download file into graph db server
         download_file(self.tracking_task.rdf_dataset_url, snapshot_path)
