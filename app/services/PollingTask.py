@@ -90,7 +90,7 @@ class PollingTask():
                 name=dataset.repository_name,
                 rdf_dataset_url=dataset.rdf_dataset_url,
                 delta_type=dataset.delta_type)
-            
+                        
             self.__versioning_wrapper = StarVersService(tracking_task)
 
         if (self.__is_initial): # if initial no diff is necessary

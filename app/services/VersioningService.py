@@ -43,13 +43,14 @@ class StarVersService(VersioningService):
         
         match tracking_task.delta_type:
             case DeltaType.ITERATIVE:
-                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url)
+                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task)
             case DeltaType.SPARQL:
-                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task.rdf_dataset_url)
+                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task)
 
 
     def run_initial_versioning(self, version_timestamp):
-        self.__delta_query_service.load_rdf_data(self.tracking_task.name)
+        self.__delta_query_service.set_version_timestamp(version_timestamp)
+        self.__delta_query_service.load_rdf_data()
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
 
@@ -102,7 +103,9 @@ class StarVersService(VersioningService):
                     with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
                         dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
                         dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
-                shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}.zip", "zip", f"{path}{get_timestamp(version_timestamp)}")
+                shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}", "zip", f"{path}{get_timestamp(version_timestamp)}")
+                shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
+                
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 return DeltaEvent(

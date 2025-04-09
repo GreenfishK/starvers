@@ -1,6 +1,7 @@
 # module for used graph database
 # replace marked sections with own code if necessary
 import datetime
+import time
 import requests
 from functools import lru_cache
 from app.AppConfig import Settings
@@ -31,20 +32,47 @@ def import_serverfile(file_name: str, repository_name: str, graph_name: str = No
     LOG.info(f"Load serverfile {file_name} into graphdb repository {repository_name}")
     payload = {
         "fileNames": [file_name],
-        "context": None,
         "importSettings": {
-            "replaceGraphs": False,
-            "context": None
+            "name": file_name,
+            "replaceGraphs": ["default"],
+            "context": ""
         }
     }
 
     if graph_name: #import into named graph
-        payload["context"] = "http://example.org/" + graph_name
         payload["importSettings"]["context"] = "http://example.org/" + graph_name
+        payload["importSettings"]["replaceGraphs"] = ["http://example.org/" + graph_name]
 
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server", json=payload)
-    if (response.status_code != 200):
+    if (response.status_code != 202):
         raise ServerFileImportFailedException(repository_name, response.text)
+    
+
+def poll_import_status(file_name: str, repository_name: str):
+    while True:
+        try:
+            response = requests.get(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server")
+            response.raise_for_status()
+            import_tasks = response.json()
+
+            # Suche nach dem Task mit dem gewünschten Dateinamen
+            task = next((t for t in import_tasks if t["name"] == file_name), None)
+
+            if not task:
+                raise ServerFileImportFailedException(repository_name, "Import not found!")
+
+            status = task["status"]
+
+            if status == "DONE":
+                LOG.info(f"Import for {repository_name} finished successfully.")
+                break
+            elif status == "ERROR":
+                raise ServerFileImportFailedException(repository_name, task.get('message'))
+
+        except Exception as e:
+            raise ServerFileImportFailedException(repository_name, f"Error while polling import status: {e}")
+
+        time.sleep(1)
 
 
 @lru_cache
