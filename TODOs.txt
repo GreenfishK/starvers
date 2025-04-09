@@ -1,0 +1,13 @@
+Implement support for multiple RDF serializations including file archives and directories with multiple RDF files.
+
+Investigate why import fails for for https://bimerr.iot.linkeddata.es/def/weather/ontology.nt
+
+Implement client to pass a URL with an ontology behind to start the versioning
+
+timings_csv: add headers
+
+Implement logs
+
+Implement stop versioning
+
+Resume service: if it is not already implemented

@@ -8,7 +8,7 @@ services:
       - 80:80
     env_file: "../prod.env"
     volumes:
-      - ~/StarVersServer/evaluation:/code/evaluation
+      - /mnt/data/starversserver/evaluation:/code/evaluation
     depends_on:
       db:
         condition: service_started
@@ -25,6 +25,8 @@ services:
       POSTGRES_DB: starvers_db
     ports:
       - 5432:5432
+    volumes:
+      - /mnt/data/starversserver/postgresql:/var/lib/postgresql
 
 
   rdfstore:
@@ -47,7 +49,7 @@ services:
       - 7200:7200
       - 7300:7300
     volumes:
-      - ./graphdb-data:/opt/graphdb/home
+      - /mnt/data/starversserver/graphdb-data:/opt/graphdb/home
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
