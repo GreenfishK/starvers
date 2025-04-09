@@ -32,10 +32,13 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         super().__init__()
         self.__starvers_engine = starvers_engine
         self.__rdf_dataset_url = rdf_dataset_url
-        self.__tmp_graph_name = tmp_graph_name
+        self.__tmp_graph_name = tmp_graph_name  
 
 
     def prepare(self):
+        # TODO: add support for archives/zip files, various RDF serializations such as RDF/turtle, RDF/xml, owl files
+        # sometimes one file, sometimes multiple files
+
         self.load_rdf_data(self.__tmp_graph_name)
 
 

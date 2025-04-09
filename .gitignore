@@ -134,3 +134,5 @@ docker/graphdb-data/
 
 .DS_Store
 evaluation/
+
+archive/
