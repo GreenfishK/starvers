@@ -1,22 +1,6 @@
 version: "3"
 
 services:
-  starversserver:
-    image: ghcr.io/martinmitteregger/starversserver:main
-    restart: always
-    ports:
-      - 80:80
-    env_file: "../prod.env"
-    volumes:
-      - /mnt/data/starversserver/evaluation:/code/evaluation
-      - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
-    depends_on:
-      db:
-        condition: service_started
-      rdfstore:
-        condition: service_started
-
-
   db:
     image: postgres
     restart: always
@@ -26,8 +10,6 @@ services:
       POSTGRES_DB: starvers_db
     ports:
       - 5432:5432
-    volumes:
-      - /mnt/data/starversserver/postgresql:/var/lib/postgresql
 
 
   rdfstore:
@@ -35,7 +17,7 @@ services:
     restart: always
     environment: 
       GDB_JAVA_OPTS: >-
-        -Xmx32g -Xms32g
+        -Xmx8g -Xms8g
         -Dgraphdb.home=/opt/graphdb/home
         -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
         -Dgraphdb.workbench.cors.enable=true
@@ -50,6 +32,6 @@ services:
       - 7200:7200
       - 7300:7300
     volumes:
-      - /mnt/data/starversserver/graphdb-data:/opt/graphdb/home
+      - ./graphdb-data:/opt/graphdb/home
     extra_hosts:
       - "host.docker.internal:host-gateway"
