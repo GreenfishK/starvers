@@ -52,7 +52,8 @@ class StarVersService(VersioningService):
         self.__delta_query_service.set_version_timestamp(version_timestamp)
         self.__delta_query_service.load_rdf_data()
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
-
+        with open(f"{path}{self.tracking_task.name}_timings.csv", "w") as timing_file:
+            timing_file.write("Timestamp, Insertions, Deletions, time_Prepare_ns, time_Delta_ns, time_Versioning_ns, time_Overall_ns\n")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
         LOG.info(f"Query at timestamp={timestamp} from repository {self.tracking_task.name} with uuid={self.tracking_task.id}")
