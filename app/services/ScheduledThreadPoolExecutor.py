@@ -1,4 +1,3 @@
-import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
@@ -6,11 +5,12 @@ from uuid import UUID
 
 from delayedqueue import DelayedQueue
 
+from app.LoggingConfig import get_logger
 from app.enums.DeltaTypeEnum import DeltaType
 from app.services.PollingTask import PollingTask
 
 
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__)
 
 class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(self, max_workers=10, name=''):
@@ -24,7 +24,7 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
         if self.shutdown:
             raise RuntimeError("Cannot schedule new task after shutdown!")
         
-        task = PollingTask(dataset_id, period, delta_type, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
+        task = PollingTask(dataset_id, period, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
         return self._put(task, 0)
 
     def _put(self, task: PollingTask, delay: int) -> bool:

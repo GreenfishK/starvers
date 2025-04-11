@@ -2,14 +2,14 @@ from sqlmodel import Session, select
 from uuid import UUID
 from typing import List
 from datetime import datetime
-import logging
 
+from app.LoggingConfig import get_logger
 from app.models.DatasetModel import Dataset, DatasetCreate
 from app.services import ScheduledThreadPoolExecutor
 from app.utils.graphdb.GraphDatabaseUtils import create_repository
 from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
 
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__)
 
 polling_executor: ScheduledThreadPoolExecutor.ScheduledThreadPoolExecutor = ScheduledThreadPoolExecutor.ScheduledThreadPoolExecutor(10)
 polling_executor.start()
