@@ -9,6 +9,7 @@ services:
     env_file: "../prod.env"
     volumes:
       - /mnt/data/starversserver/evaluation:/code/evaluation
+      - /mnt/data/starversserver/logs:/code/logs
       - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
     depends_on:
       db:

@@ -8,22 +8,22 @@ from contextlib import asynccontextmanager
 
 from app.Database import Session, engine, create_db_and_tables
 
+from app.LoggingConfig import get_logger, setup_logging
 from app.api import ManagementRestService, MockRestService, QueryRestService
 from app.models.DeltaEventModel import DeltaEvent
 from app.services.ManagementService import restart
 from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
 import uvicorn
 
-import logging
-
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
-LOG = logging.getLogger(__name__)
+LOG = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    setup_logging()
     MockRestService.tl.start()
 
     with Session(engine) as session:
@@ -75,14 +75,14 @@ async def dataset_not_found_exception_handler(request: Request, exc: DatasetNotF
 async def graph_creation_failed_exception_handler(request: Request, exc: GraphRepositoryCreationFailedException):
     return JSONResponse(
         status_code=400,
-        content={"message": f"Oops! Creation for Repository with name {exc.reposotory_name}! [{exc.error}]"},
+        content={"message": f"Oops! Creation for Repository with name {exc.repository_name}! [{exc.error}]"},
     )
 
 @app.exception_handler(ServerFileImportFailedException)
 async def serverfile_import_failed_exception_handler(request: Request, exc: ServerFileImportFailedException):
     return JSONResponse(
         status_code=400,
-        content={"message": f"Oops! Importing server file for Repository with name {exc.reposotory_name} failed! [{exc.error}]"},
+        content={"message": f"Oops! Importing server file for Repository with name {exc.repository_name} failed! [{exc.error}]"},
     )
 
 @app.webhooks.post("delta-event")
@@ -93,4 +93,4 @@ def delta_event_notification(body: DeltaEvent):
     """
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config='log_config.yaml')
+    uvicorn.run(app, host="0.0.0.0", port=8000)

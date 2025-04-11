@@ -7,14 +7,13 @@ import logging
 from starvers.starvers import TripleStoreEngine
 
 from app.AppConfig import Settings
+from app.LoggingConfig import get_tracking_logger
 from app.enums.DeltaTypeEnum import DeltaType
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
 from app.utils.HelperService import convert_df_to_n3, convert_df_to_triples, get_timestamp
 from app.utils.graphdb.GraphDatabaseUtils import get_query_all_template
-
-LOG = logging.getLogger(__name__)
 
 class VersioningService(ABC):
     @abstractmethod
@@ -35,6 +34,7 @@ class VersioningService(ABC):
 
 class StarVersService(VersioningService):
     def __init__(self, tracking_task: TrackingTaskDto) -> None:
+        self.LOG = get_tracking_logger(tracking_task.name)
         self.tracking_task = tracking_task
 
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', tracking_task.name)
@@ -49,14 +49,23 @@ class StarVersService(VersioningService):
 
 
     def run_initial_versioning(self, version_timestamp):
+        self.LOG.info(f"Start initial tracking task [{version_timestamp}]")
         self.__delta_query_service.set_version_timestamp(version_timestamp)
         self.__delta_query_service.load_rdf_data()
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
-        with open(f"{path}{self.tracking_task.name}_timings.csv", "w") as timing_file:
+
+        os.makedirs(os.path.dirname(f"./evaluation/{self.tracking_task.name}/"), exist_ok=True)
+
+        with open(f"./evaluation/{self.tracking_task.name}_timings.csv", "w") as timing_file:
             timing_file.write("Timestamp, Insertions, Deletions, time_Prepare_ns, time_Delta_ns, time_Versioning_ns, time_Overall_ns\n")
+        
+        self.LOG.info(f"Finished initial tracking task [{version_timestamp}]")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
-        LOG.info(f"Query at timestamp={timestamp} from repository {self.tracking_task.name} with uuid={self.tracking_task.id}")
+        if timestamp is not None and query_as_timestamped:
+            self.LOG.info(f"Execute timestamped query with timestamp={timestamp}")
+        else:
+            self.LOG.info("Execute query without timestamp")
         return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
     
 
@@ -66,6 +75,7 @@ class StarVersService(VersioningService):
     
 
     def run_versioning(self, version_timestamp) -> DeltaEvent:
+        self.LOG.info(f"Start tracking task [{version_timestamp}]")
         try:
             timing_overall = time.time_ns()
 
@@ -78,7 +88,7 @@ class StarVersService(VersioningService):
             insertions, deletions = self.__delta_query_service.calculate_delta()  
             timing_delta = time.time_ns() - timing_delta
 
-            LOG.info(f"Found {len(insertions.index)} insertions and {len(deletions.index)} deletions for dataset with uuid={self.tracking_task.id}")
+            self.LOG.info(f"Found {len(insertions.index)} insertions and {len(deletions.index)} deletions")
             
             timing_versioning = time.time_ns()
             insertions_n3 = convert_df_to_n3(insertions)
@@ -90,25 +100,23 @@ class StarVersService(VersioningService):
             self.__delta_query_service.clean_up()
             timing_overall = time.time_ns() - timing_overall
 
-            if (Settings().evaluation_mode):
-                path = f"./evaluation/{self.tracking_task.name}/"
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-
-                # Persist Timings
-                with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
-                    timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}")
-                    timing_file.write('\n')
-                
-                if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-                    # Persist Inserts, Deletions
-                    with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
-                        dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
-                        dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
-                shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}", "zip", f"{path}{get_timestamp(version_timestamp)}")
-                shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
+            path = f"./evaluation/{self.tracking_task.name}/"
+            # Persist Timings
+            with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
+                timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}")
+                timing_file.write('\n')
+            
+            if len(insertions_n3) > 0 or len(deletions_n3) > 0:
+                # Persist Inserts, Deletions
+                with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
+                    dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
+                    dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
+            shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}", "zip", f"{path}{get_timestamp(version_timestamp)}")
+            shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
                 
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
+                self.LOG.info(f"Tracked {insertions_n3} insertions and {deletions_n3} deletions")
                 return DeltaEvent(
                     id=self.dataset_id,
                     repository_name=self.repository_name,
@@ -121,7 +129,11 @@ class StarVersService(VersioningService):
                     timestamp=version_timestamp
                 )
             
+            self.LOG.info("No changes tracked")
+            self.LOG.info(f"Finished tracking task [{version_timestamp}]")
             return None
-        except:
+        except Exception as e:
+            self.LOG.error(f"Tracking task failed with error {e}")
+            self.LOG.info("Tracking task will be rescheduled...")
             self.__delta_query_service.clean_up()
             return None
