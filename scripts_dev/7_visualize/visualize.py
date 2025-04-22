@@ -11,6 +11,7 @@ import sys
 import math
 import logging
 import itertools
+import re
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
@@ -218,10 +219,115 @@ def create_plots_update(triplestore: str, dataset: str):
     plt.close()
 
 
+def create_latex_table():
+    """
+    Create and save a LaTeX table for query performance, ingestion, and DB file size
+    """
+
+    # Load data 
+    performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
+                                   dtype={"triplestore": "category", "dataset": "category", "policy": "category",
+                                          "query_set": "category", "snapshot": "string", "query": "string",
+                                          "execution_time": "float", "snapshot_creation_time": "float"},
+                                   parse_dates=["snapshot_ts"])
+
+    performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
+    performance_data = performance_data[['triplestore', 'dataset', 'policy', 'query_set', 'execution_time_total']]
+
+    ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
+    ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
+
+    # Load template 
+    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_tmpl.tex", "r") as file:
+        template = file.read()
+
+    # Aggregate performance data 
+    perf_agg = performance_data.groupby(["triplestore", "dataset", "policy", "query_set"]).agg(
+        min=('execution_time_total', 'min'),
+        avg=('execution_time_total', 'mean'),
+        max=('execution_time_total', 'max')
+    ).reset_index()
+
+    # Aggregate ingestion data 
+    ingestion_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"]).agg(
+        ingestion_time_min=('ingestion_time', 'min'),
+        ingestion_time_avg=('ingestion_time', 'mean'),
+        ingestion_time_max=('ingestion_time', 'max'),
+        raw_file_size_min=('raw_file_size_MiB', 'min'),
+        raw_file_size_avg=('raw_file_size_MiB', 'mean'),
+        raw_file_size_max=('raw_file_size_MiB', 'max'),
+        db_file_size_min=('db_files_disk_usage_MiB', 'min'),
+        db_file_size_avg=('db_files_disk_usage_MiB', 'mean'),
+        db_file_size_max=('db_files_disk_usage_MiB', 'max')
+    ).reset_index()
+
+    # Formatting helper 
+    def format_value(v):
+        if v < 1:
+            return f"{v:.2f}".replace("0.", ",")
+        else:
+            return f"{v:.1f}"
+
+    # Generate ordered list of values to insert 
+    row_order = ["cb_sr_ng", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+    query_sets = ["lookup", "join"]
+    datasets = ["B_day", "B_hour", "C"]
+    triplestores = ["graphdb", "jena"]
+
+    values = []
+
+    # Execution and ingestion time
+    for metric_type in ["execution", "ingestion", "raw_file_size", "db_file_size"]:
+        for query_set in query_sets:
+            for policy in row_order:
+                for triplestore in triplestores:
+                    for dataset in datasets:
+                        if metric_type == "execution":
+                            row = perf_agg[(perf_agg.triplestore == triplestore) &
+                                           (perf_agg.dataset == dataset) &
+                                           (perf_agg.policy == policy) &
+                                           (perf_agg.query_set == query_set)]
+                        else:
+                            row = ingestion_agg[(ingestion_agg.triplestore == triplestore) &
+                                                (ingestion_agg.dataset == dataset) &
+                                                (ingestion_agg.policy == policy)]
+                        
+                        if not row.empty:
+                            if metric_type == "execution":
+                                stats = row.iloc[0][["min", "avg", "max"]]
+                            elif metric_type == "ingestion":
+                                stats = row.iloc[0][["ingestion_time_min", "ingestion_time_avg", "ingestion_time_max"]]
+                            elif metric_type == "raw_file_size":
+                                stats = row.iloc[0][["raw_file_size_min", "raw_file_size_avg", "raw_file_size_max"]]
+                            else:  # db_file_size
+                                stats = row.iloc[0][["db_file_size_min", "db_file_size_avg", "db_file_size_max"]]
+                        else:
+                            stats = [0, 0, 0]
+
+                        formatted = [format_value(v) for v in stats]
+                        values.extend(formatted)
+
+
+
+    def replacer(match):
+        return values.pop(0) if values else "?"
+
+    filled = re.sub(r'\b1\b', replacer, template, count=len(values))
+
+    #  Write final LaTeX 
+    with open(f"{figures_out}/latex_table_filled.tex", "w") as file:
+        file.write(filled)
+
+    logging.info("LaTeX table filled and saved.")
+
+
+
 # Plots for query performance and ingestion
-args = itertools.product(['graphdb', 'jenatdb2'], datasets)
-list(map(lambda x: create_plots(*x), args))
+#args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+#list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-create_plots_update("GRAPHDB", 'bearc')
+#create_plots_update("GRAPHDB", 'bearc')
 
+# Latex table for query performance, ingestion, and db file size
+create_latex_table()
