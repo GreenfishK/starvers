@@ -304,6 +304,7 @@ def create_latex_table():
                         else:
                             stats = [0, 0, 0]
 
+                        logging.info(f"Filling {metric_type} for {triplestore}, {dataset}, {policy}, {query_set}: {stats}")
                         formatted = [format_value(v) for v in stats]
                         values.extend(formatted)
 
