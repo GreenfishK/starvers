@@ -118,9 +118,9 @@ class StarVersService(VersioningService):
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 self.LOG.info(f"Tracked {insertions_n3} insertions and {deletions_n3} deletions")
                 return DeltaEvent(
-                    id=self.dataset_id,
-                    repository_name=self.repository_name,
-                    delta_type=self.delta_type,
+                    id=self.tracking_task.id,
+                    repository_name=self.tracking_task.name,
+                    delta_type=self.tracking_task.delta_type,
                     totalInsertions=len(insertions_n3),
                     totalDeletions=len(deletions_n3),
                     insertions=insertions_n3,
