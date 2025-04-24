@@ -7,6 +7,7 @@ from uuid import UUID
 from pytest import Session
 
 from app.Database import get_session
+from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
 from app.services.ManagementService import get_by_id
 
@@ -31,6 +32,11 @@ async def query_knowlegde_graph_by_id(
     session: Session = Depends(get_session)):
 
     dataset =  get_by_id(id, session)
-    starvers = StarVersService(dataset.repository_name, dataset.id, dataset.rdf_dataset_url, dataset.id)
+    tracking_task = TrackingTaskDto(
+        id=dataset.id,
+        name=dataset.repository_name,
+        rdf_dataset_url=dataset.rdf_dataset_url,
+        delta_type=dataset.delta_type)
+    starvers = StarVersService(tracking_task)
 
     return starvers.query(query, timestamp, query_as_timestamped)

@@ -34,6 +34,13 @@ async def get_rdf_dataset_by_id(id: UUID, session: Session = Depends(get_session
 async def start_rdf_dataset_versioning(dataset: DatasetCreate, session: Session = Depends(get_session)):
     return add(dataset, session)
 
+@router.post("/all", response_model=List[DatasetRead], status_code=201)
+async def start_rdf_dataset_versioning_bulk(datasets: List[DatasetCreate], session: Session = Depends(get_session)):
+    bulk = []
+    for dataset in datasets:
+        bulk.append(add(dataset, session))
+    return bulk
+
 @router.delete("/all", response_model=List[DatasetRead], status_code=200)
 async def stop_all_rdf_dataset_versionings(session: Session = Depends(get_session)):
     return delete_all(session)

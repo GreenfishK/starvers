@@ -8,8 +8,8 @@ from starvers.starvers import TripleStoreEngine
 from app.LoggingConfig import get_tracking_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.FileService import download_file, skolemize_blank_nodes_in_file
-from app.utils.HelperService import get_timestamp
-from app.utils.graphdb.GraphDatabaseUtils import get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, get_query_all_template, import_serverfile, poll_import_status
+from app.utils.HelperService import convert_to_df, get_timestamp
+from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, get_query_all_template, import_serverfile, poll_import_status
 
 class DeltaCalculationService(ABC):
     @abstractmethod
@@ -52,10 +52,23 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 
     def calculate_delta(self):
         self.LOG.info("Get latest versions to calculate delta")
-        latest = self.__starvers_engine.query(get_query_all_template(self.tracking_task.name_temp()), yn_timestamp_query=False) #no versioning necessary
-        versioned = self.__starvers_engine.query(get_query_all_template(), self.__version_timestamp)
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('N3') # set to n3 return data
+        self.__starvers_engine.sparql_get_with_post.addCustomHttpHeader('Accept', 'application/n-triples')
 
-        self.LOG.info("Calculate Delta - Insertions & Deletions")
+        self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_template(self.tracking_task.name_temp())) #no versioning necessary
+        latest_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
+        
+        self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_template())
+        versioned_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
+
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('JSON') # return to default behaviour
+        self.__starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
+        self.LOG.info("Convert latest versions to calculate delta")
+        
+        latest = convert_to_df(latest_text)
+        versioned = convert_to_df(versioned_text)
+
+        self.LOG.info("Calculate delta - Insertions & Deletions")
         insertions, deletions = self.__calculate_delta(versioned, latest)
 
         return insertions, deletions
@@ -127,11 +140,22 @@ class SparqlDeltaQueryService(DeltaCalculationService):
 
 
     def calculate_delta(self):
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('N3') # set to n3 return data
+        self.__starvers_engine.sparql_get_with_post.addCustomHttpHeader('Accept', 'application/n-triples')
+    
         self.LOG.info("Calculate Delta - Insertions")
-        insertions = self.__starvers_engine.query(get_delta_query_insertions_template(self.__version_timestamp, self.tracking_task.name_temp()), yn_timestamp_query=False)
+        self.__starvers_engine.sparql_get_with_post.setQuery(get_delta_query_insertions_template(self.__version_timestamp, self.tracking_task.name_temp()))
+        insertions_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
 
         self.LOG.info("Calculate Delta - Deletions")
-        deletions = self.__starvers_engine.query(get_delta_query_deletions_template(self.__version_timestamp, self.tracking_task.name_temp()), yn_timestamp_query=False)
+        self.__starvers_engine.sparql_get_with_post.setQuery(get_delta_query_deletions_template(self.__version_timestamp, self.tracking_task.name_temp()))
+        deletions_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
+
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('JSON') # return to default behaviour
+        self.__starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
+
+        insertions = convert_to_df(insertions_text)
+        deletions = convert_to_df(deletions_text)
 
         return insertions, deletions
 

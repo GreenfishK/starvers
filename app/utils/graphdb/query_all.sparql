@@ -1,5 +1,0 @@
-SELECT ?s ?p ?o
-FROM <http://www.openrdf.org/schema/sesame#nil>
-WHERE {
-    ?s ?p ?o .
-}

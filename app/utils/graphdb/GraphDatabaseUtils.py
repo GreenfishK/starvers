@@ -12,6 +12,7 @@ from app.utils.exceptions.ServerFileImportFailedException import ServerFileImpor
 
 
 DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'
+BASE_GRAPH_URI = 'http://example.org/'
 
 # Implementation for Graph DB
 def create_repository(repository_name: str): # add URL and description?
@@ -91,35 +92,37 @@ def __load_repo_config_file() -> str:
         return f.read()
     
 def get_query_all_template(graph_name: str = None) -> str:
-    if graph_name is None:
-        with open('app/utils/graphdb/query_all.sparql', 'r') as f:
-            return f.read()
-    else:
-        with open('app/utils/graphdb/query_all_from_graph.sparql', 'r') as f:
-            template = f.read()
-            template = template.replace('{:graph_name}', graph_name)
-            return template
+    with open('app/utils/graphdb/query_all_from_graph.sparql', 'r') as f:
+        template = f.read()
+        template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
+        return template
+        
+def get_construct_all_template(graph_name: str = None) -> str:
+    with open('app/utils/graphdb/construct_all_from_graph.sparql', 'r') as f:
+        template = f.read()
+        template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
+        return template
     
     
 @lru_cache
 def get_drop_graph_template(graph_name: str) -> str:
     with open('app/utils/graphdb/drop_graph.sparql', 'r') as f:
         template = f.read()
-        template = template.replace('{:graph_name}', graph_name)
+        template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
 def get_delta_query_deletions_template(timestamp, graph_name: str) -> str:
     with open('app/utils/graphdb/delta_query_deletions.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
-        template = template.replace('{:graph_name}', graph_name)
+        template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
 def get_delta_query_insertions_template(timestamp, graph_name: str) -> str:
     with open('app/utils/graphdb/delta_query_insertions.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
-        template = template.replace('{:graph_name}', graph_name)
+        template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
 def _versioning_timestamp_format(timestamp: datetime) -> str:
