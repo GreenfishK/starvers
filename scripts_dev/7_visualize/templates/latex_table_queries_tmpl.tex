@@ -1,0 +1,26 @@
+\begin{table}
+    \centering
+    \begin{tabular}{cc|ccc|ccc|ccc|ccc|ccc}
+
+                                                                     & & \multicolumn{6}{c|}{BEARB\_day} & \multicolumn{6}{c|}{BEARB\_hour} & \multicolumn{3}{c}{BEARBC} \\
+        \cline{3-17}
+                                                                     & & \multicolumn{3}{c|}{lookup} & \multicolumn{3}{c|}{join} & \multicolumn{3}{c|}{lookup} & \multicolumn{3}{c|}{join} & \multicolumn{3}{c}{complex} \\
+        \cline{3-17}
+                                                                     & & min & avg & max & min & avg & max & min & avg & max & min & avg & max & min & avg & max \\
+        \hline
+        \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{GraphDB}}} & cb\_ng & {{bearb_day_graphdb_lookup_cb_sr_ng}} & {{bearb_day_graphdb_join_cb_sr_ng}} & {{bearb_hour_graphdb_lookup_cb_sr_ng}} & {{bearb_hour_graphdb_join_cb_sr_ng}}  & {{bearc_graphdb_complex_cb_sr_ng}} \\
+        \multicolumn{1}{c|}{}                    & ic\_ng & {{bearb_day_graphdb_lookup_ic_sr_ng}} & {{bearb_day_graphdb_join_ic_sr_ng}} & {{bearb_hour_graphdb_lookup_ic_sr_ng}} & {{bearb_hour_graphdb_join_ic_sr_ng}} & {{bearc_graphdb_complex_ic_sr_ng}}\\
+        \multicolumn{1}{c|}{}                    & tb\_ng & {{bearb_day_graphdb_lookup_tb_sr_ng}} & {{bearb_day_graphdb_join_tb_sr_ng}} & {{bearb_hour_graphdb_lookup_tb_sr_ng}} & {{bearb_hour_graphdb_join_tb_sr_ng}} & {{bearc_graphdb_complex_tb_sr_ng}}\\
+        \multicolumn{1}{c|}{}                    & tb\_rs & {{bearb_day_graphdb_lookup_tb_sr_rs}} & {{bearb_day_graphdb_join_tb_sr_rs}} & {{bearb_hour_graphdb_lookup_tb_sr_rs}} & {{bearb_hour_graphdb_join_tb_sr_rs}} & {{bearc_graphdb_complex_tb_sr_rs}}\\
+
+                                       
+        \hline
+        \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{Jena}}} & cb\_ng & {{bearb_day_jenatdb2_lookup_cb_sr_ng}} & {{bearb_day_jenatdb2_join_cb_sr_ng}} & {{bearb_hour_jenatdb2_lookup_cb_sr_ng}} & {{bearb_hour_jenatdb2_join_cb_sr_ng}}  & {{bearc_jenatdb2_complex_cb_sr_ng}} \\
+        \multicolumn{1}{c|}{}                    & ic\_ng & {{bearb_day_jenatdb2_lookup_ic_sr_ng}} & {{bearb_day_jenatdb2_join_ic_sr_ng}} & {{bearb_hour_jenatdb2_lookup_ic_sr_ng}} & {{bearb_hour_jenatdb2_join_ic_sr_ng}} & {{bearc_jenatdb2_complex_ic_sr_ng}}\\
+        \multicolumn{1}{c|}{}                    & tb\_ng & {{bearb_day_jenatdb2_lookup_tb_sr_ng}} & {{bearb_day_jenatdb2_join_tb_sr_ng}} & {{bearb_hour_jenatdb2_lookup_tb_sr_ng}} & {{bearb_hour_jenatdb2_join_tb_sr_ng}} & {{bearc_jenatdb2_complex_tb_sr_ng}}\\
+        \multicolumn{1}{c|}{}                    & tb\_rs & {{bearb_day_jenatdb2_lookup_tb_sr_rs}} & {{bearb_day_jenatdb2_join_tb_sr_rs}} & {{bearb_hour_jenatdb2_lookup_tb_sr_rs}} & {{bearb_hour_jenatdb2_join_tb_sr_rs}} & {{bearc_jenatdb2_complex_tb_sr_rs}}\\
+                                        
+    \end{tabular}
+    \caption{Average Execution Time (in seconds) for Lookup \& Join queries across three datasets, four versioning policies, and two RDF-star stores.}
+    \label{tab:eval_results_queries}
+\end{table}
