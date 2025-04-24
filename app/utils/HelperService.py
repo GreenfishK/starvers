@@ -3,19 +3,27 @@ import pandas as pd
 from datetime import datetime
 
 
+def convert_to_df(nt_text: str) -> pd.DataFrame:
+    triples = []
+    print(nt_text.splitlines())
+    for line in nt_text.splitlines():
+        line = line.strip()
+        if len(line) == 0:
+            continue
+
+        l = line.split(" ", 2)
+        triples.append((l[0].strip(" "), l[1].strip(" "), l[2].strip(" .")))
+
+    # Convert to DataFrame
+    return pd.DataFrame(triples, columns=["s", "p", "o"])
+
+
 def convert_df_to_triples(df: pd.DataFrame) -> List[Tuple]:
     result = []
     for index in df.index:
         result.append((df['s'][index], df['p'][index], df['o'][index]))
     return result
 
-
-def convert_list_to_n3(triples: List[Tuple]) -> List[str]:
-    n3: List[str] = []
-    for triple in triples:
-        n3.append(f"<{triple[0]}> <{triple[1]}> {triple[2]} .")
-
-    return n3
 
 def convert_df_to_n3(df: pd.DataFrame) -> List[str]:
     return [
