@@ -96,7 +96,14 @@ def get_query_all_template(graph_name: str = None) -> str:
         template = f.read()
         template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
         return template
-        
+
+def get_construct_all_versioned_template(timestamp, graph_name: str = None) -> str:
+    with open('app/utils/graphdb/construct_all_from_versioned_graph.sparql', 'r') as f:
+        template = f.read()
+        template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
+        template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
+        return template       
+
 def get_construct_all_template(graph_name: str = None) -> str:
     with open('app/utils/graphdb/construct_all_from_graph.sparql', 'r') as f:
         template = f.read()

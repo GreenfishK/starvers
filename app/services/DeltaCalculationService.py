@@ -9,7 +9,7 @@ from app.LoggingConfig import get_tracking_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.FileService import download_file, skolemize_blank_nodes_in_file
 from app.utils.HelperService import convert_to_df, get_timestamp
-from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, get_query_all_template, import_serverfile, poll_import_status
+from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, get_query_all_template, import_serverfile, poll_import_status
 
 class DeltaCalculationService(ABC):
     @abstractmethod
@@ -58,7 +58,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_template(self.tracking_task.name_temp())) #no versioning necessary
         latest_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
         
-        self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_template())
+        self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_versioned_template(self.__version_timestamp))
         versioned_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
 
         self.__starvers_engine.sparql_get_with_post.setReturnFormat('JSON') # return to default behaviour
