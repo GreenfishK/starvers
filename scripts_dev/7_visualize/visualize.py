@@ -219,107 +219,160 @@ def create_plots_update(triplestore: str, dataset: str):
     plt.close()
 
 
-def create_latex_table():
+def create_latex_tables():
     """
-    Create and save a LaTeX table for query performance, ingestion, and DB file size
+    Create and save two LaTeX tables:
+    1. Query and ingestion performance (min/avg/max)
+    2. Storage size (raw and DB files, no min/avg/max)
     """
 
-    # Load data 
-    performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
+    # Load data
+    queries_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
                                    dtype={"triplestore": "category", "dataset": "category", "policy": "category",
                                           "query_set": "category", "snapshot": "string", "query": "string",
                                           "execution_time": "float", "snapshot_creation_time": "float"},
                                    parse_dates=["snapshot_ts"])
 
-    performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
-    performance_data = performance_data[['triplestore', 'dataset', 'policy', 'query_set', 'execution_time_total']]
+    queries_data['execution_time_total'] = queries_data['execution_time'] + queries_data['snapshot_creation_time']
+    queries_data = queries_data[['triplestore', 'dataset', 'policy', 'query_set', 'execution_time_total']]
 
     ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
-    # Load template 
-    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_tmpl.tex", "r") as file:
-        template = file.read()
+    # Load templates
+    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_queries_tmpl.tex", "r") as f:
+        template_queries = f.read()
+    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_storage_tmpl.tex", "r") as f:
+        template_storage = f.read()
 
-    # Aggregate performance data 
-    perf_agg = performance_data.groupby(["triplestore", "dataset", "policy", "query_set"]).agg(
+    # Aggregation
+    queries_agg = queries_data.groupby(["triplestore", "dataset", "policy", "query_set"]).agg(
         min=('execution_time_total', 'min'),
         avg=('execution_time_total', 'mean'),
         max=('execution_time_total', 'max')
     ).reset_index()
 
-    # Aggregate ingestion data 
-    ingestion_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"]).agg(
-        ingestion_time_min=('ingestion_time', 'min'),
-        ingestion_time_avg=('ingestion_time', 'mean'),
-        ingestion_time_max=('ingestion_time', 'max'),
-        raw_file_size_min=('raw_file_size_MiB', 'min'),
-        raw_file_size_avg=('raw_file_size_MiB', 'mean'),
-        raw_file_size_max=('raw_file_size_MiB', 'max'),
-        db_file_size_min=('db_files_disk_usage_MiB', 'min'),
-        db_file_size_avg=('db_files_disk_usage_MiB', 'mean'),
-        db_file_size_max=('db_files_disk_usage_MiB', 'max')
+    storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"]).agg(
+        ingestion_time=('ingestion_time', 'median'),
+        raw_file_size=('raw_file_size_MiB', 'mean'), 
+        db_file_size=('db_files_disk_usage_MiB', 'mean')  
     ).reset_index()
 
-    # Formatting helper 
-    def format_value(v):
+    def format_exec_time(v):
         if v < 1:
-            return f"{v:.2f}".replace("0.", ",")
-        else:
+            return f"{v:.2f}".lstrip('0')
+        else: 
             return f"{v:.1f}"
+        
+    def format_storage_consumption(v):
+        v = v / 1024
+        return f"{v:.2f}"
 
-    # Generate ordered list of values to insert 
-    row_order = ["cb_sr_ng", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-    query_sets = ["lookup", "join"]
-    datasets = ["B_day", "B_hour", "C"]
-    triplestores = ["graphdb", "jena"]
+    def format_ingestion_time(v):
+        return f"{v:.1f}"
 
-    values = []
+    # Values as they appear in the datasets
+    filled_storage = ""
+    filled_queries = ""
 
-    # Execution and ingestion time
-    for metric_type in ["execution", "ingestion", "raw_file_size", "db_file_size"]:
+    # Queries table values (min, avg, max per dataset)
+    triplestores = ["graphdb", "jenatdb2"]
+    query_sets = ["lookup", "join", "complex"]
+    policies = ["cb_sr_ng", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+    datasets = ["bearb_day", "bearb_hour", "bearc"]
+    metrics = ["min", "avg", "max"]
+
+    from collections import defaultdict
+    placeholder_map_queries = defaultdict(str)
+
+    for triplestore in triplestores:
         for query_set in query_sets:
-            for policy in row_order:
-                for triplestore in triplestores:
-                    for dataset in datasets:
-                        if metric_type == "execution":
-                            row = perf_agg[(perf_agg.triplestore == triplestore) &
-                                           (perf_agg.dataset == dataset) &
-                                           (perf_agg.policy == policy) &
-                                           (perf_agg.query_set == query_set)]
+            for policy in policies:
+                for dataset in datasets:
+                    row_values = []
+                    for metric in metrics:
+                        match = queries_agg[
+                            (queries_agg['triplestore'] == triplestore) &
+                            (queries_agg['dataset'] == dataset) &
+                            (queries_agg['policy'] == policy) &
+                            (queries_agg['query_set'] == query_set)
+                        ]
+                        import numpy as np
+                        print(match["avg"].item())
+                        if not np.isnan(match["avg"].item()):
+                            value = match[metric].values[0]
+                            row_values.append(format_exec_time(value))
                         else:
-                            row = ingestion_agg[(ingestion_agg.triplestore == triplestore) &
-                                                (ingestion_agg.dataset == dataset) &
-                                                (ingestion_agg.policy == policy)]
-                        
-                        if not row.empty:
-                            if metric_type == "execution":
-                                stats = row.iloc[0][["min", "avg", "max"]]
-                            elif metric_type == "ingestion":
-                                stats = row.iloc[0][["ingestion_time_min", "ingestion_time_avg", "ingestion_time_max"]]
-                            elif metric_type == "raw_file_size":
-                                stats = row.iloc[0][["raw_file_size_min", "raw_file_size_avg", "raw_file_size_max"]]
-                            else:  # db_file_size
-                                stats = row.iloc[0][["db_file_size_min", "db_file_size_avg", "db_file_size_max"]]
-                        else:
-                            stats = [0, 0, 0]
+                            row_values.append("/")
+                    key = f"{dataset}_{triplestore}_{query_set}_{policy}"
+                    placeholder_map_queries[f"{{{{{key}}}}}"] = " & ".join(row_values)
+                
 
-                        logging.info(f"Filling {metric_type} for {triplestore}, {dataset}, {policy}, {query_set}: {stats}")
-                        formatted = [format_value(v) for v in stats]
-                        values.extend(formatted)
+    filled_queries = template_queries
+    for placeholder, value_str in placeholder_map_queries.items():
+        filled_queries = filled_queries.replace(placeholder, value_str)
 
+    # Storage table values
+    value_order_storage = [
+        ("bearb_day", "raw"), ("bearb_day", "graphdb"), ("bearb_day", "jenatdb2"),
+        ("bearb_hour", "raw"), ("bearb_hour", "graphdb"), ("bearb_hour", "jenatdb2"),
+        ("bearc", "raw"), ("bearc", "graphdb"), ("bearc", "jenatdb2")
+    ]
 
+    placeholder_map_storage = {}
 
-    def replacer(match):
-        return values.pop(0) if values else "?"
+    for policy in policies:
+        # Storage Consumption
+        values = []
+        for dataset, kind in value_order_storage:
+            # For raw file size, pick any triplestore, such as "graphdb"
+            if kind != "raw":
+                match = storage_agg[
+                    (storage_agg['triplestore'] == kind) &
+                    (storage_agg['dataset'] == dataset) &
+                    (storage_agg['policy'] == policy)
+                ]
+                value = match['db_file_size'].values[0]
+            else:
+                match = storage_agg[
+                    (storage_agg['triplestore'] == "graphdb") &
+                    (storage_agg['dataset'] == dataset) &
+                    (storage_agg['policy'] == policy)
+                ]
+                value = match['raw_file_size'].values[0]
+            values.append(format_storage_consumption(value))
+           
+        placeholder_map_storage[f"{{{{sotrage_consumption_{policy}}}}}"] = " & ".join(values)
 
-    filled = re.sub(r'\b1\b', replacer, template, count=len(values))
+        # Ingestion Time
+        values = []
+        for dataset, kind in value_order_storage:
+            # For raw file size, pick any triplestore, such as "graphdb"
+            if kind != "raw":
+                match = storage_agg[
+                    (storage_agg['triplestore'] == kind) &
+                    (storage_agg['dataset'] == dataset) &
+                    (storage_agg['policy'] == policy)
+                ]
+                value = match['ingestion_time'].values[0]
+                values.append(format_ingestion_time(value))
+            else:
+                values.append("/")
 
-    #  Write final LaTeX 
-    with open(f"{figures_out}/latex_table_filled.tex", "w") as file:
-        file.write(filled)
+        placeholder_map_storage[f"{{{{ingestion_time_{policy}}}}}"] = " & ".join(values)
 
-    logging.info("LaTeX table filled and saved.")
+    filled_storage = template_storage
+    for placeholder, value_str in placeholder_map_storage.items():
+        filled_storage = filled_storage.replace(placeholder, value_str)
+
+    with open(f"{figures_out}/latex_table_queries_filled.tex", "w") as f:
+        f.write(filled_queries)
+
+    with open(f"{figures_out}/latex_table_storage_filled.tex", "w") as f:
+        f.write(filled_storage)
+
+    logging.info("LaTeX tables filled and saved.")
+
 
 
 
@@ -331,4 +384,4 @@ def create_latex_table():
 #create_plots_update("GRAPHDB", 'bearc')
 
 # Latex table for query performance, ingestion, and db file size
-create_latex_table()
+create_latex_tables()
