@@ -1,5 +1,5 @@
 CONSTRUCT { ?s ?p ?o }
-    WHERE {
+WHERE {
     GRAPH <{:graph}> {
     	?s ?p ?o
 	}
