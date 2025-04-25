@@ -11,8 +11,11 @@ def convert_to_df(nt_text: str) -> pd.DataFrame:
         if len(line) == 0:
             continue
 
-        l = line.split(" ", 2)
-        triples.append((l[0].strip(" "), l[1].strip(" "), l[2].strip(" .")))
+        splitted_line = line.split(" ", 2)
+        if len(splitted_line) != 3:
+            raise Exception(f"Failed parsing of {line}, resulted into {splitted_line}")
+        
+        triples.append((splitted_line[0].strip(" "), splitted_line[1].strip(" "), splitted_line[2].strip(" .")))
 
     # Convert to DataFrame
     return pd.DataFrame(triples, columns=["s", "p", "o"])
