@@ -63,9 +63,10 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 
         self.__starvers_engine.sparql_get_with_post.setReturnFormat('JSON') # return to default behaviour
         self.__starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
-        self.LOG.info("Convert latest versions to calculate delta")
         
+        self.LOG.info("Convert latest available dump into rdf dataframe")
         latest = convert_to_df(latest_text)
+        self.LOG.info("Convert latest version dump into rdf dataframe")
         versioned = convert_to_df(versioned_text)
 
         self.LOG.info("Calculate delta - Insertions & Deletions")
