@@ -12,6 +12,7 @@ import math
 import logging
 import itertools
 import re
+import numpy as np
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
@@ -297,8 +298,6 @@ def create_latex_tables():
                             (queries_agg['policy'] == policy) &
                             (queries_agg['query_set'] == query_set)
                         ]
-                        import numpy as np
-                        print(match["avg"].item())
                         if not np.isnan(match["avg"].item()):
                             value = match[metric].values[0]
                             row_values.append(format_exec_time(value))
@@ -377,11 +376,11 @@ def create_latex_tables():
 
 
 # Plots for query performance and ingestion
-#args = itertools.product(['graphdb', 'jenatdb2'], datasets)
-#list(map(lambda x: create_plots(*x), args))
+args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-#create_plots_update("GRAPHDB", 'bearc')
+create_plots_update("GRAPHDB", 'bearc')
 
 # Latex table for query performance, ingestion, and db file size
 create_latex_tables()
