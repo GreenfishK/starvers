@@ -1,7 +1,7 @@
 # Clone starvers from Github
 FROM alpine/git:2.36.3 as base
 WORKDIR /
-RUN git clone https://github.com/GreenfishK/starvers.git
+#RUN git clone https://github.com/GreenfishK/starvers.git
 
 # Install starvers based on setup.py and modules based on requirements.txt
 FROM python:3.8.15-slim as install_python_modules
