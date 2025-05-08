@@ -23,7 +23,11 @@ The experiment can be fully run by executing the following 7 docker-compose serv
 * `docker-compose run clean_raw_datasets`: Cleans the datasets by skolomizing blank nodes and commenting out invalid triples.
 * `docker-compose run construct_datasets`: For each raw dataset (BEARB_day, BEARB_hour, BEARC) it constructs the change sets, the StarVers RDF-star-based dataset, a dataset with all ICs stored into named graphs and a dataset with all change sets stored into named graphs. It also measures the execution time of the insert and outdate functions from the [StarVers](https://github.com/GreenfishK/starvers) API.
 * `docker-compose run ingest`: Loads all 12 constructed datasets from the previous step into GraphDB and Jena TDB2, respectively.
-* `docker-compose run construct_queries`: Constructs the evaluation queries from the raw queries that have been downloaded in the first step. In total there should be 456.584 queries. This number results from the sum of 4 policies/dataset variants x 89 versions x 82 raw queries for BERAB_day, 4 policies/dataset variants x 1299 versions x 82 raw queries for BERAB_hour and 4 policies/dataset variants x 33 versions x 10 raw queries for BERAB_day.
+* `docker-compose run construct_queries`: Constructs the evaluation queries from the raw queries that have been downloaded in the first step. In total there should be 456.584 queries. 
+    * 4 policies/dataset variants x 89 versions x 82 raw queries for BERAB_day
+    * 4 policies/dataset variants x 1299 versions x 82 raw queries for BERAB_hour 
+    * 4 policies/dataset variants x 33 versions x 10 raw queries for BERAB_day.
+    * = 456.584
 * `docker-compose run evaluate`: Runs the queries against the repositories and measures the execution time.
 * `docker-compose run visualize`: Creates 7 figures with plots for query performance, dataset sizes & ingestion and update performance. These 7 figures are provided in the [output/figures](https://github.com/GreenfishK/starvers_eval/tree/master/output/figures) directory of this project. It also creates two LaTeX tables with query performance and dataset sizes.
 
