@@ -5,15 +5,20 @@ from datetime import datetime
 
 def convert_to_df(nt_text: str) -> pd.DataFrame:
     triples = []
-    print(nt_text.splitlines())
-    for line in nt_text.splitlines():
+
+    lineNumber = 0
+    lines = nt_text.splitlines()
+
+    for line in lines:
+        lineNumber += 1
+
         line = line.strip()
         if len(line) == 0:
             continue
 
-        splitted_line = line.split(" ", 2)
+        splitted_line = line.split(" ", 2)            
         if len(splitted_line) != 3:
-            raise Exception(f"Failed parsing of {line}, resulted into {splitted_line}")
+            raise Exception(f"Failed parsing of line {lineNumber} of {len(lines)}: {line} -> resulted into {splitted_line}")
         
         triples.append((splitted_line[0].strip(" "), splitted_line[1].strip(" "), splitted_line[2].strip(" .")))
 

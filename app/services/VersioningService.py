@@ -56,8 +56,8 @@ class StarVersService(VersioningService):
 
         os.makedirs(os.path.dirname(f"./evaluation/{self.tracking_task.name}/"), exist_ok=True)
 
-        with open(f"./evaluation/{self.tracking_task.name}_timings.csv", "w") as timing_file:
-            timing_file.write("Timestamp, Insertions, Deletions, time_Prepare_ns, time_Delta_ns, time_Versioning_ns, time_Overall_ns\n")
+        with open(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
+            timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns\n")
         
         self.LOG.info(f"Finished initial tracking task [{version_timestamp}]")
 
@@ -116,7 +116,7 @@ class StarVersService(VersioningService):
                 
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-                self.LOG.info(f"Tracked {insertions_n3} insertions and {deletions_n3} deletions")
+                self.LOG.info(f"Tracked {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
                 return DeltaEvent(
                     id=self.tracking_task.id,
                     repository_name=self.tracking_task.name,
