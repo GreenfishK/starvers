@@ -1,6 +1,7 @@
 
 from abc import ABC, abstractmethod
 import os
+import re
 import shutil
 import pandas as pd
 from starvers.starvers import TripleStoreEngine
@@ -52,7 +53,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 
     def calculate_delta(self):
         self.LOG.info("Get latest versions to calculate delta")
-        self.__starvers_engine.sparql_get_with_post.setReturnFormat('N3') # set to n3 return data
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('n3') # set to n3 return data
         self.__starvers_engine.sparql_get_with_post.addCustomHttpHeader('Accept', 'application/n-triples')
 
         self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_template(self.tracking_task.name_temp())) #no versioning necessary
@@ -61,12 +62,14 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self.__starvers_engine.sparql_get_with_post.setQuery(get_construct_all_versioned_template(self.__version_timestamp))
         versioned_text = self.__starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
 
-        self.__starvers_engine.sparql_get_with_post.setReturnFormat('JSON') # return to default behaviour
+        self.__starvers_engine.sparql_get_with_post.setReturnFormat('json') # return to default behaviour
         self.__starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
         
-        self.LOG.info("Convert latest available dump into rdf dataframe")
+        self.LOG.info("Convert latest available dump into rdf dataframe incl cleanup")
+        latest_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', latest_text)
         latest = convert_to_df(latest_text)
-        self.LOG.info("Convert latest version dump into rdf dataframe")
+        self.LOG.info("Convert latest version dump into rdf dataframe incl cleanup")
+        versioned_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', versioned_text)
         versioned = convert_to_df(versioned_text)
 
         self.LOG.info("Calculate delta - Insertions & Deletions")
