@@ -13,25 +13,33 @@
 
         <form method="post">
             <div class="field">
-                <label class="label">Repository</label>
+                <label class="label">Knowledge Graph or Ontology</label>
                 <div class="control">
                     <div class="select">
                         <select name="repo">
-                            <option value="orkg_v2" {% if selected_repo == 'orkg_v2' %}selected{% endif %}>orkg_v2</option>
-                            <option value="schema_org_ontology_v2" {% if selected_repo == 'schema_org_ontology_v2' %}selected{% endif %}>schema_org_ontology_v2</option>
-                            <option value="air_quality_ontology_v2" {% if selected_repo == 'air_quality_ontology_v2' %}selected{% endif %}>air_quality_ontology_v2</option>
+                            {% for label, value in repo_options.items() %}
+                                <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>
             </div>
 
+            {% if stats_plot %}
+                <div>{{ stats_plot | safe }}</div>
+            {% endif %}
+
             <div class="field">
                 <label class="label">Timestamp (ISO 8601)</label>
                 <div class="control">
-                    <input class="input" type="text" name="timestamp" placeholder="e.g. 2025-05-20T12:00:00"
+                    <input class="input" type="text" name="timestamp" style="width: 250px;" placeholder="e.g. 2025-05-20T12:00:00"
                         value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
                 </div>
             </div>
+
+            {% if ts_start and ts_end %}
+                <p><strong>Available Timestamps:</strong> from {{ ts_start }} to {{ ts_end }}</p>
+            {% endif %}
 
             <div class="field">
                 <label class="label">SPARQL Query</label>

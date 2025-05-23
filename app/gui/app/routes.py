@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, send_file
 import pandas as pd
+import configparser
 from datetime import datetime
 import html
 import logging
@@ -11,13 +12,31 @@ last_result_df = pd.DataFrame()
 
 @routes.route("/", methods=["GET", "POST"])
 def index():
+    # Init
     global last_result_df
     result_html = None
     error_msg = None
-    repo = "orkg_v2"  # default value
+    start_ts = None
+    end_ts = None
+    stats_plot = None
+
+    logging.info("Load repository mappings from app/configs/RDF2Repo_mappings.ini")
+    config = configparser.ConfigParser()
+    config.read("app/configs/RDF2Repo_mappings.ini")
+    repo_map = dict(config["repositories"])
+
+    if request.method == "GET":
+        selected_label = "orkg"
+        repo = repo_map.get(selected_label)
+        controller = GuiContr(repo_name=repo)
+
+        # Get repo stats
+        logging.info(f"Getting repository stats for {repo}")
+        start_ts, end_ts, stats_plot = controller.get_repo_stats(repo, selected_label)
 
     if request.method == "POST":
-        repo = request.form.get("repo")
+        selected_label = request.form.get("repo")
+        repo = repo_map.get(selected_label)
         timestamp_str = request.form.get("timestamp")
         query_text = request.form.get("sparql")
 
@@ -25,7 +44,10 @@ def index():
             # Initialize the controller
             controller = GuiContr(repo_name=repo)
 
-            logging.info(f"Submitting SPARQL query for repository {repo} with timestamp {timestamp_str}")
+            # Get repo stats
+            start_ts, end_ts, stats_plot = controller.get_repo_stats(repo, selected_label)
+
+            logging.info(f"Submitting SPARQL query for execution against repository {repo} with timestamp {timestamp_str} .")
             timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
             df = controller.query(query_text, timestamp=timestamp, repo_name=repo)
             last_result_df = df
@@ -45,7 +67,9 @@ def index():
         except Exception as e:
             error_msg = str(e)
 
-    return render_template("index.html", result=result_html, error=error_msg, selected_repo=repo)
+    return render_template("index.html", 
+                           result=result_html, error=error_msg, selected_repo=selected_label, 
+                           repo_options=repo_map, stats_plot=stats_plot, ts_start=start_ts, ts_end=end_ts)
 
 @routes.route("/download")
 def download():

@@ -6,3 +6,4 @@ requests
 pydantic-settings
 httpx
 rdflib-endpoint[web]
+matplotlib
