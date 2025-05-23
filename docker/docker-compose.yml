@@ -54,3 +54,19 @@ services:
       - /mnt/data/starversserver/graphdb-data:/opt/graphdb/home
     extra_hosts:
       - "host.docker.internal:host-gateway"
+  
+  gui:
+    build:
+      context: ../app
+      dockerfile: ../Dockerfile_GUI
+    image: starvers_gui
+    restart: always
+    ports:
+      - 5000:5000
+    volumes:
+      - ../app/gui:/starvers
+      - ../app/AppConfig.py:/starvers/app/AppConfig.py
+      - /mnt/data/starversserver/evaluation:/starvers/evaluation
+    env_file: "../prod.env"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
