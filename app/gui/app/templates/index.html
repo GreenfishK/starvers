@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Starvers: Time-traveling SPARQL Interface</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<section class="section">
+    <div class="container">
+        <h1 class="title">Starvers</h1>
+        <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
+
+        <form method="post">
+            <div class="field">
+                <label class="label">Repository</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="repo">
+                            <option value="orkg_v2" {% if selected_repo == 'orkg_v2' %}selected{% endif %}>orkg_v2</option>
+                            <option value="schema_org_ontology_v2" {% if selected_repo == 'schema_org_ontology_v2' %}selected{% endif %}>schema_org_ontology_v2</option>
+                            <option value="air_quality_ontology_v2" {% if selected_repo == 'air_quality_ontology_v2' %}selected{% endif %}>air_quality_ontology_v2</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Timestamp (ISO 8601)</label>
+                <div class="control">
+                    <input class="input" type="text" name="timestamp" placeholder="e.g. 2025-05-20T12:00:00"
+                        value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">SPARQL Query</label>
+                <div class="control">
+                    <textarea class="textarea" name="sparql" rows="10">{{ selected_query or 'select * {\n    ?s ?p ?o\n} \nlimit 10' }}</textarea>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <button type="submit" class="button is-link">Execute Query</button>
+                </div>
+            </div>
+        </form>
+
+        {% if error %}
+            <div class="notification is-danger mt-4">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        {% if result %}
+            <div class="mt-5">
+                <h3 class="title is-5">Query Result</h3>
+                <div class="table-container" id="result-table">
+                    {{ result|safe }}
+                </div>
+                <a href="{{ url_for('routes.download') }}">
+                    <button class="button is-success mt-3">Download CSV</button>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+</body>
+</html>

@@ -1,0 +1,12 @@
+FROM python:3.10
+
+WORKDIR /starvers
+
+COPY ./gui/requirements.txt /starvers/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /starvers/requirements.txt
+
+# Copy the files only after development is done
+# COPY ./gui /starvers
+# COPY ./AppConfig.py /starvers/app/AppConfig.py
+
+CMD ["python", "run.py"]
