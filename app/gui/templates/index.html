@@ -11,7 +11,7 @@
         <h1 class="title">Starvers</h1>
         <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
 
-        <form method="post">
+        <form id="sparql-form">
             <div class="field">
                 <label class="label">Knowledge Graph or Ontology</label>
                 <div class="control">
@@ -69,17 +69,19 @@
             </div>
         {% endif %}
 
-        {% if result %}
-            <div class="mt-5">
-                <h3 class="title is-5">Query Result</h3>
-                <div class="table-container" id="result-table">
+        <div class="mt-5">
+            <h3 class="title is-5">Query Result</h3>
+            <div class="table-container" id="result-table">
+                {% if result %}
                     {{ result|safe }}
-                </div>
+                {% endif %}
+            </div>
+            {% if result %}
                 <a href="{{ url_for('routes.download') }}">
                     <button class="button is-success mt-3">Download CSV</button>
                 </a>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
 </section>
 
@@ -92,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
 
-        fetch(`/plot/${selectedRepo}`)
+        fetch(`/infos/${selectedRepo}`)
             .then(response => {
                 if (!response.ok) throw new Error("Failed to load data");
                 return response.json();
@@ -114,6 +116,32 @@ document.addEventListener("DOMContentLoaded", function () {
                 plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
                 trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
             });
+    });
+});
+
+const sparqlForm = document.getElementById("sparql-form");
+sparqlForm.addEventListener("submit", function (e) {
+    e.preventDefault();  // Prevent page reload
+
+    const formData = new FormData(sparqlForm);
+
+    fetch("/query", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        const resultTable = document.getElementById("result-table");
+        if (data.error) {
+            resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
+        } else {
+            resultTable.innerHTML = data.html;
+        }
+    })
+    .catch(err => {
+        console.error("Query execution failed:", err);
+        document.getElementById("result-table").innerHTML =
+            `<div class="notification is-danger"><strong>Error:</strong> Failed to execute query.</div>`;
     });
 });
 </script>
