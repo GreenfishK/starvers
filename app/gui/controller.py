@@ -8,7 +8,8 @@ import os
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
 from app.AppConfig import Settings
-
+from app.services.ManagementService import get_dataset_metadata_by_repo_name
+from app.Database import get_session
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
@@ -25,7 +26,7 @@ class GuiContr:
 
         return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
 
-    def get_repo_stats(self, repo_name, RDFDataset):
+    def get_repo_stats(self, repo_name):
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         timestamps = df.iloc[:, 0]
@@ -43,7 +44,7 @@ class GuiContr:
         ax.plot(formatted_timestamps, df.iloc[:, 2], label="Deleted Triples")
         ax.set_xlabel("Timestamp")
         ax.set_ylabel("Triple Count")
-        ax.set_title(f"Triple Changes Over Time for {RDFDataset}")
+        ax.set_title(f"Triple Changes Over Time for {repo_name}")
         ax.legend()
 
         #ax.set_yscale('log')  # Set y-axis to logarithmic scale
@@ -67,3 +68,15 @@ class GuiContr:
         buffer.seek(0)
         svg_data = buffer.getvalue().decode('utf-8')
         return start, end, svg_data
+
+
+    def get_repo_tracking_infos(self, repo_name):
+        session = next(get_session())
+        tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
+        logging.info(tracking_infos)
+        rdf_dataset_url = tracking_infos[1]
+        polling_interval = tracking_infos[2]
+        session.close()
+
+        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {polling_interval}")
+        return rdf_dataset_url, polling_interval

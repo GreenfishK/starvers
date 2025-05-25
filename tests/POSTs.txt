@@ -1,6 +1,8 @@
+POST: localhost:80/management
+
 {
   "name": "Air Quality Data for a City Ontology",
-  "repository_name": "air_quality_ontology",
+  "repository_name": "air_quality_ontology_v2",
   "rdf_dataset_url": "https://vocab.linkeddata.es/datosabiertos/def/medio-ambiente/calidad-aire/ontology.nt",
   "polling_interval": 7200,
   "delta_type": "SPARQL"
@@ -35,7 +37,7 @@
 
 {
   "name": "schema.org Ontology",
-  "repository_name": "schema_org_ontology",
+  "repository_name": "schema_org_ontology_v2",
   "rdf_dataset_url": "https://schema.org/version/latest/schemaorg-current-https.nt",
   "polling_interval": 7200,
   "delta_type": "SPARQL"
@@ -53,7 +55,7 @@
 
 {
   "name": "The Open Research Knowledge Graph",
-  "repository_name": "orkg",
+  "repository_name": "orkg_v2",
   "rdf_dataset_url": "https://orkg.org/files/rdf-dumps/rdf-export-orkg.nt",
   "polling_interval": 7200,
   "delta_type": "SPARQL"
