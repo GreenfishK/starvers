@@ -16,6 +16,7 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
+    entrypoint: ["fastapi", "run", "app/main.py", "--port", "80"]
 
 
   db:
@@ -56,17 +57,21 @@ services:
       - "host.docker.internal:host-gateway"
   
   gui:
-    build:
-      context: ../app
-      dockerfile: ../Dockerfile_GUI
-    image: starvers_gui
-    restart: always
+    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
     ports:
       - 5000:5000
     volumes:
-      - ../app/gui:/starvers
-      - ../app/AppConfig.py:/starvers/app/AppConfig.py
-      - /mnt/data/starversserver/evaluation:/starvers/evaluation
+      #- ../app/gui:/starvers
+      #- ../app/AppConfig.py:/starvers/app/AppConfig.py
+      - ../app/gui:/code/app/gui
+      - /mnt/data/starversserver/evaluation:/code/evaluation
+      - /mnt/data/starversserver/logs:/code/logs
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
     env_file: "../prod.env"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    entrypoint: ["python", "app/run_gui.py"]

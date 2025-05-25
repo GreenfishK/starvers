@@ -13,5 +13,6 @@ rdflib-endpoint[web]
 timeloop
 delayedqueue
 numpy==1.26.3
-
+pandas==1.3.4
 matplotlib
+Flask>=2.0
