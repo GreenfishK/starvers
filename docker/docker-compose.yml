@@ -61,8 +61,6 @@ services:
     ports:
       - 5000:5000
     volumes:
-      #- ../app/gui:/starvers
-      #- ../app/AppConfig.py:/starvers/app/AppConfig.py
       - ../app/gui:/code/app/gui
       - /mnt/data/starversserver/evaluation:/code/evaluation
       - /mnt/data/starversserver/logs:/code/logs

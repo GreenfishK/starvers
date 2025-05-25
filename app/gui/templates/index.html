@@ -23,6 +23,12 @@
                         </select>
                     </div>
                 </div>
+                {% if rdf_dataset_url and polling_interval %}
+                    <div id="tracking-info" class="content mt-2">
+                        <p><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</p>
+                        <p><strong>Polling Interval:</strong> {{ polling_interval }} seconds</p>
+                    </div>
+                {% endif %}
             </div>
 
             <div id="plot-container">
@@ -81,23 +87,32 @@
 document.addEventListener("DOMContentLoaded", function () {
     const dropdown = document.getElementById("repo-select");
     const plotContainer = document.getElementById("plot-container");
+    const trackingInfo = document.getElementById("tracking-info");
 
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
 
         fetch(`/plot/${selectedRepo}`)
             .then(response => {
-                if (!response.ok) {
-                    throw new Error("Failed to load plot");
-                }
-                return response.text();
+                if (!response.ok) throw new Error("Failed to load data");
+                return response.json();
             })
-            .then(svg => {
-                plotContainer.innerHTML = svg;
+            .then(data => {
+                if (data.error) {
+                    plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
+                    trackingInfo.innerHTML = "";
+                } else {
+                    plotContainer.innerHTML = data.plot_html;
+                    trackingInfo.innerHTML = `
+                        <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
+                        <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
+                    `;
+                }
             })
             .catch(error => {
-                console.error("Error fetching plot:", error);
+                console.error("Error fetching plot/tracking info:", error);
                 plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
+                trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
             });
     });
 });

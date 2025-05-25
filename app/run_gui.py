@@ -23,6 +23,6 @@ if __name__ == "__main__":
 #   in f"/starvers/evaluation/{repo_name}/{repo_name}_timings.csv" in column 1
 #   - rdf_dataset_url: available in the postgres table dataset.rdf_dataset_url
 # The following SQL statement can be used to get the polling intervall and rdf_dataset_url for a specific repository:
-# select repository_name, rdf_dataset_url, last_modified from public.dataset where repository_name = '<repo_name>';
+# select repository_name, rdf_dataset_url, polling_interval from public.dataset where repository_name = '<repo_name>';
 # - A plot with the number of absolute triples in the respective versions.
 # It should be next to the Deltas plot
