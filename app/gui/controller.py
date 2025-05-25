@@ -53,8 +53,9 @@ class GuiContr:
         n = len(formatted_timestamps)
         tick_indices = [0, n // 4, n // 2, 3 * n // 4, n - 1]
         tick_positions = [formatted_timestamps.iloc[i] for i in tick_indices]
+        tick_labels = [ts.replace(" ", "\n") for ts in tick_positions]
         ax.set_xticks(tick_positions)
-        ax.set_xticklabels(tick_positions, rotation=45, size=8)
+        ax.set_xticklabels(tick_labels, rotation=45, size=8)
 
         # Format y-ticks with thousand separator
         ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
