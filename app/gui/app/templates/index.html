@@ -16,7 +16,7 @@
                 <label class="label">Knowledge Graph or Ontology</label>
                 <div class="control">
                     <div class="select">
-                        <select name="repo">
+                        <select name="repo" id="repo-select">
                             {% for label, value in repo_options.items() %}
                                 <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
                             {% endfor %}
@@ -25,9 +25,11 @@
                 </div>
             </div>
 
-            {% if stats_plot %}
-                <div>{{ stats_plot | safe }}</div>
-            {% endif %}
+            <div id="plot-container">
+                {% if stats_plot %}
+                    <div>{{ stats_plot | safe }}</div>
+                {% endif %}
+            </div>
 
             <div class="field">
                 <label class="label">Timestamp (ISO 8601)</label>
@@ -44,7 +46,7 @@
             <div class="field">
                 <label class="label">SPARQL Query</label>
                 <div class="control">
-                    <textarea class="textarea" name="sparql" rows="10">{{ selected_query or 'select * {\n    ?s ?p ?o\n} \nlimit 10' }}</textarea>
+                    <textarea class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o {\n    ?s ?p ?o\n} \nlimit 10' }}</textarea>
                 </div>
             </div>
 
@@ -74,5 +76,31 @@
         {% endif %}
     </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const dropdown = document.getElementById("repo-select");
+    const plotContainer = document.getElementById("plot-container");
+
+    dropdown.addEventListener("change", function () {
+        const selectedRepo = dropdown.value;
+
+        fetch(`/plot/${selectedRepo}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to load plot");
+                }
+                return response.text();
+            })
+            .then(svg => {
+                plotContainer.innerHTML = svg;
+            })
+            .catch(error => {
+                console.error("Error fetching plot:", error);
+                plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
+            });
+    });
+});
+</script>
 </body>
 </html>

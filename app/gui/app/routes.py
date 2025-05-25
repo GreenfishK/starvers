@@ -71,6 +71,27 @@ def index():
                            result=result_html, error=error_msg, selected_repo=selected_label, 
                            repo_options=repo_map, stats_plot=stats_plot, ts_start=start_ts, ts_end=end_ts)
 
+@routes.route("/plot/<repo_label>")
+def get_plot_for_repo(repo_label):
+    logging.info(f"Received request for updated plot of repo: {repo_label}")
+    config = configparser.ConfigParser()
+    config.read("app/configs/RDF2Repo_mappings.ini")
+    repo_map = dict(config["repositories"])
+    logging.info(repo_label)
+    repo_name = repo_map.get(repo_label)
+
+    if not repo_name:
+        logging.error(f"Repository label '{repo_label}' not found in config.")
+        return "Repository not found", 404
+
+    try:
+        controller = GuiContr(repo_name=repo_name)
+        start, end, stats_plot = controller.get_repo_stats(repo_name, repo_label)
+        return stats_plot  # This is the raw SVG string
+    except Exception as e:
+        logging.exception("Failed to generate plot")
+        return f"Error generating plot: {str(e)}", 500
+
 @routes.route("/download")
 def download():
     global last_result_df
