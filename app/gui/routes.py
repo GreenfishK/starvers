@@ -5,7 +5,7 @@ from datetime import datetime
 import html
 import logging
 from io import StringIO
-from app.controller import GuiContr
+from app.gui.controller import GuiContr
 
 routes = Blueprint('routes', __name__)
 last_result_df = pd.DataFrame()
@@ -20,9 +20,9 @@ def index():
     end_ts = None
     stats_plot = None
 
-    logging.info("Load repository mappings from app/configs/RDF2Repo_mappings.ini")
+    logging.info("Load repository mappings from /code/app/gui/app/configs/RDF2Repo_mappings.ini")
     config = configparser.ConfigParser()
-    config.read("app/configs/RDF2Repo_mappings.ini")
+    config.read("/code/app/gui/configs/RDF2Repo_mappings.ini")
     repo_map = dict(config["repositories"])
 
     if request.method == "GET":
@@ -75,7 +75,7 @@ def index():
 def get_plot_for_repo(repo_label):
     logging.info(f"Received request for updated plot of repo: {repo_label}")
     config = configparser.ConfigParser()
-    config.read("app/configs/RDF2Repo_mappings.ini")
+    config.read("/code/app/gui/configs/RDF2Repo_mappings.ini")
     repo_map = dict(config["repositories"])
     logging.info(repo_label)
     repo_name = repo_map.get(repo_label)

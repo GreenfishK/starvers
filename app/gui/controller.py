@@ -26,7 +26,7 @@ class GuiContr:
         return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
 
     def get_repo_stats(self, repo_name, RDFDataset):
-        path = f"/starvers/evaluation/{repo_name}/{repo_name}_timings.csv"
+        path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         timestamps = df.iloc[:, 0]
 
