@@ -2,7 +2,7 @@ version: "3"
 
 services:
   starversserver:
-    image: ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
     restart: always
     ports:
       - 80:80
@@ -17,7 +17,24 @@ services:
       rdfstore:
         condition: service_started
     entrypoint: ["fastapi", "run", "app/main.py", "--port", "80"]
-
+  
+  gui:
+    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    ports:
+      - 5000:5000
+    volumes:
+      - ../app/gui:/code/app/gui
+      - /mnt/data/starversserver/evaluation:/code/evaluation
+      - /mnt/data/starversserver/logs:/code/logs
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    env_file: "../prod.env"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["python", "app/run_gui.py"]
 
   db:
     image: postgres
@@ -56,20 +73,4 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
   
-  gui:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
-    ports:
-      - 5000:5000
-    volumes:
-      - ../app/gui:/code/app/gui
-      - /mnt/data/starversserver/evaluation:/code/evaluation
-      - /mnt/data/starversserver/logs:/code/logs
-    depends_on:
-      db:
-        condition: service_started
-      rdfstore:
-        condition: service_started
-    env_file: "../prod.env"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    entrypoint: ["python", "app/run_gui.py"]
+
