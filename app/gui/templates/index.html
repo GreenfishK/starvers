@@ -4,6 +4,9 @@
     <title>Starvers: Time-traveling SPARQL Interface</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/sparql/sparql.min.js"></script>
 </head>
 <body>
 <section class="section">
@@ -13,7 +16,7 @@
 
         <form id="sparql-form">
             <div class="field">
-                <label class="label">Knowledge Graph or Ontology</label>
+                <h3 class="title is-5">Knowledge Graph or Ontology</h3>
                 <div class="control">
                     <div class="select">
                         <select name="repo" id="repo-select">
@@ -37,12 +40,14 @@
                 {% endif %}
             </div>
             
-            <label class="label" style="min-width: 180px;">Timestamp (ISO 8601)</label>
+            <h3 class="title is-5">SPARQL Query</h3>
+            
+            <label id="timestamp_label" class="label">Timestamp (ISO 8601)</label>
 
             <div class="field is-horizontal is-align-items-center">
                 <div class="field-body is-flex is-align-items-center">
                     <div class="control">
-                        <input class="input" type="text" name="timestamp" style="width: 250px;" placeholder="e.g. 2025-05-20T12:00:00"
+                        <input id="timestamp_input" class="input" type="text" name="timestamp" placeholder="e.g. 2025-05-20T12:00:00"
                             value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
                     </div>
                     {% if ts_start and ts_end %}
@@ -52,12 +57,11 @@
             </div>
 
             <div class="field">
-                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
-                    <label class="label">SPARQL Query</label>
+                <div class="is-flex is-justify-content-flex-end mb-1">
                     <span id="execution-time" class="has-text-grey">Execution time: <span id="timer">0</span> sec</span>
                 </div>
                 <div class="control">
-                    <textarea class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o {\n    ?s ?p ?o\n} \nlimit 10' }}</textarea>
+                    <textarea id="sparql-code" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }}</textarea>
                 </div>
             </div>
 
@@ -76,15 +80,17 @@
 
         <div class="mt-5">
             <h3 class="title is-5">Query Result</h3>
-            <div id="result-container" style="position: relative;">
+            <div id="result-container">
                 <div id="loading-overlay">
                     <span>Executing query... </span>
                 </div>
-                <div class="table-container" id="result-table">
+           
+                <div id="result-table">
                     {% if result %}
                         {{ result|safe }}
                     {% endif %}
                 </div>
+               
             </div>
 
             {% if result %}
@@ -180,6 +186,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script>
+var editor = CodeMirror.fromTextArea(document.getElementById('sparql-code'), {
+    mode: 'sparql',
+    lineNumbers: true
+});
+</script>
 
 </body>
 </html>
