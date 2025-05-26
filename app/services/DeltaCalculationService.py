@@ -10,7 +10,7 @@ from app.LoggingConfig import get_tracking_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.FileService import download_file, skolemize_blank_nodes_in_file
 from app.utils.HelperService import convert_to_df, get_timestamp
-from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, get_query_all_template, import_serverfile, poll_import_status
+from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, import_serverfile, poll_import_status
 
 class DeltaCalculationService(ABC):
     @abstractmethod

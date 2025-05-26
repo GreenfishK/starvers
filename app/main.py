@@ -22,7 +22,10 @@ LOG = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    LOG.info("Creating database tables...")
     create_db_and_tables()
+
+    LOG.info("Setting up logging...")
     setup_logging()
     MockRestService.tl.start()
 

@@ -5,6 +5,8 @@ import time
 from datetime import datetime
 import logging
 from starvers.starvers import TripleStoreEngine
+from rdflib import Literal
+from rdflib.namespace import XSD
 
 from app.AppConfig import Settings
 from app.LoggingConfig import get_tracking_logger
@@ -12,8 +14,8 @@ from app.enums.DeltaTypeEnum import DeltaType
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
-from app.utils.HelperService import convert_df_to_n3, convert_df_to_triples, get_timestamp
-from app.utils.graphdb.GraphDatabaseUtils import get_query_all_template
+from app.utils.HelperService import convert_df_to_n3, convert_df_to_triples, get_timestamp, convert_select_query_to_df
+from app.utils.graphdb.GraphDatabaseUtils import get_query_all_template, get_count_triples_template
 
 class VersioningService(ABC):
     @abstractmethod
@@ -57,7 +59,7 @@ class StarVersService(VersioningService):
         os.makedirs(os.path.dirname(f"./evaluation/{self.tracking_task.name}/"), exist_ok=True)
 
         with open(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
-            timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns\n")
+            timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n")
         
         self.LOG.info(f"Finished initial tracking task [{version_timestamp}]")
 
@@ -100,10 +102,18 @@ class StarVersService(VersioningService):
             self.__delta_query_service.clean_up()
             timing_overall = time.time_ns() - timing_overall
 
+            self.LOG.info("Counting triples in the snapshot with timestamp '{version_timestamp}'")
+            cnt_triples_query = get_count_triples_template(version_timestamp)
+            self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
+            cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
+            cnt_triples_df = convert_select_query_to_df(cnt_triples)
+            cnt_triples = cnt_triples_df["cnt_triples"].values[0].split('^^')[0].strip('"') 
+            self.LOG.info(f"Number of triples: {cnt_triples}")
+
             path = f"./evaluation/{self.tracking_task.name}/"
             # Persist Timings
             with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
-                timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}")
+                timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}, {cnt_triples}")
                 timing_file.write('\n')
             
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
@@ -113,8 +123,7 @@ class StarVersService(VersioningService):
                     dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
             shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}", "zip", f"{path}{get_timestamp(version_timestamp)}")
             shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
-                
-            
+
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 self.LOG.info(f"Tracked {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
                 return DeltaEvent(

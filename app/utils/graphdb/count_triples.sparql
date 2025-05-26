@@ -1,0 +1,12 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT (count(*) as ?cnt_triples)
+WHERE {
+    GRAPH <{:graph}> {
+        << <<?s ?p ?o>> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1.
+        FILTER(?valid_from_1 <= ?tsBGP_0 && ?tsBGP_0 < ?valid_until_1)
+
+        BIND("{:timestamp}"^^xsd:dateTime as ?tsBGP_0)
+    }
+}

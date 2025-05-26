@@ -1,6 +1,49 @@
 from typing import List, Tuple
 import pandas as pd
 from datetime import datetime
+from SPARQLWrapper import Wrapper
+
+def convert_select_query_to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
+    """
+
+    :param result:
+    :return: Dataframe
+    """
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+
+    def format_value(res_value):
+        value = res_value["value"]
+        lang = res_value.get("xml:lang")
+        datatype = res_value.get("datatype")
+
+        if lang:  # Language-tagged literal
+            return f"\"{value}\"@{lang}"
+        elif datatype:  # Typed literal
+            return f"\"{value}\"^^<{datatype}>"
+        else:  # Plain string literal
+            return f"<{value}>" if res_value["type"] == "uri" else f"\"{value}\""
+
+    results = result.convert()
+
+    column_names = []
+    for var in results["head"]["vars"]:
+        column_names.append(var)
+    df = pd.DataFrame(columns=column_names)
+
+    values = []
+    for r in results["results"]["bindings"]:
+        row = []
+        for col in results["head"]["vars"]:
+            if col in r:
+                result_value = format_value(r[col])
+            else:
+                result_value = None
+            row.append(result_value)
+        values.append(row)
+    df = df.append(pd.DataFrame(values, columns=df.columns))
+
+    return df
 
 
 def convert_to_df(nt_text: str) -> pd.DataFrame:
