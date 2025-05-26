@@ -16,3 +16,28 @@
 .table-container {
     overflow-x: auto;
 }
+
+#result-container {
+  position: relative;
+}
+
+#loading-overlay {
+  display: none;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  display: flex;
+}
+
+#loading-overlay span {
+    font-size: 1.5rem;
+    font-weight: bold;
+}

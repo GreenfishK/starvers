@@ -31,11 +31,11 @@ def index():
 
     # Get repo stats
     logging.info(f"Getting repository stats for {repo}")
-    start_ts, end_ts, stats_plot = controller.get_repo_stats(repo)
+    start_ts, end_ts, stats_plot = controller.get_repo_stats()
 
     # Get tracking infos
     logging.info(f"Getting tracking infos for {repo}")
-    rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos(repo)
+    rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
 
     return render_template(
         "index.html", 
@@ -65,8 +65,8 @@ def get_repo_infos(repo_label):
 
     try:
         controller = GuiContr(repo_name=repo_name)
-        start, end, stats_plot = controller.get_repo_stats(repo_name)
-        rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos(repo_name)
+        start, end, stats_plot = controller.get_repo_stats()
+        rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
 
         return jsonify({
             "plot_html": stats_plot,
@@ -91,9 +91,8 @@ def run_query():
 
     try:
         controller = GuiContr(repo_name=repo)
-
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
-        df = controller.query(query_text, timestamp=timestamp, repo_name=repo)
+        df = controller.query(query_text, timestamp=timestamp)
 
         # Convert IRI to link
         def iri_to_link(val):

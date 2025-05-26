@@ -13,12 +13,13 @@ from app.Database import get_session
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
+        self.repo_name = repo_name
         self.__graph_db_get_endpoint = f"http://rdfstore:7200/repositories/{repo_name}" 
         self.__graph_db_post_endpoint = f"http://rdfstore:7200/repositories/{repo_name}/statements" 
         self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint, skip_connection_test=True)
 
 
-    def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True, repo_name: str = None) -> pd.DataFrame:
+    def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True) -> pd.DataFrame:
         if timestamp is not None and query_as_timestamped:
             logging.info(f"Execute timestamped query with timestamp={timestamp}")
         else:
@@ -26,7 +27,9 @@ class GuiContr:
 
         return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
 
-    def get_repo_stats(self, repo_name):
+
+    def get_repo_stats(self):
+        repo_name = self.repo_name 
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         timestamps = df.iloc[:, 0]
@@ -71,7 +74,9 @@ class GuiContr:
         return start, end, svg_data
 
 
-    def get_repo_tracking_infos(self, repo_name):
+    def get_repo_tracking_infos(self):
+        repo_name = self.repo_name
+
         session = next(get_session())
         tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
         logging.info(tracking_infos)

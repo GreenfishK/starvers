@@ -36,21 +36,26 @@
                     <div>{{ stats_plot | safe }}</div>
                 {% endif %}
             </div>
+            
+            <label class="label" style="min-width: 180px;">Timestamp (ISO 8601)</label>
 
-            <div class="field">
-                <label class="label">Timestamp (ISO 8601)</label>
-                <div class="control">
-                    <input class="input" type="text" name="timestamp" style="width: 250px;" placeholder="e.g. 2025-05-20T12:00:00"
-                        value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
+            <div class="field is-horizontal is-align-items-center">
+                <div class="field-body is-flex is-align-items-center">
+                    <div class="control">
+                        <input class="input" type="text" name="timestamp" style="width: 250px;" placeholder="e.g. 2025-05-20T12:00:00"
+                            value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
+                    </div>
+                    {% if ts_start and ts_end %}
+                        <p class="has-text-grey ml-3">Select one between {{ ts_start }} and {{ ts_end }}</p>
+                    {% endif %}
                 </div>
             </div>
 
-            {% if ts_start and ts_end %}
-                <p><strong>Available Timestamps:</strong> from {{ ts_start }} to {{ ts_end }}</p>
-            {% endif %}
-
             <div class="field">
-                <label class="label">SPARQL Query</label>
+                <div class="is-flex is-justify-content-space-between is-align-items-center mb-1">
+                    <label class="label">SPARQL Query</label>
+                    <span id="execution-time" class="has-text-grey">Execution time: <span id="timer">0</span> sec</span>
+                </div>
                 <div class="control">
                     <textarea class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o {\n    ?s ?p ?o\n} \nlimit 10' }}</textarea>
                 </div>
@@ -71,11 +76,17 @@
 
         <div class="mt-5">
             <h3 class="title is-5">Query Result</h3>
-            <div class="table-container" id="result-table">
-                {% if result %}
-                    {{ result|safe }}
-                {% endif %}
+            <div id="result-container" style="position: relative;">
+                <div id="loading-overlay">
+                    <span>Executing query... </span>
+                </div>
+                <div class="table-container" id="result-table">
+                    {% if result %}
+                        {{ result|safe }}
+                    {% endif %}
+                </div>
             </div>
+
             {% if result %}
                 <a href="{{ url_for('routes.download') }}">
                     <button class="button is-success mt-3">Download CSV</button>
@@ -90,6 +101,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const dropdown = document.getElementById("repo-select");
     const plotContainer = document.getElementById("plot-container");
     const trackingInfo = document.getElementById("tracking-info");
+    const sparqlForm = document.getElementById("sparql-form");
+    const overlay = document.getElementById("loading-overlay");
+    const timerEl = document.getElementById("timer");
+
+    let timerInterval;
 
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
@@ -116,34 +132,54 @@ document.addEventListener("DOMContentLoaded", function () {
                 plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
                 trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
             });
+    
+        // Optional: clear previous query results on repo change
+        document.getElementById("result-table").innerHTML = "";
     });
-});
 
-const sparqlForm = document.getElementById("sparql-form");
-sparqlForm.addEventListener("submit", function (e) {
-    e.preventDefault();  // Prevent page reload
+    sparqlForm.addEventListener("submit", function (e) {
+        e.preventDefault();  // Prevent page reload
 
-    const formData = new FormData(sparqlForm);
+        const formData = new FormData(sparqlForm);
 
-    fetch("/query", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        const resultTable = document.getElementById("result-table");
-        if (data.error) {
-            resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
-        } else {
-            resultTable.innerHTML = data.html;
-        }
-    })
-    .catch(err => {
-        console.error("Query execution failed:", err);
-        document.getElementById("result-table").innerHTML =
-            `<div class="notification is-danger"><strong>Error:</strong> Failed to execute query.</div>`;
+        let seconds = 0;
+        timerEl.textContent = "0";
+
+        // Show loading overlay and start timer
+        overlay.style.display = "flex";
+        timerInterval = setInterval(() => {
+            seconds += 1;
+            timerEl.textContent = seconds;
+        }, 1000);
+
+        fetch("/query", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            clearInterval(timerInterval);
+            overlay.style.display = "none";
+
+            const resultTable = document.getElementById("result-table");
+            if (data.error) {
+                resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
+            } else {
+                resultTable.innerHTML = data.html;
+            }
+        })
+        .catch(err => {
+            clearInterval(timerInterval);
+            overlay.style.display = "none";
+
+            console.error("Query execution failed:", err);
+            document.getElementById("result-table").innerHTML =
+                `<div class="notification is-danger"><strong>Error:</strong> Failed to execute query.</div>`;
+        });
     });
 });
 </script>
+
+
 </body>
 </html>
