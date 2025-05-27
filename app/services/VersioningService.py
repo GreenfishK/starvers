@@ -51,6 +51,17 @@ class StarVersService(VersioningService):
                 self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task)
 
 
+    def _cnt_triples(self, version_timestamp):
+        self.LOG.info(f"Counting triples in the snapshot with timestamp '{version_timestamp}'")
+        cnt_triples_query = get_count_triples_template(version_timestamp)
+        self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
+        cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
+        cnt_triples_df = convert_select_query_to_df(cnt_triples)
+        cnt_triples = cnt_triples_df["cnt_triples"].values[0].split('^^')[0].strip('"') 
+        self.LOG.info(f"Number of triples: {cnt_triples}")
+
+        return cnt_triples
+
     def run_initial_versioning(self, version_timestamp):
         self.LOG.info(f"Start initial versioning task [{version_timestamp}]")
         self.__delta_query_service.set_version_timestamp(version_timestamp)
@@ -66,6 +77,14 @@ class StarVersService(VersioningService):
         with open(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
             timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n")
         
+        # Persist Timings
+        path = f"./evaluation/{self.tracking_task.name}/"
+
+        cnt_triples = self._cnt_triples(version_timestamp)
+
+        with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
+            timing_file.write(f"{get_timestamp(version_timestamp)}, {cnt_triples}, 0, 0, 0, 0, 0, {cnt_triples}")
+            timing_file.write('\n')
         self.LOG.info(f"Finished initial versioning task [{version_timestamp}]")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
@@ -110,13 +129,7 @@ class StarVersService(VersioningService):
             self.__delta_query_service.clean_up()
             timing_overall = time.time_ns() - timing_overall
 
-            self.LOG.info(f"Counting triples in the snapshot with timestamp '{version_timestamp}'")
-            cnt_triples_query = get_count_triples_template(version_timestamp)
-            self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
-            cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
-            cnt_triples_df = convert_select_query_to_df(cnt_triples)
-            cnt_triples = cnt_triples_df["cnt_triples"].values[0].split('^^')[0].strip('"') 
-            self.LOG.info(f"Number of triples: {cnt_triples}")
+            cnt_triples = self._cnt_triples(version_timestamp)
 
             path = f"./evaluation/{self.tracking_task.name}/"
             # Persist Timings

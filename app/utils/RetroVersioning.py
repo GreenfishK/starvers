@@ -61,7 +61,7 @@ def get_initial_version_timestamp(evaluation_dir, tracking_task_name):
 
     # Extract timestamp from the first file after sorting
     first_file = rdf_files[0]
-    return extract_timestamp(first_file)
+    return first_file, extract_timestamp(first_file)
 
 def convert_timestamp_str_to_iso(timestamp_str):
     # Pad milliseconds to microseconds (3 digits -> 6 digits)
@@ -75,7 +75,7 @@ def convert_timestamp_str_to_iso(timestamp_str):
 
     return dt
 
-init_version_timestmap = get_initial_version_timestamp(evaluation_dir, tracking_task.name)
+first_rdf_file, init_version_timestmap = get_initial_version_timestamp(evaluation_dir, tracking_task.name)
 init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
 logging.info(f"Initial version timestamp: {init_version_timestmap_iso}")
 
@@ -88,6 +88,9 @@ versioning_service.local_file = True
 
 # Run initial versioning for the tracking task
 versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
+
+# Remove first RDF file after initial versioning
+os.remove(first_rdf_file)
 
 # Extract all RDF file names and their timestamps, create a mapping, and sort by timestamp
 rdf_files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task.name}_*.raw.nt"))
