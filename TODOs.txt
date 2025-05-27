@@ -17,3 +17,5 @@ Persist Postegresql Database
 A service that iterates through all zip files, 
 calculates deltas between the consecutive snapshots 
 and inserts them with the corresponding timestamp
+
+Fix bug: Wrongly packaed orkg_iterative files. The timestamps in the filenames in the zip archives do not reflect the timestamps of the zip archives
