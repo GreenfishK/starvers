@@ -28,8 +28,6 @@ except KeyError:
     logging.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
     sys.exit(1)
 
-input_mode = sys.argv[3]
-
 logging.info("Starting with building an RDF-star dataset from individual snapshots...")
 logging.info(f"Repository name: {repo_name}, Delta type: {delta_type}")
 
@@ -58,10 +56,7 @@ def convert_timestamp_str_to_iso(timestamp_str):
     return dt
 
 # Extract all RDF file names and their timestamps, create a mapping, and sort by timestamp
-if input_mode == "rdf":
-    files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task.name}_*.raw.nt"))
-elif input_mode == "zip":
-    files = glob.glob(os.path.join(evaluation_dir, f"*.zip"))
+files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task.name}_*.raw.nt"))
 
 timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})')
 
@@ -96,7 +91,7 @@ versioning_service.local_file = True
 versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
 
 # Remove first RDF file after initial versioning
-os.remove(first_file) if input_mode == "rdf" else None
+os.remove(first_file)
 
 # Sort by timestamp (oldest first)
 file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
@@ -104,18 +99,7 @@ file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
 # Iterate over all files, starting from the oldest
 for timestamp_str, file in file_timestamp_pairs[1:]:
     version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-    if input_mode == "zip":
-        archive = file
-        logging.info(f"Unzipping rdf file from zip archive: {archive}")
-        with zipfile.ZipFile(archive, 'r') as zip_ref:
-            zip_ref.extractall(evaluation_dir)
-        
-        logging.info(f"Deleting zip archive after extraction: {archive}")
-        os.remove(archive)
-        rdf_file = os.path.join(evaluation_dir, f"{tracking_task.name}_{timestamp_str}.raw.nt")
-
-    elif input_mode == "rdf":
-        rdf_file = file
+    rdf_file = file
     versioning_service.run_versioning(version_timestamp=version_timestamp)
     
     logging.info(f"Deleting RDF file: {rdf_file}")
