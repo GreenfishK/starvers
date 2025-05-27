@@ -6,7 +6,7 @@ import time
 import requests
 from functools import lru_cache
 from app.AppConfig import Settings
-from app.LoggingConfig import get_logger, get_tracking_logger
+from app.LoggingConfig import get_logger
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
@@ -29,7 +29,7 @@ def create_repository(repository_name: str): # add URL and description?
             raise GraphRepositoryCreationFailedException(repository_name, response.text)
         
 def import_serverfile(file_name: str, repository_name: str, graph_name: str = None):
-    get_tracking_logger(repository_name).info(f"Load serverfile {file_name} into graphdb repository {repository_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Load serverfile {file_name} into graphdb repository {repository_name}")
     payload = {
         "fileNames": [file_name],
         "importSettings": {
@@ -45,12 +45,12 @@ def import_serverfile(file_name: str, repository_name: str, graph_name: str = No
 
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server", json=payload)
     if (response.status_code != 202):
-        get_tracking_logger(repository_name).error(f"Error loading serverfile {file_name} into graphdb repository {repository_name} with exception {response.text}")
+        get_logger(__name__,f"tracking_{repository_name}.log").error(f"Error loading serverfile {file_name} into graphdb repository {repository_name} with exception {response.text}")
         raise ServerFileImportFailedException(repository_name, response.text)
     
 
 def poll_import_status(file_name: str, repository_name: str):
-    get_tracking_logger(repository_name).info(f"Awaiting import of serverfile {file_name} into graphdb repository {repository_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Awaiting import of serverfile {file_name} into graphdb repository {repository_name}")
     while True:
         try:
             response = requests.get(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server")
@@ -61,28 +61,28 @@ def poll_import_status(file_name: str, repository_name: str):
             task = next((t for t in import_tasks if t["name"] == file_name), None)
 
             if not task:
-                get_tracking_logger(repository_name).error(f"Import for serverfile {file_name} not found!")
+                get_logger(__name__,f"tracking_{repository_name}.log").error(f"Import for serverfile {file_name} not found!")
                 raise ServerFileImportFailedException(repository_name, "Import not found!")
 
             status = task["status"]
 
             if status == "DONE":
-                get_tracking_logger(repository_name).info(f"Import for {repository_name} finished successfully.")
+                get_logger(__name__,f"tracking_{repository_name}.log").info(f"Import for {repository_name} finished successfully.")
                 delete_serverfile(file_name, repository_name)
                 break
             elif status == "ERROR":
-                get_tracking_logger(repository_name).error("Import for {repository_name} failed: {e}")
+                get_logger(__name__,f"tracking_{repository_name}.log").error("Import for {repository_name} failed: {e}")
                 raise ServerFileImportFailedException(repository_name, task.get('message'))
 
         except Exception as e:
-            get_tracking_logger(repository_name).error("Error while polling import status: {e}")
+            get_logger(__name__,f"tracking_{repository_name}.log").error("Error while polling import status: {e}")
             delete_serverfile(file_name, repository_name)
             raise ServerFileImportFailedException(repository_name, f"Error while polling import status: {e}")
 
         time.sleep(1)
 
 def delete_serverfile(file_name: str, repository_name: str):
-    get_tracking_logger(repository_name).info(f"Remove serverfile {file_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Remove serverfile {file_name}")
     import_path = f"/graphdb-import/{file_name}"
     os.remove(import_path)
 
