@@ -4,6 +4,7 @@ import glob
 import sys
 import re
 import logging
+import zipfile
 
 from app.services.VersioningService import StarVersService
 from app.models.TrackingTaskModel import TrackingTaskDto
@@ -27,6 +28,8 @@ except KeyError:
     logging.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
     sys.exit(1)
 
+input_mode = sys.argv[3]
+
 logging.info("Starting with building an RDF-star dataset from individual snapshots...")
 logging.info(f"Repository name: {repo_name}, Delta type: {delta_type}")
 
@@ -44,8 +47,11 @@ logging.info(f"Evaluation directory: {evaluation_dir}")
 
 # Get initial versioning timestamp from evaluation directory
 def get_initial_version_timestamp(evaluation_dir, tracking_task_name):
-    rdf_files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task_name}_*.raw.nt"))
-    if not rdf_files:
+    if input_mode == "rdf":
+        files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task_name}_*.raw.nt"))
+    elif input_mode == "zip":
+        files = glob.glob(os.path.join(evaluation_dir, f"*.zip"))
+    if not files:
         return None
 
     # Regex to extract timestamp of form: YYYYMMDD-HHMMSS_mmm
@@ -57,10 +63,10 @@ def get_initial_version_timestamp(evaluation_dir, tracking_task_name):
         return match.group(1) if match else ''
 
     # Sort rdf files based on extracted timestamp string
-    rdf_files.sort(key=lambda x: extract_timestamp(x))
+    files.sort(key=lambda x: extract_timestamp(x))
 
     # Extract timestamp from the first file after sorting
-    first_file = rdf_files[0]
+    first_file = files[0]
     return first_file, extract_timestamp(first_file)
 
 def convert_timestamp_str_to_iso(timestamp_str):
@@ -75,7 +81,7 @@ def convert_timestamp_str_to_iso(timestamp_str):
 
     return dt
 
-first_rdf_file, init_version_timestmap = get_initial_version_timestamp(evaluation_dir, tracking_task.name)
+first_file, init_version_timestmap = get_initial_version_timestamp(evaluation_dir, tracking_task.name)
 init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
 logging.info(f"Initial version timestamp: {init_version_timestmap_iso}")
 
@@ -90,10 +96,14 @@ versioning_service.local_file = True
 versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
 
 # Remove first RDF file after initial versioning
-os.remove(first_rdf_file)
+os.remove(first_file) if input_mode == "rdf" else None
 
 # Extract all RDF file names and their timestamps, create a mapping, and sort by timestamp
-rdf_files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task.name}_*.raw.nt"))
+if input_mode == "rdf":
+    files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task.name}_*.raw.nt"))
+elif input_mode == "zip":
+    files = glob.glob(os.path.join(evaluation_dir, f"*.zip"))
+
 timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})')
 
 def extract_timestamp(file_path):
@@ -103,7 +113,7 @@ def extract_timestamp(file_path):
 
 # Build mapping: {timestamp_str: file_path}
 file_timestamp_pairs = []
-for file_path in rdf_files:
+for file_path in files:
     timestamp_str = extract_timestamp(file_path)
     if timestamp_str:
         file_timestamp_pairs.append((timestamp_str, file_path))
@@ -112,9 +122,22 @@ for file_path in rdf_files:
 file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
 
 # Iterate over all files, starting from the oldest
-for timestamp_str, rdf_file in file_timestamp_pairs[1:]:
+for timestamp_str, file in file_timestamp_pairs[1:]:
     version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
+    if input_mode == "zip":
+        archive = file
+        logging.info(f"Unzipping rdf file from zip archive: {archive}")
+        with zipfile.ZipFile(archive, 'r') as zip_ref:
+            zip_ref.extractall(evaluation_dir)
+        
+        logging.info(f"Deleting zip archive after extraction: {archive}")
+        os.remove(archive)
+        rdf_file = os.path.join(evaluation_dir, f"{tracking_task.name}_{timestamp_str}.raw.nt")
+
+    elif input_mode == "rdf":
+        rdf_file = file
     versioning_service.run_versioning(version_timestamp=version_timestamp)
+    
     logging.info(f"Deleting RDF file: {rdf_file}")
     os.remove(rdf_file)
 
