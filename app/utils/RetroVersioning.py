@@ -3,37 +3,29 @@ import os
 import glob
 import sys
 import re
-import logging
-import zipfile
-
+from uuid import uuid4
 from app.services.VersioningService import StarVersService
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.graphdb.GraphDatabaseUtils import create_repository
 from app.enums.DeltaTypeEnum import DeltaType
+from app.LoggingConfig import get_logger
 
 # Logging
 repo_name = sys.argv[1]
-if not os.path.exists('/code/logs'):
-    os.makedirs('/code/logs')
-with open(f'/code/logs/build_rdf_star_dataset_{repo_name}.log', "w") as log_file:
-    log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename=f"/code/logs/build_rdf_star_dataset_{repo_name}.log", 
-                                                  encoding='utf-8', mode='a+')],
-                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
-                    datefmt="%F %A %T", 
-                    level=logging.INFO)
+logger = get_logger(__name__, f"tracking_{repo_name}.log")
+
 try:
     delta_type = DeltaType[sys.argv[2].upper()]
 except KeyError:
-    logging.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
+    logger.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
     sys.exit(1)
 
-logging.info("Starting with building an RDF-star dataset from individual snapshots...")
-logging.info(f"Repository name: {repo_name}, Delta type: {delta_type}")
+logger.info("Starting with building an RDF-star dataset from individual snapshots...")
+logger.info(f"Repository name: {repo_name}, Delta type: {delta_type}")
 
 # Define tracking task with input parameters
 tracking_task = TrackingTaskDto(
-    id="123",
+    id=uuid4(),
     name=repo_name,
     rdf_dataset_url="",
     delta_type=delta_type
@@ -41,7 +33,7 @@ tracking_task = TrackingTaskDto(
 
 # RDF datasets directory
 evaluation_dir = f"./evaluation/{tracking_task.name}"
-logging.info(f"Evaluation directory: {evaluation_dir}")
+logger.info(f"Evaluation directory: {evaluation_dir}")
 
 def convert_timestamp_str_to_iso(timestamp_str):
     # Pad milliseconds to microseconds (3 digits -> 6 digits)
@@ -76,9 +68,9 @@ for file_path in files:
 file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
 
 init_version_timestmap, first_file = file_timestamp_pairs[0]
-logging.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
+logger.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
 init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
-logging.info(f"Initial version timestamp: {init_version_timestmap_iso}")
+logger.info(f"Initial version timestamp: {init_version_timestmap_iso}")
 
 # Create repository
 create_repository(tracking_task.name)
@@ -102,7 +94,7 @@ for timestamp_str, file in file_timestamp_pairs[1:]:
     rdf_file = file
     versioning_service.run_versioning(version_timestamp=version_timestamp)
     
-    logging.info(f"Deleting RDF file: {rdf_file}")
+    logger.info(f"Deleting RDF file: {rdf_file}")
     os.remove(rdf_file)
 
-logging.info("Retro versioning completed successfully.")
+logger.info("Retro versioning completed successfully.")

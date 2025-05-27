@@ -45,15 +45,14 @@ def setup_logging():
         },
     })
 
-def get_logger(name: str) -> logging.Logger:
-    return logging.getLogger(name)
+def get_logger(name: str, log_file_name: str = None) -> logging.Logger:
+    if log_file_name is None:
+        return logging.getLogger(name)
 
-def get_tracking_logger(repository_name: str) -> logging.Logger:
-    logger = logging.getLogger(f"tracking_task_{repository_name}")
+    logger = logging.getLogger(name)
     if not logger.handlers:
-        # Create file handler only once per task
-        fh = logging.FileHandler(f"./logs/tracking_{repository_name}.log")
-        formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
+        fh = logging.FileHandler(f"./logs/{log_file_name}")
+        formatter = logging.Formatter(f"[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s")
         fh.setFormatter(formatter)
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)

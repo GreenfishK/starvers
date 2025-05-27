@@ -3,13 +3,12 @@ import os
 import shutil
 import time
 from datetime import datetime
-import logging
 from starvers.starvers import TripleStoreEngine
 from rdflib import Literal
 from rdflib.namespace import XSD
 
 from app.AppConfig import Settings
-from app.LoggingConfig import get_tracking_logger
+from app.LoggingConfig import get_logger
 from app.enums.DeltaTypeEnum import DeltaType
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
@@ -36,7 +35,7 @@ class VersioningService(ABC):
 
 class StarVersService(VersioningService):
     def __init__(self, tracking_task: TrackingTaskDto) -> None:
-        self.LOG = get_tracking_logger(tracking_task.name)
+        self.LOG = get_logger(__name__, f"tracking_{tracking_task.name}.log")
         self.tracking_task = tracking_task
         self.local_file = False
 

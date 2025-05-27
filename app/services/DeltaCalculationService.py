@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 from starvers.starvers import TripleStoreEngine
 
-from app.LoggingConfig import get_tracking_logger
+from app.LoggingConfig import get_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.FileService import download_file, skolemize_blank_nodes_in_file
 from app.utils.HelperService import convert_to_df, get_timestamp
@@ -38,7 +38,7 @@ class DeltaCalculationService(ABC):
 class IterativeDeltaQueryService(DeltaCalculationService):
     def __init__(self, starvers_engine: TripleStoreEngine, tracking_task: TrackingTaskDto) -> None:
         super().__init__()
-        self.LOG = get_tracking_logger(tracking_task.name)
+        self.LOG = get_logger(__name__, f"tracking_{tracking_task.name}.log")
         self.__starvers_engine = starvers_engine
         self.tracking_task = tracking_task
 
@@ -134,7 +134,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 class SparqlDeltaQueryService(DeltaCalculationService):
     def __init__(self, starvers_engine: TripleStoreEngine, tracking_task: TrackingTaskDto) -> None:
         super().__init__()
-        self.LOG = get_tracking_logger(tracking_task.name)
+        self.LOG = get_logger(__name__, f"tracking_{tracking_task.name}.log")
         self.__starvers_engine = starvers_engine
         self.tracking_task = tracking_task
 
