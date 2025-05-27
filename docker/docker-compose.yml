@@ -36,6 +36,18 @@ services:
       - "host.docker.internal:host-gateway"
     entrypoint: ["python", "app/run_gui.py"]
 
+  retroVersioning:
+    image: starversserver
+    env_file: "../prod.env"
+    ports: 
+      - 80:80
+    volumes:
+      - /mnt/data/starversserver/evaluation:/code/evaluation
+      - /mnt/data/starversserver/logs:/code/logs
+      - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
+    entrypoint: ["python", "app/utils/RetroVersioning.py", "air_quality_ontology", "SPARQL"]
+
+
   db:
     image: postgres
     restart: always

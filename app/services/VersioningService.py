@@ -38,6 +38,7 @@ class StarVersService(VersioningService):
     def __init__(self, tracking_task: TrackingTaskDto) -> None:
         self.LOG = get_tracking_logger(tracking_task.name)
         self.tracking_task = tracking_task
+        self.local_file = False
 
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', tracking_task.name)
         self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', tracking_task.name)
@@ -51,9 +52,13 @@ class StarVersService(VersioningService):
 
 
     def run_initial_versioning(self, version_timestamp):
-        self.LOG.info(f"Start initial tracking task [{version_timestamp}]")
+        self.LOG.info(f"Start initial versioning task [{version_timestamp}]")
         self.__delta_query_service.set_version_timestamp(version_timestamp)
-        self.__delta_query_service.load_rdf_data()
+        
+        if self.local_file:
+            self.__delta_query_service.load_rdf_data(local_file=True)
+        else:
+            self.__delta_query_service.load_rdf_data()
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
         os.makedirs(os.path.dirname(f"./evaluation/{self.tracking_task.name}/"), exist_ok=True)
@@ -61,7 +66,7 @@ class StarVersService(VersioningService):
         with open(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
             timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n")
         
-        self.LOG.info(f"Finished initial tracking task [{version_timestamp}]")
+        self.LOG.info(f"Finished initial versioning task [{version_timestamp}]")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
         if timestamp is not None and query_as_timestamped:
@@ -77,13 +82,16 @@ class StarVersService(VersioningService):
     
 
     def run_versioning(self, version_timestamp) -> DeltaEvent:
-        self.LOG.info(f"Start tracking task [{version_timestamp}]")
+        self.LOG.info(f"Start versioning task [{version_timestamp}]")
         try:
             timing_overall = time.time_ns()
 
             timing_prepare = time.time_ns()
             self.__delta_query_service.set_version_timestamp(version_timestamp)
-            self.__delta_query_service.prepare()
+            if self.local_file:
+                self.__delta_query_service.prepare(local_file=True)
+            else:
+                self.__delta_query_service.prepare()
             timing_prepare = time.time_ns() - timing_prepare
 
             timing_delta = time.time_ns()
@@ -102,7 +110,7 @@ class StarVersService(VersioningService):
             self.__delta_query_service.clean_up()
             timing_overall = time.time_ns() - timing_overall
 
-            self.LOG.info("Counting triples in the snapshot with timestamp '{version_timestamp}'")
+            self.LOG.info(f"Counting triples in the snapshot with timestamp '{version_timestamp}'")
             cnt_triples_query = get_count_triples_template(version_timestamp)
             self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
             cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
@@ -139,10 +147,10 @@ class StarVersService(VersioningService):
                 )
             
             self.LOG.info("No changes tracked")
-            self.LOG.info(f"Finished tracking task [{version_timestamp}]")
+            self.LOG.info(f"Finished versioning task [{version_timestamp}]")
             return None
         except Exception as e:
-            self.LOG.error(f"Tracking task failed with error {e}")
-            self.LOG.info("Tracking task will be rescheduled...")
+            self.LOG.error(f"Versioning task failed with error {e}")
+            self.LOG.info("Versioning task will be rescheduled...")
             self.__delta_query_service.clean_up()
             return None

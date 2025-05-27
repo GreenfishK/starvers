@@ -47,8 +47,8 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self.__version_timestamp = version_timestamp
 
 
-    def prepare(self):
-        self.load_rdf_data(self.tracking_task.name_temp())
+    def prepare(self, local_file: bool = False):
+        self.load_rdf_data(self.tracking_task.name_temp(), local_file)
 
 
     def calculate_delta(self):
@@ -84,24 +84,28 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self.__starvers_engine.sparql_post.query()
 
 
-    def load_rdf_data(self, graph_name: str = None):
+    def load_rdf_data(self, graph_name: str = None, local_file: bool = False):
         base_path = f"./evaluation/{self.tracking_task.name}/{get_timestamp(self.__version_timestamp)}/"
         os.makedirs(os.path.dirname(base_path), exist_ok=True)
-
-        snapshot_path = f"{base_path}{self.tracking_task.name}_{get_timestamp()}.raw.nt"
-        processed_path = f"{base_path}{self.tracking_task.name}_{get_timestamp()}.nt"
-
-        # download file into graph db server
-        for attempt in range(2):
-            self.LOG.info(f"Download rdf data ({attempt+1}. attempt)")
-            try:
-                download_file(self.tracking_task.rdf_dataset_url, snapshot_path)
-                break  # success
-            except Exception as e:
-                if attempt == 1:
-                    self.LOG.info("Download failed after 2 attempts.")
-                    raise
-                self.LOG.warning("Retrying after error: %s", e)
+        snapshot_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt"
+        processed_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.nt"
+        import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
+        
+        if not local_file:
+            # download file into graph db server
+            for attempt in range(2):
+                self.LOG.info(f"Download rdf data ({attempt+1}. attempt)")
+                try:
+                    download_file(self.tracking_task.rdf_dataset_url, snapshot_path)
+                    break  # success
+                except Exception as e:
+                    if attempt == 1:
+                        self.LOG.info("Download failed after 2 attempts.")
+                        raise
+                    self.LOG.warning("Retrying after error: %s", e)
+        else:   
+            self.LOG.info(f"Local rdf data provided. Copy {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt into snapshot path")
+            shutil.copy2(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt", snapshot_path)
 
         #cleanup file
         self.LOG.info("Skolemize rdf data")
@@ -109,7 +113,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
 
         #copy to graphdb server file directory
         self.LOG.info("Copy rdf data into graphdb-import directory")
-        shutil.copy2(processed_path, f'/graphdb-import/{self.tracking_task.name}.nt')
+        shutil.copy2(processed_path, import_path)
 
         #start import server file
         import_serverfile(f"{self.tracking_task.name}.nt", self.tracking_task.name, graph_name)
@@ -139,8 +143,8 @@ class SparqlDeltaQueryService(DeltaCalculationService):
         self.__version_timestamp = version_timestamp
 
 
-    def prepare(self):
-        self.load_rdf_data(self.tracking_task.name_temp())
+    def prepare(self, local_file: bool = False):
+        self.load_rdf_data(self.tracking_task.name_temp(), local_file)
 
 
     def calculate_delta(self):
@@ -170,25 +174,28 @@ class SparqlDeltaQueryService(DeltaCalculationService):
         self.__starvers_engine.sparql_post.query()
 
 
-    def load_rdf_data(self, graph_name: str = None):
+    def load_rdf_data(self, graph_name: str = None, local_file: bool = False):
         base_path = f"./evaluation/{self.tracking_task.name}/{get_timestamp(self.__version_timestamp)}/"
         os.makedirs(os.path.dirname(base_path), exist_ok=True)
-
         snapshot_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt"
         processed_path = f"{base_path}{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.nt"
         import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
-
-        # download file into graph db server
-        for attempt in range(2):
-            self.LOG.info(f"Download rdf data ({attempt+1}. attempt)")
-            try:
-                download_file(self.tracking_task.rdf_dataset_url, snapshot_path)
-                break  # success
-            except Exception as e:
-                if attempt == 1:
-                    self.LOG.info("Download failed after 2 attempts.")
-                    raise
-                self.LOG.warning("Retrying after error: %s", e)
+        
+        if not local_file:
+            # download file into graph db server
+            for attempt in range(2):
+                self.LOG.info(f"Download rdf data ({attempt+1}. attempt)")
+                try:
+                    download_file(self.tracking_task.rdf_dataset_url, snapshot_path)
+                    break  # success
+                except Exception as e:
+                    if attempt == 1:
+                        self.LOG.info("Download failed after 2 attempts.")
+                        raise
+                    self.LOG.warning("Retrying after error: %s", e)
+        else:   
+            self.LOG.info(f"Local rdf data provided. Copy {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt into snapshot path")
+            shutil.copy2(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt", snapshot_path)
 
         #cleanup file
         self.LOG.info("Skolemize rdf data")
