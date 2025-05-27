@@ -45,30 +45,6 @@ tracking_task = TrackingTaskDto(
 evaluation_dir = f"./evaluation/{tracking_task.name}"
 logging.info(f"Evaluation directory: {evaluation_dir}")
 
-# Get initial versioning timestamp from evaluation directory
-def get_initial_version_timestamp(evaluation_dir, tracking_task_name):
-    if input_mode == "rdf":
-        files = glob.glob(os.path.join(evaluation_dir, f"{tracking_task_name}_*.raw.nt"))
-    elif input_mode == "zip":
-        files = glob.glob(os.path.join(evaluation_dir, f"*.zip"))
-    if not files:
-        return None
-
-    # Regex to extract timestamp of form: YYYYMMDD-HHMMSS_mmm
-    timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})')
-
-    def extract_timestamp(file_path):
-        filename = os.path.basename(file_path)
-        match = timestamp_pattern.search(filename)
-        return match.group(1) if match else ''
-
-    # Sort rdf files based on extracted timestamp string
-    files.sort(key=lambda x: extract_timestamp(x))
-
-    # Extract timestamp from the first file after sorting
-    first_file = files[0]
-    return first_file, extract_timestamp(first_file)
-
 def convert_timestamp_str_to_iso(timestamp_str):
     # Pad milliseconds to microseconds (3 digits -> 6 digits)
     if '_' in timestamp_str:
@@ -80,23 +56,6 @@ def convert_timestamp_str_to_iso(timestamp_str):
     assert isinstance(dt, datetime), "Conversion to datetime failed"
 
     return dt
-
-first_file, init_version_timestmap = get_initial_version_timestamp(evaluation_dir, tracking_task.name)
-init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
-logging.info(f"Initial version timestamp: {init_version_timestmap_iso}")
-
-# Create repository
-create_repository(tracking_task.name)
-
-# Init versioning service
-versioning_service = StarVersService(tracking_task)
-versioning_service.local_file = True 
-
-# Run initial versioning for the tracking task
-versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
-
-# Remove first RDF file after initial versioning
-os.remove(first_file) if input_mode == "rdf" else None
 
 # Extract all RDF file names and their timestamps, create a mapping, and sort by timestamp
 if input_mode == "rdf":
@@ -117,6 +76,27 @@ for file_path in files:
     timestamp_str = extract_timestamp(file_path)
     if timestamp_str:
         file_timestamp_pairs.append((timestamp_str, file_path))
+
+# Sort by timestamp string to ensure chronological order
+file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
+
+init_version_timestmap, first_file = file_timestamp_pairs[0]
+logging.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
+init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
+logging.info(f"Initial version timestamp: {init_version_timestmap_iso}")
+
+# Create repository
+create_repository(tracking_task.name)
+
+# Init versioning service
+versioning_service = StarVersService(tracking_task)
+versioning_service.local_file = True 
+
+# Run initial versioning for the tracking task
+versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
+
+# Remove first RDF file after initial versioning
+os.remove(first_file) if input_mode == "rdf" else None
 
 # Sort by timestamp (oldest first)
 file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))

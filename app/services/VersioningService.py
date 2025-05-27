@@ -72,20 +72,30 @@ class StarVersService(VersioningService):
             self.__delta_query_service.load_rdf_data()
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
-        os.makedirs(os.path.dirname(f"./evaluation/{self.tracking_task.name}/"), exist_ok=True)
-
-        with open(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
+        path = f"./evaluation/{self.tracking_task.name}"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(f"{path}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
             timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n")
         
         # Persist Timings
-        path = f"./evaluation/{self.tracking_task.name}/"
-
         cnt_triples = self._cnt_triples(version_timestamp)
 
-        with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
+        with open(f"{path}/{self.tracking_task.name}_timings.csv", "a+") as timing_file:
             timing_file.write(f"{get_timestamp(version_timestamp)}, {cnt_triples}, 0, 0, 0, 0, 0, {cnt_triples}")
             timing_file.write('\n')
         self.LOG.info(f"Finished initial versioning task [{version_timestamp}]")
+
+        # Zip and remove tmp directory that gets created in load_rdf_data
+        tmp_dir = f"{path}/{get_timestamp(version_timestamp)}"
+        
+        # zip tmp_dir and save the zip file in the same directory as tmp_dir
+        shutil.make_archive(tmp_dir, 'zip', tmp_dir)
+        self.LOG.info(f"Zipped initial snapshot: {tmp_dir}.zip")
+        
+        # remove tmp_dir
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+            self.LOG.info(f"Removed temporary directory: {tmp_dir}")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
         if timestamp is not None and query_as_timestamped:
