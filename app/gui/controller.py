@@ -32,7 +32,7 @@ class GuiContr:
         repo_name = self.repo_name 
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
-        timestamps = df.iloc[:, 0]
+        timestamps = df.iloc[1:, 0]  # Skip header row
 
         def parse_ts(ts):
             dt = datetime.strptime(ts[:15], "%Y%m%d-%H%M%S")
@@ -43,8 +43,8 @@ class GuiContr:
 
         # Plot
         fig, ax = plt.subplots()
-        ax.plot(formatted_timestamps, df.iloc[:, 1], label="Added Triples")
-        ax.plot(formatted_timestamps, df.iloc[:, 2], label="Deleted Triples")
+        ax.plot(formatted_timestamps, df.iloc[1:, 1], label="Added Triples")
+        ax.plot(formatted_timestamps, df.iloc[1:, 2], label="Deleted Triples")
         ax.set_xlabel("Timestamp")
         ax.set_ylabel("Triple Count")
         ax.set_title(f"Triple Changes Over Time for {repo_name}")
