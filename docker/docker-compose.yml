@@ -46,7 +46,7 @@ services:
       - /mnt/data/starversserver/evaluation:/code/evaluation
       - /mnt/data/starversserver/logs:/code/logs
       - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/RetroVersioning.py", "air_quality_ontology", "SPARQL"]
+    entrypoint: ["python", "app/utils/RetroVersioning.py", "schema_org_ontology", "SPARQL"]
 
 
   db:
