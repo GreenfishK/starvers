@@ -236,6 +236,8 @@ class TripleStoreEngine:
         self.sparql_post.setHTTPAuth(DIGEST)
         self.sparql_post.setMethod(POST)
 
+        self.timestamped_query = None
+
         if self.credentials is not None:
             self.sparql_post.setCredentials(credentials.user_name, credentials.pw)
             self.sparql_get.setCredentials(credentials.user_name, credentials.pw)
@@ -396,6 +398,7 @@ class TripleStoreEngine:
             logger.info("Timestamped query with timestamp {0} being executed:"
                          " \n {1}".format(version_timestamp, timestamped_query))
             self.sparql_get_with_post.setQuery(timestamped_query)
+            self.timestamped_query = timestamped_query
         else:
             logger.info("Query being executed: \n {0}".format(select_statement))
             self.sparql_get_with_post.setQuery(select_statement)
