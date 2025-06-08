@@ -4,7 +4,7 @@ import configparser
 from datetime import datetime
 import html
 import logging
-from io import StringIO
+from io import BytesIO
 from app.gui.controller import GuiContr
 
 routes = Blueprint('routes', __name__)
@@ -96,6 +96,9 @@ def run_query():
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
         df = controller.query(query_text, timestamp=timestamp)
 
+        global last_result_df
+        last_result_df = df if not df.empty else pd.DataFrame()
+
         # Convert IRI to link
         def iri_to_link(val):
             s = str(val)
@@ -103,8 +106,8 @@ def run_query():
                 iri = s[1:-1]
                 return f'<a href="{iri}" target="_blank">{html.escape(iri)}</a>'
             return html.escape(s)
+        
         df = df.applymap(iri_to_link)
-
         html_table = df.to_html(classes="table table-striped", index=False, escape=False)
         return jsonify({"html": html_table})
     except Exception as e:
@@ -114,8 +117,17 @@ def run_query():
 @routes.route("/download")
 def download():
     global last_result_df
-    csv_buffer = StringIO()
-    last_result_df.to_csv(csv_buffer, index=False)
+
+    # Write CSV to string first
+    csv_string = last_result_df.to_csv(index=False)
+
+    # Encode the string into bytes and wrap it with BytesIO
+    csv_buffer = BytesIO(csv_string.encode("utf-8"))
     csv_buffer.seek(0)
-    
-    return send_file(csv_buffer, mimetype="text/csv", as_attachment=True, download_name="query_result.csv")
+
+    return send_file(
+        csv_buffer,
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="query_result.csv"
+    )

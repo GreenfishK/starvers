@@ -118,6 +118,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
+        const downloadButton = document.getElementById("download-btn");
+
+        // Remove download button if it exists
+        if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
 
         fetch(`/infos/${selectedRepo}`)
             .then(response => {
@@ -150,12 +154,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     sparqlForm.addEventListener("submit", function (e) {
-        e.preventDefault();  // Prevent page reload
-
+        e.preventDefault(); 
+        
+        const downloadButton = document.getElementById("download-btn");
         const formData = new FormData(sparqlForm);
 
         let seconds = 0;
         timerEl.textContent = "0";
+
+        // Remove old download button if it exists
+        if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
 
         // Show loading overlay and start timer
         overlay.style.display = "flex";
@@ -178,6 +186,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
             } else {
                 resultTable.innerHTML = data.html;
+
+                // Check if the download button already exists
+                if (!downloadButton) {
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = "/download";
+                    downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
+                    resultTable.parentElement.appendChild(downloadLink);
+                }
             }
         })
         .catch(err => {
