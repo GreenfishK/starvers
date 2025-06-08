@@ -34,9 +34,14 @@
                 {% endif %}
             </div>
 
-            <div id="plot-container">
-                {% if stats_plot %}
-                    <div>{{ stats_plot | safe }}</div>
+            <div id="plot-container" class="is-flex is-flex-wrap-wrap">
+                {% if delta_plot or total_plot %}
+                    <div id="delta-plot" class="plot-box">
+                        {{ delta_plot | safe }}
+                    </div>
+                    <div id="total-plot" class="plot-box">
+                        {{ total_plot | safe }}
+                    </div>
                 {% endif %}
             </div>
             
@@ -124,7 +129,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
                     trackingInfo.innerHTML = "";
                 } else {
-                    plotContainer.innerHTML = data.plot_html;
+                    plotContainer.innerHTML = `
+                        <div id="delta-plot" class="plot-box">${data.delta_plot_html}</div>
+                        <div id="total-plot" class="plot-box">${data.total_plot_html}</div>
+                    `;
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
                         <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
