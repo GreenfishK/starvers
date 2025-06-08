@@ -5,6 +5,7 @@ import logging
 from io import BytesIO
 import base64
 import os
+import numpy as np
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
 from app.AppConfig import Settings
@@ -34,64 +35,68 @@ class GuiContr:
         df = pd.read_csv(path)
         timestamps = df.iloc[1:, 0]  # Skip header row
 
+        # Parse to datetime objects
         def parse_ts(ts):
-            dt = datetime.strptime(ts[:15], "%Y%m%d-%H%M%S")
-            return dt.strftime("%d.%m.%Y %H:%M:%S")
+            return datetime.strptime(ts[:15], "%Y%m%d-%H%M%S")
 
-        formatted_timestamps = timestamps.apply(parse_ts)
-        start, end = formatted_timestamps.min(), formatted_timestamps.max()
+        datetime_series = timestamps.apply(parse_ts)
+        start, end = datetime_series.min().strftime("%d.%m.%Y %H:%M:%S"), datetime_series.max().strftime("%d.%m.%Y %H:%M:%S")
 
-        # Plot inserts and deletes
+        # === Plot inserts and deletes (bar plot) ===
         fig, ax = plt.subplots()
-        ax.plot(formatted_timestamps, df.iloc[1:, 1], label="Added Triples")
-        ax.plot(formatted_timestamps, df.iloc[1:, 2], label="Deleted Triples")
+
+        added = df.iloc[1:, 1].astype(int).values
+        deleted = df.iloc[1:, 2].astype(int).values
+        x = np.arange(len(datetime_series))  
+        width = 0.4
+        
+        ax.bar(x - width/2, added, width=width, label="Added Triples", color="green")
+        ax.bar(x + width/2, deleted, width=width, label="Deleted Triples", color="red")
+
         ax.set_xlabel("Timestamp")
         ax.set_ylabel("Triple Count")
         ax.set_title(f"Triple Changes Over Time for {repo_name}")
         ax.legend()
 
-        #ax.set_yscale('log')  # Set y-axis to logarithmic scale
-
-        # Set 5 evenly spaced x-ticks: first, three in between, last
-        n = len(formatted_timestamps)
+        # Set 5 evenly spaced tick positions and labels
+        n = len(datetime_series)
         tick_indices = [0, n // 4, n // 2, 3 * n // 4, n - 1]
-        tick_positions = [formatted_timestamps.iloc[i] for i in tick_indices]
-        tick_labels = [ts.replace(" ", "\n") for ts in tick_positions]
-        ax.set_xticks(tick_positions)
+        tick_labels = [datetime_series.iloc[i].strftime("%d.%m.%Y\n%H:%M:%S") for i in tick_indices]
+
+        ax.set_xticks(tick_indices)
         ax.set_xticklabels(tick_labels, rotation=45, size=8)
 
-        # Format y-ticks with thousand separator
         ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
         fig.tight_layout()
 
-        # Convert plot to SVG
         buffer = BytesIO()
         plt.savefig(buffer, format="svg", bbox_inches='tight')
         plt.close(fig)
         buffer.seek(0)
         delta_plot = buffer.getvalue().decode('utf-8')
 
-        # Plot absolute triple counnts per snapshots
-        # The number of absolute triples in the df is in the 8th column
+        # === Plot total triples over time (line plot) ===
         fig, ax = plt.subplots()
-        ax.plot(formatted_timestamps, df.iloc[1:, 7], label="Total Triples")
+        
+        total_triples = df.iloc[1:, 7].astype(int).values
+        ax.plot(x, total_triples, label="Total Triples", color="blue")  # Use numeric x
+
         ax.set_xlabel("Timestamp")
         ax.set_ylabel("Total Triples")
         ax.set_title(f"Total Triples Over Time for {repo_name}")
         ax.legend()
 
-        # Set 5 evenly spaced x-ticks: first, three in between, last
-        ax.set_xticks(tick_positions)
+        # Use same x-ticks and labels as the bar plot
+        ax.set_xticks(tick_indices)
         ax.set_xticklabels(tick_labels, rotation=45, size=8)
-        
-        # Format y-ticks with thousand separator
+
         ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
         fig.tight_layout()
 
-        # Convert plot to SVG
         buffer = BytesIO()
         plt.savefig(buffer, format="svg", bbox_inches='tight')
         plt.close(fig)
+        buffer.seek(0)
         total_plot = buffer.getvalue().decode('utf-8')
 
         return start, end, delta_plot, total_plot
