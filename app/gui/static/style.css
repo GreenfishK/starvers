@@ -8,8 +8,8 @@
     position: sticky;
     top: 0;
     background: white;
-    z-index: 10; /* must be high enough to stay above table body rows */
-    box-shadow: inset 0 -3px 0 #ccc; /* draw inner bottom border */
+    z-index: 10; 
+    box-shadow: inset 0 -3px 0 #ccc; 
     border: none;
     padding: 8px;
     text-align: left;
@@ -64,4 +64,17 @@
     font-family: monospace;
     background-color: white;
     font-size: 18px;
+}
+
+#plot-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.plot-box {
+    flex: 1 1 48%;
+    min-width: 300px;
+    max-width: 100%;
 }

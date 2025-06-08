@@ -41,7 +41,7 @@ class GuiContr:
         formatted_timestamps = timestamps.apply(parse_ts)
         start, end = formatted_timestamps.min(), formatted_timestamps.max()
 
-        # Plot
+        # Plot inserts and deletes
         fig, ax = plt.subplots()
         ax.plot(formatted_timestamps, df.iloc[1:, 1], label="Added Triples")
         ax.plot(formatted_timestamps, df.iloc[1:, 2], label="Deleted Triples")
@@ -62,7 +62,6 @@ class GuiContr:
 
         # Format y-ticks with thousand separator
         ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
-
         fig.tight_layout()
 
         # Convert plot to SVG
@@ -70,8 +69,32 @@ class GuiContr:
         plt.savefig(buffer, format="svg", bbox_inches='tight')
         plt.close(fig)
         buffer.seek(0)
-        svg_data = buffer.getvalue().decode('utf-8')
-        return start, end, svg_data
+        delta_plot = buffer.getvalue().decode('utf-8')
+
+        # Plot absolute triple counnts per snapshots
+        # The number of absolute triples in the df is in the 8th column
+        fig, ax = plt.subplots()
+        ax.plot(formatted_timestamps, df.iloc[1:, 7], label="Total Triples")
+        ax.set_xlabel("Timestamp")
+        ax.set_ylabel("Total Triples")
+        ax.set_title(f"Total Triples Over Time for {repo_name}")
+        ax.legend()
+
+        # Set 5 evenly spaced x-ticks: first, three in between, last
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=45, size=8)
+        
+        # Format y-ticks with thousand separator
+        ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
+        fig.tight_layout()
+
+        # Convert plot to SVG
+        buffer = BytesIO()
+        plt.savefig(buffer, format="svg", bbox_inches='tight')
+        plt.close(fig)
+        total_plot = buffer.getvalue().decode('utf-8')
+
+        return start, end, delta_plot, total_plot
 
 
     def get_repo_tracking_infos(self):
