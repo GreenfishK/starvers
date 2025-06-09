@@ -3,7 +3,8 @@ uvicorn[standard]
 load_dotenv
 sqlmodel
 psycopg2-binary
-starvers @ git+https://github.com/martinmitteregger/starvers.git
+#starvers @ git+https://github.com/martinmitteregger/starvers.git
+starvers @ git+https://github.com/GreenfishK/starvers.git
 requests
 pydantic-settings
 requests

@@ -61,15 +61,27 @@
                 </div>
             </div>
 
-            <div class="field">
-                <div class="is-flex is-justify-content-flex-end mb-1">
-                    <span id="execution-time" class="has-text-grey">Execution time: <span id="timer">0</span> sec</span>
-                </div>
-                <div class="control">
-                    <textarea id="sparql-code" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }}</textarea>
+            <div class="field is-vertical">
+                <div class="field is-flex is-flex-wrap-wrap" style="gap: 1rem;">
+
+                    <!-- SPARQL editor -->
+                    <div class="control" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
+                        <div class="is-flex is-justify-content-flex-end">
+                            <label class="label">Execution Time: <span id="timer">0</span> sec</label>
+                        </div>
+                        <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }}</textarea>
+                    </div>
+
+                    <!-- Timestamped query with label -->
+                    <div class="control" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
+                        <div class="is-flex is-justify-content-flex-end">
+                            <label class="label">Timestamped Query</label>
+                        </div>
+                        <div id="timestamped-editor" style="flex-grow: 1; min-height: 300px;"></div>
+                    </div>
                 </div>
             </div>
-
+            
             <div class="field">
                 <div class="control">
                     <button type="submit" class="button is-link">Execute Query</button>
@@ -187,6 +199,9 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 resultTable.innerHTML = data.html;
 
+                timestampedEditor.setValue(data.timestamped_query || "");
+
+
                 // Check if the download button already exists
                 if (!downloadButton) {
                     const downloadLink = document.createElement("a");
@@ -209,10 +224,18 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <script>
-var editor = CodeMirror.fromTextArea(document.getElementById('sparql-code'), {
-    mode: 'sparql',
-    lineNumbers: true
-});
+    const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
+        mode: 'sparql',
+        lineNumbers: true
+    });
+
+    const timestampedEditor = CodeMirror(document.getElementById("timestamped-editor"), {
+        value: "",
+        mode: "sparql",
+        lineNumbers: true,
+        theme: "default",
+        readOnly: true  
+    });
 </script>
 
 </body>

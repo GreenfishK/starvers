@@ -94,7 +94,7 @@ def run_query():
     try:
         controller = GuiContr(repo_name=repo)
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
-        df = controller.query(query_text, timestamp=timestamp)
+        df, timesamped_query = controller.query(query_text, timestamp=timestamp)
 
         global last_result_df
         last_result_df = df if not df.empty else pd.DataFrame()
@@ -109,7 +109,7 @@ def run_query():
         
         df = df.applymap(iri_to_link)
         html_table = df.to_html(classes="table table-striped", index=False, escape=False)
-        return jsonify({"html": html_table})
+        return jsonify({"html": html_table, "timestamped_query": timesamped_query})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
