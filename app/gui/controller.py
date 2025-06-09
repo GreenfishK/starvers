@@ -25,8 +25,11 @@ class GuiContr:
             logging.info(f"Execute timestamped query with timestamp={timestamp}")
         else:
             logging.info("Execute query without timestamp")
-
-        return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+        
+        result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+        timestamped_query = self.__starvers_engine.timestamped_query
+        timestamped_query = timestamped_query.lstrip()
+        return result_set_df, timestamped_query
 
 
     def get_repo_stats(self):
