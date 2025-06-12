@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
 import logging
@@ -32,33 +32,80 @@ class GuiContr:
         return result_set_df, timestamped_query
 
 
-    def get_repo_stats(self):
+    def get_repo_stats(self):    
         repo_name = self.repo_name 
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
-        timestamps = df.iloc[1:, 0]  # Skip header row
+        df.columns = df.columns.str.strip()
+
+        session = next(get_session())
+        tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
+        polling_interval = tracking_infos[2]
+        session.close()
+
+        # Remove lines where no adds and delets occured
+        df = df[~((df["insertions"] == 0) & (df["deletions"] == 0))]
+
+        # Include only rows where the timestamp is not newer than the 28.05.2025
+        cutoff_date = datetime.strptime("20250528", "%Y%m%d")
+        def parse_ts_for_filter(ts):
+            return datetime.strptime(ts[:8], "%Y%m%d")
+        df = df[df.iloc[:, 0].apply(lambda ts: parse_ts_for_filter(ts) <= cutoff_date)]
+
+        # Skip header row
+        timestamps = df.iloc[1:, 0] 
 
         # Parse to datetime objects
-        def parse_ts(ts):
-            return datetime.strptime(ts[:15], "%Y%m%d-%H%M%S")
-
-        datetime_series = timestamps.apply(parse_ts)
+        datetime_series = timestamps.apply(lambda ts: datetime.strptime(ts[:15], "%Y%m%d-%H%M%S"))
         start, end = datetime_series.min().strftime("%d.%m.%Y %H:%M:%S"), datetime_series.max().strftime("%d.%m.%Y %H:%M:%S")
 
         # === Plot inserts and deletes (bar plot) ===
         fig, ax = plt.subplots()
 
+        # Data
         added = df.iloc[1:, 1].astype(int).values
         deleted = df.iloc[1:, 2].astype(int).values
-        x = np.arange(len(datetime_series))  
-        width = 0.4
-        
-        ax.bar(x - width/2, added, width=width, label="Added Triples", color="green")
-        ax.bar(x + width/2, deleted, width=width, label="Deleted Triples", color="red")
+        added_net = added - deleted  # Positive = net insertion, Negative = net deletion
 
+        x = np.arange(len(datetime_series))
+        width = 0.6
+
+        used_labels = set()
+
+        for i in range(len(x)):
+            net = added_net[i]
+            ins = added[i]
+            dels = deleted[i]
+            base = x[i]
+
+            if net >= 0:
+                # Green base bar for net insertions
+                label = "Net Insertions" if "Net Insertions" not in used_labels and net > 0 else None
+                ax.bar(base, net, width=width, color="green", label=label)
+                if label: used_labels.add(label)
+
+                # Red overlay for the deleted portion
+                if dels > 0:
+                    label = "Deleted" if "Deleted" not in used_labels else None
+                    ax.bar(base, dels, width=width, bottom=net, color="#FFB6C1", label=label)
+                    if label: used_labels.add(label)
+
+            else:
+                # Red base bar for net deletions
+                label = "Net Deletions" if "Net Deletions" not in used_labels and net != 0 else None
+                ax.bar(base, -net, width=width, color="red", label=label)
+                if label: used_labels.add(label)
+
+                # Green overlay for the inserted portion
+                if ins > 0:
+                    label = "Inserted" if "Inserted" not in used_labels else None
+                    ax.bar(base, ins, width=width, bottom=-net, color="#98FB98", label=label)
+                    if label: used_labels.add(label)
+        
         ax.set_xlabel("Timestamp")
         ax.set_ylabel("Triple Count")
         ax.set_title(f"Triple Changes Over Time for {repo_name}")
+
         ax.legend()
 
         # Set 5 evenly spaced tick positions and labels

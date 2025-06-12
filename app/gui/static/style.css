@@ -79,8 +79,10 @@
     max-width: 100%;
 }
 
-#timestamped-query-box[disabled] {
-    color: #363636;
-    background-color: #f5f5f5;
-    border-color: #dbdbdb;
+#onto-infos{
+    gap: 1rem;
+}
+
+#tracking-info{
+    gap: 1rem;
 }
