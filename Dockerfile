@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./app/api /code/app/api
 COPY ./app/enums /code/app/enums
 # COPY ./app/gui /code/app/gui # Copy after the development is done
+# COPY ./evaluation /code/evaluation # Copy after the development is done
 COPY ./app/models /code/app/models
 COPY ./app/services /code/app/services
 COPY ./app/utils /code/app/utils
