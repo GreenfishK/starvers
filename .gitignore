@@ -133,6 +133,5 @@ docker/graphdb-data/
 .vscode/**
 
 .DS_Store
-evaluation/
 
 archive/
