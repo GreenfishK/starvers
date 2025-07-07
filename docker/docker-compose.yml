@@ -48,6 +48,15 @@ services:
       - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
     entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg_iterative", "ITERATIVE"]
 
+  evaluate:
+    image: starversserver
+    env_file: "../prod.env"
+    volumes:
+      - ../evaluation:/code/evaluation
+      - /mnt/data/starversserver/evaluation:/data/evaluation
+      - /mnt/data/starversserver/logs:/data/logs
+    entrypoint: ["python", "/code/evaluation/evaluation.py"]
+
 
   db:
     image: postgres
