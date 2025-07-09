@@ -193,13 +193,22 @@ services:
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
 
-
-  start_ostrich:
+  start_ostrich_endpoint:
     build:
-      context: archiving-demo
-      dockerfile: endpoint/Dockerfile
-    image: ostrich_endpoint
-    volumnes:
-      - ${base_host_dir}/databases/ostrich/ostrich-node:/opt/ostrich-node 
-      - ${base_host_dir}/databases/ostrich/comunica-feature-versioning:/opt/comunica-feature-versioning 
-    entrypoint: ["node", "/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js", "-p 42564", "-t 480", "-l debug", "ostrichFile@/var/ostrich"]
+      context: archiving-demo/endpoint
+      dockerfile: Dockerfile
+    image: ostrich-endpoint
+    ports:
+      - 42564:42564
+    volumes:
+      - ${base_host_dir}/rawdata/beart:/var/ostrich
+
+  start_ostrich_webapp:
+    build: ./archiving-demo/webapp/
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./archiving-demo/webapp/http:/var/https
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
