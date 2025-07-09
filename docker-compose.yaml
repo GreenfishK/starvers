@@ -207,6 +207,7 @@ services:
     build: ./archiving-demo/webapp/
     ports:
       - "3000:3000"
+    image: ostrich-webapp
     volumes:
       - ./archiving-demo/webapp/http:/var/https
     extra_hosts:
