@@ -201,8 +201,8 @@ services:
     ports:
       - 42564:42564
     volumes:
-      - ${base_host_dir}/rawdata/beart:/var/ostrich
-
+      - ${base_host_dir}/databases/ostrich:/var/ostrich
+      
   start_ostrich_webapp:
     build: ./archiving-demo/webapp/
     ports:
@@ -213,3 +213,14 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
 
+  query_ostrich:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: final_stage
+    image: starvers_eval
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:   
+      - ./scripts_dev/ostrich.py:/starvers_eval/scripts/ostrich.py # move to image after development has finished
+    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/ostrich.py"]

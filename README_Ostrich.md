@@ -1,45 +1,58 @@
 # Pull ostrich from DockerHub
 `docker pull rdfostrich/ostrich`
 
-# Pull HDT from docker and convert the initial snapshot to hdt
-```
-docker run --rm -v /mnt/data/starvers_eval/rawdata:/data rdfhdt/hdt-cpp rdf2hdt /data/beart/alldata.IC.nt/000001.nt /data/ostrich/000001.hdt
-
-sudo cp /mnt/data/starvers_eval/rawdata/beart/alldata.CB_computed.nt/data-*.nt /mnt/data/starvers_eval/rawdata/ostrich/
-```
-
-# Insert the initial snapshot
-```
-docker run --rm -it --entrypoint /opt/ostrich/build/ostrich-insert -v /mnt/data/starvers_eval/rawdata/ostrich:/data rdfostrich/ostrich 1 + /data/alldata.CB_computed.nt/data-added_1-2.nt 
-```
+# Delete all database files
+sudo rm -rf *_del* && sudo rm -rf *_add* && sudo rm -rf *.hdt && sudo rm -rf *.v1-1 && sudo rm -rf *.dic && sudo rm -rf *.dat && sudo rm -rf *.kch
 
 # Ingest initial snapshot
 ```
 docker run --rm -it \
-  -v /mnt/data/starvers_eval/rawdata/ostrich:/data \
-  --workdir /data \
+  -v /mnt/data/starvers_eval:/data \
+  --workdir /data/databases/ostrich \
   --entrypoint /opt/ostrich/build/ostrich-insert \
   rdfostrich/ostrich \
   0
 ```
 
-# Add patches (initial snapshot or change sets)
+# Ingest the initial snapshot
 ```
 docker run --rm -it \
-  -v /mnt/data/starvers_eval/rawdata/ostrich:/data \
-  --workdir /data \
+  -v /mnt/data/starvers_eval:/data \
+  --workdir /data/databases/ostrich \
   --entrypoint /opt/ostrich/build/ostrich-insert \
   rdfostrich/ostrich \
   1 \
-  + /data/000001.nt
+  + /data/rawdata/beart/alldata.IC.nt/000001.nt
 ```
 
-# Query first snapshot
+# Insert patches (change sets)
 ```
 docker run --rm -it \
-  -v /mnt/data/starvers_eval/rawdata/ostrich:/data \
+  -v /mnt/data/starvers_eval:/data \
+  --workdir /data/databases/ostrich \
+  --entrypoint /opt/ostrich/build/ostrich-insert \
+  rdfostrich/ostrich \
+  2 \
+  + /data/rawdata/beart/alldata.CB_computed.nt/data-added_1-2.nt
+```
+
+```
+docker run --rm -it \
+  -v /mnt/data/starvers_eval:/data \
+  --workdir /data/databases/ostrich \
+  --entrypoint /opt/ostrich/build/ostrich-insert \
+  rdfostrich/ostrich \
+  2 \
+  + /data/rawdata/beart/alldata.CB_computed.nt/data-deleted_1-2.nt
+```
+
+
+# Query initial snapshot
+```
+docker run --rm -it \
+  -v /mnt/data/starvers_eval/databases/ostrich:/data \
   --workdir /data \
   --entrypoint /opt/ostrich/build/ostrich-query-version-materialized \
   rdfostrich/ostrich \
-  1 s p o
+  0 s p o
 ```
