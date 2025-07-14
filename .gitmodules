@@ -1,3 +1,6 @@
 [submodule "archiving-demo"]
 	path = archiving-demo
 	url = https://github.com/dkw-aau/archiving-demo.git
+[submodule "ostrich-admin"]
+	path = ostrich-admin
+	url = https://github.com/rdfostrich/ostrich-admin.git
