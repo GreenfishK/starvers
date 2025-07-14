@@ -1,17 +1,22 @@
 # Pull ostrich from DockerHub
 `docker pull rdfostrich/ostrich`
 
-# Delete all database files
-sudo rm -rf *_del* && sudo rm -rf *_add* && sudo rm -rf *.hdt && sudo rm -rf *.v1-1 && sudo rm -rf *.dic && sudo rm -rf *.dat && sudo rm -rf *.kch
+# Run ostrich endpoint
+From the root project directory of starvers_eval run:
+`docker-compose up -d start_ostrich_endpoint`
 
-# Ingest initial snapshot
+# Debug
 ```
 docker run --rm -it \
-  -v /mnt/data/starvers_eval:/data \
-  --workdir /data/databases/ostrich \
-  --entrypoint /opt/ostrich/build/ostrich-insert \
-  rdfostrich/ostrich \
-  0
+  --entrypoint /bin/bash \
+  rdfostrich/ostrich
+```
+
+# Test
+```
+docker run --rm -it \
+  --entrypoint /opt/ostrich/build/ostrich_test \
+  rdfostrich/ostrich
 ```
 
 # Ingest the initial snapshot
@@ -21,38 +26,44 @@ docker run --rm -it \
   --workdir /data/databases/ostrich \
   --entrypoint /opt/ostrich/build/ostrich-insert \
   rdfostrich/ostrich \
+  -v \
+  0 \
+  + /data/rawdata/beart_ostrich/alldata.IC.nt/000001.nt
+```
+
+# Insert patch (positive change set)
+```
+docker run --rm -it \
+  -v /mnt/data/starvers_eval:/data \
+  --workdir /data/databases/ostrich \
+  --entrypoint /opt/ostrich/build/ostrich-insert \
+  rdfostrich/ostrich \
+  -v \
   1 \
-  + /data/rawdata/beart/alldata.IC.nt/000001.nt
+  + /data/rawdata/beart_ostrich/alldata.CB_computed.nt/data-added_1-2.nt
 ```
 
-# Insert patches (change sets)
+# Insert patch (negative change set)
 ```
 docker run --rm -it \
   -v /mnt/data/starvers_eval:/data \
   --workdir /data/databases/ostrich \
   --entrypoint /opt/ostrich/build/ostrich-insert \
   rdfostrich/ostrich \
-  2 \
-  + /data/rawdata/beart/alldata.CB_computed.nt/data-added_1-2.nt
+  -v \
+  1 \
+  - /data/rawdata/beart_ostrich/alldata.CB_computed.nt/data-deleted_1-2.nt
 ```
+Adding a negative change set to version 1 gets stuck and never finishes.
 
+# Query Ostrich Store
 ```
 docker run --rm -it \
   -v /mnt/data/starvers_eval:/data \
   --workdir /data/databases/ostrich \
-  --entrypoint /opt/ostrich/build/ostrich-insert \
-  rdfostrich/ostrich \
-  2 \
-  + /data/rawdata/beart/alldata.CB_computed.nt/data-deleted_1-2.nt
-```
-
-
-# Query initial snapshot
-```
-docker run --rm -it \
-  -v /mnt/data/starvers_eval/databases/ostrich:/data \
-  --workdir /data \
   --entrypoint /opt/ostrich/build/ostrich-query-version-materialized \
   rdfostrich/ostrich \
-  0 s p o
+  -v \
+  0 \
+  s p o
 ```
