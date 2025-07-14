@@ -193,34 +193,45 @@ services:
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
 
-  start_ostrich_endpoint:
+  start_ostrich:
     build:
-      context: archiving-demo/endpoint
-      dockerfile: Dockerfile
-    image: ostrich-endpoint
-    ports:
-      - 42564:42564
-    volumes:
-      - ${base_host_dir}/databases/ostrich:/var/ostrich
-      
-  start_ostrich_webapp:
-    build: ./archiving-demo/webapp/
-    ports:
-      - "3000:3000"
-    image: ostrich-webapp
-    volumes:
-      - ./archiving-demo/webapp/http:/var/https
-    extra_hosts:
-      - host.docker.internal:host-gateway
-
-  query_ostrich:
-    build: 
       context: .
-      dockerfile: Dockerfile
-      target: final_stage
-    image: starvers_eval
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    volumes:   
-      - ./scripts_dev/ostrich.py:/starvers_eval/scripts/ostrich.py # move to image after development has finished
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/ostrich.py"]
+      dockerfile: Dockerfile.ostrich
+    image: ostrich-admin
+    volumes:
+      - ${base_host_dir}/databases/ostrich2:/opt/ostrich
+    entrypoint: ["/bin/bash"]
+
+#  start_ostrich_endpoint:
+#    build:
+#      context: archiving-demo/endpoint
+#      dockerfile: Dockerfile
+#    image: ostrich-endpoint
+#    ports:
+#      - 42564:42564
+#    volumes:
+#      - ${base_host_dir}/databases/ostrich:/var/ostrich
+      
+#  start_ostrich_webapp:
+#    build: ./archiving-demo/webapp/
+#    ports:
+#      - "3000:3000"
+#    image: ostrich-webapp
+#    volumes:
+#      - ./archiving-demo/webapp/http:/var/https
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
+
+#  query_ostrich:
+#    build: 
+#      context: .
+#      dockerfile: Dockerfile
+#      target: final_stage
+#    image: starvers_eval
+#    extra_hosts:
+#      - host.docker.internal:host-gateway
+#    volumes:   
+#      - ./scripts_dev/ostrich.py:/starvers_eval/scripts/ostrich.py # move to image after development has finished
+#    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/ostrich.py"]
+
+
