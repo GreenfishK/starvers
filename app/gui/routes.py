@@ -31,7 +31,7 @@ def index():
 
     # Get repo stats
     logging.info(f"Getting repository stats for {repo}")
-    start_ts, end_ts, delta_plot, total_plot = controller.get_repo_stats()
+    start_ts, end_ts, total_plot = controller.get_repo_stats()
 
     # Get tracking infos
     logging.info(f"Getting tracking infos for {repo}")
@@ -43,7 +43,6 @@ def index():
         error=None,
         selected_repo=selected_label,
         repo_options=repo_map,
-        delta_plot=delta_plot,
         total_plot=total_plot,
         ts_start=start_ts,
         ts_end=end_ts,
@@ -66,12 +65,11 @@ def get_repo_infos(repo_label):
 
     try:
         controller = GuiContr(repo_name=repo_name)
-        start, end, delta_plot, total_plot = controller.get_repo_stats()
+        start, end, total_plot = controller.get_repo_stats()
         rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
 
         return jsonify({
-            "delta_plot_html": delta_plot,
-            "total_plot_html": total_plot,
+            "total_plot": total_plot,
             "rdf_dataset_url": rdf_dataset_url,
             "polling_interval": polling_interval
         })

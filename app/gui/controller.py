@@ -3,12 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging
 from io import BytesIO
-import base64
-import os
 import numpy as np
+
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
-from app.AppConfig import Settings
 from app.services.ManagementService import get_dataset_metadata_by_repo_name
 from app.Database import get_session
 
@@ -37,6 +35,7 @@ class GuiContr:
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         df.columns = df.columns.str.strip()
+        logging.info(f"Loaded {len(df)} rows from {path}")
 
         session = next(get_session())
         tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
@@ -45,26 +44,30 @@ class GuiContr:
 
         # Remove lines where no adds and delets occured
         df = df[~((df["insertions"] == 0) & (df["deletions"] == 0))]
+        logging.info(f"Rows after removing lines: {len(df)}")
 
         # Include only rows where the timestamp is not newer than the 28.05.2025
         cutoff_date = datetime.strptime("20250528", "%Y%m%d")
         def parse_ts_for_filter(ts):
             return datetime.strptime(ts[:8], "%Y%m%d")
         df = df[df.iloc[:, 0].apply(lambda ts: parse_ts_for_filter(ts) <= cutoff_date)]
+        logging.info(f"Rows after cutting off date: {df}")
 
         # Skip header row
-        timestamps = df.iloc[1:, 0] 
+        timestamps = df["timestamp"]
+        logging.info(f"Timestamps: {timestamps}")
 
         # Parse to datetime objects
-        datetime_series = timestamps.apply(lambda ts: datetime.strptime(ts[:15], "%Y%m%d-%H%M%S"))
+        datetime_series = pd.to_datetime(timestamps.str[:15], format="%Y%m%d-%H%M%S", errors="coerce")
+        logging.info(f"Parsed timestamps: {datetime_series}")
         start, end = datetime_series.min().strftime("%d.%m.%Y %H:%M:%S"), datetime_series.max().strftime("%d.%m.%Y %H:%M:%S")
 
         # === Plot inserts and deletes (bar plot) ===
         fig, ax = plt.subplots()
 
         # Data
-        added = df.iloc[1:, 1].astype(int).values
-        deleted = df.iloc[1:, 2].astype(int).values
+        added = df["insertions"].astype(int).values
+        deleted = df["deletions"].astype(int).values
         added_net = added - deleted  # Positive = net insertion, Negative = net deletion
 
         x = np.arange(len(datetime_series))
@@ -128,7 +131,7 @@ class GuiContr:
         # === Plot total triples over time (line plot) ===
         fig, ax = plt.subplots()
         
-        total_triples = df.iloc[1:, 7].astype(int).values
+        total_triples = df["cnt_triples"].astype(int).values
         ax.plot(x, total_triples, label="Total Triples", color="blue")  # Use numeric x
 
         ax.set_xlabel("Timestamp")
@@ -149,7 +152,7 @@ class GuiContr:
         buffer.seek(0)
         total_plot = buffer.getvalue().decode('utf-8')
 
-        return start, end, delta_plot, total_plot
+        return start, end, total_plot
 
 
     def get_repo_tracking_infos(self):
