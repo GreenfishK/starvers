@@ -39,10 +39,7 @@
             </div>
 
             <div id="plot-container" class="is-flex is-flex-wrap-wrap">
-                {% if delta_plot or total_plot %}
-                    <div id="delta-plot" class="plot-box">
-                        {{ delta_plot | safe }}
-                    </div>
+                {% if total_plot %}
                     <div id="total-plot" class="plot-box">
                         {{ total_plot | safe }}
                     </div>

@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const sparqlForm = document.getElementById("sparql-form");
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
-    let timerInterval;
 
     console.log("Initializing SPARQL editor.");
     const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
@@ -35,24 +34,25 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
         const downloadButton = document.getElementById("download-btn");
-        console.log("Dropdown changed to repo:", selectedRepo, "fetching new data.");
+        console.log("Dropdown changed to repo:", selectedRepo);
 
         // Remove download button if it exists
         if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
 
+        console.log("Fetching plot and tracking info for repo:", selectedRepo);
         fetch(`/infos/${selectedRepo}`)
             .then(response => {
                 if (!response.ok) throw new Error("Failed to load data");
                 return response.json();
             })
             .then(data => {
+                console.log("Data received for repo:", selectedRepo);
                 if (data.error) {
                     plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
                     trackingInfo.innerHTML = "";
                 } else {
                     plotContainer.innerHTML = `
-                        <div id="delta-plot" class="plot-box">${data.delta_plot_html}</div>
-                        <div id="total-plot" class="plot-box">${data.total_plot_html}</div>
+                        <div id="total-plot" class="plot-box">${data.total_plot}</div>
                     `;
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
@@ -66,11 +66,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
             });
     
-        // Optional: clear previous query results on repo change
+        // Clear previous query results on repo change
         document.getElementById("result-table").innerHTML = "";
     });
 
     console.log("Initializing listener for the SPARQL form submission.")
+    let timerInterval;
     sparqlForm.addEventListener("submit", function (e) {
         console.log("Form submitted.");
         e.preventDefault(); 
