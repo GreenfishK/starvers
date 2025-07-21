@@ -19,7 +19,7 @@ services:
     entrypoint: ["fastapi", "run", "app/main.py", "--port", "80"]
   
   gui:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver_gui # should be changed to ghcr.io/martinmitteregger/starversserver:main
     ports:
       - 5000:5000
     volumes:
