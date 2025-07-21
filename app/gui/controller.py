@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 import pandas as pd
-import matplotlib.pyplot as plt
 import logging
-from io import BytesIO
-import numpy as np
+from plotly.io import to_html
+import plotly.graph_objects as go
 
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
@@ -30,127 +29,155 @@ class GuiContr:
         return result_set_df, timestamped_query
 
 
-    def get_repo_stats(self):    
-        repo_name = self.repo_name 
+    def get_repo_stats(self):
+        repo_name = self.repo_name
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         df.columns = df.columns.str.strip()
-        logging.info(f"Loaded {len(df)} rows from {path}")
 
         session = next(get_session())
         tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
-        polling_interval = tracking_infos[2]
+        polling_interval = int(tracking_infos[2])
         session.close()
 
-        # Remove lines where no adds and delets occured
-        df = df[~((df["insertions"] == 0) & (df["deletions"] == 0))]
-        logging.info(f"Rows after removing lines: {len(df)}")
+        # Parse timestamp
+        df = df.rename(columns={df.columns[0]: "timestamp"})
+        df["timestamp"] = df["timestamp"].apply(lambda ts: datetime.strptime(ts[:15], "%Y%m%d-%H%M%S"))
 
-        # Include only rows where the timestamp is not newer than the 28.05.2025
-        cutoff_date = datetime.strptime("20250528", "%Y%m%d")
-        def parse_ts_for_filter(ts):
-            return datetime.strptime(ts[:8], "%Y%m%d")
-        df = df[df.iloc[:, 0].apply(lambda ts: parse_ts_for_filter(ts) <= cutoff_date)]
-        logging.info(f"Rows after cutting off date: {df}")
+        # Aggregate by polling interval
+        df = df.set_index("timestamp")
+        interval = f"{polling_interval}s"
+        agg = df.resample(interval).agg({
+            "insertions": "sum",
+            "deletions": "sum",
+            "cnt_triples": "last"
+        })
 
-        # Skip header row
-        timestamps = df["timestamp"]
-        logging.info(f"Timestamps: {timestamps}")
+        # Fill missing values
+        agg["insertions"] = agg["insertions"].fillna(0).astype(int)
+        agg["deletions"] = agg["deletions"].fillna(0).astype(int)
+        agg["cnt_triples"] = agg["cnt_triples"].fillna(method="ffill").astype(int)
 
-        # Parse to datetime objects
-        datetime_series = pd.to_datetime(timestamps.str[:15], format="%Y%m%d-%H%M%S", errors="coerce")
-        logging.info(f"Parsed timestamps: {datetime_series}")
-        start, end = datetime_series.min().strftime("%d.%m.%Y %H:%M:%S"), datetime_series.max().strftime("%d.%m.%Y %H:%M:%S")
+        agg = agg.reset_index()
 
-        # === Plot inserts and deletes (bar plot) ===
-        fig, ax = plt.subplots()
+        timestamps = agg["timestamp"].dt.strftime("%d.%m.%Y\n%H:%M:%S")
+        total = agg["cnt_triples"].astype(int)
+        insertions = agg["insertions"].astype(int)
+        deletions = agg["deletions"].astype(int)
 
-        # Data
-        added = df["insertions"].astype(int).values
-        deleted = df["deletions"].astype(int).values
-        added_net = added - deleted  # Positive = net insertion, Negative = net deletion
+        # Prepare arrays for traces
+        ins_y = []
+        ins_base = []
+        del_y = []
+        del_base = []
+        widths_ins = []
+        widths_del = []
+        hovertemplates_ins = []
+        hovertemplates_del = []
 
-        x = np.arange(len(datetime_series))
-        width = 0.6
+        for i in range(len(agg)):
+            base_y = total.iloc[i - 1] if i > 0 else 0
+            ins = insertions.iloc[i]
+            dels = deletions.iloc[i]
+            net = ins - dels
 
-        used_labels = set()
+            if net > 0:
+                ins_y.append(net)
+                ins_base.append(base_y)
+                widths_ins.append(0.4)
+                widths_del.append(0.1)
+                hovertemplates_ins.append(f"{ins} insertions (net)")
 
-        for i in range(len(x)):
-            net = added_net[i]
-            ins = added[i]
-            dels = deleted[i]
-            base = x[i]
-
-            if net >= 0:
-                # Green base bar for net insertions
-                label = "Net Insertions" if "Net Insertions" not in used_labels and net > 0 else None
-                ax.bar(base, net, width=width, color="green", label=label)
-                if label: used_labels.add(label)
-
-                # Red overlay for the deleted portion
                 if dels > 0:
-                    label = "Deleted" if "Deleted" not in used_labels else None
-                    ax.bar(base, dels, width=width, bottom=net, color="#FFB6C1", label=label)
-                    if label: used_labels.add(label)
-
+                    del_y.append(dels)
+                    del_base.append(base_y + net)
+                    hovertemplates_del.append(f"{dels} deletions")
+                else:
+                    del_y.append(0)
+                    del_base.append(0)
+                    hovertemplates_del.append("No deletions")
+                logging.info(f"Insertions: {ins}, Deletions: {dels}, Net: {net} (insertions dominate)")
             else:
-                # Red base bar for net deletions
-                label = "Net Deletions" if "Net Deletions" not in used_labels and net != 0 else None
-                ax.bar(base, -net, width=width, color="red", label=label)
-                if label: used_labels.add(label)
+                del_y.append(net)
+                del_base.append(base_y)
+                widths_ins.append(0.1)
+                widths_del.append(0.4)
+                hovertemplates_del.append(f"{-net} deletions (net)")
 
-                # Green overlay for the inserted portion
                 if ins > 0:
-                    label = "Inserted" if "Inserted" not in used_labels else None
-                    ax.bar(base, ins, width=width, bottom=-net, color="#98FB98", label=label)
-                    if label: used_labels.add(label)
-        
-        ax.set_xlabel("Timestamp")
-        ax.set_ylabel("Triple Count")
-        ax.set_title(f"Triple Changes Over Time for {repo_name}")
+                    ins_y.append(ins)
+                    ins_base.append(base_y - dels)
+                    hovertemplates_ins.append(f"{ins} insertions")
+                else:
+                    ins_y.append(0)
+                    ins_base.append(0)
+                    hovertemplates_ins.append("No insertions")
 
-        ax.legend()
+        fig = go.Figure()
 
-        # Set 5 evenly spaced tick positions and labels
-        n = len(datetime_series)
-        tick_indices = [0, n // 4, n // 2, 3 * n // 4, n - 1]
-        tick_labels = [datetime_series.iloc[i].strftime("%d.%m.%Y\n%H:%M:%S") for i in tick_indices]
+        fig.add_trace(go.Bar(
+            x=timestamps,
+            y=ins_y,
+            base=ins_base,
+            marker_color="green",
+            name="Insertions",
+            width=widths_ins,
+            hovertemplate=hovertemplates_ins
+        ))
 
-        ax.set_xticks(tick_indices)
-        ax.set_xticklabels(tick_labels, rotation=45, size=8)
+        fig.add_trace(go.Bar(
+            x=timestamps,
+            y=del_y,
+            base=del_base,
+            marker_color="red",
+            name="Deletions",
+            width=widths_del,
+            hovertemplate=hovertemplates_del
+        ))
 
-        ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
-        fig.tight_layout()
+        fig.add_trace(go.Scatter(
+            x=timestamps,
+            y=[0] + total.tolist(),
+            mode="none",
+            name='Total Triples',
+            showlegend=False  # show the legend if you want
+        ))
 
-        buffer = BytesIO()
-        plt.savefig(buffer, format="svg", bbox_inches='tight')
-        plt.close(fig)
-        buffer.seek(0)
-        delta_plot = buffer.getvalue().decode('utf-8')
+        fig.update_layout(
+            xaxis_title="Time",
+            yaxis_title="Triple Count",
+            dragmode="pan",
+            height=500,
+            barmode='overlay',
+            plot_bgcolor='white',   # <- background behind plot area
+            paper_bgcolor='white',  # <- full chart background
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',  # Optional: grid line color
+                gridwidth=1,
+                rangeslider=dict(visible=False),
+                fixedrange=False
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                gridwidth=1,
+                autorange=True,
+                fixedrange=True,  # prevent manual manual y panning, but allow zoom
+                tickformat=","
+            )
+        )
 
-        # === Plot total triples over time (line plot) ===
-        fig, ax = plt.subplots()
-        
-        total_triples = df["cnt_triples"].astype(int).values
-        ax.plot(x, total_triples, label="Total Triples", color="blue")  # Use numeric x
+        total_plot = to_html(
+            fig,
+            config={"scrollZoom": True, "responsive": True, "displayModeBar": False},
+            full_html=False,
+            include_plotlyjs=False,
+            div_id="total-plot-graph"
+        )
 
-        ax.set_xlabel("Timestamp")
-        ax.set_ylabel("Total Triples")
-        ax.set_title(f"Total Triples Over Time for {repo_name}")
-        ax.legend()
-
-        # Use same x-ticks and labels as the bar plot
-        ax.set_xticks(tick_indices)
-        ax.set_xticklabels(tick_labels, rotation=45, size=8)
-
-        ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda x, _: f"{int(x):,}"))
-        fig.tight_layout()
-
-        buffer = BytesIO()
-        plt.savefig(buffer, format="svg", bbox_inches='tight')
-        plt.close(fig)
-        buffer.seek(0)
-        total_plot = buffer.getvalue().decode('utf-8')
+        start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")
+        end = agg["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S")
 
         return start, end, total_plot
 

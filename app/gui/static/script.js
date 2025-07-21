@@ -11,6 +11,102 @@ document.addEventListener("DOMContentLoaded", function () {
     const sparqlForm = document.getElementById("sparql-form");
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
+    const plotDiv = document.getElementById("total-plot-graph");
+    console.log(Plotly.version);
+
+
+    if (plotDiv) {
+        let relayoutTimeout = null;
+        let lastYRange = null;
+
+        plotDiv.on("plotly_relayout", (eventdata) => {
+            console.log("Plotly relayout event triggered:", eventdata);
+
+            console.log("All trace names in plot:");
+            plotDiv.data.forEach((trace, i) => {
+                console.log(`Trace ${i}: name='${trace.name}', has x: ${Array.isArray(trace.x)}, has y: ${Array.isArray(trace.y)}`);
+            });
+
+            if (!("xaxis.range[0]" in eventdata) || !("xaxis.range[1]" in eventdata)) {
+                console.log("Skipped: No xaxis range in eventdata.");
+                return;
+            }
+
+            const xVals = plotDiv.data[0].x;
+            const xStart = eventdata['xaxis.range[0]'];
+            const xEnd = eventdata['xaxis.range[1]'];
+
+            console.log("xaxis.range[0]:", Math.floor(xStart));
+            console.log("xaxis.range[1]:", Math.ceil(xEnd));
+            console.log("trace[0].x.length:", plotDiv.data[0].x.length);
+            console.log("trace[1].x.length:", plotDiv.data[1] ? plotDiv.data[1].x.length : "N/A");
+
+            const startIndex = Math.max(0, Math.floor(xStart));
+            const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
+
+            console.log("startIndex:", startIndex, "endIndex:", endIndex);
+
+            if (startIndex > endIndex) {
+                console.log("No visible data in range.");
+                return;
+            }
+
+            // Find the "Total Triples" trace
+            const traceTotal = plotDiv.data.find(t => t.name === "Total Triples");
+            if (!traceTotal) {
+                console.warn("Total Triples trace not found, skipping relayout.");
+                return;
+            }
+
+            // Extract y data as plain array, handling typed arrays
+            let yData = traceTotal.y;
+            if (!Array.isArray(yData)) {
+                if (yData && '_inputArray' in yData) {
+                    yData = Array.from(yData._inputArray);
+                } else {
+                    console.warn("Total Triples y data unavailable or invalid, skipping relayout.");
+                    return;
+                }
+            }
+
+            const visibleTotals = yData.slice(startIndex, endIndex + 1);
+            if (visibleTotals.length === 0) {
+                console.log("No visible y-values in Total Triples trace, skipping relayout.");
+                return;
+            }
+
+            const yMin = Math.min(...visibleTotals);
+            const yMax = Math.max(...visibleTotals);
+            const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
+
+            const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
+
+            console.log("Visible Y range:", yMin, yMax);
+            console.log("Setting yaxis.range:", yRange[0], yRange[1]);
+
+            if (
+                lastYRange &&
+                Math.abs(lastYRange[0] - yRange[0]) < 1e-3 &&
+                Math.abs(lastYRange[1] - yRange[1]) < 1e-3
+            ) {
+                console.log("y-axis range unchanged, skipping relayout.");
+                return;
+            }
+            lastYRange = yRange;
+
+            if (relayoutTimeout) clearTimeout(relayoutTimeout);
+            relayoutTimeout = setTimeout(() => {
+                Plotly.relayout(plotDiv, {
+                    "yaxis.autorange": false,
+                    "yaxis.range": yRange,
+                }).catch((err) => {
+                    console.warn("Plotly relayout error:", err);
+                });
+            }, 100); // debounce 100ms
+        });
+    }
+
+
 
     console.log("Initializing SPARQL editor.");
     const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
@@ -68,6 +164,9 @@ document.addEventListener("DOMContentLoaded", function () {
     
         // Clear previous query results on repo change
         document.getElementById("result-table").innerHTML = "";
+
+        // Clear the timestamped editor
+        timestampedEditor.setValue("");
     });
 
     console.log("Initializing listener for the SPARQL form submission.")
@@ -130,3 +229,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
+
