@@ -130,9 +130,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let timerInterval;
 
+    console.log("Document loaded.");
+
+    console.log("Initializing SPARQL editor.");
+    const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
+        mode: 'sparql',
+        lineNumbers: true
+    });
+    editor.setSize(null, "420px");
+
+    console.log("Initializing SPARQL-star view.")
+    const timestampedEditor = CodeMirror(document.getElementById("timestamped-editor"), {
+        value: "",
+        mode: "sparql",
+        lineNumbers: true,
+        theme: "default",
+        readOnly: false  
+    });
+    timestampedEditor.setSize(null, "420px");
+    timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
+
+    console.log("Initializing listener for the repository dropdown menu.")
     dropdown.addEventListener("change", function () {
         const selectedRepo = dropdown.value;
         const downloadButton = document.getElementById("download-btn");
+        console.log("Dropdown changed to repo:", selectedRepo, "fetching new data.");
 
         // Remove download button if it exists
         if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
@@ -167,7 +189,9 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("result-table").innerHTML = "";
     });
 
+    console.log("Initializing listener for the SPARQL form submission.")
     sparqlForm.addEventListener("submit", function (e) {
+        console.log("Form submitted, executing query.");
         e.preventDefault(); 
         
         const downloadButton = document.getElementById("download-btn");
@@ -200,9 +224,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
             } else {
                 resultTable.innerHTML = data.html;
-
                 timestampedEditor.setValue(data.timestamped_query || "");
-
+                console.log("Result successfully retrieved.");
 
                 // Check if the download button already exists
                 if (!downloadButton) {
@@ -223,26 +246,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 });
-</script>
-
-<script>
-    const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
-        mode: 'sparql',
-        lineNumbers: true
-    });
-    editor.setSize(null, "420px");
-
-    const timestampedEditor = CodeMirror(document.getElementById("timestamped-editor"), {
-        value: "",
-        mode: "sparql",
-        lineNumbers: true,
-        theme: "default",
-        readOnly: false  
-    });
-    timestampedEditor.setSize(null, "420px");
-    timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
-
-
 </script>
 
 </body>
