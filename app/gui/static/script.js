@@ -12,8 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
     const plotDiv = document.getElementById("total-plot-graph");
-    console.log(Plotly.version);
-
+    
 
     if (plotDiv) {
         let relayoutTimeout = null;
@@ -106,8 +105,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-
     console.log("Initializing SPARQL editor.");
     const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
         mode: 'sparql',
@@ -147,9 +144,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
                     trackingInfo.innerHTML = "";
                 } else {
-                    plotContainer.innerHTML = `
-                        <div id="total-plot" class="plot-box">${data.total_plot}</div>
-                    `;
+                    const plotObj = JSON.parse(data.plot);
+                    Plotly.react("total-plot-graph", plotObj.data, plotObj.layout);
+
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
                         <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
