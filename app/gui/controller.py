@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import logging
-from plotly.io import to_html
 import plotly.graph_objects as go
 
 # starvers and starversServer imports
@@ -96,7 +95,6 @@ class GuiContr:
                     del_y.append(0)
                     del_base.append(0)
                     hovertemplates_del.append("No deletions")
-                logging.info(f"Insertions: {ins}, Deletions: {dels}, Net: {net} (insertions dominate)")
             else:
                 del_y.append(net)
                 del_base.append(base_y)
@@ -168,18 +166,10 @@ class GuiContr:
             )
         )
 
-        total_plot = to_html(
-            fig,
-            config={"scrollZoom": True, "responsive": True, "displayModeBar": False},
-            full_html=False,
-            include_plotlyjs=False,
-            div_id="total-plot-graph"
-        )
-
         start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")
         end = agg["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S")
 
-        return start, end, total_plot
+        return start, end, fig.data, fig.layout
 
 
     def get_repo_tracking_infos(self):

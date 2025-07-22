@@ -1,0 +1,28 @@
+Task 2:
+Distinguish between days were the service was not running and days when there were no inserts. Use colors or symbols to display this in the plot.
+
+Task 3:
+Add information about the inserts and deletes (metrics) in a side view or different tab:
+* number of distinct classes
+* number of added instances per class in the delta set
+* number of instances with no class
+* number of distinct dobject properties
+* number of distinct data properties
+* change ratio between two versions (BEAR)
+    * $\delta_{i,j} = \frac{|\Delta⁺_{i,j} \cup \Delta⁻_{i,j}|}{|IC_i \cup IC_j|}$
+    * $\delta⁺_{i,j} = \frac{|\Delta⁺_{i,j}|}{|IC_i|}$
+    * $\delta⁻_{i,j} = \frac{|\Delta⁻_{i,j}|}{|IC_i|}$
+    * positive and negative change ratios can be part of the tooltip/hovertemplate on individual bars on the insert/delete trace
+* data growth  (BEAR)
+    * $growth = \frac{|IC_j|}{|IC_i|}$
+    * can be part of the tooltip/hovertemplate on individual points on the total triples trace
+* static core (BEAR)
+    * $C_A$ : take the first version and applying all the subsequent deletions.
+* total version-oblivious triples  (BEAR)
+    * $O_A$: number of different triples regardless of the timestamp
+
+Task 4: Add a line for the total number of triples in the plot.
+
+Task 5: Add an info when the text polling will take place.
+
+Task 6: add thousan separators in the tooltips.

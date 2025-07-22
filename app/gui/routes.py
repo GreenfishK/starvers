@@ -6,6 +6,9 @@ import html
 import logging
 from io import BytesIO
 from app.gui.controller import GuiContr
+import plotly.graph_objects as go
+from plotly.io import to_html, to_json
+
 
 routes = Blueprint('routes', __name__)
 last_result_df = pd.DataFrame()
@@ -31,7 +34,18 @@ def index():
 
     # Get repo stats
     logging.info(f"Getting repository stats for {repo}")
-    start_ts, end_ts, total_plot = controller.get_repo_stats()
+    start_ts, end_ts, fig_data, fig_layout = controller.get_repo_stats()
+
+    total_plot = to_html(
+        go.Figure(
+            data=fig_data,
+            layout=fig_layout
+        ),
+        config={"scrollZoom": True, "responsive": True, "displayModeBar": False},
+        full_html=False,
+        include_plotlyjs=False,
+        div_id="total-plot-graph"
+    )
 
     # Get tracking infos
     logging.info(f"Getting tracking infos for {repo}")
@@ -65,11 +79,14 @@ def get_repo_infos(repo_label):
 
     try:
         controller = GuiContr(repo_name=repo_name)
-        start, end, total_plot = controller.get_repo_stats()
+        start, end, fig_data, fig_layout = controller.get_repo_stats()
         rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
 
+        # Convert data + layout to JSON-serializable format
+        plot = go.Figure(data=fig_data, layout=fig_layout)
+
         return jsonify({
-            "total_plot": total_plot,
+            "plot": to_json(plot),
             "rdf_dataset_url": rdf_dataset_url,
             "polling_interval": polling_interval
         })
