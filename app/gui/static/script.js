@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const sparqlForm = document.getElementById("sparql-form");
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
-    const plotDiv = document.getElementById("total-plot-graph");
+    const plotDiv = document.getElementById("evo-plot");
     
 
     if (plotDiv) {
@@ -144,8 +144,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
                     trackingInfo.innerHTML = "";
                 } else {
-                    const plotObj = JSON.parse(data.plot);
-                    Plotly.react("total-plot-graph", plotObj.data, plotObj.layout);
+                    const evoPlotObj = JSON.parse(data.evo_plot);
+                    Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
 
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>

@@ -20,8 +20,9 @@ def create_repository(repository_name: str): # add URL and description?
     repoConfig = repoConfig.replace('{:name}', repository_name)
     repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + repository_name)
 
-    get_logger(__name__).info(f"Create graphdb repository with name {repository_name}")
+    get_logger(__name__).info(f"Create graphdb repository with name {repository_name}, if it does not exist.")
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories", files=dict(config=repoConfig))
+    
     if (response.status_code != 201):
         if (response.text.find('already exists.') > -1):
             get_logger(__name__).warning(f'[{response.status_code}] {response.text}')
