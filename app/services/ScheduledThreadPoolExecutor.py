@@ -30,8 +30,9 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
     def _put(self, task: PollingTask, delay: int) -> bool:
         if delay < 0:
             raise ValueError(f"Delay `{delay}` must be a non-negative number")
-        LOG.info(f"Enqueuing {task} with delay of {delay}")
-        return self.queue.put(task, delay)
+        is_scheduled = self.queue.put(task, delay)
+        LOG.info(f"Scheduled {task} with delay of {delay}")
+        return is_scheduled
     
 
     def __run(self):
