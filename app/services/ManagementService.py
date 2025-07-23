@@ -77,7 +77,5 @@ def restart(session: Session):
         pass
 
 def __start(dataset: Dataset, initial_run=True):
-    #create repository for
     create_repository(dataset.repository_name)
-
     polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)

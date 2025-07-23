@@ -110,7 +110,7 @@ class StarVersService(VersioningService):
     
 
     def run_versioning(self, version_timestamp) -> DeltaEvent:
-        self.LOG.info(f"Start versioning task [{version_timestamp}]")
+        self.LOG.info(f"Version timestmap: {version_timestamp}")
         try:
             timing_overall = time.time_ns()
 

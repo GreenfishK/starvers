@@ -85,12 +85,12 @@ class GuiContr:
                 ins_base.append(base_y)
                 widths_ins.append(0.4)
                 widths_del.append(0.1)
-                hovertemplates_ins.append(f"{ins} insertions (net)")
+                hovertemplates_ins.append(f"{ins:,} insertions (net)")
 
                 if dels > 0:
                     del_y.append(dels)
                     del_base.append(base_y + net)
-                    hovertemplates_del.append(f"{dels} deletions")
+                    hovertemplates_del.append(f"{dels:,} deletions")
                 else:
                     del_y.append(0)
                     del_base.append(0)
@@ -100,12 +100,12 @@ class GuiContr:
                 del_base.append(base_y)
                 widths_ins.append(0.1)
                 widths_del.append(0.4)
-                hovertemplates_del.append(f"{-net} deletions (net)")
+                hovertemplates_del.append(f"{-net:,} deletions (net)")
 
                 if ins > 0:
                     ins_y.append(ins)
                     ins_base.append(base_y - dels)
-                    hovertemplates_ins.append(f"{ins} insertions")
+                    hovertemplates_ins.append(f"{ins:,} insertions")
                 else:
                     ins_y.append(0)
                     ins_base.append(0)
@@ -136,9 +136,9 @@ class GuiContr:
         fig.add_trace(go.Scatter(
             x=timestamps,
             y=[0] + total.tolist(),
-            mode="none",
+            mode="lines+markers",
             name='Total Triples',
-            showlegend=False  # show the legend if you want
+            line=dict(color="blue", width=1),  # thin blue line
         ))
 
         fig.update_layout(
@@ -175,12 +175,37 @@ class GuiContr:
     def get_repo_tracking_infos(self):
         repo_name = self.repo_name
 
+        
         session = next(get_session())
         tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
         logging.info(tracking_infos)
         rdf_dataset_url = tracking_infos[1]
-        polling_interval = tracking_infos[2]
+        formatted_polling_interval = _format_polling_interval(tracking_infos[2])
         session.close()
 
-        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {polling_interval}")
-        return rdf_dataset_url, polling_interval
+        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {formatted_polling_interval}")
+        return rdf_dataset_url, formatted_polling_interval
+    
+
+def _format_polling_interval(seconds: int) -> str:
+    seconds = int(seconds)
+    if seconds < 60:
+        return f"{seconds} seconds"
+    elif seconds < 3600:
+        minutes = seconds // 60
+        sec = seconds % 60
+        return f"{minutes} minutes {sec} seconds"
+    elif seconds < 86400:
+        hours = seconds // 3600
+        remainder = seconds % 3600
+        minutes = remainder // 60
+        sec = remainder % 60
+        return f"{hours:02d}:{minutes:02d}:{sec:02d}"
+    else:
+        days = seconds // 86400
+        remainder = seconds % 86400
+        hours = remainder // 3600
+        remainder %= 3600
+        minutes = remainder // 60
+        sec = remainder % 60
+        return f"{days} days, {hours:02d}:{minutes:02d}:{sec:02d}"

@@ -38,10 +38,10 @@
                 </div>
             </div>
 
-            <div id="plot-container" class="is-flex is-flex-wrap-wrap">
-                {% if total_plot %}
-                    <div id="total-plot" class="plot-box">
-                        {{ total_plot | safe }}
+            <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                {% if evo_plot %}
+                    <div class="plot-box">
+                        {{ evo_plot | safe }}
                     </div>
                 {% endif %}
             </div>

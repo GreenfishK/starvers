@@ -21,8 +21,4 @@ Add information about the inserts and deletes (metrics) in a side view or differ
 * total version-oblivious triples  (BEAR)
     * $O_A$: number of different triples regardless of the timestamp
 
-Task 4: Add a line for the total number of triples in the plot.
-
 Task 5: Add an info when the text polling will take place.
-
-Task 6: add thousan separators in the tooltips.

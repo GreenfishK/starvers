@@ -36,7 +36,7 @@ def index():
     logging.info(f"Getting repository stats for {repo}")
     start_ts, end_ts, fig_data, fig_layout = controller.get_repo_stats()
 
-    total_plot = to_html(
+    evo_plot = to_html(
         go.Figure(
             data=fig_data,
             layout=fig_layout
@@ -44,7 +44,7 @@ def index():
         config={"scrollZoom": True, "responsive": True, "displayModeBar": False},
         full_html=False,
         include_plotlyjs=False,
-        div_id="total-plot-graph"
+        div_id="evo-plot"
     )
 
     # Get tracking infos
@@ -57,7 +57,7 @@ def index():
         error=None,
         selected_repo=selected_label,
         repo_options=repo_map,
-        total_plot=total_plot,
+        evo_plot=evo_plot,
         ts_start=start_ts,
         ts_end=end_ts,
         rdf_dataset_url=rdf_dataset_url,
@@ -82,11 +82,10 @@ def get_repo_infos(repo_label):
         start, end, fig_data, fig_layout = controller.get_repo_stats()
         rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
 
-        # Convert data + layout to JSON-serializable format
-        plot = go.Figure(data=fig_data, layout=fig_layout)
+        evo_plot = go.Figure(data=fig_data, layout=fig_layout)
 
         return jsonify({
-            "plot": to_json(plot),
+            "evo_plot": to_json(evo_plot),
             "rdf_dataset_url": rdf_dataset_url,
             "polling_interval": polling_interval
         })

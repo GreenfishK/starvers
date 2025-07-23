@@ -5,6 +5,7 @@ from uuid import UUID
 import requests
 
 from app.Database import Session, engine
+from app.models.DatasetModel import Dataset
 from app.LoggingConfig import get_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
@@ -52,8 +53,12 @@ class PollingTask():
     def run(self):
         start_time = time.time_ns()
         try:
-            with Session(engine) as session:
-                self.__stopped = self.__run(session)
+            session = Session(engine)
+            dataset = session.get(Dataset, self.dataset_id)
+            if dataset.next_run is None or dataset.next_run <= self.__time_func():
+                self.__stopped = self.__run(session, dataset)
+            else:
+                LOG.info(f"Next run for dataset with uuid={self.dataset_id} is not yet reached. Next polling and versioning will be executed at {dataset.next_run}.")
         except Exception as e:
             LOG.error(e)
         finally:
@@ -61,23 +66,30 @@ class PollingTask():
                 LOG.info(f'Stopped tracking task for dataset with uuid={self.dataset_id}!')
                 return
             
+            # update next run time in the database
             end_time = time.time_ns()
             time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
-            
             self.set_next_run(time_taken)
+            
+            dataset.next_run = datetime.fromtimestamp(self.next_run)
+            session.commit()
+            session.refresh(dataset)
+            session.close()
+
+            # update the executor context with the delay for the next run
             next_delay = self.period - time_taken
             if next_delay < 0 or self.next_run <= self.__time_func():
                 self.executor_ctx._put(self, 0)
             else:
                 self.executor_ctx._put(self, next_delay)
+            
 
-    def __run(self, session: Session) -> bool:
-        LOG.info(f"[{self.dataset_id}] Start tracking task for dataset")
-
-        from app.services.ManagementService import get_by_id
-        dataset = get_by_id(id=self.dataset_id, session=session)
+            
+    def __run(self, session: Session, dataset: Dataset) -> bool:
+        LOG.info(f"Start tracking task for dataset id={self.dataset_id}")
 
         if not dataset.active:
+            LOG.info(f"Dataset is not active. Skipping tracking task for dataset id={self.dataset_id}")
             return True
 
         version_timestamp = datetime.now()
@@ -92,12 +104,14 @@ class PollingTask():
             self.__versioning_wrapper = StarVersService(tracking_task)
 
         if (self.__is_initial): # if initial no diff is necessary
-            LOG.info(f"[{self.dataset_id}] Initial version for dataset")
+            LOG.info(f"Initial versioning of dataset with id={self.dataset_id}")
 
             # push triples into repository
             self.__versioning_wrapper.run_initial_versioning(version_timestamp)
 
-        else: # get diff to previous version using StarVers
+        else: 
+            LOG.info(f"Continue versioning dataset with id={self.dataset_id}")
+            # get diff to previous version using StarVers
             delta_event = self.__versioning_wrapper.run_versioning(version_timestamp)
 
             if delta_event is not None:
@@ -114,6 +128,6 @@ class PollingTask():
         session.commit()
         session.refresh(dataset)
 
-        LOG.info(f"[{self.dataset_id}] Finished tracking task for dataset")
+        LOG.info(f"Finished tracking task for dataset id={self.dataset_id}")
 
         return False

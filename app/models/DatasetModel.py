@@ -13,16 +13,14 @@ HttpUrlString = Annotated[HttpUrl, AfterValidator(str)]
 class DatasetBase(SQLModel):
     name: str
     repository_name: str
-
     rdf_dataset_url: HttpUrlString = Field(sa_type=AutoString)
     polling_interval: int # polling intervall in seconds
     delta_type: DeltaType = Field(sa_type=Enum(DeltaType), default=DeltaType.ITERATIVE)
-
     notification_webhook: Optional[HttpUrlString] = Field(sa_type=AutoString, default=None)
-
     created_at: Optional[datetime] = Field(default_factory=datetime.now)
     last_modified: Optional[datetime] = Field(default_factory=datetime.now)
     active: Optional[bool] = Field(default=True)
+    next_run: Optional[datetime] = Field(default=None)
 
 class Dataset(DatasetBase, table=True):
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
