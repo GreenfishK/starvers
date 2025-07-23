@@ -18,6 +18,30 @@ document.addEventListener("DOMContentLoaded", function () {
         let relayoutTimeout = null;
         let lastYRange = null;
 
+        plotDiv.on("plotly_buttonclicked", (eventData) => {
+            const selectedLabel = eventData.button.label;
+            console.log("Aggregation button clicked:", selectedLabel);
+
+            const repo = document.getElementById("repo-select").value;
+
+            fetch(`/infos/${repo}?agg=${selectedLabel.toUpperCase()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
+                        return;
+                    }
+                    console.log("Restyle plot for", selectedLabel);
+                    const evoPlotObj = JSON.parse(data.evo_plot);
+                    Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
+                    
+                })
+                .catch(err => {
+                    console.error("Failed to fetch new aggregation plot:", err);
+                    plotContainer.innerHTML = "<p class='has-text-danger'>Failed to update plot.</p>";
+                });
+        });
+
         plotDiv.on("plotly_relayout", (eventdata) => {
             console.log("Plotly relayout event triggered:", eventdata);
 
