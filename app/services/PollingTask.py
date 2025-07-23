@@ -59,16 +59,16 @@ class PollingTask():
                 dataset = session.get(Dataset, self.dataset_id)
                 if dataset.next_run is None or dataset.next_run <= datetime.fromtimestamp(self.__time_func()):
                     self.__stopped = self.__run(session, dataset)
-                    dataset.next_run = datetime.fromtimestamp(self.next_run)
-                    session.commit()
-                    session.refresh(dataset)
-
                     end_time = time.time_ns()
                     time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
                     self.set_next_run(time_taken)
                     next_delay = self.period - time_taken
+
+                    # Update next run time in dataset table
+                    dataset.next_run = datetime.fromtimestamp(self.next_run)
+                    session.commit()
+                    session.refresh(dataset)
                 else:
-                    LOG.info(f"Next run for dataset with uuid={self.dataset_id} is not yet reached.")
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()
                     next_delay = dataset.next_run.timestamp() - self.__time_func()
@@ -81,7 +81,7 @@ class PollingTask():
                 return
             
             # Re-schedule task
-            LOG.info(f"Re-scheduling task for dataset with uuid={self.dataset_id} to run at {dataset.next_run} (next run time).")
+            LOG.info(f"Re-scheduling task for dataset with uuid={self.dataset_id} to run at {datetime.fromtimestamp(self.next_run)} (next run time).")
             if next_delay < 0 or self.next_run <= self.__time_func():
                 self.executor_ctx._put(self, 0)
             else:
