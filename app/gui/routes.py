@@ -49,7 +49,7 @@ def index():
 
     # Get tracking infos
     logging.info(f"Getting tracking infos for {repo}")
-    rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
+    rdf_dataset_url, polling_interval, next_run = controller.get_repo_tracking_infos()
 
     return render_template(
         "index.html", 
@@ -61,7 +61,8 @@ def index():
         ts_start=start_ts,
         ts_end=end_ts,
         rdf_dataset_url=rdf_dataset_url,
-        polling_interval=polling_interval
+        polling_interval=polling_interval,
+        next_run=next_run.strftime("%Y-%m-%d %H:%M:%S") if next_run else None
     )
 
 
@@ -80,14 +81,15 @@ def get_repo_infos(repo_label):
     try:
         controller = GuiContr(repo_name=repo_name)
         start, end, fig_data, fig_layout = controller.get_repo_stats()
-        rdf_dataset_url, polling_interval = controller.get_repo_tracking_infos()
+        rdf_dataset_url, polling_interval, next_run = controller.get_repo_tracking_infos()
 
         evo_plot = go.Figure(data=fig_data, layout=fig_layout)
 
         return jsonify({
             "evo_plot": to_json(evo_plot),
             "rdf_dataset_url": rdf_dataset_url,
-            "polling_interval": polling_interval
+            "polling_interval": polling_interval,
+            "next_run": next_run.strftime("%Y-%m-%d %H:%M:%S") if next_run else None,
         })
     except Exception as e:
         logging.exception("Failed to generate plot and tracking info")

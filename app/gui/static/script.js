@@ -21,11 +21,6 @@ document.addEventListener("DOMContentLoaded", function () {
         plotDiv.on("plotly_relayout", (eventdata) => {
             console.log("Plotly relayout event triggered:", eventdata);
 
-            console.log("All trace names in plot:");
-            plotDiv.data.forEach((trace, i) => {
-                console.log(`Trace ${i}: name='${trace.name}', has x: ${Array.isArray(trace.x)}, has y: ${Array.isArray(trace.y)}`);
-            });
-
             if (!("xaxis.range[0]" in eventdata) || !("xaxis.range[1]" in eventdata)) {
                 console.log("Skipped: No xaxis range in eventdata.");
                 return;
@@ -35,15 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
             const xStart = eventdata['xaxis.range[0]'];
             const xEnd = eventdata['xaxis.range[1]'];
 
-            console.log("xaxis.range[0]:", Math.floor(xStart));
-            console.log("xaxis.range[1]:", Math.ceil(xEnd));
-            console.log("trace[0].x.length:", plotDiv.data[0].x.length);
-            console.log("trace[1].x.length:", plotDiv.data[1] ? plotDiv.data[1].x.length : "N/A");
-
             const startIndex = Math.max(0, Math.floor(xStart));
             const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
-
-            console.log("startIndex:", startIndex, "endIndex:", endIndex);
 
             if (startIndex > endIndex) {
                 console.log("No visible data in range.");
@@ -77,11 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const yMin = Math.min(...visibleTotals);
             const yMax = Math.max(...visibleTotals);
             const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
-
             const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
-
-            console.log("Visible Y range:", yMin, yMax);
-            console.log("Setting yaxis.range:", yRange[0], yRange[1]);
 
             if (
                 lastYRange &&
@@ -150,6 +134,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
                         <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
+                        <p><strong>Next run (UTC): </strong>${data.next_run}</p>
+
                     `;
                 }
             })

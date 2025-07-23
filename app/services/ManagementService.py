@@ -29,7 +29,7 @@ from typing import Optional, Tuple
 
 def get_dataset_metadata_by_repo_name(repo_name: str, session: Session) -> Optional[Tuple[str, str, int]]:
     statement = (
-        select(Dataset.repository_name, Dataset.rdf_dataset_url, Dataset.polling_interval)
+        select(Dataset.repository_name, Dataset.rdf_dataset_url, Dataset.polling_interval, Dataset.next_run)
         .where(Dataset.repository_name == repo_name)
         .where(Dataset.active)
     )

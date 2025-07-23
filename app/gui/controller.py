@@ -175,16 +175,15 @@ class GuiContr:
     def get_repo_tracking_infos(self):
         repo_name = self.repo_name
 
-        
         session = next(get_session())
         tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
-        logging.info(tracking_infos)
         rdf_dataset_url = tracking_infos[1]
         formatted_polling_interval = _format_polling_interval(tracking_infos[2])
+        next_run = tracking_infos[3]
         session.close()
 
-        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {formatted_polling_interval}")
-        return rdf_dataset_url, formatted_polling_interval
+        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {formatted_polling_interval}; {next_run}")
+        return rdf_dataset_url, formatted_polling_interval, next_run
     
 
 def _format_polling_interval(seconds: int) -> str:

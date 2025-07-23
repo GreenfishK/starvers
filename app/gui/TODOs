@@ -20,5 +20,3 @@ Add information about the inserts and deletes (metrics) in a side view or differ
     * $C_A$ : take the first version and applying all the subsequent deletions.
 * total version-oblivious triples  (BEAR)
     * $O_A$: number of different triples regardless of the timestamp
-
-Task 5: Add an info when the text polling will take place.

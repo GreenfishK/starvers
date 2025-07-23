@@ -33,6 +33,7 @@
                         <div id="tracking-info" class="mt-2 content is-flex is-flex-wrap-wrap">
                             <p><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</p>
                             <p><strong>Polling Interval:</strong> {{ polling_interval }} seconds</p>
+                            <p><strong>Next run (UTC):</strong> {{ next_run }}</p>
                         </div>
                     {% endif %}
                 </div>
@@ -52,13 +53,14 @@
 
             <div class="field is-horizontal is-align-items-center">
                 <div class="field-body is-flex is-align-items-center">
-                    <div class="control">
+                    <div class="control is-flex is-flex-wrap-wrap is-align-items-center">
                         <input id="timestamp_input" class="input" type="text" name="timestamp" placeholder="e.g. 2025-05-20T12:00:00"
                             value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
-                    </div>
+
                     {% if ts_start and ts_end %}
                         <p class="has-text-grey ml-3">Select one between {{ ts_start }} and {{ ts_end }}</p>
                     {% endif %}
+                    </div>
                 </div>
             </div>
 
