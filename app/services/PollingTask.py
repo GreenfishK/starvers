@@ -55,7 +55,7 @@ class PollingTask():
         try:
             session = Session(engine)
             dataset = session.get(Dataset, self.dataset_id)
-            if dataset.next_run is None or dataset.next_run <= self.__time_func():
+            if dataset.next_run is None or dataset.next_run <= datetime.fromtimestamp(self.__time_func()):
                 self.__stopped = self.__run(session, dataset)
             else:
                 LOG.info(f"Next run for dataset with uuid={self.dataset_id} is not yet reached. Next polling and versioning will be executed at {dataset.next_run}.")
