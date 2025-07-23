@@ -7,6 +7,9 @@ import plotly.graph_objects as go
 from starvers.starvers import TripleStoreEngine
 from app.services.ManagementService import get_dataset_metadata_by_repo_name
 from app.Database import get_session
+from app.enums.TimeAggregationEnum import TimeAggregation
+
+
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
@@ -28,25 +31,19 @@ class GuiContr:
         return result_set_df, timestamped_query
 
 
-    def get_repo_stats(self):
+    def get_repo_stats(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1):
         repo_name = self.repo_name
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         df.columns = df.columns.str.strip()
 
-        session = next(get_session())
-        tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
-        polling_interval = int(tracking_infos[2])
-        session.close()
-
         # Parse timestamp
-        df = df.rename(columns={df.columns[0]: "timestamp"})
         df["timestamp"] = df["timestamp"].apply(lambda ts: datetime.strptime(ts[:15], "%Y%m%d-%H%M%S"))
 
-        # Aggregate by polling interval
+        # Aggregate by given time interval
         df = df.set_index("timestamp")
-        interval = f"{polling_interval}s"
-        agg = df.resample(interval).agg({
+        logging.info(f"Aggregating data by {time_aggr.value} intervals")
+        agg = df.resample(time_aggr.value).agg({
             "insertions": "sum",
             "deletions": "sum",
             "cnt_triples": "last"
@@ -147,11 +144,11 @@ class GuiContr:
             dragmode="pan",
             height=500,
             barmode='overlay',
-            plot_bgcolor='white',   # <- background behind plot area
-            paper_bgcolor='white',  # <- full chart background
+            plot_bgcolor='white',  
+            paper_bgcolor='white',  
             xaxis=dict(
                 showgrid=True,
-                gridcolor='lightgray',  # Optional: grid line color
+                gridcolor='lightgray', 
                 gridwidth=1,
                 rangeslider=dict(visible=False),
                 fixedrange=False
@@ -164,6 +161,27 @@ class GuiContr:
                 fixedrange=True,  # prevent manual manual y panning, but allow zoom
                 tickformat=","
             )
+        )
+
+        # Add dropdown for time aggregation
+        fig.update_layout(
+            updatemenus=[
+                dict(
+                    type="buttons",
+                    direction="left",
+                    showactive=True,
+                    active=active_time_aggr,  
+                    buttons=[
+                        dict(label="Hour", method="restyle", args=[[], []], args2=["HOUR"]),
+                        dict(label="Day", method="restyle", args=[[], []], args2=["DAY"]),
+                        dict(label="Week", method="restyle", args=[[], []], args2=["WEEK"]),
+                    ],
+                    x=0,
+                    xanchor="left",
+                    y=1.15,
+                    yanchor="top"
+                )
+            ],
         )
 
         start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")

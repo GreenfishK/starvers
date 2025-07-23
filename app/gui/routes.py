@@ -5,9 +5,11 @@ from datetime import datetime
 import html
 import logging
 from io import BytesIO
-from app.gui.controller import GuiContr
 import plotly.graph_objects as go
 from plotly.io import to_html, to_json
+
+from app.gui.controller import GuiContr
+from app.enums.TimeAggregationEnum import TimeAggregation
 
 
 routes = Blueprint('routes', __name__)
@@ -78,9 +80,21 @@ def get_repo_infos(repo_label):
         logging.error(f"Repository label '{repo_label}' not found in config.")
         return jsonify({"error": "Repository not found"}), 404
 
+    aggregation = request.args.get("agg", "DAY")  
+    try:
+        time_aggr = TimeAggregation[aggregation.upper()]
+        time_aggr_map = {
+            TimeAggregation.HOUR: 0,
+            TimeAggregation.DAY: 1,
+            TimeAggregation.WEEK: 2
+        }
+        active_time_aggr = time_aggr_map[time_aggr]
+    except KeyError:
+        return jsonify({"error": "Invalid aggregation level"}), 400
+
     try:
         controller = GuiContr(repo_name=repo_name)
-        start, end, fig_data, fig_layout = controller.get_repo_stats()
+        start, end, fig_data, fig_layout = controller.get_repo_stats(time_aggr, active_time_aggr)
         rdf_dataset_url, polling_interval, next_run = controller.get_repo_tracking_infos()
 
         evo_plot = go.Figure(data=fig_data, layout=fig_layout)
