@@ -51,14 +51,28 @@ class PollingTask():
         return f"(Polling Task {self.dataset_id}, Periodic: {self.period} seconds (s), Next run: {time.ctime(self.next_run)})"
 
     def run(self):
+        LOG.info(f"Running polling task for dataset with uuid={self.dataset_id} and period={self.period} seconds (s)")
         start_time = time.time_ns()
+        next_delay = -1
         try:
-            session = Session(engine)
-            dataset = session.get(Dataset, self.dataset_id)
-            if dataset.next_run is None or dataset.next_run <= datetime.fromtimestamp(self.__time_func()):
-                self.__stopped = self.__run(session, dataset)
-            else:
-                LOG.info(f"Next run for dataset with uuid={self.dataset_id} is not yet reached. Next polling and versioning will be executed at {dataset.next_run}.")
+            with Session(engine) as session:
+                dataset = session.get(Dataset, self.dataset_id)
+                if dataset.next_run is None or dataset.next_run <= datetime.fromtimestamp(self.__time_func()):
+                    self.__stopped = self.__run(session, dataset)
+                    dataset.next_run = datetime.fromtimestamp(self.next_run)
+                    session.commit()
+                    session.refresh(dataset)
+
+                    end_time = time.time_ns()
+                    time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
+                    self.set_next_run(time_taken)
+                    next_delay = self.period - time_taken
+                else:
+                    LOG.info(f"Next run for dataset with uuid={self.dataset_id} is not yet reached.")
+                    self.__is_initial = False
+                    self.next_run = dataset.next_run.timestamp()
+                    next_delay = dataset.next_run.timestamp() - self.__time_func()
+                    
         except Exception as e:
             LOG.error(e)
         finally:
@@ -66,18 +80,8 @@ class PollingTask():
                 LOG.info(f'Stopped tracking task for dataset with uuid={self.dataset_id}!')
                 return
             
-            # update next run time in the database
-            end_time = time.time_ns()
-            time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
-            self.set_next_run(time_taken)
-            
-            dataset.next_run = datetime.fromtimestamp(self.next_run)
-            session.commit()
-            session.refresh(dataset)
-            session.close()
-
-            # update the executor context with the delay for the next run
-            next_delay = self.period - time_taken
+            # Re-schedule task
+            LOG.info(f"Re-scheduling task for dataset with uuid={self.dataset_id} to run at {dataset.next_run} (next run time).")
             if next_delay < 0 or self.next_run <= self.__time_func():
                 self.executor_ctx._put(self, 0)
             else:
