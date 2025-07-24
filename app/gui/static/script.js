@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            const visibleTotals = yData.slice(startIndex, endIndex + 1);
+            const visibleTotals = yData.slice(startIndex, endIndex );
             if (visibleTotals.length === 0) {
                 console.log("No visible y-values in Total Triples trace, skipping relayout.");
                 return;
@@ -90,6 +90,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const yMax = Math.max(...visibleTotals);
             const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
             const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
+
+            // to show the first bar
+            if (xStart < 0.20) {
+                    yRange[0] = Math.min(0, yRange[0]);
+                }
 
             if (
                 lastYRange &&

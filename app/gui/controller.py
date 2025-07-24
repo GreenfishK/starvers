@@ -61,6 +61,8 @@ class GuiContr:
         insertions = agg["insertions"].astype(int)
         deletions = agg["deletions"].astype(int)
 
+        logging.info(f"Total. {total}")
+
         # Prepare arrays for traces
         ins_y = []
         ins_base = []
@@ -82,7 +84,7 @@ class GuiContr:
                 ins_base.append(base_y)
                 widths_ins.append(0.4)
                 widths_del.append(0.1)
-                hovertemplates_ins.append(f"{ins:,} insertions (net)")
+                hovertemplates_ins.append(f"{net:,} insertions (net)")
 
                 if dels > 0:
                     del_y.append(dels)
@@ -101,7 +103,7 @@ class GuiContr:
 
                 if ins > 0:
                     ins_y.append(ins)
-                    ins_base.append(base_y - dels)
+                    ins_base.append(base_y + net)
                     hovertemplates_ins.append(f"{ins:,} insertions")
                 else:
                     ins_y.append(0)
@@ -132,7 +134,7 @@ class GuiContr:
 
         fig.add_trace(go.Scatter(
             x=timestamps,
-            y=[0] + total.tolist(),
+            y=total.tolist(),
             mode="lines+markers",
             name='Total Triples',
             line=dict(color="blue", width=1),  # thin blue line
@@ -146,6 +148,13 @@ class GuiContr:
             barmode='overlay',
             plot_bgcolor='white',  
             paper_bgcolor='white',  
+            legend=dict(
+                orientation="h",        # horizontal
+                yanchor="top",       # anchor from the bottom
+                y=1.15,                 # just above the plot area
+                xanchor="right",        # align from the right
+                x=1                     # align to the right side
+            ),
             xaxis=dict(
                 showgrid=True,
                 gridcolor='lightgray', 

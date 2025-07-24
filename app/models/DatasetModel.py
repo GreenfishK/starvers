@@ -34,6 +34,8 @@ class Snapshot(SQLModel, table=True):
     cnt_properties: int
     cnt_instances: int
 
+
+
 class DatasetCreate(DatasetBase):
     pass
 
