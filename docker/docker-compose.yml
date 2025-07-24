@@ -16,7 +16,7 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
-    entrypoint: ["fastapi", "run", "app/main.py", "--port", "80"]
+    entrypoint: ["uvicorn", "app.main:app", "--reload"]
   
   gui:
     image: starversserver_gui # should be changed to ghcr.io/martinmitteregger/starversserver:main
