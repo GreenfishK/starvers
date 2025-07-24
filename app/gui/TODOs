@@ -6,7 +6,7 @@ Add information about the inserts and deletes (metrics) in a side view or differ
 * number of distinct classes
 * number of added instances per class in the delta set
 * number of instances with no class
-* number of distinct dobject properties
+* number of distinct object properties
 * number of distinct data properties
 * change ratio between two versions (BEAR)
     * $\delta_{i,j} = \frac{|\Delta⁺_{i,j} \cup \Delta⁻_{i,j}|}{|IC_i \cup IC_j|}$
@@ -20,3 +20,20 @@ Add information about the inserts and deletes (metrics) in a side view or differ
     * $C_A$ : take the first version and applying all the subsequent deletions.
 * total version-oblivious triples  (BEAR)
     * $O_A$: number of different triples regardless of the timestamp
+
+Task 4:
+* Add a new table ClassHierarchy to the database
+    * dataset_id: foreign key
+    * snapshot_id: foreign_key
+    * snapshot_id_prev: foreign_key (non-identifying)
+    * onto_class: done
+    * parent_onto_class: done
+    * cnt_class_instances_current: done
+    * cnt_class_instances_prev: done
+    * cnt_added_instances: done
+    * cnt_deleted_instances: done
+
+
+
+Feasability analysis
+* A SPARQL query that takes two versions and retrieves the class, parent class, number of total instances, number of new instances, is_new_class

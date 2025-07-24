@@ -21,3 +21,5 @@ COPY ./app/main.py /code/app/main.py
 COPY ./app/run_gui.py /code/app/run_gui.py
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
+
+CMD ["fastapi", "run", "app/main.py", "--port", "80"]

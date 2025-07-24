@@ -22,11 +22,13 @@ LOG = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    LOG.info("Setting up logging...")
+    setup_logging()
+
     LOG.info("Creating database tables...")
     create_db_and_tables()
 
-    LOG.info("Setting up logging...")
-    setup_logging()
+    LOG.info("Starting mocking service")
     MockRestService.tl.start()
 
     with Session(engine) as session:
@@ -95,5 +97,6 @@ def delta_event_notification(body: DeltaEvent):
     every time a delta was calculated. The request payload contains relevant data to be able to query the corresponding rdf dataset.
     """
 
+# for manual start via python main.py
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

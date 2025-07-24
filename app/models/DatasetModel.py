@@ -28,11 +28,15 @@ class Dataset(DatasetBase, table=True):
 class Snapshot(SQLModel, table=True):
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
     dataset_id: UUID = Field(foreign_key="dataset.id")
-    cnt_triples: int
-    snapshot_ts: datetime = Field(default_factory=datetime.now)
-    cnt_classes: int
-    cnt_properties: int
-    cnt_instances: int
+    snapshot_ts: datetime = Field(default=None)
+    snapshot_ts_prev: datetime = Field(default=None)
+    onto_class: str = Field(default=None)
+    parent_onto_class: Optional[str] = Field(default=None)
+    cnt_class_instances_current: int = Field(default=None)
+    cnt_class_instances_prev: int = Field(default=None)
+    cnt_classes_added: int = Field(default=None)
+    cnt_classes_deleted: int = Field(default=None)
+    
 
 
 
