@@ -166,6 +166,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         <p><strong>Next run (UTC): </strong>${data.next_run}</p>
 
                     `;
+        
+                    document.getElementById("data_section").style.display = "none";
+
                 }
             })
             .catch(error => {
@@ -217,8 +220,9 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.error) {
                 resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
             } else {
-                resultTable.innerHTML = data.html;
+                resultTable.innerHTML = data.result_set;
                 timestampedEditor.setValue(data.timestamped_query || "");
+                document.getElementById("data_section").style.display = "block";
                 console.log("Result successfully retrieved.");
 
                 // Check if the download button already exists

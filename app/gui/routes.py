@@ -138,8 +138,8 @@ def run_query():
             return html.escape(s)
         
         df = df.applymap(iri_to_link)
-        html_table = df.to_html(classes="table table-striped", index=False, escape=False)
-        return jsonify({"html": html_table, "timestamped_query": timesamped_query})
+        result_set = df.to_html(classes="table table-striped", index=False, escape=False)
+        return jsonify({"result_set": result_set, "timestamped_query": timesamped_query})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
