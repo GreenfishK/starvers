@@ -16,7 +16,7 @@ routes = Blueprint('routes', __name__)
 last_result_df = pd.DataFrame()
 
 @routes.route("/", methods=["GET"])
-def index():
+def index(): 
     # Init
     result_html = None
     start_ts = None

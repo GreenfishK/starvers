@@ -74,6 +74,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    margin-top: 3rem;
     margin-bottom: 1rem;
 }
 
@@ -102,7 +103,6 @@
     min-height: 300px;
 }
 
-
 .legend-dot {
   display: inline-block;
   width: 10px;
@@ -111,3 +111,6 @@
   margin-right: 0.3em;
 }
 
+#external_buttons {
+    gap: 1rem;
+}
