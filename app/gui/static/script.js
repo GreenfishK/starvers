@@ -2,6 +2,9 @@
 // This script handles the dynamic behavior of the GUI, including SPARQL query execution,
 // repository selection, triple evolution, and result display.
 
+// Global variables
+let activeAggLevel = 'DAY'; 
+
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Document loaded.");
 
@@ -22,28 +25,49 @@ document.addEventListener("DOMContentLoaded", function () {
         let relayoutTimeout = null;
         let lastYRange = null;
 
-        plotDiv.on("plotly_buttonclicked", (eventData) => {
-            const selectedLabel = eventData.button.label;
-            console.log("Aggregation button clicked:", selectedLabel);
+        plotDiv.on("plotly_click", function(eventData) {
+            if (!eventData || !eventData.points || eventData.points.length === 0) return;
 
-            const repo = document.getElementById("repo-select").value;
+            const point = eventData.points[0];
+            const rawTimestamp = point.x;
 
-            fetch(`/infos/${repo}?agg=${selectedLabel.toUpperCase()}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
-                        return;
-                    }
-                    console.log("Restyle plot for", selectedLabel);
-                    const evoPlotObj = JSON.parse(data.evo_plot);
-                    Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
-                    
-                })
-                .catch(err => {
-                    console.error("Failed to fetch new aggregation plot:", err);
-                    plotContainer.innerHTML = "<p class='has-text-danger'>Failed to update plot.</p>";
-                });
+            const [day, month, year] = rawTimestamp.split(".");
+            if (!day || !month || !year) return;
+
+            const formattedTimestamp =
+                activeAggLevel === "HOUR"
+                    ? point.x
+                    : `${year}-${month}-${day}T23:59:59`;
+
+            document.getElementById("timestamp_input").value = formattedTimestamp;
+
+            // Add halo marker
+            const highlightTrace = {
+                x: [point.x],
+                y: [point.y],
+                mode: "markers",
+                marker: {
+                    size: 20,
+                    color: "rgba(0, 150, 255, 0.4)",  // translucent blue halo
+                    line: {
+                        width: 2,
+                        color: "rgba(0, 150, 255, 1.0)"
+                    },
+                    symbol: "circle"
+                },
+                name: "Selection Halo",
+                hoverinfo: "skip",
+                showlegend: false
+            };
+
+            // Add it as the last trace
+            Plotly.addTraces(plotDiv, highlightTrace).then(() => {
+                // Remove it after 300ms
+                setTimeout(() => {
+                    const currentDataLength = plotDiv.data.length;
+                    Plotly.deleteTraces(plotDiv, currentDataLength - 1);
+                }, 100);
+            });
         });
 
         plotDiv.on("plotly_relayout", (eventdata) => {
@@ -128,6 +152,39 @@ document.addEventListener("DOMContentLoaded", function () {
         lineNumbers: true
     });
     editor.setSize(null, "420px");
+
+    const timestampTooltip = document.getElementById("timestamp-help");
+    if (timestampTooltip && timestampTooltip.title) {
+        const tooltip = document.createElement("div");
+        tooltip.textContent = timestampTooltip.title;
+        tooltip.style.position = "fixed";
+        tooltip.style.left = "50%";
+        tooltip.style.top = "20%";
+        tooltip.style.transform = "translateX(-50%)";
+        tooltip.style.background = "#f5f5f5";
+        tooltip.style.border = "1px solid #ccc";
+        tooltip.style.borderRadius = "5px";
+        tooltip.style.padding = "0.75em 1.25em";
+        tooltip.style.zIndex = 1000;
+        tooltip.style.boxShadow = "0 2px 8px rgba(0,0,0,0.25)";
+        tooltip.style.transition = "opacity 0.3s ease-in-out";
+        tooltip.style.opacity = "0";
+        tooltip.style.pointerEvents = "none";
+        tooltip.style.fontSize = "0.9rem";
+
+        document.body.appendChild(tooltip);
+
+        requestAnimationFrame(() => {
+            tooltip.style.opacity = "1";
+        });
+
+        setTimeout(() => {
+            tooltip.style.opacity = "0";
+            setTimeout(() => {
+                tooltip.remove();
+            }, 300);
+        }, 5000);
+    }
 
     console.log("Initializing SPARQL-star view.")
     const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
@@ -261,8 +318,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+
 // hour, day, week buttons listener
 function changeAgg(level, clickedButton) {
+    activeAggLevel = level;  // Track current aggregation
     const repo = document.getElementById("repo-select").value;
     const plotContainer = document.getElementById("plot-container");
 

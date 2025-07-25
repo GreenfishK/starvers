@@ -81,17 +81,15 @@
                                 class="input"
                                 type="text"
                                 name="timestamp"
-                                placeholder="2025-05-20T12:00:00"
-                                value="{{ selected_timestamp or '2025-05-20T12:00:00' }}"
-                                style="width: 20ch;">
+                                placeholder="{{ ts_end_iso8601 }}"
+                                value="{{ selected_timestamp or ts_end_iso8601 }}"
+                                style="width: 23ch;">
                         </div>
                     </div>
 
-                    <!-- Help text -->
-                    <p class="has-text-grey help-text mb-2" style="min-height: 1.5em;">
-                        {% if ts_start and ts_end %}
-                            Select one between {{ ts_start }} and {{ ts_end }}
-                        {% endif %}
+                    <p id="timestamp-help"
+                    title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
+                    style="display: none;">
                     </p>
 
                     <!-- SPARQL editor -->
