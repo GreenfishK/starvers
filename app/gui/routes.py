@@ -36,7 +36,9 @@ def index():
 
     # Get repo stats
     logging.info(f"Getting repository stats for {repo}")
-    start_ts, end_ts, fig_data, fig_layout = controller.get_repo_stats()
+    ts_start, ts_end, fig_data, fig_layout = controller.get_repo_stats()
+    ts_end_iso8601 = datetime.strptime(ts_end, "%d.%m.%Y %H:%M:%S.%f").isoformat()[:-3]
+    logging.info(f"Timestamp: {ts_end}, {ts_end_iso8601}")
 
     evo_plot = to_html(
         go.Figure(
@@ -60,8 +62,9 @@ def index():
         selected_repo=selected_label,
         repo_options=repo_map,
         evo_plot=evo_plot,
-        ts_start=start_ts,
-        ts_end=end_ts,
+        ts_start=ts_start,
+        ts_end=ts_end,
+        ts_end_iso8601=ts_end_iso8601,
         rdf_dataset_url=rdf_dataset_url,
         polling_interval=polling_interval,
         next_run=next_run.strftime("%Y-%m-%d %H:%M:%S") if next_run else None

@@ -34,13 +34,16 @@ Add information about the inserts and deletes (metrics) in a side view or differ
 * total version-oblivious triples  (BEAR)
     * $O_A$: number of different triples regardless of the timestamp
 
-TODO: GUI
-When hovering over the total triples data points (blue points) in the plot, the timestamp in the input field should take the value of the corresponding timestamp. 
-    * For days and weeks the timestamp should be: yyyy-MM-ddT23:59:59, thereby taking the last minute of the day or week
-    * For hours the timestamp should be: yyyy-MM-ddThh:mm:ss, copying the 
 
+TODO: GUI
+fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
 
 # Done
+TODO: GUI
+When selecting one data point (blue points) in the plot, the timestamp in the input field should take the value of the corresponding timestamp. 
+    * For days and weeks the timestamp should be: yyyy-MM-ddT23:59:59, thereby taking the last minute of the day or week
+    * For hours the timestamp should be: yyyy-MM-ddThh:mm:ss, the same as in the data point
+
 TODO: Resume service: If the repository exists, the tracking should be ressumed after a container shutdown or even deletion
 
 TODO: timings_csv: add headers

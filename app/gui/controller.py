@@ -38,7 +38,9 @@ class GuiContr:
         df.columns = df.columns.str.strip()
 
         # Parse timestamp
-        df["timestamp"] = df["timestamp"].apply(lambda ts: datetime.strptime(ts[:15], "%Y%m%d-%H%M%S"))
+        df["timestamp"] = df["timestamp"].apply(lambda ts: datetime.strptime(ts[:19], "%Y%m%d-%H%M%S_%f"))
+        ts_start = df["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
+        ts_end = df["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
 
         # Aggregate by given time interval
         df = df.set_index("timestamp")
@@ -176,10 +178,7 @@ class GuiContr:
             )
         )
 
-        start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")
-        end = agg["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S")
-
-        return start, end, fig.data, fig.layout
+        return ts_start, ts_end, fig.data, fig.layout
 
 
     def get_repo_tracking_infos(self):
