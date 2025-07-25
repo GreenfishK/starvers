@@ -12,7 +12,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
     const plotDiv = document.getElementById("evo-plot");
-    
+    const defaultBtn = document.getElementById("day_button")
+
+    if (defaultBtn) {
+        changeAgg('DAY', defaultBtn);
+    }
 
     if (plotDiv) {
         let relayoutTimeout = null;
@@ -142,6 +146,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const downloadButton = document.getElementById("download-btn");
         console.log("Dropdown changed to repo:", selectedRepo);
 
+        //Toggle DAY button
+        if (defaultBtn) {
+            changeAgg('DAY', defaultBtn);
+        }
+
         // Remove download button if it exists
         if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
 
@@ -253,9 +262,14 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // hour, day, week buttons listener
-function changeAgg(level) {
+function changeAgg(level, clickedButton) {
     const repo = document.getElementById("repo-select").value;
     const plotContainer = document.getElementById("plot-container");
+
+    // Highlight clicked button, remove is-active from others
+    const allAggButtons = document.querySelectorAll(".agg-button");
+    allAggButtons.forEach(btn => btn.classList.remove("is-active"));
+    clickedButton.classList.add("is-active");
 
     fetch(`/infos/${repo}?agg=${level}`)
       .then(response => response.json())

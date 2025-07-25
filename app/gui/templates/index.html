@@ -5,7 +5,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css">
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/sparql/sparql.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0-rc.0/plotly.min.js" charset="utf-8"></script>
@@ -13,6 +12,7 @@
 <body>
 <section class="section">
     <div class="container">
+        
         <h1 class="title">Starvers</h1>
         <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
 
@@ -30,7 +30,7 @@
                         </div>
                     </div>
                     {% if rdf_dataset_url and polling_interval %}
-                        <div id="tracking-info" class="mt-2 content is-flex is-flex-wrap-wrap">
+                        <div id="tracking-info" class="mt-2 is-flex is-flex-wrap-wrap">
                             <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
                             <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
                             <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
@@ -39,32 +39,30 @@
                 </div>
             </div>
 
-            <div id="plot_menu_and_legend">
-                <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between mb-3" style="gap: 1rem;">
-                    <!-- Time aggregation buttons -->
-                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
-                        <button type="button" class="button is-link is-light is-small" onclick="changeAgg('HOUR')">Hour</button>
-                        <button type="button" autofocus class="button is-link is-light is-small" onclick="changeAgg('DAY')">Day</button>
-                        <button type="button" class="button is-link is-light is-small" onclick="changeAgg('WEEK')">Week</button>
-                    </div>
+            <!-- Plotly chart -->
+            <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                {% if evo_plot %}
+                    <div class="plot-box">
+                        <div id="external_buttons" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
+                            <!-- Time aggregation buttons -->
+                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <button type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('HOUR', this)">Hour</button>
+                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('DAY', this)">Day</button>
+                                <button type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('WEEK', this)">Week</button>
+                            </div>
 
-                    <!-- Custom Legend -->
-                    <div class="is-flex is-align-items-center is-flex-wrap" style="gap: 1rem;">
-                        <span><span class="legend-dot" style="background: green;"></span> Insertions</span>
-                        <span><span class="legend-dot" style="background: red;"></span> Deletions</span>
-                        <span><span class="legend-dot" style="background: blue;"></span> Total Triples</span>
-                    </div>
-                </div>
-
-                <!-- Plotly chart -->
-                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
-                    {% if evo_plot %}
-                        <div class="plot-box">
-                            {{ evo_plot | safe }}
+                            <!-- Custom Legend -->
+                            <div class="is-flex is-align-items-center is-flex-wrap" style="gap: 1rem;">
+                                <span><span class="legend-dot" style="background: green;"></span> Insertions</span>
+                                <span><span class="legend-dot" style="background: red;"></span> Deletions</span>
+                                <span><span class="legend-dot" style="background: blue;"></span> Total Triples</span>
+                            </div>
                         </div>
-                    {% endif %}
-                </div>
+                        {{ evo_plot | safe }}
+                    </div>
+                {% endif %}
             </div>
+          
             
             <h3 class="title is-5">SPARQL Query Editor</h3>
             
@@ -131,7 +129,7 @@
                         <label class="label">Executing timestamped query ... <label id="timer">0</label> sec</label>
                     </div>
                 </div>
-           
+        
                 <div id="result-table">
                     {% if result %}
                         {{ result|safe }}
@@ -147,6 +145,7 @@
     </div>
 </section>
 
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 
 </body>
 </html>

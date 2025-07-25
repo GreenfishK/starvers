@@ -149,6 +149,8 @@ class GuiContr:
             barmode='overlay',
             plot_bgcolor='white',  
             paper_bgcolor='white',  
+            margin=dict(t=30, b=40, l=50, r=20), 
+
             #legend=dict(
             #    orientation="h",       
             #    yanchor="top",      
@@ -173,27 +175,6 @@ class GuiContr:
                 tickformat=","
             )
         )
-
-        # Add buttons for time aggregation
-        #fig.update_layout(
-        #    updatemenus=[
-        #        dict(
-        #            type="buttons",
-        #            direction="left",
-        #            showactive=True,
-        #            active=active_time_aggr,  
-        #            buttons=[
-        #                dict(label="Hour", method="restyle", args=[[], []], args2=["HOUR"]),
-        #                dict(label="Day", method="restyle", args=[[], []], args2=["DAY"]),
-        #                dict(label="Week", method="restyle", args=[[], []], args2=["WEEK"]),
-        #            ],
-        #            x=0,
-        #            xanchor="left",
-        #            y=1.15,
-        #            yanchor="top"
-        #        )
-        #    ],
-        #)
 
         start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")
         end = agg["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S")
