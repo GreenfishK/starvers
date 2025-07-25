@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            const visibleTotals = yData.slice(startIndex, endIndex );
+            const visibleTotals = yData.slice(startIndex, endIndex + 1);
             if (visibleTotals.length === 0) {
                 console.log("No visible y-values in Total Triples trace, skipping relayout.");
                 return;
@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function () {
     editor.setSize(null, "420px");
 
     console.log("Initializing SPARQL-star view.")
-    const timestampedEditor = CodeMirror(document.getElementById("timestamped-editor"), {
+    const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
         value: "",
         mode: "sparql",
         lineNumbers: true,
         theme: "default",
-        readOnly: false  
+        readOnly: "nocursor" 
     });
     timestampedEditor.setSize(null, "420px");
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
@@ -207,12 +207,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 1000);
 
         console.log("Executing query.")
+        // show result container
+        document.getElementById("data_section").style.display = "block";
+        
+
         fetch("/query", {
             method: "POST",
             body: formData
         })
         .then(res => res.json())
         .then(data => {
+            // show timestamped query
+            timestampedEditor.setValue(data.timestamped_query || "");
+
             clearInterval(timerInterval);
             overlay.style.display = "none";
 
@@ -220,9 +227,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.error) {
                 resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
             } else {
+
                 resultTable.innerHTML = data.result_set;
-                timestampedEditor.setValue(data.timestamped_query || "");
-                document.getElementById("data_section").style.display = "block";
                 console.log("Result successfully retrieved.");
 
                 // Check if the download button already exists
@@ -246,3 +252,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+// hour, day, week buttons listener
+function changeAgg(level) {
+    const repo = document.getElementById("repo-select").value;
+    const plotContainer = document.getElementById("plot-container");
+
+    fetch(`/infos/${repo}?agg=${level}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) {
+          plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
+          return;
+        }
+        console.log("Updated plot for aggregation level:", level);
+        const evoPlotObj = JSON.parse(data.evo_plot);
+        Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
+      })
+      .catch(err => {
+        console.error("Failed to fetch new aggregation plot:", err);
+        plotContainer.innerHTML = "<p class='has-text-danger'>Failed to update plot.</p>";
+      });
+  }
