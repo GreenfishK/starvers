@@ -26,6 +26,10 @@
     position: relative;
 }
 
+#timer {
+    font-size: 1rem;
+}
+
 #timestamp_label {
     min-width: 180px;
 }
@@ -86,3 +90,24 @@
 #tracking-info{
     gap: 1rem;
 }
+
+.help-text {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+#sparql-editor, #timestamped-query {
+    min-height: 300px;
+}
+
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.3em;
+}
+

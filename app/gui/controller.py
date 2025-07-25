@@ -56,7 +56,8 @@ class GuiContr:
 
         agg = agg.reset_index()
 
-        timestamps = agg["timestamp"].dt.strftime("%d.%m.%Y\n%H:%M:%S")
+        timeformat = "%d.%m.%Y\n%H:%M:%S" if time_aggr.name == "HOUR" else "%d.%m.%Y"
+        timestamps = agg["timestamp"].dt.strftime(timeformat) 
         total = agg["cnt_triples"].astype(int)
         insertions = agg["insertions"].astype(int)
         deletions = agg["deletions"].astype(int)
@@ -137,7 +138,7 @@ class GuiContr:
             y=total.tolist(),
             mode="lines+markers",
             name='Total Triples',
-            line=dict(color="blue", width=1),  # thin blue line
+            line=dict(color="blue", width=1)
         ))
 
         fig.update_layout(
@@ -148,13 +149,14 @@ class GuiContr:
             barmode='overlay',
             plot_bgcolor='white',  
             paper_bgcolor='white',  
-            legend=dict(
-                orientation="h",        # horizontal
-                yanchor="top",       # anchor from the bottom
-                y=1.15,                 # just above the plot area
-                xanchor="right",        # align from the right
-                x=1                     # align to the right side
-            ),
+            #legend=dict(
+            #    orientation="h",       
+            #    yanchor="top",      
+            #    y=1.15,                
+            #    xanchor="right",      
+            #    x=1                    
+            #),
+            showlegend=False,
             xaxis=dict(
                 showgrid=True,
                 gridcolor='lightgray', 
@@ -172,26 +174,26 @@ class GuiContr:
             )
         )
 
-        # Add dropdown for time aggregation
-        fig.update_layout(
-            updatemenus=[
-                dict(
-                    type="buttons",
-                    direction="left",
-                    showactive=True,
-                    active=active_time_aggr,  
-                    buttons=[
-                        dict(label="Hour", method="restyle", args=[[], []], args2=["HOUR"]),
-                        dict(label="Day", method="restyle", args=[[], []], args2=["DAY"]),
-                        dict(label="Week", method="restyle", args=[[], []], args2=["WEEK"]),
-                    ],
-                    x=0,
-                    xanchor="left",
-                    y=1.15,
-                    yanchor="top"
-                )
-            ],
-        )
+        # Add buttons for time aggregation
+        #fig.update_layout(
+        #    updatemenus=[
+        #        dict(
+        #            type="buttons",
+        #            direction="left",
+        #            showactive=True,
+        #            active=active_time_aggr,  
+        #            buttons=[
+        #                dict(label="Hour", method="restyle", args=[[], []], args2=["HOUR"]),
+        #                dict(label="Day", method="restyle", args=[[], []], args2=["DAY"]),
+        #                dict(label="Week", method="restyle", args=[[], []], args2=["WEEK"]),
+        #            ],
+        #            x=0,
+        #            xanchor="left",
+        #            y=1.15,
+        #            yanchor="top"
+        #        )
+        #    ],
+        #)
 
         start = agg["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S")
         end = agg["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S")

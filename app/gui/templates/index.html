@@ -31,56 +31,80 @@
                     </div>
                     {% if rdf_dataset_url and polling_interval %}
                         <div id="tracking-info" class="mt-2 content is-flex is-flex-wrap-wrap">
-                            <p><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</p>
-                            <p><strong>Polling Interval:</strong> {{ polling_interval }} seconds</p>
-                            <p><strong>Next run (UTC):</strong> {{ next_run }}</p>
+                            <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
+                            <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
+                            <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-            <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
-                {% if evo_plot %}
-                    <div class="plot-box">
-                        {{ evo_plot | safe }}
+            <div id="plot_menu_and_legend">
+                <div class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between mb-3" style="gap: 1rem;">
+                    <!-- Time aggregation buttons -->
+                    <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                        <button type="button" class="button is-link is-light is-small" onclick="changeAgg('HOUR')">Hour</button>
+                        <button type="button" autofocus class="button is-link is-light is-small" onclick="changeAgg('DAY')">Day</button>
+                        <button type="button" class="button is-link is-light is-small" onclick="changeAgg('WEEK')">Week</button>
                     </div>
-                {% endif %}
-            </div>
-            
-            <h3 class="title is-5">SPARQL Query</h3>
-            
-            <label id="timestamp_label" class="label">Timestamp</label>
 
-            <div class="field is-horizontal is-align-items-center">
-                <div class="field-body is-flex is-align-items-center">
-                    <div class="control is-flex is-flex-wrap-wrap is-align-items-center">
-                        <input id="timestamp_input" class="input" type="text" name="timestamp" placeholder="e.g. 2025-05-20T12:00:00"
-                            value="{{ selected_timestamp or '2025-05-20T12:00:00' }}">
-
-                    {% if ts_start and ts_end %}
-                        <p class="has-text-grey ml-3">Select one between {{ ts_start }} and {{ ts_end }}</p>
-                    {% endif %}
+                    <!-- Custom Legend -->
+                    <div class="is-flex is-align-items-center is-flex-wrap" style="gap: 1rem;">
+                        <span><span class="legend-dot" style="background: green;"></span> Insertions</span>
+                        <span><span class="legend-dot" style="background: red;"></span> Deletions</span>
+                        <span><span class="legend-dot" style="background: blue;"></span> Total Triples</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="field is-vertical">
-                <div class="field is-flex is-flex-wrap-wrap" style="gap: 1rem;">
+                <!-- Plotly chart -->
+                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                    {% if evo_plot %}
+                        <div class="plot-box">
+                            {{ evo_plot | safe }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <h3 class="title is-5">SPARQL Query Editor</h3>
+            
+            <div class="field is-flex" style="gap: 1rem; flex-wrap: wrap; align-items: stretch;">
+
+                <!-- Left side: Label + Input + Help + Query Editor -->
+                <div class="control is-flex is-flex-direction-column is-justify-content-space-between" style="flex: 1; min-width: 300px;">
+                    
+                    <!-- Timestamp label + input inline -->
+                    <div class="field is-grouped mb-2" style="align-items: center;">
+                        <div class="control" style="display: inline-flex; align-items: center;">
+                        <label for="timestamp_input" style="display: inline-flex; align-items: center; padding: 0; white-space: nowrap; font-weight: bold; margin-right: 0.5rem;">
+                            Timestamp
+                        </label>
+                        <input id="timestamp_input"
+                                class="input"
+                                type="text"
+                                name="timestamp"
+                                placeholder="2025-05-20T12:00:00"
+                                value="{{ selected_timestamp or '2025-05-20T12:00:00' }}"
+                                style="width: 20ch;">
+                        </div>
+                    </div>
+
+                    <!-- Help text -->
+                    <p class="has-text-grey help-text mb-2" style="min-height: 1.5em;">
+                        {% if ts_start and ts_end %}
+                            Select one between {{ ts_start }} and {{ ts_end }}
+                        {% endif %}
+                    </p>
 
                     <!-- SPARQL editor -->
-                    <div class="control" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
-                        <div class="is-flex is-justify-content-flex-end">
-                            <label class="label">Execution Time: <span id="timer">0</span> sec</label>
-                        </div>
-                        <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }}</textarea>
-                    </div>
+                    <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
+                </div>
 
-                    <!-- Timestamped query with label -->
-                    <div class="control" style="flex: 1; min-width: 300px; display: flex; flex-direction: column;">
-                        <div class="is-flex is-justify-content-flex-end">
-                            <label class="label">Timestamped Query</label>
-                        </div>
-                        <div id="timestamped-editor"></div>
+                <!-- right side: Label + Timestamped query -->
+                <div class="control is-flex is-flex-direction-column" style="flex: 1; min-width: 300px; justify-content: flex-end;">
+                    <div class="is-flex is-flex-direction-column">
+                        <label class="label is-flex is-justify-content-flex-end" style="margin-bottom: 0.5rem;">Timestamped Query</label>
+                        <div id="timestamped-query"></div>
                     </div>
                 </div>
             </div>
@@ -103,7 +127,9 @@
                 <h3 class="title is-5">Query Result</h3>
 
                 <div id="loading-overlay">
-                    <span>Executing query... </span>
+                    <div class="is-flex is-justify-content-flex-end">
+                        <label class="label">Executing timestamped query ... <label id="timer">0</label> sec</label>
+                    </div>
                 </div>
            
                 <div id="result-table">
