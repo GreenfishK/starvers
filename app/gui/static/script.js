@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
         changeAgg('DAY', defaultBtn);
     }
 
+
     if (plotDiv) {
         let relayoutTimeout = null;
         let lastYRange = null;
@@ -152,39 +153,6 @@ document.addEventListener("DOMContentLoaded", function () {
         lineNumbers: true
     });
     editor.setSize(null, "420px");
-
-    const timestampTooltip = document.getElementById("timestamp-help");
-    if (timestampTooltip && timestampTooltip.title) {
-        const tooltip = document.createElement("div");
-        tooltip.textContent = timestampTooltip.title;
-        tooltip.style.position = "fixed";
-        tooltip.style.left = "50%";
-        tooltip.style.top = "20%";
-        tooltip.style.transform = "translateX(-50%)";
-        tooltip.style.background = "#f5f5f5";
-        tooltip.style.border = "1px solid #ccc";
-        tooltip.style.borderRadius = "5px";
-        tooltip.style.padding = "0.75em 1.25em";
-        tooltip.style.zIndex = 1000;
-        tooltip.style.boxShadow = "0 2px 8px rgba(0,0,0,0.25)";
-        tooltip.style.transition = "opacity 0.3s ease-in-out";
-        tooltip.style.opacity = "0";
-        tooltip.style.pointerEvents = "none";
-        tooltip.style.fontSize = "0.9rem";
-
-        document.body.appendChild(tooltip);
-
-        requestAnimationFrame(() => {
-            tooltip.style.opacity = "1";
-        });
-
-        setTimeout(() => {
-            tooltip.style.opacity = "0";
-            setTimeout(() => {
-                tooltip.remove();
-            }, 300);
-        }, 5000);
-    }
 
     console.log("Initializing SPARQL-star view.")
     const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
@@ -346,3 +314,33 @@ function changeAgg(level, clickedButton) {
         plotContainer.innerHTML = "<p class='has-text-danger'>Failed to update plot.</p>";
       });
   }
+
+// Timestamp seleciton tooltip
+function showTooltip(inputField) {
+    const timestampTooltip = document.getElementById("timestamp-help");
+    if (timestampTooltip && timestampTooltip.title && inputField) {
+        const tooltip = document.createElement("div");
+        tooltip.id = "timestamp-help-div"
+        tooltip.textContent = timestampTooltip.title;
+
+        // Calculate position
+        const rect = inputField.getBoundingClientRect();
+        tooltip.style.left = `${rect.right + 10}px`; 
+        tooltip.style.top = `${rect.top + window.scrollY}px`; 
+
+        document.body.appendChild(tooltip);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            tooltip.style.opacity = "1";
+        });
+
+        // Remove after 5s
+        setTimeout(() => {
+            tooltip.style.opacity = "0";
+            setTimeout(() => {
+                tooltip.remove();
+            }, 300);
+        }, 5000);
+    }
+}

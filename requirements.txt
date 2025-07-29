@@ -2,6 +2,7 @@ fastapi[standard]
 uvicorn[standard]
 load_dotenv
 sqlmodel
+sqlalchemy
 psycopg2-binary
 starvers @ git+https://github.com/GreenfishK/starvers.git
 requests
@@ -17,3 +18,4 @@ pandas==1.3.4
 matplotlib
 Flask>=2.0
 plotly==6.2.0
+SPARQLWrapper==2.0.0

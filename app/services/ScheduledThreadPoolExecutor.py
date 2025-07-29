@@ -20,21 +20,21 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
 
         self.shutdown = False
 
-    def schedule_polling_at_fixed_rate(self, dataset_id: UUID, period: int, delta_type: DeltaType, *args, initial_run=True, **kwargs) -> bool:
+    def schedule_polling_at_fixed_rate(self, dataset_id: UUID, repository_name, latest_timestamp, period: int, delta_type: DeltaType, *args, initial_run=True, **kwargs) -> bool:
         if self.shutdown:
-            raise RuntimeError("Cannot schedule new task after shutdown!")
+            raise RuntimeError(f"Repository name: {repository_name}: Cannot schedule new task after shutdown!")
         
-        task = PollingTask(dataset_id, period, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
-        return self._put(task, 0)
+        task = PollingTask(dataset_id, repository_name, latest_timestamp, period, *args, is_fixed_rate=True, time_func=self.queue.time_func, executor_ctx=self, is_initial=initial_run, **kwargs)
+        return self._put(task, repository_name, 0)
 
-    def _put(self, task: PollingTask, delay: int) -> bool:
+    def _put(self, task: PollingTask, repository_name, delay: int) -> bool:
         if delay < 0:
             raise ValueError(f"Delay `{delay}` must be a non-negative number")
         is_scheduled = self.queue.put(task, delay)
-        LOG.info(f"Scheduled {task} with delay of {delay}")
+        LOG.info(f"Repository name: {repository_name}: Scheduled {task} with delay of {delay}")
+        
         return is_scheduled
     
-
     def __run(self):
         while not self.shutdown:
             try:

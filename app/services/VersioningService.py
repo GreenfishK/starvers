@@ -34,10 +34,11 @@ class VersioningService(ABC):
         pass
 
 class StarVersService(VersioningService):
-    def __init__(self, tracking_task: TrackingTaskDto) -> None:
+    def __init__(self, tracking_task: TrackingTaskDto, repository_name: str) -> None:
         self.LOG = get_logger(__name__, f"tracking_{tracking_task.name}.log")
         self.tracking_task = tracking_task
         self.local_file = False
+        self.repository_name = repository_name
 
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', tracking_task.name)
         self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', tracking_task.name)
@@ -45,24 +46,24 @@ class StarVersService(VersioningService):
         
         match tracking_task.delta_type:
             case DeltaType.ITERATIVE:
-                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task)
+                self.__delta_query_service = IterativeDeltaQueryService(self.__starvers_engine, tracking_task, repository_name)
             case DeltaType.SPARQL:
-                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task)
+                self.__delta_query_service = SparqlDeltaQueryService(self.__starvers_engine, tracking_task, repository_name)
 
 
     def _cnt_triples(self, version_timestamp):
-        self.LOG.info(f"Counting triples in the snapshot with timestamp '{version_timestamp}'")
+        self.LOG.info(f"Repository name: {self.repository_name}: Counting triples in the snapshot with timestamp '{version_timestamp}'")
         cnt_triples_query = get_count_triples_template(version_timestamp)
         self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
         cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
         cnt_triples_df = convert_select_query_to_df(cnt_triples)
         cnt_triples = cnt_triples_df["cnt_triples"].values[0].split('^^')[0].strip('"') 
-        self.LOG.info(f"Number of triples: {cnt_triples}")
+        self.LOG.info(f"Repository name: {self.repository_name}: Number of triples: {cnt_triples}")
 
         return cnt_triples
 
     def run_initial_versioning(self, version_timestamp):
-        self.LOG.info(f"Start initial versioning task [{version_timestamp}]")
+        self.LOG.info(f"Repository name: {self.repository_name}: Start initial versioning task [{version_timestamp}]")
         self.__delta_query_service.set_version_timestamp(version_timestamp)
         
         if self.local_file:
@@ -82,25 +83,25 @@ class StarVersService(VersioningService):
         with open(f"{path}/{self.tracking_task.name}_timings.csv", "a+") as timing_file:
             timing_file.write(f"{get_timestamp(version_timestamp)}, {cnt_triples}, 0, 0, 0, 0, 0, {cnt_triples}")
             timing_file.write('\n')
-        self.LOG.info(f"Finished initial versioning task [{version_timestamp}]")
+        self.LOG.info(f"Repository name: {self.repository_name}: Finished initial versioning task [{version_timestamp}]")
 
         # Zip and remove tmp directory that gets created in load_rdf_data
         tmp_dir = f"{path}/{get_timestamp(version_timestamp)}"
         
         # zip tmp_dir and save the zip file in the same directory as tmp_dir
         shutil.make_archive(tmp_dir, 'zip', tmp_dir)
-        self.LOG.info(f"Zipped initial snapshot: {tmp_dir}.zip")
+        self.LOG.info(f"Repository name: {self.repository_name}: Zipped initial snapshot: {tmp_dir}.zip")
         
         # remove tmp_dir
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
-            self.LOG.info(f"Removed temporary directory: {tmp_dir}")
+            self.LOG.info(f"Repository name: {self.repository_name}: Removed temporary directory: {tmp_dir}")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
         if timestamp is not None and query_as_timestamped:
-            self.LOG.info(f"Execute timestamped query with timestamp={timestamp}")
+            self.LOG.info(f"Repository name: {self.repository_name}: Execute timestamped query with timestamp={timestamp}")
         else:
-            self.LOG.info("Execute query without timestamp")
+            self.LOG.info("Repository name: {self.repository_name}: Execute query without timestamp")
         return self.__starvers_engine.query(query, timestamp, query_as_timestamped)
     
 
@@ -110,7 +111,7 @@ class StarVersService(VersioningService):
     
 
     def run_versioning(self, version_timestamp) -> DeltaEvent:
-        self.LOG.info(f"Version timestamp: {version_timestamp}")
+        self.LOG.info(f"Repository name: {self.repository_name}: Version timestamp: {version_timestamp}")
         try:
             timing_overall = time.time_ns()
 
@@ -125,8 +126,7 @@ class StarVersService(VersioningService):
             timing_delta = time.time_ns()
             insertions, deletions = self.__delta_query_service.calculate_delta()  
             timing_delta = time.time_ns() - timing_delta
-
-            self.LOG.info(f"Found {len(insertions.index)} insertions and {len(deletions.index)} deletions")
+            self.LOG.info(f"Repository name: {self.repository_name}: Found {len(insertions.index)} insertions and {len(deletions.index)} deletions")
             
             timing_versioning = time.time_ns()
             insertions_n3 = convert_df_to_n3(insertions)
@@ -155,7 +155,7 @@ class StarVersService(VersioningService):
             shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
 
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-                self.LOG.info(f"Tracked {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
+                self.LOG.info(f"Repository name: {self.repository_name}: Tracked {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
                 return DeltaEvent(
                     id=self.tracking_task.id,
                     repository_name=self.tracking_task.name,
@@ -168,11 +168,11 @@ class StarVersService(VersioningService):
                     timestamp=version_timestamp
                 )
             
-            self.LOG.info("No changes tracked")
-            self.LOG.info(f"Finished versioning task [{version_timestamp}]")
+            self.LOG.info(f"Repository name: {self.repository_name}: No changes tracked")
+            self.LOG.info(f"Repository name: {self.repository_name}: Finished versioning task [{version_timestamp}]")
             return None
         except Exception as e:
-            self.LOG.error(f"Versioning task failed with error {e}")
-            self.LOG.info("Versioning task will be rescheduled...")
+            self.LOG.error(f"Repository name: {self.repository_name}: Versioning task failed with error {e}")
+            self.LOG.info(f"Repository name: {self.repository_name}: Versioning task will be rescheduled...")
             self.__delta_query_service.clean_up()
             return None
