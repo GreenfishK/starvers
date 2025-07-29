@@ -1,16 +1,15 @@
-version: "3"
-
 services:
   starversserver:
     image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    container_name: starvers-server
     restart: always
     ports:
       - 80:80
     env_file: "../prod.env"
     volumes:
-      - /mnt/data/starversserver/evaluation:/code/evaluation
-      - /mnt/data/starversserver/logs:/code/logs
-      - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     depends_on:
       db:
         condition: service_started
@@ -20,12 +19,13 @@ services:
   
   gui:
     image: starversserver_gui # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    container_name: starvers-gui
     ports:
       - 5000:5000
     volumes:
       - ../app/gui:/code/app/gui
-      - /mnt/data/starversserver/evaluation:/code/evaluation
-      - /mnt/data/starversserver/logs:/code/logs
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
     depends_on:
       db:
         condition: service_started
@@ -43,9 +43,9 @@ services:
     ports: 
       - 80:80
     volumes:
-      - /mnt/data/starversserver/evaluation:/code/evaluation
-      - /mnt/data/starversserver/logs:/code/logs
-      - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg_iterative", "ITERATIVE"]
 
   evaluate:
@@ -53,14 +53,16 @@ services:
     env_file: "../prod.env"
     volumes:
       - ../evaluation:/code/evaluation
-      - /mnt/data/starversserver/evaluation:/data/evaluation
-      - /mnt/data/starversserver/logs:/data/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
     entrypoint: ["python", "/code/evaluation/evaluation.py"]
 
 
   db:
     image: postgres
+    container_name: starvers-db
     restart: always
+    env_file: "../prod.env"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -68,12 +70,14 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - /mnt/data/starversserver/postgresql:/var/lib/postgresql
+      - ${data_storage}/postgresql:/var/lib/postgresql
 
 
   rdfstore:
     image: ontotext/graphdb:10.5.0
+    container_name: starvers-rdfstore
     restart: always
+    env_file: "../prod.env"
     environment: 
       GDB_JAVA_OPTS: >-
         -Xmx32g -Xms32g
@@ -91,7 +95,7 @@ services:
       - 7200:7200
       - 7300:7300
     volumes:
-      - /mnt/data/starversserver/graphdb-data:/opt/graphdb/home
+      - ${data_storage}/graphdb-data:/opt/graphdb/home
     extra_hosts:
       - "host.docker.internal:host-gateway"
   

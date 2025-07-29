@@ -1,13 +1,14 @@
 from sqlmodel import Session, select
+from sqlalchemy import desc
 from uuid import UUID
 from typing import List
 from datetime import datetime
 
-from app.LoggingConfig import get_logger
-from app.models.DatasetModel import Dataset, DatasetCreate
+from app.models.DatasetModel import Dataset, DatasetCreate, Snapshot
 from app.services import ScheduledThreadPoolExecutor
 from app.utils.graphdb.GraphDatabaseUtils import create_repository
 from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
+from app.LoggingConfig import get_logger
 
 LOG = get_logger(__name__)
 
@@ -36,6 +37,18 @@ def get_dataset_metadata_by_repo_name(repo_name: str, session: Session) -> Optio
     result = session.exec(statement).first()
     return result 
 
+def get_latest_snapshot_timestamp(session: Session, dataset_id: str):
+    statement = (
+        select(Snapshot.snapshot_ts)
+        .where(Snapshot.dataset_id == dataset_id)
+        .order_by(desc(Snapshot.snapshot_ts))
+        .limit(1)
+    )
+    result = session.exec(statement).first()
+    latest_timestamp = result[0] if result else None
+
+    return latest_timestamp
+
 def add(dataset: DatasetCreate, session: Session) -> List[Dataset]:
     db_dataset = Dataset.model_validate(dataset)
 
@@ -43,7 +56,7 @@ def add(dataset: DatasetCreate, session: Session) -> List[Dataset]:
     session.commit()
     session.refresh(db_dataset)
 
-    __start(db_dataset)
+    __start(session, db_dataset)
 
     return db_dataset
 
@@ -70,12 +83,21 @@ def delete_all(session: Session) -> List[Dataset]:
     return db_datasets
 
 def restart(session: Session):
+    # Query active dataset from database
     active_graphs = get_all(session)
+
+    # Restart active versioning tasks
     LOG.info(f'Restart {len(active_graphs)} active versioning task')
     for graph in active_graphs:
-        __start(graph, False)
+        __start(session, graph, False)
         pass
 
-def __start(dataset: Dataset, initial_run=True):
+def __start(session: Session, dataset: Dataset, initial_run=True):
+    # Create triple store repository if it does not exist
     create_repository(dataset.repository_name)
-    polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)
+
+    # Polling, delta calculation, versioning
+    LOG.info(f"Repository name: {dataset.repository_name}: Query latest timestamp from snapshot table.")
+    latest_timestamp = get_latest_snapshot_timestamp(session, dataset.id)
+    LOG.info(f"Repository name: {dataset.repository_name}: Latest timestamp: {latest_timestamp}")
+    polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.repository_name, latest_timestamp, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)

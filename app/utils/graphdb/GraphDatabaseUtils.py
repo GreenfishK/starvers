@@ -5,6 +5,8 @@ import os
 import time
 import requests
 from functools import lru_cache
+from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, CSV
+
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
 from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
@@ -14,13 +16,24 @@ from app.utils.exceptions.ServerFileImportFailedException import ServerFileImpor
 DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'
 BASE_GRAPH_URI = 'http://example.org/'
 
+def create_engine(repository_name, auth = DIGEST, method = POST, return_format = CSV, query_type = 'SELECT'):
+    graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repository_name)
+    sparql_engine = SPARQLWrapper(graph_db_get_endpoint)
+    sparql_engine.setHTTPAuth(auth)
+    sparql_engine.setMethod(method)
+    sparql_engine.setReturnFormat(return_format)
+    # sparql.addCustomHttpHeader("Accept", "text/csv")
+    sparql_engine.queryType = query_type
+
+    return sparql_engine
+
 # Implementation for Graph DB
 def create_repository(repository_name: str): # add URL and description?
     repoConfig = __load_repo_config_file()
     repoConfig = repoConfig.replace('{:name}', repository_name)
     repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + repository_name)
 
-    get_logger(__name__).info(f"Create graphdb repository with name {repository_name}, if it does not exist.")
+    get_logger(__name__).info(f"Repository name: {repository_name}: Create graphdb repository, if it does not exist.")
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories", files=dict(config=repoConfig))
     
     if (response.status_code != 201):
@@ -30,7 +43,7 @@ def create_repository(repository_name: str): # add URL and description?
             raise GraphRepositoryCreationFailedException(repository_name, response.text)
         
 def import_serverfile(file_name: str, repository_name: str, graph_name: str = None):
-    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Load serverfile {file_name} into graphdb repository {repository_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Load serverfile {file_name} into graphdb repository.")
     payload = {
         "fileNames": [file_name],
         "importSettings": {
@@ -46,12 +59,12 @@ def import_serverfile(file_name: str, repository_name: str, graph_name: str = No
 
     response = requests.post(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server", json=payload)
     if (response.status_code != 202):
-        get_logger(__name__,f"tracking_{repository_name}.log").error(f"Error loading serverfile {file_name} into graphdb repository {repository_name} with exception {response.text}")
+        get_logger(__name__,f"tracking_{repository_name}.log").error(f"Repository name: {repository_name}: Error loading serverfile {file_name} into graphdb repository with exception {response.text}")
         raise ServerFileImportFailedException(repository_name, response.text)
     
 
 def poll_import_status(file_name: str, repository_name: str):
-    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Awaiting import of serverfile {file_name} into graphdb repository {repository_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Awaiting import of serverfile {file_name} into graphdb repository.")
     while True:
         try:
             response = requests.get(f"{Settings().graph_db_url}/rest/repositories/{repository_name}/import/server")
@@ -62,28 +75,28 @@ def poll_import_status(file_name: str, repository_name: str):
             task = next((t for t in import_tasks if t["name"] == file_name), None)
 
             if not task:
-                get_logger(__name__,f"tracking_{repository_name}.log").error(f"Import for serverfile {file_name} not found!")
+                get_logger(__name__,f"tracking_{repository_name}.log").error(f"Repository name: {repository_name}: Import for serverfile {file_name} not found!")
                 raise ServerFileImportFailedException(repository_name, "Import not found!")
 
             status = task["status"]
 
             if status == "DONE":
-                get_logger(__name__,f"tracking_{repository_name}.log").info(f"Import for {repository_name} finished successfully.")
+                get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Import finished successfully.")
                 delete_serverfile(file_name, repository_name)
                 break
             elif status == "ERROR":
-                get_logger(__name__,f"tracking_{repository_name}.log").error("Import for {repository_name} failed: {e}")
+                get_logger(__name__,f"tracking_{repository_name}.log").error("Repository name: {repository_name}: Import failed: {e}")
                 raise ServerFileImportFailedException(repository_name, task.get('message'))
 
         except Exception as e:
-            get_logger(__name__,f"tracking_{repository_name}.log").error("Error while polling import status: {e}")
+            get_logger(__name__,f"tracking_{repository_name}.log").error(f"Repository name: {repository_name}: Error while polling import status: {e}")
             delete_serverfile(file_name, repository_name)
-            raise ServerFileImportFailedException(repository_name, f"Error while polling import status: {e}")
+            raise ServerFileImportFailedException(repository_name, f"Repository name: {repository_name}: Error while polling import status: {e}")
 
         time.sleep(1)
 
 def delete_serverfile(file_name: str, repository_name: str):
-    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Remove serverfile {file_name}")
+    get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Remove serverfile {file_name}")
     import_path = f"/graphdb-import/{file_name}"
     os.remove(import_path)
 
@@ -137,6 +150,13 @@ def get_delta_query_insertions_template(timestamp, graph_name: str) -> str:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
         template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
+        return template
+    
+def get_snapshot_metrics_template(ts_current: datetime, ts_prev: datetime) -> str:
+    with open('app/utils/graphdb/query_snapshot_metrics.sparql', 'r') as f:
+        template = f.read()
+        template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
+        template = template.replace('{:ts_prev}', _versioning_timestamp_format(ts_prev))
         return template
     
 def _versioning_timestamp_format(timestamp: datetime) -> str:

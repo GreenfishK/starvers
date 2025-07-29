@@ -9,12 +9,9 @@ class DeltaEvent(BaseModel):
     id: UUID
     repository_name: str
     delta_type: DeltaType
-
     totalInsertions: int
     totalDeletions: int
-
     insertions: List[str]
     deletions: List[str]
-
     versioning_duration_ms: int
     timestamp: datetime
