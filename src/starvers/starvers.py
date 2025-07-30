@@ -403,7 +403,7 @@ class TripleStoreEngine:
             logger.info("Query being executed: \n {0}".format(select_statement))
             self.sparql_get_with_post.setQuery(select_statement)
         
-        self.sparql_get_with_post.queryType = 'SELECT'
+        #self.sparql_get_with_post.queryType = 'SELECT'
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
         logger.info("Converting results ... ")
