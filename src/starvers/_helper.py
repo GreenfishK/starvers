@@ -77,6 +77,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     response_format = result._get_responseFormat()
 
     if response_format == "json":
+        logger.info(f"Parsing JSON into DataFrame")
         column_names = []
         for var in results["head"]["vars"]:
             column_names.append(var)
@@ -94,6 +95,9 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
             values.append(row)
         df = df.append(pd.DataFrame(values, columns=df.columns))
     elif response_format == "csv":
+        logger.info(f"Parsing CSV into DataFrame")
+        logger.info(type(results))
+        logger.info(results)
         return pd.read_csv(io.StringIO(results))
     else:
         raise ValueError(f"Unsupported response format: {response_format}")
