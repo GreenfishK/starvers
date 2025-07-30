@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 import pandas as pd
+import io
 from SPARQLWrapper import Wrapper
 import logging
 from rdflib.plugins.sparql.parserutils import CompValue
@@ -73,23 +74,30 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
                 return escape_string(value)
         
     results = result.convert()
+    response_format = result._get_responseFormat()
 
-    column_names = []
-    for var in results["head"]["vars"]:
-        column_names.append(var)
-    df = pd.DataFrame(columns=column_names)
-
-    values = []
-    for r in results["results"]["bindings"]:
-        row = []
-        for col in results["head"]["vars"]:
-            if col in r:
-                result_value = format_value(r[col])
-            else:
-                result_value = None
-            row.append(result_value)
-        values.append(row)
-    df = df.append(pd.DataFrame(values, columns=df.columns))
+    if response_format == "json":
+        column_names = []
+        for var in results["head"]["vars"]:
+            column_names.append(var)
+        df = pd.DataFrame(columns=column_names)
+    
+        values = []
+        for r in results["results"]["bindings"]:
+            row = []
+            for col in results["head"]["vars"]:
+                if col in r:
+                    result_value = format_value(r[col])
+                else:
+                    result_value = None
+                row.append(result_value)
+            values.append(row)
+        df = df.append(pd.DataFrame(values, columns=df.columns))
+    elif reponse_format == "csv":
+        csv_string = result.decode("utf-8")
+        return pd.read_csv(io.StringIO(csv_string))
+    else:
+        raise ValueError(f"Unsupported response format: {response_format}")
 
     return df
 
