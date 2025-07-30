@@ -95,8 +95,6 @@ class PollingTask():
                     csv_text = response.decode('utf-8')
                     df_metrics = pd.read_csv(StringIO(csv_text))
 
-                    LOG.info(f"Repository name: {self.repository_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table: set all fields")
-
                     snapshots = []
                     for _, row in df_metrics.iterrows():
                         snapshot = Snapshot(
@@ -113,7 +111,7 @@ class PollingTask():
                         snapshots.append(snapshot)
 
                     if snapshots:
-                        LOG.info(f"Repository name: {self.repository_name}: Inserting {len(snapshots)} snapshot(s) into 'snapshot' table.")
+                        LOG.info(f"Repository name: {self.repository_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table: set all fields")
                         session.add_all(snapshots)
                         session.commit()
                         for snap in snapshots:
