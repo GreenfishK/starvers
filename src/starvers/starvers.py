@@ -406,7 +406,7 @@ class TripleStoreEngine:
         #self.sparql_get_with_post.queryType = 'SELECT'
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
-        logger.info("Converting results ... ")
+        logger.info(f"The result has the return type {result._get_responseFormat()}. Converting results ... ")
         df = _to_df(result)
 
         return df
