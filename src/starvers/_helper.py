@@ -93,9 +93,8 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
                 row.append(result_value)
             values.append(row)
         df = df.append(pd.DataFrame(values, columns=df.columns))
-    elif reponse_format == "csv":
-        csv_string = result.decode("utf-8")
-        return pd.read_csv(io.StringIO(csv_string))
+    elif response_format == "csv":
+        return pd.read_csv(io.StringIO(results))
     else:
         raise ValueError(f"Unsupported response format: {response_format}")
 
