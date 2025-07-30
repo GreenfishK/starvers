@@ -6,6 +6,7 @@ from datetime import datetime
 from starvers.starvers import TripleStoreEngine
 from rdflib import Literal
 from rdflib.namespace import XSD
+from SPARQLWrapper import JSON
 
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
@@ -53,11 +54,13 @@ class StarVersService(VersioningService):
 
     def _cnt_triples(self, version_timestamp):
         self.LOG.info(f"Repository name: {self.repository_name}: Counting triples in the snapshot with timestamp '{version_timestamp}'")
+        
         cnt_triples_query = get_count_triples_template(version_timestamp)
-        self.__starvers_engine.sparql_get_with_post.setQuery(cnt_triples_query)
-        cnt_triples = self.__starvers_engine.sparql_get_with_post.query()
-        cnt_triples_df = convert_select_query_to_df(cnt_triples)
-        cnt_triples = cnt_triples_df["cnt_triples"].values[0].split('^^')[0].strip('"') 
+        cnt_triples_df = self.__starvers_engine.query(cnt_triples_query, yn_timestamp_query=False)
+        cnt_triples = cnt_triples_df["cnt_triples"].values[0]
+        if isinstance(cnt_triples, str):
+            cnt_triples = cnt_triples.split('^^')[0].strip('"')
+            
         self.LOG.info(f"Repository name: {self.repository_name}: Number of triples: {cnt_triples}")
 
         return cnt_triples
@@ -141,6 +144,7 @@ class StarVersService(VersioningService):
             cnt_triples = self._cnt_triples(version_timestamp)
 
             path = f"./evaluation/{self.tracking_task.name}/"
+            
             # Persist Timings
             with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
                 timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}, {cnt_triples}")
@@ -170,9 +174,11 @@ class StarVersService(VersioningService):
             
             self.LOG.info(f"Repository name: {self.repository_name}: No changes tracked")
             self.LOG.info(f"Repository name: {self.repository_name}: Finished versioning task [{version_timestamp}]")
+            
             return None
         except Exception as e:
             self.LOG.error(f"Repository name: {self.repository_name}: Versioning task failed with error {e}")
             self.LOG.info(f"Repository name: {self.repository_name}: Versioning task will be rescheduled...")
             self.__delta_query_service.clean_up()
+            
             return None

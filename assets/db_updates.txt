@@ -17,4 +17,9 @@ update dataset set next_run = null;
 truncate snapshot;
 
 update dataset set active = False;
+update dataset set active = True;
+
 update dataset set active = True where repository_name = 'schema_org_ontology';
+update dataset set active = True where repository_name = 'schema_org_ontology_iterative';
+
+update dataset set active = True where repository_name = 'schema_org_ontology' or repository_name = 'air_quality_ontology';
