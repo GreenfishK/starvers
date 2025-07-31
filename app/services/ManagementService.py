@@ -37,6 +37,19 @@ def get_dataset_metadata_by_repo_name(repo_name: str, session: Session) -> Optio
     result = session.exec(statement).first()
     return result 
 
+def get_id_by_repo_name(repo_name: str, session: Session) -> str:
+    statement = (
+        select(Dataset.id)
+        .where(Dataset.repository_name == repo_name)
+        .where(Dataset.active)
+    )
+    result = session.exec(statement).first()
+
+    if result is None:
+        raise DatasetNotFoundException(name=repo_name)
+
+    return str(result)
+
 def get_latest_snapshot_timestamp(session: Session, dataset_id: str):
     statement = (
         select(Snapshot.snapshot_ts)
@@ -99,5 +112,6 @@ def __start(session: Session, dataset: Dataset, initial_run=True):
     # Polling, delta calculation, versioning
     LOG.info(f"Repository name: {dataset.repository_name}: Query latest timestamp from snapshot table.")
     latest_timestamp = get_latest_snapshot_timestamp(session, dataset.id)
+    
     LOG.info(f"Repository name: {dataset.repository_name}: Latest timestamp: {latest_timestamp}")
     polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.repository_name, latest_timestamp, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)

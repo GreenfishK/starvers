@@ -21,5 +21,7 @@ update dataset set active = True;
 
 update dataset set active = True where repository_name = 'schema_org_ontology';
 update dataset set active = True where repository_name = 'schema_org_ontology_iterative';
+update dataset set active = True where repository_name = 'orkg';
+update dataset set active = True where repository_name = 'orkg_iterative';
 
 update dataset set active = True where repository_name = 'schema_org_ontology' or repository_name = 'air_quality_ontology';

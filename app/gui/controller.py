@@ -64,8 +64,7 @@ class GuiContr:
         insertions = agg["insertions"].astype(int)
         deletions = agg["deletions"].astype(int)
 
-        logging.info(f"Total. {total}")
-
+        logging.info(insertions)
         # Prepare arrays for traces
         ins_y = []
         ins_base = []
@@ -152,14 +151,6 @@ class GuiContr:
             plot_bgcolor='white',  
             paper_bgcolor='white',  
             margin=dict(t=30, b=40, l=50, r=20), 
-
-            #legend=dict(
-            #    orientation="h",       
-            #    yanchor="top",      
-            #    y=1.15,                
-            #    xanchor="right",      
-            #    x=1                    
-            #),
             showlegend=False,
             xaxis=dict(
                 showgrid=True,
