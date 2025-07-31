@@ -2,6 +2,10 @@ from typing import List, Tuple
 import pandas as pd
 from datetime import datetime
 from SPARQLWrapper import Wrapper
+import re
+from typing import Union, List, Tuple
+
+from rdflib import Graph
 
 def convert_select_query_to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     """
@@ -46,7 +50,25 @@ def convert_select_query_to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     return df
 
 
-def convert_to_df(nt_text: str) -> pd.DataFrame:
+def n3_to_set(n3_text: str):
+    g = Graph()
+    g.parse(data=n3_text, format='nt')  # Assuming N-Triples, not N3
+    n3_set = set(g)
+
+    return n3_set
+
+def convert_n3_to_list(nt_text: str) -> List[str]:
+    nt_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', nt_text)
+    lines = nt_text.splitlines()
+    clean_lines = [line.strip() for line in lines if line.strip()]
+    return clean_lines
+
+def convert_n3_to_df_or_list(nt_text: str, output_format: str) -> Union[pd.DataFrame, List[Tuple[str, str, str]]]:
+    # Hidden newline breaks (U+2028, U+2029)
+    # Invisible formatting characters (U+00A0, non-breaking space)
+    # Control characters 
+    nt_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', nt_text)
+
     triples = []
 
     lineNumber = 0
@@ -65,8 +87,13 @@ def convert_to_df(nt_text: str) -> pd.DataFrame:
         
         triples.append((splitted_line[0].strip(" "), splitted_line[1].strip(" "), splitted_line[2].strip(" .")))
 
-    # Convert to DataFrame
-    return pd.DataFrame(triples, columns=["s", "p", "o"])
+    if output_format == "df":
+        # Convert to DataFrame
+        return pd.DataFrame(triples, columns=["s", "p", "o"])
+    elif output_format == "list":
+        return triples
+    else:
+        raise ValueError(f"Wrong output format: {output_format}. Valid output formats are: df, list")
 
 
 def convert_df_to_triples(df: pd.DataFrame) -> List[Tuple]:

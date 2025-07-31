@@ -40,6 +40,11 @@ services:
   retroVersioning:
     image: starversserver
     env_file: "../prod.env"
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
     ports: 
       - 80:80
     volumes:
@@ -70,7 +75,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - ${data_storage}/postgresql:/var/lib/postgresql
+      - ${data_storage}/postgresql/data:/var/lib/postgresql/data
 
 
   rdfstore:

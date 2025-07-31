@@ -4,9 +4,6 @@ import shutil
 import time
 from datetime import datetime
 from starvers.starvers import TripleStoreEngine
-from rdflib import Literal
-from rdflib.namespace import XSD
-from SPARQLWrapper import JSON
 
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
@@ -14,7 +11,7 @@ from app.enums.DeltaTypeEnum import DeltaType
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
-from app.utils.HelperService import convert_df_to_n3, convert_df_to_triples, get_timestamp, convert_select_query_to_df
+from app.utils.HelperService import convert_df_to_triples, get_timestamp
 from app.utils.graphdb.GraphDatabaseUtils import get_query_all_template, get_count_triples_template
 
 class VersioningService(ABC):
@@ -127,13 +124,12 @@ class StarVersService(VersioningService):
             timing_prepare = time.time_ns() - timing_prepare
 
             timing_delta = time.time_ns()
-            insertions, deletions = self.__delta_query_service.calculate_delta()  
+            insertions_n3, deletions_n3 = self.__delta_query_service.calculate_delta()  
+
             timing_delta = time.time_ns() - timing_delta
-            self.LOG.info(f"Repository name: {self.repository_name}: Found {len(insertions.index)} insertions and {len(deletions.index)} deletions")
+            self.LOG.info(f"Repository name: {self.repository_name}: Found {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
             
             timing_versioning = time.time_ns()
-            insertions_n3 = convert_df_to_n3(insertions)
-            deletions_n3 = convert_df_to_n3(deletions)
             self.__starvers_engine.insert(insertions_n3, timestamp=version_timestamp)
             self.__starvers_engine.outdate(deletions_n3, timestamp=version_timestamp)
             timing_versioning = time.time_ns() - timing_versioning
