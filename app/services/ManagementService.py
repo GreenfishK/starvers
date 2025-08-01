@@ -41,7 +41,6 @@ def get_id_by_repo_name(repo_name: str, session: Session) -> str:
     statement = (
         select(Dataset.id)
         .where(Dataset.repository_name == repo_name)
-        .where(Dataset.active)
     )
     result = session.exec(statement).first()
 

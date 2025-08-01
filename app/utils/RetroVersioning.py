@@ -30,6 +30,7 @@ delta_calc_method = sys.argv[2].upper()
 logger = get_logger(__name__, f"tracking_{repo_name}.log")
 setup_logging()
 
+# Parameter validation
 try:
     delta_type = DeltaType[delta_calc_method]
 except KeyError:

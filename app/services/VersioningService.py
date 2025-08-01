@@ -25,6 +25,7 @@ class VersioningService(ABC):
     
     @abstractmethod
     def get_latest_version():
+        # TODO: consider removing or implementing propertly and using
         pass
 
     @abstractmethod
@@ -106,6 +107,7 @@ class StarVersService(VersioningService):
     
 
     def get_latest_version(self):
+        # TODO: consider removing this method or implementing propertly and using
         query = get_query_all_template()
         return convert_df_to_triples(self.query(query))
     
