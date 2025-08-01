@@ -1,3 +1,35 @@
+# Various DB updates during development
+psql -d starvers_db -U user -W
+
+update dataset set repository_name = 'schema_org_ontology' where repository_name 
+= 'schema_org_ontology_v2';
+update dataset set repository_name = 'schema_org_ontology_iterative' where repository_name 
+= 'schema_org_ontology_iterative_v2';
+update dataset set repository_name = 'air_quality_ontology' where repository_name 
+= 'air_quality_ontology_v2';
+update dataset set repository_name = 'air_quality_ontology_iterative' where repository_name 
+= 'air_quality_ontology_iterative_v2';
+update dataset set repository_name = 'orkg' where repository_name 
+= 'orkg_v2';
+update dataset set repository_name = 'orkg_iterative' where repository_name 
+= 'orkg_iterative_v2';
+
+update dataset set next_run = null;
+truncate snapshot;
+
+update dataset set active = False;
+update dataset set active = True;
+
+update dataset set active = True where repository_name = 'schema_org_ontology';
+update dataset set active = True where repository_name = 'schema_org_ontology_iterative';
+update dataset set active = True where repository_name = 'orkg';
+update dataset set active = True where repository_name = 'orkg_iterative';
+
+update dataset set active = True where repository_name = 'schema_org_ontology' or repository_name = 'air_quality_ontology';
+
+
+
+# Create tables and insert data
 CREATE TABLE dataset (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -47,9 +79,9 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:35:11.064284',
     '2025-07-28 16:36:55.611705',
-    FALSE,
+    TRUE,
     '1ede0112-ee5e-4b56-88bb-e76904e9e929',
-    NULL
+    '2025-08-01 16:36:55.611705'
 ),
 (
     'The Open Research Knowledge Graph',
@@ -60,9 +92,9 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:44:34.202699',
     '2025-07-28 16:37:01.590618',
-    FALSE,
+    TRUE,
     '32a0d2ce-b65b-4a5c-9d5d-39815e035969',
-    NULL
+    '2025-08-01 16:36:55.611705'
 ),
 (
     'The Open Research Knowledge Graph',
@@ -73,9 +105,9 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:36:01.378723',
     '2025-07-27 16:42:56.267383',
-    FALSE,
+    TRUE,
     '831764af-25d9-4830-b653-9780e69ed53e',
-    NULL
+    '2025-08-01 16:36:55.611705'
 ),
 (
     'schema.org Ontology',
@@ -86,9 +118,9 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:35:27.376885',
     '2025-07-28 16:58:36.792085',
-    FALSE,
+    TRUE,
     '55c4c558-9643-46b4-8f19-24a74b670708',
-    NULL
+    '2025-08-01 16:36:55.611705'
 ),
 (
     'schema.org Ontology',
@@ -99,9 +131,9 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:35:40.608740',
     '2025-07-28 16:58:45.117995',
-    FALSE,
+    TRUE,
     'f2193740-964e-4573-83e1-63aafbe09f7c',
-    NULL
+    '2025-08-01 16:36:55.611705'
 ),
 (
     'Air Quality Data for a City Ontology',
@@ -112,7 +144,7 @@ INSERT INTO dataset (
     NULL,
     '2025-05-25 16:35:02.298197',
     '2025-07-28 16:58:50.793766',
-    FALSE,
+    TRUE,
     '7c0606ab-dc16-49d3-929a-3e6ea8eba410',
-    NULL
+    '2025-08-01 16:36:55.611705'
 );

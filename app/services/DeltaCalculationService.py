@@ -107,15 +107,15 @@ class IterativeDeltaQueryService(DeltaCalculationService):
             self.LOG.info(f"Repository name: {self.repository_name}: Local rdf data provided. Copy {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt into snapshot path")
             shutil.copy2(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt", snapshot_path)
 
-        #cleanup file
-        self.LOG.info(f"Repository name: {self.repository_name}: Skolemize rdf data")
+        # cleanup file
+        self.LOG.info(f"Repository name: {self.repository_name}: Skolemize {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt")
         skolemize_blank_nodes_in_file(snapshot_path, processed_path)
 
-        #copy to graphdb server file directory
-        self.LOG.info(f"Repository name: {self.repository_name}: Copy rdf data into graphdb-import directory")
+        # copy to graphdb server file directory
+        self.LOG.info(f"Repository name: {self.repository_name}: Copy {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.nt into {import_path}")
         shutil.copy2(processed_path, import_path)
 
-        #start import server file
+        # start import server file
         import_serverfile(f"{self.tracking_task.name}.nt", self.tracking_task.name, graph_name)
         poll_import_status(f"{self.tracking_task.name}.nt", self.tracking_task.name)
 
@@ -217,11 +217,11 @@ class SparqlDeltaQueryService(DeltaCalculationService):
             shutil.copy2(f"./evaluation/{self.tracking_task.name}/{self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt", snapshot_path)
 
         #cleanup file
-        self.LOG.info(f"Repository name: {self.repository_name}: Skolemize rdf data")
+        self.LOG.info(f"Repository name: {self.repository_name}: Skolemize {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.raw.nt")
         skolemize_blank_nodes_in_file(snapshot_path, processed_path)
 
         #copy to graphdb server file directory
-        self.LOG.info(f"Repository name: {self.repository_name}: Copy rdf data into graphdb-import directory")
+        self.LOG.info(f"Repository name: {self.repository_name}: Copy {self.tracking_task.name}_{get_timestamp(self.__version_timestamp)}.nt into {import_path}")
         shutil.copy2(processed_path, import_path)
 
         #start import server file

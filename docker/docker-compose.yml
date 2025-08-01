@@ -18,7 +18,7 @@ services:
     entrypoint: ["uvicorn", "app.main:app", "--reload"]
   
   gui:
-    image: starversserver_gui # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
     container_name: starvers-gui
     ports:
       - 5000:5000
@@ -35,33 +35,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     entrypoint: ["python", "app/run_gui.py"]
-
-  # Creates a timestamped RDF-star dataset from individual snapshots
-  retroVersioning:
-    image: starversserver
-    env_file: "../prod.env"
-    depends_on:
-      db:
-        condition: service_started
-      rdfstore:
-        condition: service_started
-    ports: 
-      - 80:80
-    volumes:
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
-      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg_iterative", "ITERATIVE"]
-
-  evaluate:
-    image: starversserver
-    env_file: "../prod.env"
-    volumes:
-      - ../evaluation:/code/evaluation
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
-    entrypoint: ["python", "/code/evaluation/evaluation.py"]
-
 
   db:
     image: postgres
@@ -105,3 +78,37 @@ services:
       - "host.docker.internal:host-gateway"
   
 
+  # Creates a timestamped RDF-star dataset from individual snapshots
+  retroVersioning:
+    image: starversserver
+    env_file: "../prod.env"
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    ports: 
+      - 80:80
+    volumes:
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+    entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg_iterative", "ITERATIVE"]
+
+  # Creates plots from the timing files
+  evaluate:
+    image: starversserver
+    env_file: "../prod.env"
+    volumes:
+      - ../evaluation:/code/evaluation
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
+    entrypoint: ["python", "/code/evaluation/evaluation.py"]
+
+  validate:
+    image: starversserver
+    env_file: "../prod.env"
+    volumes:
+      -  ${data_storage}/evaluation:/data/evaluation
+      -  ${data_storage}/logs:/data/logs
+    entrypoint: ["java", "-jar", "/code/app/utils/rdfvalidator-1.0-jar-with-dependencies.jar"]
