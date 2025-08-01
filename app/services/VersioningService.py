@@ -66,21 +66,28 @@ class StarVersService(VersioningService):
     def run_initial_versioning(self, version_timestamp):
         self.LOG.info(f"Repository name: {self.repository_name}: Start initial versioning task [{version_timestamp}]")
         self.__delta_query_service.set_version_timestamp(version_timestamp)
+        self.__delta_query_service.set_paths(version_timestamp)
         
-        if self.local_file:
-            self.__delta_query_service.load_rdf_data(local_file=True)
-        else:
-            self.__delta_query_service.load_rdf_data()
+        # Download data
+        self.__delta_query_service.download_data(self.local_file)
+
+        # Skolemize
+        self.__delta_query_service.skolemize_blank_nodes()
+        
+        # Ingest data
+        self.__delta_query_service.load_rdf_data(self.tracking_task.name_temp())
+        
+        # Version data
+        self.LOG.info(f"Repository name: {self.repository_name}: Initialize triples with [{version_timestamp}] and artificial end timestamp.")
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
+        # Persist Timings and ingest statistics
         path = f"./evaluation/{self.tracking_task.name}"
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(f"{path}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
             timing_file.write("timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n")
         
-        # Persist Timings
         cnt_triples = self._cnt_triples(version_timestamp)
-
         with open(f"{path}/{self.tracking_task.name}_timings.csv", "a+") as timing_file:
             timing_file.write(f"{get_timestamp(version_timestamp)}, {cnt_triples}, 0, 0, 0, 0, 0, {cnt_triples}")
             timing_file.write('\n')
@@ -93,10 +100,11 @@ class StarVersService(VersioningService):
         shutil.make_archive(tmp_dir, 'zip', tmp_dir)
         self.LOG.info(f"Repository name: {self.repository_name}: Zipped initial snapshot: {tmp_dir}.zip")
         
-        # remove tmp_dir
+        # Remove tmp_dir
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
             self.LOG.info(f"Repository name: {self.repository_name}: Removed temporary directory: {tmp_dir}")
+
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True):
         if timestamp is not None and query_as_timestamped:
@@ -118,16 +126,11 @@ class StarVersService(VersioningService):
             timing_overall = time.time_ns()
 
             timing_prepare = time.time_ns()
-            self.__delta_query_service.set_version_timestamp(version_timestamp)
-            if self.local_file:
-                self.__delta_query_service.prepare(local_file=True)
-            else:
-                self.__delta_query_service.prepare()
+            self.__delta_query_service.prepare(version_timestamp, self.local_file)
             timing_prepare = time.time_ns() - timing_prepare
 
             timing_delta = time.time_ns()
             insertions_n3, deletions_n3 = self.__delta_query_service.calculate_delta()  
-
             timing_delta = time.time_ns() - timing_delta
             self.LOG.info(f"Repository name: {self.repository_name}: Found {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
             
@@ -138,16 +141,15 @@ class StarVersService(VersioningService):
 
             self.__delta_query_service.clean_up()
             timing_overall = time.time_ns() - timing_overall
-
-            cnt_triples = self._cnt_triples(version_timestamp)
-
-            path = f"./evaluation/{self.tracking_task.name}/"
             
             # Persist Timings
+            path = f"./evaluation/{self.tracking_task.name}/"
+            cnt_triples = self._cnt_triples(version_timestamp)
             with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
                 timing_file.write(f"{get_timestamp(version_timestamp)}, {len(insertions_n3)}, {len(deletions_n3)}, {timing_prepare}, {timing_delta}, {timing_versioning}, {timing_overall}, {cnt_triples}")
                 timing_file.write('\n')
             
+            # Persist deltas, if there are any
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 # Persist Inserts, Deletions
                 with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
