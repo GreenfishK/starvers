@@ -21,7 +21,7 @@ COPY ./app/LoggingConfig.py /code/app/LoggingConfig.py
 COPY ./app/main.py /code/app/main.py
 COPY ./app/run_gui.py /code/app/run_gui.py
 
-ENV PYTHONPATH "${PYTHONPATH}:/code"
+ENV PYTHONPATH="${PYTHONPATH}:/code"
 
 # ---------- Second Stage: Java RDF Validator ----------
 FROM maven:3.9.6-eclipse-temurin-11 AS rdfvalidator

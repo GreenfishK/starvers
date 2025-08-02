@@ -71,8 +71,8 @@ class StarVersService(VersioningService):
         # Download data
         self.__delta_query_service.download_data(self.local_file)
 
-        # Skolemize
-        self.__delta_query_service.skolemize_blank_nodes()
+        # Preprocess
+        self.__delta_query_service.preprocess()
         
         # Ingest data
         self.__delta_query_service.load_rdf_data(self.tracking_task.name_temp())
