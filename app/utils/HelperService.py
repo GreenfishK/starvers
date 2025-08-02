@@ -8,20 +8,20 @@ from typing import Union, List, Tuple
 from rdflib import Graph
 
 
-def convert_n3_to_list(nt_text: str) -> List[str]:
-    nt_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', nt_text)
-
+def to_list(nt_text: str) -> List[str]:
+    #nt_text = re.sub(r'[\u0000-\u0008\u0009\u000B\u000C\u000E-\u001F\u007F\u00A0\u2028\u2029]', ' ', nt_text)
+    # u00011, \u0002\u0003
     # Remove ^^<...#string> only if it appears right before the final dot in a line
-    nt_text = re.sub(
-        r'(".*?")\^\^<http://www\.w3\.org/2001/XMLSchema#string>(\s*\.)',
-        r'\1\2',
-        nt_text
-    )
+    #nt_text = re.sub(
+    #    r'(".*?")\^\^<http://www\.w3\.org/2001/XMLSchema#string>(\s*\.)',
+    #    r'\1\2',
+    #    nt_text
+    #)
 
     lines = nt_text.splitlines()
     clean_lines = [line.strip() for line in lines if line.strip()]
-    
     return clean_lines
+    
 
 
 def convert_df_to_triples(df: pd.DataFrame) -> List[Tuple]:

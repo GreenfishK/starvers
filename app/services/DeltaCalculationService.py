@@ -8,8 +8,8 @@ from starvers.starvers import TripleStoreEngine
 
 from app.LoggingConfig import get_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
-from app.utils.FileService import download_file, skolemize_blank_nodes_in_file
-from app.utils.HelperService import get_timestamp, convert_n3_to_list
+from app.utils.FileService import download_file, normalize_and_skolemize
+from app.utils.HelperService import get_timestamp, to_list
 from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, import_serverfile, poll_import_status
 
 class DeltaCalculationService(ABC):
@@ -67,9 +67,9 @@ class DeltaCalculationService(ABC):
             shutil.copy2(f"{self.dumps_path}/{self.tracking_task.name}_{get_timestamp(self.version_timestamp)}.raw.nt", snapshot_path)
 
 
-    def skolemize_blank_nodes(self):
-        self.LOG.info(f"Repository name: {self.repository_name}: Skolemize {self.tracking_task.name}_{get_timestamp(self.version_timestamp)}.raw.nt")
-        skolemize_blank_nodes_in_file(self.snapshot_path, self.processed_path)
+    def preprocess(self):
+        self.LOG.info(f"Repository name: {self.repository_name}: Normalize and skolemize {self.tracking_task.name}_{get_timestamp(self.version_timestamp)}.raw.nt")
+        normalize_and_skolemize(self.snapshot_path, self.processed_path)
 
 
     def load_rdf_data(self, graph_name: str = None):
@@ -96,8 +96,8 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         # Download data
         self.download_data(local_file)
 
-        # Skolemize
-        self.skolemize_blank_nodes()
+        # Skolemize and normalize (remove special characters)
+        self.preprocess()
 
 
     def calculate_delta(self) -> Tuple[List[str],List[str]]:
@@ -118,9 +118,9 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self._starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
 
         self.LOG.info(f"Repository name: {self.repository_name}: Calculate delta - Insertions & Deletions")
-        # Convert n3 to lists and then to sets of triples
-        versioned_triples = set(convert_n3_to_list(versioned_n3_str))
-        latest_triples = set(convert_n3_to_list(latest_n3_str))
+        # Split file into lines, put them into a list, and then turn into a set
+        versioned_triples = set(to_list(versioned_n3_str))
+        latest_triples = set(to_list(latest_n3_str))
 
         # Calculate differences
         insertions = latest_triples - versioned_triples
@@ -136,8 +136,6 @@ class IterativeDeltaQueryService(DeltaCalculationService):
     def clean_up(self):
         pass
 
-    
-    
 
 class SparqlDeltaQueryService(DeltaCalculationService):
     def __init__(self, starvers_engine: TripleStoreEngine, tracking_task: TrackingTaskDto, repository_name: str) -> None:
@@ -151,8 +149,8 @@ class SparqlDeltaQueryService(DeltaCalculationService):
         # Download data
         self.download_data(local_file)
 
-        # Skolemize
-        self.skolemize_blank_nodes()
+        # Skolemize and normalize (remove special characters)
+        self.preprocess()
         
         # Ingest data
         self.load_rdf_data(self.tracking_task.name_temp())
@@ -167,14 +165,14 @@ class SparqlDeltaQueryService(DeltaCalculationService):
         self._starvers_engine.sparql_get_with_post.setQuery(get_delta_query_insertions_template(self.version_timestamp, self.tracking_task.name_temp())) #no versioning necessary
         insertions_n3_str = self._starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
         self.LOG.info(f"Repository name: {self.repository_name}: Convert n3 string of insertions to list.")
-        insertions_n3 = convert_n3_to_list(insertions_n3_str)
+        insertions_n3 = to_list(insertions_n3_str)
 
         # Deletions
         self.LOG.info(f"Repository name: {self.repository_name}: Calculate Delta with SPARQL - Deletions")
         self._starvers_engine.sparql_get_with_post.setQuery(get_delta_query_deletions_template(self.version_timestamp, self.tracking_task.name_temp())) #no versioning necessary
         deletions_n3_str = self._starvers_engine.sparql_get_with_post.query().convert().decode("utf-8")
         self.LOG.info(f"Repository name: {self.repository_name}: Convert n3 string of deletions to list.")
-        deletions_n3 = convert_n3_to_list(deletions_n3_str)
+        deletions_n3 = to_list(deletions_n3_str)
 
         # Return to default behavior
         self._starvers_engine.sparql_get_with_post.setReturnFormat('json') 
