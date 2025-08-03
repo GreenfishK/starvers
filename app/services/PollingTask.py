@@ -10,7 +10,6 @@ from app.models.DatasetModel import Dataset, Snapshot
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
 from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_metrics_template, create_engine
-from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
 
 
