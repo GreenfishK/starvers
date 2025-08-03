@@ -8,8 +8,7 @@ from starvers.starvers import TripleStoreEngine
 
 from app.LoggingConfig import get_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
-from app.utils.FileService import download_file, normalize_and_skolemize
-from app.utils.HelperService import get_timestamp, to_list
+from app.utils.HelperService import get_timestamp, to_list, download_file, normalize_and_skolemize
 from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_template, get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template, import_serverfile, poll_import_status
 
 class DeltaCalculationService(ABC):
