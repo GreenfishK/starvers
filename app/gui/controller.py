@@ -8,15 +8,16 @@ from starvers.starvers import TripleStoreEngine
 from app.services.ManagementService import get_dataset_metadata_by_repo_name
 from app.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
-
+from app.AppConfig import Settings
 
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
         self.repo_name = repo_name
-        self.__graph_db_get_endpoint = f"http://rdfstore:7200/repositories/{repo_name}" 
-        self.__graph_db_post_endpoint = f"http://rdfstore:7200/repositories/{repo_name}/statements" 
+        self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repo_name)
+        self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', repo_name)
         self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint, skip_connection_test=True)
+        logging.info(f"Get endpoint: {self.__graph_db_get_endpoint}")
 
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True) -> pd.DataFrame:

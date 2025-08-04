@@ -1,17 +1,18 @@
 services:
-  gui_prod:
-    image: starversserver
+  gui:
+    image: starversserver_prod
     container_name: starvers-gui_prod
     ports:
       - 5001:5000
     volumes:
       - ../app/gui:/code/app/gui
+      - ../app/AppConfig.py:/code/app/AppConfig.py
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
     depends_on:
-      db_prod:
+      db:
         condition: service_started
-      rdfstore_prod:
+      rdfstore:
         condition: service_started
     env_file: "./prod.env"
     extra_hosts:
@@ -21,7 +22,7 @@ services:
     entrypoint: ["python", "app/run_gui.py"]
 
 
-  db_prod:
+  db:
     image: postgres
     container_name: starvers-db_prod
     restart: always
@@ -37,7 +38,7 @@ services:
     networks:
       - starvers_prod_net
 
-  rdfstore_prod:
+  rdfstore:
     image: ontotext/graphdb:10.5.0
     container_name: starvers-rdfstore_prod
     restart: always
