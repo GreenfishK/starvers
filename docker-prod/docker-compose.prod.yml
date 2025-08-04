@@ -56,9 +56,9 @@ services:
         -Dreuse.vars.in.subselects=true
         -Dgraphdb.health.minimal.free.storage.enabled=false
         -Dgraphdb.health.minimal.free.storage.asyncCheck=false
-        -Dgraphdb.connector.port=7400
+        -Dgraphdb.connector.port=7200
     ports: 
-      - 7400:7400
+      - 7400:7200
     volumes:
       - ${data_storage}/graphdb-data:/opt/graphdb/home
     extra_hosts:
