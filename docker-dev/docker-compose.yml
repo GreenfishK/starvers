@@ -5,7 +5,7 @@ services:
     restart: always
     ports:
       - 80:80
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     volumes:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
@@ -31,7 +31,7 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     entrypoint: ["python", "app/run_gui.py"]
@@ -40,7 +40,7 @@ services:
     image: postgres
     container_name: starvers-db
     restart: always
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -55,7 +55,7 @@ services:
     image: ontotext/graphdb:10.5.0
     container_name: starvers-rdfstore
     restart: always
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     environment: 
       GDB_JAVA_OPTS: >-
         -Xmx32g -Xms32g
@@ -81,7 +81,7 @@ services:
   # Creates a timestamped RDF-star dataset from individual snapshots
   retroVersioning:
     image: starversserver
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     depends_on:
       db:
         condition: service_started
@@ -93,12 +93,12 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg_iterative", "ITERATIVE"]
+    entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg", "SPARQL"]
 
   # Creates plots from the timing files
   evaluate:
     image: starversserver
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     volumes:
       - ../evaluation:/code/evaluation
       - ${data_storage}/evaluation:/data/evaluation
@@ -107,7 +107,7 @@ services:
 
   validate:
     image: starversserver
-    env_file: "../prod.env"
+    env_file: "./dev.env"
     volumes:
       -  ${data_storage}/evaluation:/data/evaluation
       -  ${data_storage}/logs:/data/logs
