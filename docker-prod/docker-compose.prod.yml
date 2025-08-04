@@ -1,0 +1,70 @@
+services:
+  gui_prod:
+    image: starversserver
+    container_name: starvers-gui_prod
+    ports:
+      - 5001:5000
+    volumes:
+      - ../app/gui:/code/app/gui
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+    depends_on:
+      db_prod:
+        condition: service_started
+      rdfstore_prod:
+        condition: service_started
+    env_file: "./prod.env"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_prod_net
+    entrypoint: ["python", "app/run_gui.py"]
+
+
+  db_prod:
+    image: postgres
+    container_name: starvers-db_prod
+    restart: always
+    env_file: "./prod.env"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: starvers_db
+    ports:
+      - 5433:5432
+    volumes:
+      - ${data_storage}/postgresql/data:/var/lib/postgresql/data
+    networks:
+      - starvers_prod_net
+
+  rdfstore_prod:
+    image: ontotext/graphdb:10.5.0
+    container_name: starvers-rdfstore_prod
+    restart: always
+    env_file: "./prod.env"
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx32g -Xms32g
+        -Dgraphdb.home=/opt/graphdb/home
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dreuse.vars.in.subselects=true
+        -Dgraphdb.health.minimal.free.storage.enabled=false
+        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
+        -Dgraphdb.connector.port=7400
+    ports: 
+      - 7400:7400
+    volumes:
+      - ${data_storage}/graphdb-data:/opt/graphdb/home
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_prod_net
+
+networks:
+  starvers_prod_net:
+    driver: bridge

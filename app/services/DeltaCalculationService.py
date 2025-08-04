@@ -95,7 +95,7 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         # Download data
         self.download_data(local_file)
 
-        # Skolemize and normalize (remove special characters)
+        # Skolemize and normalize (remove control characters)
         self.preprocess()
 
 
@@ -116,8 +116,8 @@ class IterativeDeltaQueryService(DeltaCalculationService):
         self._starvers_engine.sparql_get_with_post.setReturnFormat('json') 
         self._starvers_engine.sparql_get_with_post.clearCustomHttpHeader('Accept')
 
-        self.LOG.info(f"Repository name: {self.repository_name}: Calculate delta - Insertions & Deletions")
         # Split file into lines, put them into a list, and then turn into a set
+        self.LOG.info(f"Repository name: {self.repository_name}: Calculate delta - Insertions & Deletions")
         versioned_triples = set(to_list(versioned_n3_str))
         latest_triples = set(to_list(latest_n3_str))
 
