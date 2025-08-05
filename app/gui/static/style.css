@@ -1,43 +1,189 @@
-.table {
-    border-collapse: collapse;
+/* Hide tab buttons by default */
+#tab-buttons {
+    margin-top: 1rem;
+}
+
+/* top container */
+#layout-wrapper {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+}
+
+
+
+/* ############################################### */
+/* left-section */
+/* ############################################### */
+#left-section{
+    width: 25%;
+}
+
+/* ############################################### */
+/* main-section */
+/* ############################################### */
+#main-section {
+    width: 50%;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+/* main-section -> meta-info -> onto-infos */
+#onto-infos{
+    gap: 1rem;
+}
+
+/* main-section -> meta-info -> onto-infos -> repo-select-container */
+
+
+/* main-section -> meta-info -> onto-infos -> tracking-infos */
+#tracking-infos{
+    gap: 1rem;
+}
+
+/* main-section -> plot-container */
+#plot-container {
     width: 100%;
-    border: none;
+    height: 100%; /* Match height of main-content */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto; /* scroll if plots overflow */
 }
 
-.table thead th {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 10; 
-    box-shadow: inset 0 -3px 0 #ccc; 
-    border: none;
-    padding: 8px;
-    text-align: left;
+/* main-section -> plot-container -> plot-box */
+#plot-box {
+    flex: 1 1 48%;
+    min-width: 300px;
+    max-width: 100%;
+} 
+
+/* main-section -> plot-container -> plot-box -> external_buttons */
+#external_buttons {
+    gap: 1rem;
 }
 
+/* main-section -> plot-container -> plot-box -> external_buttons -> plot-box-buttons*/
+#plot-box-buttons {
+    gap: 0.5rem;
+}
+
+/* main-section -> plot-container -> plot-box -> external_buttons -> plot-box-legend*/
+#plot-box-legend {
+    gap: 1rem;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.3em;
+}
+
+#legend-insertions {
+    background: green;
+}
+
+#legend-deletions {
+    background: red;
+}
+
+#legend-total {
+    background: blue;
+}
+
+
+/* main-section -> plot-container -> plot-box -> evo-plot */
+/* injected via routes.get_repo_infos() and routes.index() */
+
+/* main-section -> sparlq-container-total */
+
+/* main-section -> sparlq-container-total -> sparql-container */
+.query-editor-labels {
+    display: flex;
+    align-items: center;
+    min-height: 3.5rem; 
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left */
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> timestamp-input-container*/
+#timestamp-input-container {
+    display: flex; 
+    align-items: center;
+    gap: 1rem;
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> timestamp-input-container -> timestamp_input-label */
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> timestamp-input-container -> timestamp_input */
+#timestamp_input {
+    width: 250px;
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> timestamp-input-container -> timestamp-help */
+#timestamp-help-div {
+    position: absolute;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 0.75em 1.25em;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+    pointer-events: none;
+    font-size: 0.9rem;
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> sparql-editor */
+#sparql-editor {
+    min-height: 300px;
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+-> CodeMirror */
+.CodeMirror {
+    border: 1px solid #dbdbdb;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 2px rgba(10,10,10,0.1);
+    padding: 0.5em;
+    font-family: monospace;
+    background-color: white;
+    font-size: 18px;
+}
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right */
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right
+->  timestamped-query-label*/
+
+/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right
+->  timestamped-query*/
+#timestamped-query {
+    min-height: 300px;
+}
+
+/* main-section -> result-retrieval-error */
+
+/* main-section -> data-section */
+
+/* main-section -> data-section -> result-container */
 #result-container {
     position: relative;
     border:none;
 }
 
-#result-table {
-    height: 460px;
-    overflow: auto;
-    position: relative;
-}
-
-#timer {
-    font-size: 1rem;
-}
-
-#timestamp_label {
-    min-width: 180px;
-}
-
-#timestamp_input {
-    width: 250px;
-}
-
+/* main-section -> data-section -> result-container -> loading-overlay */
 #loading-overlay {
     display: none;
     position: absolute;
@@ -55,76 +201,143 @@
     pointer-events: none;
 }
 
+#timer {
+    font-size: 1rem;
+}
+
 #loading-overlay span {
     font-size: 1.5rem;
     font-weight: bold;
 }
 
-.CodeMirror {
-    border: 1px solid #dbdbdb;
-    border-radius: 4px;
-    box-shadow: inset 0 1px 2px rgba(10,10,10,0.1);
-    padding: 0.5em;
-    font-family: monospace;
-    background-color: white;
-    font-size: 18px;
+/* main-section -> data-section -> result-container -> result-table */
+#result-table {
+    height: 460px;
+    overflow: auto;
+    position: relative;
 }
 
-#plot-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 3rem;
-    margin-bottom: 1rem;
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    border: none;
 }
 
-.plot-box {
-    flex: 1 1 48%;
-    min-width: 300px;
-    max-width: 100%;
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10; 
+    box-shadow: inset 0 -3px 0 #ccc; 
+    border: none;
+    padding: 8px;
+    text-align: left;
 }
 
-#onto-infos{
-    gap: 1rem;
+
+/* ############################################### */
+/* right-section */
+/* ############################################### */
+#right-section {
+    width: 25%;
+    overflow-y: auto;
+    border-left: 1px solid #ccc;
+    background-color: #f9f9f9;
+    box-sizing: border-box;
+    padding: 1rem;
 }
 
-#tracking-info{
-    gap: 1rem;
+.snapshot-tree {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  max-width: 300px;
 }
 
-.help-text {
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: break-word;
-    max-width: 100%;
+/* Scope all rules inside .snapshot-tree */
+.snapshot-tree .tree-node {
+  margin-left: 1.2em;
+  position: relative;
+  padding-left: 1.2em;
+  border-left: 1px solid #ccc;
+  margin-bottom: 0.3em;
 }
 
-#sparql-editor, #timestamped-query {
-    min-height: 300px;
+.snapshot-tree .tree-node > .class-label {
+  font-weight: 600;
+  margin-right: 0.6em;
 }
 
-.legend-dot {
+.snapshot-tree .tree-node > .info {
+  background: #f0f0f0;
+  border-radius: 3px;
+  padding: 0 0.4em;
+  margin-right: 0.4em;
+  font-size: 0.85em;
+  color: #333;
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 0.3em;
 }
 
-#external_buttons {
-    gap: 1rem;
+.snapshot-tree .children {
+  display: none;
+  margin-top: 0.2em;
+  margin-left: 1.5em;
 }
 
-#timestamp-help-div {
-    position: absolute;
-    background: #f5f5f5;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 0.75em 1.25em;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    transition: opacity 0.3s ease-in-out;
-    opacity: 0;
-    pointer-events: none;
-    font-size: 0.9rem;
+.snapshot-tree .tree-node.expanded .children {
+  display: block;
 }
+
+.snapshot-tree .tree-node > .expand-btn {
+  cursor: pointer;
+  user-select: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1em;
+  display: inline-block;
+  color: #007BFF;
+  font-weight: bold;
+  pointer-events: auto;
+}
+
+.snapshot-tree .tree-node > .expand-btn::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+.snapshot-tree .tree-node.expanded > .expand-btn::before {
+  content: "−"; /* minus sign */
+}
+
+
+/* Show tab buttons and hide layout on small screens */
+@media (max-width: 900px) {
+    #layout-wrapper {
+        flex-direction: column;
+        height: auto;
+    }
+
+
+    #left-section,
+    #main-section,
+    #right-section {
+        width: 100%;
+    }
+
+    .tab-section {
+        display: none;
+    }
+
+    #tab-buttons {
+        display: flex !important;
+    }
+
+    /* Show only the active tab */
+    .tab-section.active-tab {
+        display: block !important;
+    }
+}
+

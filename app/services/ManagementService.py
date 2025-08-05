@@ -3,6 +3,8 @@ from sqlalchemy import desc
 from uuid import UUID
 from typing import List
 from datetime import datetime
+from typing import Optional, Tuple
+import pandas as pd
 
 from app.models.DatasetModel import Dataset, DatasetCreate, Snapshot
 from app.services import ScheduledThreadPoolExecutor
@@ -26,16 +28,53 @@ def get_by_id(id: UUID, session: Session) -> Dataset:
         raise DatasetNotFoundException(id=id)
     return dataset
 
-from typing import Optional, Tuple
 
 def get_dataset_metadata_by_repo_name(repo_name: str, session: Session) -> Optional[Tuple[str, str, int]]:
     statement = (
         select(Dataset.repository_name, Dataset.rdf_dataset_url, Dataset.polling_interval, Dataset.next_run)
         .where(Dataset.repository_name == repo_name)
-        .where(Dataset.active)
     )
     result = session.exec(statement).first()
     return result 
+
+def get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name: str, snapshot_ts: datetime, session: Session):
+    # Find the latest snapshot_ts <= given snapshot_ts
+    ts_stmt = (
+        select(Snapshot.snapshot_ts)
+        .join(Dataset, Snapshot.dataset_id == Dataset.id)
+        .where(Dataset.repository_name == repo_name)
+        .where(Snapshot.snapshot_ts <= snapshot_ts)
+        .order_by(Snapshot.snapshot_ts.desc())
+        .limit(1)
+    )
+    latest_ts_result = session.exec(ts_stmt).first()
+    if not latest_ts_result:
+        return pd.DataFrame()
+
+    actual_ts = latest_ts_result
+
+    stmt = (
+        select(
+            Snapshot.onto_class,
+            Snapshot.parent_onto_class,
+            Snapshot.snapshot_ts,
+            Snapshot.cnt_class_instances_current,
+            Snapshot.cnt_class_instances_prev,
+            Snapshot.cnt_classes_added,
+            Snapshot.cnt_classes_deleted,
+        )
+        .join(Dataset, Snapshot.dataset_id == Dataset.id)
+        .where(Dataset.repository_name == repo_name)
+        .where(Snapshot.snapshot_ts == actual_ts)
+    )
+    results = session.exec(stmt).all()
+    df = pd.DataFrame(results, columns=[
+        "onto_class", "parent_onto_class", "snapshot_ts",
+        "cnt_class_instances_current", "cnt_class_instances_prev",
+        "cnt_classes_added", "cnt_classes_deleted"
+    ])
+
+    return df
 
 def get_id_by_repo_name(repo_name: str, session: Session) -> str:
     statement = (
@@ -57,7 +96,7 @@ def get_latest_snapshot_timestamp(session: Session, dataset_id: str):
         .limit(1)
     )
     result = session.exec(statement).first()
-    latest_timestamp = result[0] if result else None
+    latest_timestamp = result if result else None
 
     return latest_timestamp
 

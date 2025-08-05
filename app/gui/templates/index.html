@@ -10,97 +10,98 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0-rc.0/plotly.min.js" charset="utf-8"></script>
 </head>
 <body>
-<section class="section">
-    <div class="container">
-        
+
+<div id="tab-buttons" class="buttons has-addons is-centered is-hidden">
+    <button class="button is-link is-light" onclick="showTab('left')">Sidebar</button>
+    <button class="button is-link is-light is-active" onclick="showTab('main')">Main</button>
+    <button class="button is-link is-light" onclick="showTab('right')">Snapshots</button>
+</div>
+
+<div id="layout-wrapper">
+    <div id="left-section" class="tab-section"></div>
+
+    <section id="main-section" class="section tab-section">
         <h1 class="title">Starvers</h1>
         <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
 
         <form id="sparql-form">
-            <div class="field">
+            <div id="meta-info" class="field">
                 <h3 class="title is-5">Knowledge Graph or Ontology</h3>
                 <div id="onto-infos" class="is-flex is-flex-wrap-wrap"> 
-                    <div class="control">
-                        <div class="select">
-                            <select name="repo" id="repo-select">
-                                {% for label, value in repo_options.items() %}
-                                    <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <div id="repo-select-container" class="control select">
+                        <select name="repo" id="repo-select">
+                            {% for label, value in repo_options.items() %}
+                                <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     {% if rdf_dataset_url and polling_interval %}
-                        <div id="tracking-info" class="mt-2 is-flex is-flex-wrap-wrap">
-                            <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
-                            <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
-                            <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
-                        </div>
+                    <div id="tracking-infos" class="mt-2 is-flex is-flex-wrap-wrap">
+                        <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
+                        <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
+                        <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
+                    </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Plotly chart -->
+            <!-- Plotly chart -->   
             <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
                 {% if evo_plot %}
-                    <div class="plot-box">
-                        <div id="external_buttons" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
-                            <!-- Time aggregation buttons -->
-                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
-                                <button type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('HOUR', this)">Hour</button>
-                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('DAY', this)">Day</button>
-                                <button type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('WEEK', this)">Week</button>
-                            </div>
-
-                            <!-- Custom Legend -->
-                            <div class="is-flex is-align-items-center is-flex-wrap" style="gap: 1rem;">
-                                <span><span class="legend-dot" style="background: green;"></span> Insertions</span>
-                                <span><span class="legend-dot" style="background: red;"></span> Deletions</span>
-                                <span><span class="legend-dot" style="background: blue;"></span> Total Triples</span>
-                            </div>
+                <div id="plot-box">
+                    <div id="external_buttons" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
+                        <!-- Time aggregation buttons -->
+                        <div id="plot-box-buttons" class="is-flex is-align-items-center">
+                            <button id="hour_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('HOUR', this)">Hour</button>
+                            <button id="day_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('DAY', this)">Day</button>
+                            <button id="week_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('WEEK', this)">Week</button>
                         </div>
-                        {{ evo_plot | safe }}
+
+                        <!-- Custom Legend -->
+                        <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
+                            <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
+                            <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
+                            <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
+                        </div>
                     </div>
+                    {{ evo_plot | safe }}
+                </div>
                 {% endif %}
             </div>
-          
             
-            <h3 class="title is-5">SPARQL Query Editor</h3>
-            
-            <div class="field is-flex" style="gap: 1rem; flex-wrap: wrap; align-items: stretch;">
+            <div id="sparlq-container-total" class="mb-2">
+                <h3 class="title is-5">SPARQL Query Editor</h3>
 
-                <!-- Left side: Label + Input + Help + Query Editor -->
-                <div class="control is-flex is-flex-direction-column is-justify-content-space-between" style="flex: 1; min-width: 300px;">
-                    
-                    <!-- Timestamp label + input inline -->
-                    <div class="field is-grouped mb-2" style="align-items: center;">
-                        <div class="control" style="display: inline-flex; align-items: center;">
-                        <label for="timestamp_input" style="display: inline-flex; align-items: center; padding: 0; white-space: nowrap; font-weight: bold; margin-right: 0.5rem;">
-                            Timestamp
-                        </label>
-                        <input id="timestamp_input"
-                                class="input"
-                                onclick="showTooltip(this)"
-                                type="text"
-                                name="timestamp"
-                                placeholder="{{ ts_end_iso8601 }}"
-                                value="{{ selected_timestamp or ts_end_iso8601 }}"
-                                style="width: 23ch;">
+                <div id ="sparlq-container" class="columns is-multiline">
+                    <!-- Left side: Label + Input + Help + Query Editor -->
+                    <div id="sparql-container-left" class="column is-half">
+                        <div id="timestamp-input-container" class="query-editor-labels">
+                            <label id="timestamp_input-label" class="label" for="timestamp_input">Timestamp</label>
+                            <input id="timestamp_input"
+                                    class="input"
+                                    onclick="showTooltip(this)"
+                                    type="text"
+                                    name="timestamp"
+                                    placeholder="{{ ts_end_iso8601 }}"
+                                    value="{{ selected_timestamp or ts_end_iso8601 }}"
+                                    style="width: 23ch;">
+
+                            <!-- gets updated via showTooltip() javascript function -->
+                            <p id="timestamp-help"
+                            title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
+                            style="display: none;">
+                            </p>
                         </div>
+
+                        <!-- SPARQL editor -->
+                        <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
                     </div>
 
-                    <p id="timestamp-help"
-                    title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
-                    style="display: none;">
-                    </p>
-
-                    <!-- SPARQL editor -->
-                    <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
-                </div>
-
-                <!-- right side: Label + Timestamped query -->
-                <div class="control is-flex is-flex-direction-column" style="flex: 1; min-width: 300px; justify-content: flex-end;">
-                    <div class="is-flex is-flex-direction-column">
-                        <label class="label is-flex is-justify-content-flex-end" style="margin-bottom: 0.5rem;">Timestamped Query</label>
+                    <!-- right side: Label + Timestamped query -->
+                    <div id="sparql-container-right" class="column is-half">
+                        <div id="query-editor-label-container" class="query-editor-labels">
+                            <label id="timestamped-query-label" class="label">Timestamped Query</label>
+                        </div>
                         <div id="timestamped-query"></div>
                     </div>
                 </div>
@@ -108,24 +109,24 @@
             
             <div class="field">
                 <div class="control">
-                    <button type="submit" class="button is-link">Execute Query</button>
+                    <button type="submit" class="button is-link mb-2">Execute Query</button>
                 </div>
             </div>
         </form>
 
         {% if error %}
-            <div class="notification is-danger mt-4">
-                <strong>Error:</strong> {{ error }}
-            </div>
+        <div id="result-retrieval-error" class="notification is-danger mt-4">
+            <strong>Error:</strong> {{ error }}
+        </div>
         {% endif %}
 
-        <div id="data_section" class="mt-5" style="display: none;">
+        <div id="data-section" class="mt-5 mb-5" style="display: none;">
             <div id="result-container">
                 <h3 class="title is-5">Query Result</h3>
 
                 <div id="loading-overlay">
                     <div class="is-flex is-justify-content-flex-end">
-                        <label class="label">Executing timestamped query ... <label id="timer">0</label> sec</label>
+                        <label>Executing timestamped query ... <label id="timer">0</label> sec</label>
                     </div>
                 </div>
         
@@ -136,13 +137,21 @@
                 </div>
             </div>
             {% if result %}
-                <a href="{{ url_for('routes.download') }}">
-                    <button class="button is-success mt-3">Download CSV</button>
-                </a>
+            <a href="{{ url_for('routes.download') }}">
+                <button class="button is-success mt-3">Download CSV</button>
+            </a>
             {% endif %}
         </div>
-    </div>
-</section>
+  
+    </section>
+
+    <section id="right-section" class="section tab-section"> 
+        
+    </section>    
+    
+        
+    
+</div>
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 

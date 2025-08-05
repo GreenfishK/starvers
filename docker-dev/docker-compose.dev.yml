@@ -1,7 +1,7 @@
 services:
   starversserver:
     image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
-    container_name: starvers-server
+    container_name: starvers-server_dev
     restart: always
     ports:
       - 80:80
@@ -19,7 +19,7 @@ services:
   
   gui:
     image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
-    container_name: starvers-gui
+    container_name: starvers-gui_dev
     ports:
       - 5000:5000
     volumes:
@@ -38,7 +38,7 @@ services:
 
   db:
     image: postgres
-    container_name: starvers-db
+    container_name: starvers-db_dev
     restart: always
     env_file: "./dev.env"
     environment:
@@ -53,7 +53,7 @@ services:
 
   rdfstore:
     image: ontotext/graphdb:10.5.0
-    container_name: starvers-rdfstore
+    container_name: starvers-rdfstore_dev
     restart: always
     env_file: "./dev.env"
     environment: 
@@ -93,7 +93,7 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/RetroVersioning.py", "orkg", "SPARQL"]
+    entrypoint: ["python", "app/utils/RetroVersioning.py", "air_quality_ontology_iterative", "ITERATIVE"]
 
   # Creates plots from the timing files
   evaluate:

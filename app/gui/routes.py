@@ -113,13 +113,45 @@ def get_repo_infos(repo_label):
         return jsonify({"error": str(e)}), 500
 
 
+@routes.route("/statistics", methods=["GET"])
+def get_snapshot_stats():
+    # Repo name
+    config = configparser.ConfigParser()
+    config.read("/code/app/gui/configs/RDF2Repo_mappings.ini")
+    repo_map = dict(config["repositories"])
+
+    try:
+        selected_label = request.args.get("repo")
+        repo_name = repo_map.get(selected_label)
+        logging.info(f"Received selected repository name from frontend: {repo_name}")
+
+        # snapshot_ts
+        snapshot_ts = request.args.get("timestamp")
+        logging.info(f"Received timestamp from selected data point from frontend: {snapshot_ts}")
+    except Exception as e:
+        logging.error(f"Repo or snapshot timestamp not received from frontend. Repo name: {repo_name}; Snapshot timestamp: {snapshot_ts}")
+
+    try:
+        controller = GuiContr(repo_name=repo_name)
+        snapshot_stats, snapshot_ts_actual = controller.get_snapshot_stats(snapshot_ts)
+        
+        return jsonify({
+            "snapshot_stats": snapshot_stats,
+            "snapshot_ts": snapshot_ts_actual.isoformat() if snapshot_ts_actual else None
+        })
+
+    except Exception as e:
+        logging.exception("Failed to retrieve snapshot statistics from database.")
+        return jsonify({"error": str(e)}), 500
+
+
 @routes.route("/query", methods=["POST"])
 def run_query():
     config = configparser.ConfigParser()
     config.read("/code/app/gui/configs/RDF2Repo_mappings.ini")
     repo_map = dict(config["repositories"])
-
     selected_label = request.form.get("repo")
+    
     repo = repo_map.get(selected_label)
     timestamp_str = request.form.get("timestamp")
     query_text = request.form.get("sparql")

@@ -3,16 +3,14 @@ TODO: Implement support for multiple RDF serializations including file archives 
 
 TODO: Investigate why import fails for for https://bimerr.iot.linkeddata.es/def/weather/ontology.nt
 
-TODO: Implement client to pass a URL with an ontology behind to start the versioning
-
 TODO: Implement stop versioning
+* Not sure what we want. Delete TODO?
 
-TODO: Persist Postegresql Database
-
-TODO: Fix bug: Wrongly packaed orkg_iterative files. The timestamps in the filenames in the zip archives do not reflect the timestamps of the zip archives
+TODO: Fix bug
+* Wrongly packaged orkg_iterative files. The timestamps in the filenames in the zip archives do not reflect the timestamps of the zip archives
 
 TODO: GUI
-Distinguish between days were the service was not running and days when there were no inserts. Use colors or symbols to display this in the plot.
+* Distinguish between days were the service was not running and days when there were no inserts. Use colors or symbols to display this in the plot.
 
 TODO: GUI
 Add information about the inserts and deletes (metrics) in a side view or different tab:
@@ -36,9 +34,19 @@ Add information about the inserts and deletes (metrics) in a side view or differ
 
 
 TODO: GUI
-fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
+* fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
+
+TODO: GUI
+Update view of timestamp of x-axis
+* HOUR view: Hours, day, month, and year should be shown in a 4 layer view to avoid repeating the day, month, and year for every hour
+* DAY view: Year, month, and day should be shown in a 3-layer view to avoid repeating the month and year for every day
+* Week view: like day view
 
 # Done
+TODO: Implement client to pass a URL with an ontology behind to start the versioning
+
+TODO: Persist Postegresql Database
+
 TODO: GUI
 When selecting one data point (blue points) in the plot, the timestamp in the input field should take the value of the corresponding timestamp. 
     * For days and weeks the timestamp should be: yyyy-MM-ddT23:59:59, thereby taking the last minute of the day or week

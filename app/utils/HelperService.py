@@ -63,9 +63,9 @@ def download_file(url, output_path, chunk_size=65536):
 def normalize_and_skolemize(input_path, output_path):
     # Escape sequences
     # Chapter 6.4 in https://www.w3.org/TR/turtle/
-    # Escape sequences: first representation: \u hex hex hex hex, e.g. \u0009
+    # Escape sequences: first representation: \u hex hex hex hex, e.g. \u0008
     escaped_unicode_control_pattern = re.compile(
-        r'\\u(?:000[0-8bcefBCEF]|001[0-9a-fA-F]|007f|00a0|2028|2029)'
+        r'\\u(?:000[0-9bcefBCEF]|001[0-9a-fA-F]|007f|00a0|2028|2029)'
     )
 
     # Escape sequences: second representation: as string literals
@@ -78,6 +78,10 @@ def normalize_and_skolemize(input_path, output_path):
     # After a round trip (import and export) these characters are not preserved
     # E.g. \n is preserved after a roundtrip
     problematic_literal_escapes = re.compile(r'(?<!\\)\\[fb\']')
+
+    # 5c 74 (\t): A tab can be mistaken for a space in utf-8 but it is visible in hex
+    # GraphDB adds literally "\t" after a roundtrip
+    # Replace each occurence with a literal "\t"
 
     # reserved character escape sequences consist of a '\' followed 
     # by one of ~.-!$&'()*+,;=/?#@%_ and represent the character to the right of the '\'.
@@ -101,6 +105,9 @@ def normalize_and_skolemize(input_path, output_path):
                 # Step 1: Normalize — remove control characters and escape sequences
                 line = escaped_unicode_control_pattern.sub('', line)
                 line = problematic_literal_escapes.sub('', line)
+
+                # Step 1.5: Replace actual tab characters with literal "\t"
+                line = line.replace('\t', '\\t')
                 
                 # Step 2: Normalize — Remove xsd:string datatype
                 # This is necessary because upon import into GraphDB, the string datatypes get removed
