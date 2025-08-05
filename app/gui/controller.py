@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
-from app.services.ManagementService import get_dataset_metadata_by_repo_name
+from app.services.ManagementService import get_dataset_metadata_by_repo_name, get_snapshot_stats_by_repo_name_and_snapshot_ts
 from app.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
 from app.AppConfig import Settings
@@ -17,8 +17,7 @@ class GuiContr:
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repo_name)
         self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', repo_name)
         self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint, skip_connection_test=True)
-        logging.info(f"Get endpoint: {self.__graph_db_get_endpoint}")
-
+        logging.info(f"GET endpoint: {self.__graph_db_get_endpoint}\nPOST endpoint: {self.__graph_db_post_endpoint}")
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True) -> pd.DataFrame:
         if timestamp is not None and query_as_timestamped:
@@ -65,7 +64,6 @@ class GuiContr:
         insertions = agg["insertions"].astype(int)
         deletions = agg["deletions"].astype(int)
 
-        logging.info(insertions)
         # Prepare arrays for traces
         ins_y = []
         ins_base = []
@@ -177,15 +175,87 @@ class GuiContr:
         repo_name = self.repo_name
 
         session = next(get_session())
-        tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
-        rdf_dataset_url = tracking_infos[1]
-        formatted_polling_interval = _format_polling_interval(tracking_infos[2])
-        next_run = tracking_infos[3]
-        session.close()
+        rdf_dataset_url = ""
+        formatted_polling_interval = ""
+        next_run = ""
+        try:
+            tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
+            rdf_dataset_url = tracking_infos[1]
+            formatted_polling_interval = _format_polling_interval(tracking_infos[2])
+            next_run = tracking_infos[3]
+            session.close()
+        except TypeError as e:
+            logging.error(f"Values could not be retrieved from the Postgres database. Original message: {str(e)}")
 
         logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {formatted_polling_interval}; {next_run}")
         return rdf_dataset_url, formatted_polling_interval, next_run
     
+
+    def get_snapshot_stats(self, snapshot_ts):
+        repo_name = self.repo_name
+        session = next(get_session())
+        snapshot_ts = datetime.fromisoformat(snapshot_ts)
+        raw_df = get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name, snapshot_ts, session)
+        session.close()
+
+        if raw_df.empty:
+            return [], None  # empty tree and no timestamp
+        
+        snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
+
+        # Sort dataframe
+        raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
+
+        class_tree = {}  # Map: parent -> list of children
+        class_data = {}  # Map: class_id -> row data
+
+        for _, row in raw_df.iterrows():
+            parent = row["parent_onto_class"]
+            class_id = row["onto_class"]
+            class_tree.setdefault(parent, []).append(class_id)
+            class_data[class_id] = row
+
+        # Precompute aggregated stats per node (sum of children)
+        def aggregate_stats(class_id):
+            children = class_tree.get(class_id, [])
+            if not children:
+                return {
+                    "cnt_class_instances_current": class_data[class_id]["cnt_class_instances_current"],
+                    "cnt_class_instances_prev": class_data[class_id]["cnt_class_instances_prev"],
+                    "cnt_classes_added": class_data[class_id]["cnt_classes_added"],
+                    "cnt_classes_deleted": class_data[class_id]["cnt_classes_deleted"],
+                }
+            else:
+                agg = {
+                    "cnt_class_instances_current": 0,
+                    "cnt_class_instances_prev": 0,
+                    "cnt_classes_added": 0,
+                    "cnt_classes_deleted": 0,
+                }
+                for child in children:
+                    child_agg = aggregate_stats(child)
+                    for k in agg:
+                        agg[k] += child_agg[k]
+                return agg
+
+        # Recursively build node with children in nested structure
+        def build_node(class_id):
+            stats = aggregate_stats(class_id)
+            children = class_tree.get(class_id, [])
+            return {
+                "id": class_id,
+                "cnt_class_instances": stats["cnt_class_instances_current"],
+                "cnt_class_instances_prev": stats["cnt_class_instances_prev"],
+                "cnt_classes_added": stats["cnt_classes_added"],
+                "cnt_classes_deleted": stats["cnt_classes_deleted"],
+                "children": [build_node(child) for child in children] if children else []
+            }
+
+        roots = class_tree.get("NaN", [])
+        hierarchy = [build_node(root) for root in roots]
+
+        return hierarchy, snapshot_ts_actual
+
 
 def _format_polling_interval(seconds: int) -> str:
     seconds = int(seconds)
@@ -209,3 +279,5 @@ def _format_polling_interval(seconds: int) -> str:
         minutes = remainder // 60
         sec = remainder % 60
         return f"{days} days, {hours:02d}:{minutes:02d}:{sec:02d}"
+
+

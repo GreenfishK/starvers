@@ -1,6 +1,6 @@
 services:
   gui:
-    image: starversserver_prod
+    image: starversserver
     container_name: starvers-gui_prod
     ports:
       - 5001:5000
@@ -21,6 +21,25 @@ services:
       - starvers_prod_net
     entrypoint: ["python", "app/run_gui.py"]
 
+  starversserver:
+    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    container_name: starvers-server_prod
+    restart: always
+    ports:
+      - 80:80
+    env_file: "./prod.env"
+    volumes:
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    networks:
+      - starvers_prod_net
+    entrypoint: ["uvicorn", "app.main:app", "--reload"]
 
   db:
     image: postgres

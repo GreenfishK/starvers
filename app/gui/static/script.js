@@ -10,12 +10,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const dropdown = document.getElementById("repo-select");
     const plotContainer = document.getElementById("plot-container");
-    const trackingInfo = document.getElementById("tracking-info");
+    const trackingInfo = document.getElementById("tracking-infos");
     const sparqlForm = document.getElementById("sparql-form");
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
     const plotDiv = document.getElementById("evo-plot");
     const defaultBtn = document.getElementById("day_button")
+
+    if (window.innerWidth <= 900) {
+        showTab('main');  
+    } else {
+        ['left-section', 'main-section', 'right-section'].forEach(id => {
+            document.getElementById(id).classList.add('active-tab');
+        });
+    }
 
     if (defaultBtn) {
         changeAgg('DAY', defaultBtn);
@@ -41,6 +49,29 @@ document.addEventListener("DOMContentLoaded", function () {
                     : `${year}-${month}-${day}T23:59:59`;
 
             document.getElementById("timestamp_input").value = formattedTimestamp;
+
+            fetch(`/statistics?repo=${dropdown.value}&timestamp=${encodeURIComponent(formattedTimestamp)}`, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json" 
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json(); 
+            })
+            .then(data => {
+                const classHierarchy = document.getElementById("right-section");
+                if (classHierarchy && data.snapshot_stats) {
+                    classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
+                    attachTreeToggleHandlers();
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching snapshot statistics:", error);
+            });
 
             // Add halo marker
             const highlightTrace = {
@@ -193,7 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     const evoPlotObj = JSON.parse(data.evo_plot);
                     Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
-
+                    
                     trackingInfo.innerHTML = `
                         <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
                         <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
@@ -201,7 +232,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     `;
         
-                    document.getElementById("data_section").style.display = "none";
+                    document.getElementById("data-section").style.display = "none";
 
                 }
             })
@@ -242,7 +273,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         console.log("Executing query.")
         // show result container
-        document.getElementById("data_section").style.display = "block";
+        document.getElementById("data-section").style.display = "block";
         
 
         fetch("/query", {
@@ -344,3 +375,80 @@ function showTooltip(inputField) {
         }, 5000);
     }
 }
+
+
+function renderSnapshotStats(stats) {
+    // Example: recursive function to build nested HTML list from stats hierarchy
+
+    function renderNode(node) {
+        const { id, cnt_class_instances, cnt_classes_added, cnt_classes_deleted, children } = node;
+
+        const hasChildren = children && children.length > 0;
+
+        let html = `<section class="tree-node${hasChildren ? ' has-children' : ''}">`;
+
+        if (hasChildren) {
+            html += `<span class="expand-btn">[+]</span>`;
+        }
+
+        html += `<span class="class-label">${id}</span>`;
+        html += `<span class="info">Instances: ${cnt_class_instances}</span>`;
+        html += `<span class="info">Added: ${cnt_classes_added}</span>`;
+        html += `<span class="info">Deleted: ${cnt_classes_deleted}</span>`;
+
+        if (hasChildren) {
+            html += `<section class="children">`;  // <-- Removed inline style here
+            children.forEach(child => {
+                html += renderNode(child);
+            });
+            html += `</section>`;
+        }
+
+        html += `</section>`;
+        return html;
+    }
+
+    let fullHtml = `<section class="snapshot-tree">`;
+    stats.forEach(node => {
+        fullHtml += renderNode(node);
+    });
+    fullHtml += `</section>`;
+
+    return fullHtml;
+}
+
+// Attach expand/collapse handlers after injecting the HTML
+function attachTreeToggleHandlers() {
+    console.log("Attaching expand/collapse handlers...");
+    document.querySelectorAll('.tree-node > .expand-btn').forEach(btn => {
+        btn.onclick = () => {
+            const node = btn.parentElement;
+            node.classList.toggle('expanded');
+        };
+    });
+}
+
+function showTab(tab) {
+    const sections = {
+        left: document.getElementById('left-section'),
+        main: document.getElementById('main-section'),
+        right: document.getElementById('right-section')
+    };
+
+    // Remove active-tab class from all
+    for (let key in sections) {
+        sections[key].classList.remove('active-tab');
+    }
+
+    // Add active-tab to selected
+    if (sections[tab]) {
+        sections[tab].classList.add('active-tab');
+    }
+
+    // Update button styles
+    document.querySelectorAll('#tab-buttons .button').forEach(btn => btn.classList.remove('is-active'));
+    const tabIndex = tab === 'left' ? 0 : tab === 'main' ? 1 : 2;
+    document.querySelectorAll('#tab-buttons .button')[tabIndex].classList.add('is-active');
+}
+
+

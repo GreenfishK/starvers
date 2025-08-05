@@ -14,7 +14,6 @@ update dataset set repository_name = 'orkg' where repository_name
 update dataset set repository_name = 'orkg_iterative' where repository_name 
 = 'orkg_iterative_v2';
 
-update dataset set next_run = null;
 truncate snapshot;
 
 update dataset set active = False;
@@ -24,9 +23,12 @@ update dataset set active = True where repository_name = 'schema_org_ontology';
 update dataset set active = True where repository_name = 'schema_org_ontology_iterative';
 update dataset set active = True where repository_name = 'orkg';
 update dataset set active = True where repository_name = 'orkg_iterative';
-
 update dataset set active = True where repository_name = 'schema_org_ontology' or repository_name = 'air_quality_ontology';
 
+update dataset set next_run = null;
+update dataset set next_run = '2025-08-04 16:35:11.064284';
+
+delete from snapshot where dataset_id = 'f2193740-964e-4573-83e1-63aafbe09f7c';
 
 
 # Create tables and insert data
