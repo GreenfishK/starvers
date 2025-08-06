@@ -89,19 +89,18 @@ class PollingTask():
                         query = get_snapshot_metrics_template(ts_current=version_timestamp, ts_prev=version_timestamp)
                     sparql_engine.setQuery(query)
                     response = sparql_engine.query().convert() 
-
-                    # Parse CSV using pandas
                     csv_text = response.decode('utf-8')
                     df_metrics = pd.read_csv(StringIO(csv_text))
 
                     snapshots = []
                     for _, row in df_metrics.iterrows():
+                        LOG.info(f'Parent class: {row["parent_onto_class"]}; Type: {type(row["parent_onto_class"])}')
                         snapshot = Snapshot(
                             dataset_id=self.dataset_id,
                             snapshot_ts=version_timestamp,
                             snapshot_ts_prev=self.latest_timestamp if self.latest_timestamp else version_timestamp,
                             onto_class=row["onto_class"],
-                            parent_onto_class=row["parent_onto_class"],
+                            parent_onto_class=row["parent_onto_class"] if pd.notna(row["parent_onto_class"]) else None,
                             cnt_class_instances_current=row["cnt_class_instances_current"],
                             cnt_class_instances_prev=row["cnt_class_instances_prev"],
                             cnt_classes_added=row["cnt_classes_added"],
@@ -110,7 +109,7 @@ class PollingTask():
                         snapshots.append(snapshot)
 
                     if snapshots:
-                        LOG.info(f"Repository name: {self.repository_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table: set all fields")
+                        LOG.info(f"Repository name: {self.repository_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table.")
                         session.add_all(snapshots)
                         session.commit()
                         for snap in snapshots:

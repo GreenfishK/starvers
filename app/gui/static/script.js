@@ -388,7 +388,7 @@ function renderSnapshotStats(stats) {
         let html = `<section class="tree-node${hasChildren ? ' has-children' : ''}">`;
 
         if (hasChildren) {
-            html += `<span class="expand-btn">[+]</span>`;
+            html += `<span class="expand-btn"></span>`;
         }
 
         html += `<span class="class-label">${id}</span>`;
@@ -417,7 +417,6 @@ function renderSnapshotStats(stats) {
     return fullHtml;
 }
 
-// Attach expand/collapse handlers after injecting the HTML
 function attachTreeToggleHandlers() {
     console.log("Attaching expand/collapse handlers...");
     document.querySelectorAll('.tree-node > .expand-btn').forEach(btn => {

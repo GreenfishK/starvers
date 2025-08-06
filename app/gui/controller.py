@@ -2,6 +2,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 import logging
 import plotly.graph_objects as go
+from collections import defaultdict
+import networkx as nx
+from datetime import datetime
 
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
@@ -200,59 +203,72 @@ class GuiContr:
 
         if raw_df.empty:
             return [], None  # empty tree and no timestamp
-        
+
         snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
-
-        # Sort dataframe
         raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
+        raw_df.to_csv("/code/logs/class_tree.csv", header=True)
 
-        class_tree = {}  # Map: parent -> list of children
-        class_data = {}  # Map: class_id -> row data
+        G = nx.DiGraph()
+        class_data = {}
+
+        # Add a synthetic root node
+        ROOT = "Thing"
+        G.add_node(ROOT, synthetic=True)
 
         for _, row in raw_df.iterrows():
-            parent = row["parent_onto_class"]
-            class_id = row["onto_class"]
-            class_tree.setdefault(parent, []).append(class_id)
-            class_data[class_id] = row
+            parent = row["parent_onto_class"] or ROOT
+            child = row["onto_class"]
 
-        # Precompute aggregated stats per node (sum of children)
-        def aggregate_stats(class_id):
-            children = class_tree.get(class_id, [])
-            if not children:
+            # Add nodes with metadata
+            class_data[child] = {
+                "cnt_class_instances_current": row["cnt_class_instances_current"],
+                "cnt_class_instances_prev": row["cnt_class_instances_prev"],
+                "cnt_classes_added": row["cnt_classes_added"],
+                "cnt_classes_deleted": row["cnt_classes_deleted"],
+            }
+
+            G.add_node(child)
+            G.add_edge(parent, child)
+
+        # Aggregate statistics for a given node
+        def aggregate_stats(node):
+            if node not in class_data:
                 return {
-                    "cnt_class_instances_current": class_data[class_id]["cnt_class_instances_current"],
-                    "cnt_class_instances_prev": class_data[class_id]["cnt_class_instances_prev"],
-                    "cnt_classes_added": class_data[class_id]["cnt_classes_added"],
-                    "cnt_classes_deleted": class_data[class_id]["cnt_classes_deleted"],
-                }
-            else:
-                agg = {
                     "cnt_class_instances_current": 0,
                     "cnt_class_instances_prev": 0,
                     "cnt_classes_added": 0,
                     "cnt_classes_deleted": 0,
                 }
-                for child in children:
-                    child_agg = aggregate_stats(child)
-                    for k in agg:
-                        agg[k] += child_agg[k]
-                return agg
 
-        # Recursively build node with children in nested structure
-        def build_node(class_id):
-            stats = aggregate_stats(class_id)
-            children = class_tree.get(class_id, [])
+            children = list(G.successors(node))
+            if not children:
+                return class_data[node]
+
+            agg = {
+                "cnt_class_instances_current": 0,
+                "cnt_class_instances_prev": 0,
+                "cnt_classes_added": 0,
+                "cnt_classes_deleted": 0,
+            }
+            for child in children:
+                child_agg = aggregate_stats(child)
+                for k in agg:
+                    agg[k] += child_agg[k]
+            return agg
+
+        # Build the tree from a node recursively
+        def build_tree(node):
+            stats = aggregate_stats(node)
             return {
-                "id": class_id,
+                "id": node,
                 "cnt_class_instances": stats["cnt_class_instances_current"],
                 "cnt_class_instances_prev": stats["cnt_class_instances_prev"],
                 "cnt_classes_added": stats["cnt_classes_added"],
                 "cnt_classes_deleted": stats["cnt_classes_deleted"],
-                "children": [build_node(child) for child in children] if children else []
+                "children": [build_tree(child) for child in G.successors(node)]
             }
 
-        roots = class_tree.get("NaN", [])
-        hierarchy = [build_node(root) for root in roots]
+        hierarchy = [build_tree(child) for child in G.successors(ROOT)]
 
         return hierarchy, snapshot_ts_actual
 

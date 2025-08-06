@@ -1,10 +1,10 @@
 services:
   starversserver:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver_dev # should be changed to ghcr.io/martinmitteregger/starversserver:main
     container_name: starvers-server_dev
     restart: always
     ports:
-      - 80:80
+      - 81:80
     env_file: "./dev.env"
     volumes:
       - ${data_storage}/evaluation:/code/evaluation
@@ -18,7 +18,7 @@ services:
     entrypoint: ["uvicorn", "app.main:app", "--reload"]
   
   gui:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver_dev # should be changed to ghcr.io/martinmitteregger/starversserver:main
     container_name: starvers-gui_dev
     ports:
       - 5000:5000
@@ -71,7 +71,6 @@ services:
         -Dgraphdb.health.minimal.free.storage.asyncCheck=false
     ports: 
       - 7200:7200
-      - 7300:7300
     volumes:
       - ${data_storage}/graphdb-data:/opt/graphdb/home
     extra_hosts:
@@ -80,7 +79,7 @@ services:
 
   # Creates a timestamped RDF-star dataset from individual snapshots
   retroVersioning:
-    image: starversserver
+    image: starversserver_dev
     env_file: "./dev.env"
     depends_on:
       db:
@@ -88,7 +87,7 @@ services:
       rdfstore:
         condition: service_started
     ports: 
-      - 80:80
+      - 81:80
     volumes:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
@@ -97,7 +96,7 @@ services:
 
   # Creates plots from the timing files
   evaluate:
-    image: starversserver
+    image: starversserver_dev
     env_file: "./dev.env"
     volumes:
       - ../evaluation:/code/evaluation
@@ -106,7 +105,7 @@ services:
     entrypoint: ["python", "/code/evaluation/evaluation.py"]
 
   validate:
-    image: starversserver
+    image: starversserver_dev
     env_file: "./dev.env"
     volumes:
       -  ${data_storage}/evaluation:/data/evaluation

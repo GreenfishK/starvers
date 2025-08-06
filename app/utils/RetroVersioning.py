@@ -188,7 +188,7 @@ for timestamp_str, file in file_timestamp_pairs[1:]:
                 snapshot_ts=version_timestamp,
                 snapshot_ts_prev=latest_timestamp if latest_timestamp else version_timestamp,
                 onto_class=row["onto_class"],
-                parent_onto_class=row["parent_onto_class"],
+                parent_onto_class=row["parent_onto_class"] if pd.notna(row["parent_onto_class"]) else None,
                 cnt_class_instances_current=row["cnt_class_instances_current"],
                 cnt_class_instances_prev=row["cnt_class_instances_prev"],
                 cnt_classes_added=row["cnt_classes_added"],

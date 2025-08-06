@@ -28,7 +28,18 @@ update dataset set active = True where repository_name = 'schema_org_ontology' o
 update dataset set next_run = null;
 update dataset set next_run = '2025-08-04 16:35:11.064284';
 
-delete from snapshot where dataset_id = 'f2193740-964e-4573-83e1-63aafbe09f7c';
+delete from snapshot where dataset_id = '1ede0112-ee5e-4b56-88bb-e76904e9e929';
+
+select * from snapshot where dataset_id = '1ede0112-ee5e-4b56-88bb-e76904e9e929' and snapshot_ts = '2025-05-08 08:06:13.736';
+
+update snapshot set parent_onto_class = NULL 
+where parent_onto_class = 'NaN' 
+and dataset_id = '831764af-25d9-4830-b653-9780e69ed53e';
+
+
+update snapshot set parent_onto_class = NULL 
+where parent_onto_class = 'NaN' 
+and dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
 
 
 # Create tables and insert data
