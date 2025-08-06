@@ -41,6 +41,9 @@ update snapshot set parent_onto_class = NULL
 where parent_onto_class = 'NaN' 
 and dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
 
+select dataset_id, snapshot_ts, cnt_class_instances_current, cnt_class_instances_prev from snapshot where dataset_id = '32a0d2ce-b65b-4a5c-9d5d-39815e035969' 
+and abs(cnt_class_instances_current - cnt_class_instances_prev) > 0;
+
 
 # Create tables and insert data
 CREATE TABLE dataset (

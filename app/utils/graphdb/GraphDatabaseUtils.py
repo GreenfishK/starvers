@@ -42,6 +42,36 @@ def create_repository(repository_name: str): # add URL and description?
         else:
             raise GraphRepositoryCreationFailedException(repository_name, response.text)
         
+
+def recreate_repository(repository_name: str): 
+    repoConfig = __load_repo_config_file()
+    repoConfig = repoConfig.replace('{:name}', repository_name)
+    repoConfig = repoConfig.replace('{:description}', "Repository for versioned " + repository_name)
+
+    logger = get_logger(__name__)
+    logger.info(f"Repository name: {repository_name}: Recreating GraphDB repository.")
+
+    # Delete repository if it exists
+    logger.info(f"Deleting GraphDB repository via REST API: {Settings().graph_db_url}/rest/repositories/{repository_name}")
+    delete_response = requests.delete(f"{Settings().graph_db_url}/rest/repositories/{repository_name}")
+    if delete_response.status_code in [200, 204]:
+        logger.info(f"Repository {repository_name} deleted successfully.")
+    elif delete_response.status_code == 404:
+        logger.info(f"Repository {repository_name} did not exist.")
+    else:
+        logger.warning(f"Repository deletion for {repository_name} returned unexpected status: {delete_response.status_code} - {delete_response.text}")
+
+    time.sleep(5)
+
+    # Create repository
+    response = requests.post(f"{Settings().graph_db_url}/rest/repositories", files=dict(config=repoConfig))
+    
+    if response.status_code == 201:
+        logger.info(f"Repository {repository_name} created successfully.")
+    else:
+        logger.error(f"Repository creation for {repository_name} failed. Error code and message: {response.status_code} - {response.text}")
+
+        
 def import_serverfile(file_name: str, repository_name: str, graph_name: str = None):
     get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Load serverfile {file_name} into graphdb repository.")
     payload = {

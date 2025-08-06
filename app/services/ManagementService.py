@@ -1,4 +1,6 @@
 from sqlmodel import Session, select
+from sqlmodel import delete as sqlmodel_delete
+
 from sqlalchemy import desc
 from uuid import UUID
 from typing import List
@@ -120,6 +122,17 @@ def delete(id: UUID, session: Session) -> Dataset:
         session.commit()
         session.refresh(db_dataset)
     return db_dataset
+
+def delete_snapshot_metrics_by_dataset_id(repo_name: str, session: Session):
+    dataset_id_stmt = select(Dataset.id).where(Dataset.repository_name == repo_name)
+    dataset_id = session.exec(dataset_id_stmt).first()
+
+    if not dataset_id:
+        raise DatasetNotFoundException(name=repo_name)
+
+    delete_stmt = sqlmodel_delete(Snapshot).where(Snapshot.dataset_id == dataset_id)
+    session.exec(delete_stmt)
+    session.commit()
 
 def delete_all(session: Session) -> List[Dataset]:
     db_datasets = get_all(session)
