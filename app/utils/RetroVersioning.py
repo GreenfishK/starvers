@@ -1,3 +1,7 @@
+#######################################
+# Notes
+# To use this service, an entry in the Dataset table with the repository name and id must exist!
+#######################################
 from datetime import datetime
 import os
 import shutil
@@ -193,6 +197,7 @@ def convert_timestamp_str_to_iso(timestamp_str):
     assert isinstance(dt, datetime), "Conversion to datetime failed"
 
     return dt
+
 file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
 
 init_version_timestmap, first_file = file_timestamp_pairs[0]
@@ -223,11 +228,10 @@ with Session(engine) as session:
     dataset = session.get(Dataset, dataset_id)
 
 # Compute metrics for initial snapshot
-init_timestamp = file_timestamp_pairs[0][1]
-compute_snapshot_statistics(dataset_id, init_timestamp, init_timestamp)
+compute_snapshot_statistics(dataset_id, init_version_timestmap_iso, init_version_timestmap_iso)
 
 # Iterate over all files, starting from the second oldest
-latest_timestamp = init_timestamp
+latest_timestamp = init_version_timestmap_iso
 for timestamp_str, file in file_timestamp_pairs[1:]:
     version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
 

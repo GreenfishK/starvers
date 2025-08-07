@@ -197,57 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
 
     console.log("Initializing listener for the repository dropdown menu.")
-    dropdown.addEventListener("change", function () {
-        const selectedRepo = dropdown.value;
-        const downloadButton = document.getElementById("download-btn");
-        console.log("Dropdown changed to repo:", selectedRepo);
-
-        //Toggle DAY button
-        if (defaultBtn) {
-            changeAgg('DAY', defaultBtn);
-        }
-
-        // Remove download button if it exists
-        if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
-
-        console.log("Fetching plot and tracking info for repo:", selectedRepo);
-        fetch(`/infos/${selectedRepo}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Failed to load data");
-                return response.json();
-            })
-            .then(data => {
-                console.log("Data received for repo:", selectedRepo);
-                if (data.error) {
-                    plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
-                    trackingInfo.innerHTML = "";
-                } else {
-                    const evoPlotObj = JSON.parse(data.evo_plot);
-                    Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
-                    
-                    trackingInfo.innerHTML = `
-                        <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
-                        <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
-                        <p><strong>Next run (UTC): </strong>${data.next_run}</p>
-
-                    `;
-        
-                    document.getElementById("data-section").style.display = "none";
-
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching plot/tracking info:", error);
-                plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
-                trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
-            });
-    
-        // Clear previous query results on repo change
-        document.getElementById("result-table").innerHTML = "";
-
-        // Clear the timestamped editor
-        timestampedEditor.setValue("");
-    });
+    dropdown.addEventListener("change",  () => repoChange(dropdown, timestampedEditor));
 
     console.log("Initializing listener for the SPARQL form submission.")
     let timerInterval;
@@ -317,6 +267,68 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+
+function repoChange(dropdown, timestampedEditor) {
+    const selectedRepo = dropdown.value;
+    const downloadButton = document.getElementById("download-btn");
+    const plotContainer = document.getElementById("plot-container");
+    const trackingInfo = document.getElementById("tracking-infos");
+    const defaultBtn = document.getElementById("day_button")
+
+    console.log("Dropdown changed to repo:", selectedRepo);
+
+    //Toggle DAY button
+    if (defaultBtn) {
+        changeAgg('DAY', defaultBtn);
+    }
+
+    // Remove download button if it exists
+    if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
+
+    console.log("Fetching plot and tracking info for repo:", selectedRepo);
+    fetch(`/infos/${selectedRepo}`)
+        .then(response => {
+            if (!response.ok) throw new Error("Failed to load data");
+            return response.json();
+        })
+        .then(data => {
+            console.log("Data received for repo:", selectedRepo);
+            if (data.error) {
+                plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
+                trackingInfo.innerHTML = "";
+            } else {
+                const evoPlotObj = JSON.parse(data.evo_plot);
+                Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
+                
+                trackingInfo.innerHTML = `
+                    <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
+                    <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
+                    <p><strong>Next run (UTC): </strong>${data.next_run}</p>
+
+                `;
+    
+                document.getElementById("data-section").style.display = "none";
+
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching plot/tracking info:", error);
+            plotContainer.innerHTML = "<p class='has-text-danger'>Failed to load plot.</p>";
+            trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
+        });
+
+    // Clear previous query results on repo change
+    console.log("Clearing result table")
+    document.getElementById("result-table").innerHTML = "";
+
+    // Clear class hierarchy
+    console.log("Clearing class hierarchy")
+    document.getElementById("right-section").innerHTML = "";
+
+    // Clear the timestamped editor
+    timestampedEditor.setValue("");
+    
+};
 
 // hour, day, week buttons listener
 function changeAgg(level, clickedButton) {

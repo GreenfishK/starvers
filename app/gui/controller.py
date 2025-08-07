@@ -207,7 +207,7 @@ class GuiContr:
         snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
         raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
         raw_df.to_csv("/code/logs/class_tree.csv", header=True)
-
+        
         G = nx.DiGraph()
         class_data = {}
 
@@ -218,6 +218,9 @@ class GuiContr:
         for _, row in raw_df.iterrows():
             parent = row["parent_onto_class"] or ROOT
             child = row["onto_class"]
+
+            if row["onto_class"] == "http://orkg.org/orkg/class/Contribution":
+                logging.info(row["cnt_class_instances_current"])
 
             # Add nodes with metadata
             class_data[child] = {
