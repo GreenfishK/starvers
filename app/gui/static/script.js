@@ -9,8 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Document loaded.");
 
     const dropdown = document.getElementById("repo-select");
-    const plotContainer = document.getElementById("plot-container");
-    const trackingInfo = document.getElementById("tracking-infos");
     const sparqlForm = document.getElementById("sparql-form");
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
@@ -65,8 +63,16 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(data => {
                 const classHierarchy = document.getElementById("right-section");
                 if (classHierarchy && data.snapshot_stats) {
-                    classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
-                    attachTreeToggleHandlers();
+                    if (data.snapshot_stats.length === 0 && data.snapshot_ts == null) {
+                        classHierarchy.innerHTML = `
+                            <div class="notification is-warning mt-2">
+                                <strong>Notice:</strong> No snapshot statistics available for this repository.
+                            </div>
+                        `;                    
+                    } else {
+                        classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
+                        attachTreeToggleHandlers();
+                    }
                 }
             })
             .catch(error => {
@@ -183,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
         mode: 'sparql',
         lineNumbers: true
     });
-    editor.setSize(null, "420px");
+    //editor.setSize(null, "420px");
 
     console.log("Initializing SPARQL-star view.")
     const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
@@ -193,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function () {
         theme: "default",
         readOnly: "nocursor" 
     });
-    timestampedEditor.setSize(null, "420px");
+    //timestampedEditor.setSize(null, "420px");
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
 
     console.log("Initializing listener for the repository dropdown menu.")
@@ -461,5 +467,7 @@ function showTab(tab) {
     const tabIndex = tab === 'left' ? 0 : tab === 'main' ? 1 : 2;
     document.querySelectorAll('#tab-buttons .button')[tabIndex].classList.add('is-active');
 }
+
+
 
 
