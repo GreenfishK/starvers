@@ -163,4 +163,17 @@ INSERT INTO dataset (
     TRUE,
     '7c0606ab-dc16-49d3-929a-3e6ea8eba410',
     '2025-08-01 16:36:55.611705'
+),
+(
+    'Animals and Plants Test Ontology',
+    'test_iterative',
+    'http://example.com',
+    86400,
+    'ITERATIVE',
+    NULL,
+    '2025-05-25 16:35:02.298197',
+    '2025-07-28 16:58:50.793766',
+    TRUE,
+    'f2d3c6e1-72b6-4e4f-96c6-2a8f4f61e9d7',
+    '2025-08-01 16:36:55.611705'
 );
