@@ -262,11 +262,9 @@
 #right-section {
     width: 25%;  
     padding: 1rem;
-    max-height: 100vh; 
     box-sizing: border-box;
     border-left: 1px solid #ccc;
     background-color: #f9f9f9;
-
 }
 
 #right-section-tabs {
