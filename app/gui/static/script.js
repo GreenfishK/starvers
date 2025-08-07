@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 return response.json(); 
             })
             .then(data => {
-                const classHierarchy = document.getElementById("right-section");
+                const classHierarchy = document.getElementById("right-section-tab-classes");
                 if (classHierarchy && data.snapshot_stats) {
                     if (data.snapshot_stats.length === 0 && data.snapshot_ts == null) {
                         classHierarchy.innerHTML = `
@@ -469,5 +469,20 @@ function showTab(tab) {
 }
 
 
+function switchRightSectionTabs(tab) {
+    console.log("Test")
+    // Remove 'is-active' from all buttons
+    document.querySelectorAll('#right-section-tabs .button').forEach(btn => {
+        btn.classList.remove('is-active');
+    });
 
+    // Hide all tab panes
+    document.querySelectorAll('.right-section-tab-pane').forEach(pane => {
+        pane.style.display = 'none';
+    });
+
+    // Show selected tab and highlight button
+    document.querySelector(`#right-section-tab-${tab}`).style.display = 'block';
+    document.querySelector(`#right-section-tabs .button[onclick*="${tab}"]`).classList.add('is-active');
+}
 

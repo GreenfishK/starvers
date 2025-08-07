@@ -1,4 +1,3 @@
-/* Hide tab buttons by default */
 #tab-buttons {
     margin-top: 1rem;
 }
@@ -10,16 +9,17 @@
     height: 100vh; 
 }
 
-
+.tab-section {
+    height: 100%; /* Lock height to wrapper */
+    min-height: 0; /* Ensure proper overflow behavior in flex items */
+    overflow-y: auto;
+}
 
 /* ############################################### */
 /* left-section */
 /* ############################################### */
-#left-section{
+#left-section {
     width: 25%;
-    height: 100%; /* Lock height to wrapper */
-    min-height: 0; /* Ensure proper overflow behavior in flex items */
-    overflow-y: auto;
 }
 
 /* ############################################### */
@@ -28,12 +28,9 @@
 #main-section {
     display: flex;
     flex-direction: column;
-    -ms-overflow-style: none;  /* IE 10+ */
     width: 50%;
-    height: 100%; /* Lock height to wrapper */
-    min-height: 0; /* Ensure proper overflow behavior in flex items */
-    overflow:auto;
 
+    -ms-overflow-style: none;  /* IE 10+ */
     scrollbar-width: none; /* Firefox */
     padding: 2rem;
     box-sizing: border-box;
@@ -264,21 +261,27 @@
 /* ############################################### */
 #right-section {
     width: 25%;  
-    height: 100%; /* Lock height to wrapper */
-    min-height: 0; /* Ensure proper overflow behavior in flex items */
-    overflow-y: auto;
     padding: 1rem;
-    padding-bottom: 3rem;
+    max-height: 100vh; 
     box-sizing: border-box;
     border-left: 1px solid #ccc;
     background-color: #f9f9f9;
 
 }
 
+#right-section-tabs {
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.right-section-tab-pane {
+    width: 100%;
+}
+
 .snapshot-tree {
-  flex: 1;
   width: 100%;
   min-height: 0;
+  max-height: 86.5vh;
   overflow-y: auto;
   font-family: Arial, sans-serif;
   font-size: 14px;

@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/sparql/sparql.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0-rc.0/plotly.min.js" charset="utf-8"></script>
 </head>
-<body>
 
+<body>
 <div id="tab-buttons" class="buttons has-addons is-centered is-hidden">
     <button class="button is-link is-light" onclick="showTab('left')">Sidebar</button>
     <button class="button is-link is-light is-active" onclick="showTab('main')">Main</button>
@@ -145,7 +145,22 @@
     </section>
 
     <section id="right-section" class="section tab-section"> 
-        
+        <!-- New tab buttons -->
+        <div id="right-section-tabs" class="buttons has-addons is-centered mb-3">
+            <button class="button is-link is-light is-active" onclick="switchRightSectionTabs('classes')">Classes</button>
+            <button class="button is-link is-light" onclick="switchRightSectionTabs('properties')">Properties</button>
+        </div>
+
+        <!-- New tab content containers -->
+        <div id="right-section-tab-content">
+            <div id="right-section-tab-classes" class="right-section-tab-pane">
+                <!-- Snapshot tree content goes here -->
+            </div>
+            <div id="right-section-tab-properties" class="right-section-tab-pane" style="display: none;">
+                <p>Properties content will go here.</p>
+            </div>
+        </div>
+    
     </section>    
     
         
