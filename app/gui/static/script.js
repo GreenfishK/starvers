@@ -329,10 +329,13 @@ function repoChange(dropdown, timestampedEditor) {
 
     // Clear class hierarchy
     console.log("Clearing class hierarchy")
-    document.getElementById("right-section").innerHTML = "";
+    document.getElementById("right-section-tab-classes").innerHTML = "";
 
     // Clear the timestamped editor
     timestampedEditor.setValue("");
+
+    // Show class hierarchy and activate classes tab
+    switchRightSectionTabs("classes");
     
 };
 
