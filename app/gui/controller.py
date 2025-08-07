@@ -219,9 +219,6 @@ class GuiContr:
             parent = row["parent_onto_class"] or ROOT
             child = row["onto_class"]
 
-            if row["onto_class"] == "http://orkg.org/orkg/class/Contribution":
-                logging.info(row["cnt_class_instances_current"])
-
             # Add nodes with metadata
             class_data[child] = {
                 "cnt_class_instances_current": row["cnt_class_instances_current"],
@@ -242,17 +239,15 @@ class GuiContr:
                     "cnt_classes_added": 0,
                     "cnt_classes_deleted": 0,
                 }
+        
+            if node == "http://orkg.org/orkg/class/Contribution":
+                logging.info("node in class_data")
 
             children = list(G.successors(node))
             if not children:
                 return class_data[node]
 
-            agg = {
-                "cnt_class_instances_current": 0,
-                "cnt_class_instances_prev": 0,
-                "cnt_classes_added": 0,
-                "cnt_classes_deleted": 0,
-            }
+            agg = class_data[node]
             for child in children:
                 child_agg = aggregate_stats(child)
                 for k in agg:
@@ -262,6 +257,8 @@ class GuiContr:
         # Build the tree from a node recursively
         def build_tree(node):
             stats = aggregate_stats(node)
+            if node == "http://orkg.org/orkg/class/Contribution":
+                logging.info(stats)
             return {
                 "id": node,
                 "cnt_class_instances": stats["cnt_class_instances_current"],
