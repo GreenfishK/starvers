@@ -429,7 +429,7 @@ function renderSnapshotStats(stats) {
         return html;
     }
 
-    let fullHtml = `<section class="snapshot-tree">`;
+    let fullHtml = `<section id="snapshot-tree">`;
     stats.forEach(node => {
         fullHtml += renderNode(node);
     });

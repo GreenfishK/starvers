@@ -10,8 +10,7 @@
 }
 
 .tab-section {
-    height: 100%; /* Lock height to wrapper */
-    min-height: 0; /* Ensure proper overflow behavior in flex items */
+    
     overflow-y: auto;
 }
 
@@ -33,7 +32,6 @@
     -ms-overflow-style: none;  /* IE 10+ */
     scrollbar-width: none; /* Firefox */
     padding: 2rem;
-    box-sizing: border-box;
 }
 
 #main-section::-webkit-scrollbar {
@@ -62,25 +60,17 @@
     flex-direction: column;
     width: 100%;
     overflow-y: auto; 
-    flex-wrap: wrap;
 
     gap: 1rem;
     margin-top: 3rem;
     margin-bottom: 1rem;
-    box-sizing: border-box;
 }
 
 /* main-section -> sparql-form -> plot-container -> plot-box */
-#plot-box {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 48%;
-    min-width: 300px;
-    max-width: 100%;
-} 
+
 
 /* main-section -> sparql-form -> plot-container -> plot-box -> external_buttons */
-#external_buttons {
+#plot-box-top-row {
     gap: 1rem;
 }
 
@@ -136,7 +126,6 @@
 #timestamp-input-container {
     display: flex;
     flex-direction: row; 
-    width: 100%;
     align-items: center;
     gap: 1rem;
 }
@@ -148,8 +137,6 @@
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container -> timestamp_input */
 #timestamp_input {
-    display: flex;
-    flex-direction: row;
     max-width: 13rem;
 }
 
@@ -201,7 +188,7 @@
 /* main-section -> data-section -> result-container */
 #result-container {
     position: relative;
-    border:none;
+    border: none;
 }
 
 /* main-section -> data-section -> result-container -> loading-overlay */
@@ -210,12 +197,11 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    top: 0;
-    left: 0;
-    background: rgba(240, 240, 240, 0.8);
-    z-index: 10;
     justify-content: center;
     align-items: center;
+    z-index: 10;
+
+    background: rgba(240, 240, 240, 0.8);
     font-weight: bold;
     color: #333;
     font-size: 1.2em;
@@ -267,6 +253,7 @@
     background-color: #f9f9f9;
 }
 
+/* right-sectin -> right-section-tabs */
 #right-section-tabs {
     margin-bottom: 1rem;
     margin-top: 1rem;
@@ -274,20 +261,23 @@
 
 .right-section-tab-pane {
     width: 100%;
+    padding-bottom: 1rem;
 }
 
-.snapshot-tree {
+/* right-sectin -> right-section-tab-content -> snapshot-tree */
+#snapshot-tree {
   width: 100%;
   min-height: 0;
   max-height: 86.5vh;
+  padding-bottom: 1rem;
   overflow-y: auto;
   font-family: Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
 }
 
-/* Scope all rules inside .snapshot-tree */
-.snapshot-tree .tree-node {
+/* Scope all rules inside #snapshot-tree */
+#snapshot-tree .tree-node {
   margin-left: 1.2em;
   position: relative;
   padding-left: 1.2em;
@@ -295,12 +285,12 @@
   margin-bottom: 0.3em;
 }
 
-.snapshot-tree .tree-node > .class-label {
+#snapshot-tree .tree-node > .class-label {
   font-weight: 600;
   margin-right: 0.6em;
 }
 
-.snapshot-tree .tree-node > .info {
+#snapshot-tree .tree-node > .info {
   background: #f0f0f0;
   border-radius: 3px;
   padding: 0 0.4em;
@@ -310,17 +300,17 @@
   display: inline-block;
 }
 
-.snapshot-tree .children {
+#snapshot-tree .children {
   display: none;
   margin-top: 0.2em;
   margin-left: 1.5em;
 }
 
-.snapshot-tree .tree-node.expanded > .children {
+#snapshot-tree .tree-node.expanded > .children {
   display: block;
 }
 
-.snapshot-tree .tree-node > .expand-btn {
+#snapshot-tree .tree-node > .expand-btn {
   cursor: pointer;
   user-select: none;
   position: absolute;
@@ -333,14 +323,14 @@
   pointer-events: auto;
 }
 
-.snapshot-tree .tree-node > .expand-btn::before {
+#snapshot-tree .tree-node > .expand-btn::before {
   content: "+";
   display: inline-block;
   width: 1em;
   text-align: center;
 }
 
-.snapshot-tree .tree-node.expanded > .expand-btn::before {
+#snapshot-tree .tree-node.expanded > .expand-btn::before {
   content: "−"; /* minus sign */
 }
 
