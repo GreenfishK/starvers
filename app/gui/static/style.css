@@ -7,7 +7,7 @@
 #layout-wrapper {
     display: flex;
     flex-direction: row;
-    height: 100vh;
+    height: 100vh; 
 }
 
 
@@ -17,61 +17,82 @@
 /* ############################################### */
 #left-section{
     width: 25%;
+    height: 100%; /* Lock height to wrapper */
+    min-height: 0; /* Ensure proper overflow behavior in flex items */
+    overflow-y: auto;
 }
 
 /* ############################################### */
 /* main-section */
 /* ############################################### */
 #main-section {
+    display: flex;
+    flex-direction: column;
+    -ms-overflow-style: none;  /* IE 10+ */
     width: 50%;
+    height: 100%; /* Lock height to wrapper */
+    min-height: 0; /* Ensure proper overflow behavior in flex items */
+    overflow:auto;
+
+    scrollbar-width: none; /* Firefox */
     padding: 2rem;
     box-sizing: border-box;
 }
 
-/* main-section -> meta-info -> onto-infos */
+#main-section::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* main-section -> sparql-form */
+
+
+/* main-section -> sparql-form -> meta-info -> onto-infos */
 #onto-infos{
     gap: 1rem;
 }
 
-/* main-section -> meta-info -> onto-infos -> repo-select-container */
+/* main-section -> sparql-form -> meta-info -> onto-infos -> repo-select-container */
 
 
-/* main-section -> meta-info -> onto-infos -> tracking-infos */
+/* main-section -> sparql-form -> meta-info -> onto-infos -> tracking-infos */
 #tracking-infos{
     gap: 1rem;
 }
 
-/* main-section -> plot-container */
+/* main-section -> sparql-form -> plot-container */
 #plot-container {
-    width: 100%;
-    height: 100%; /* Match height of main-content */
     display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow-y: auto; 
     flex-wrap: wrap;
+
     gap: 1rem;
     margin-top: 3rem;
     margin-bottom: 1rem;
     box-sizing: border-box;
-    overflow-y: auto; /* scroll if plots overflow */
 }
 
-/* main-section -> plot-container -> plot-box */
+/* main-section -> sparql-form -> plot-container -> plot-box */
 #plot-box {
+    display: flex;
+    flex-direction: column;
     flex: 1 1 48%;
     min-width: 300px;
     max-width: 100%;
 } 
 
-/* main-section -> plot-container -> plot-box -> external_buttons */
+/* main-section -> sparql-form -> plot-container -> plot-box -> external_buttons */
 #external_buttons {
     gap: 1rem;
 }
 
-/* main-section -> plot-container -> plot-box -> external_buttons -> plot-box-buttons*/
+/* main-section -> sparql-form -> plot-container -> plot-box -> external_buttons -> plot-box-buttons*/
 #plot-box-buttons {
     gap: 0.5rem;
 }
 
-/* main-section -> plot-container -> plot-box -> external_buttons -> plot-box-legend*/
+/* main-section-> sparql-form  -> plot-container -> plot-box -> external_buttons -> plot-box-legend*/
 #plot-box-legend {
     gap: 1rem;
 }
@@ -97,38 +118,46 @@
 }
 
 
-/* main-section -> plot-container -> plot-box -> evo-plot */
+/* main-section -> sparql-form -> plot-container -> plot-box -> evo-plot */
 /* injected via routes.get_repo_infos() and routes.index() */
 
-/* main-section -> sparlq-container-total */
+/* main-section -> sparql-form -> sparlq-container-total */
 
-/* main-section -> sparlq-container-total -> sparql-container */
+
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container */
 .query-editor-labels {
     display: flex;
+    flex-direction: row; 
     align-items: center;
     min-height: 3.5rem; 
 }
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left */
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left */
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container*/
 #timestamp-input-container {
-    display: flex; 
+    display: flex;
+    flex-direction: row; 
+    width: 100%;
     align-items: center;
     gap: 1rem;
 }
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container -> timestamp_input-label */
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container -> timestamp_input */
 #timestamp_input {
-    width: 250px;
+    display: flex;
+    flex-direction: row;
+    max-width: 13rem;
 }
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container -> timestamp-help */
 #timestamp-help-div {
     position: absolute;
@@ -144,13 +173,10 @@
     font-size: 0.9rem;
 }
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> sparql-editor */
-#sparql-editor {
-    min-height: 300px;
-}
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-left 
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> CodeMirror */
 .CodeMirror {
     border: 1px solid #dbdbdb;
@@ -162,16 +188,14 @@
     font-size: 18px;
 }
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right */
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right */
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right
 ->  timestamped-query-label*/
 
-/* main-section -> sparlq-container-total -> sparql-container -> sparql-container-right
+/* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right
 ->  timestamped-query*/
-#timestamped-query {
-    min-height: 300px;
-}
+
 
 /* main-section -> result-retrieval-error */
 
@@ -187,10 +211,10 @@
 #loading-overlay {
     display: none;
     position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
+    top: 0;
+    left: 0;
     background: rgba(240, 240, 240, 0.8);
     z-index: 10;
     justify-content: center;
@@ -239,19 +263,26 @@
 /* right-section */
 /* ############################################### */
 #right-section {
-    width: 25%;
+    width: 25%;  
+    height: 100%; /* Lock height to wrapper */
+    min-height: 0; /* Ensure proper overflow behavior in flex items */
     overflow-y: auto;
+    padding: 1rem;
+    padding-bottom: 3rem;
+    box-sizing: border-box;
     border-left: 1px solid #ccc;
     background-color: #f9f9f9;
-    box-sizing: border-box;
-    padding: 1rem;
+
 }
 
 .snapshot-tree {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
   font-family: Arial, sans-serif;
   font-size: 14px;
   line-height: 1.4;
-  max-width: 300px;
 }
 
 /* Scope all rules inside .snapshot-tree */
@@ -320,7 +351,6 @@
         height: auto;
     }
 
-
     #left-section,
     #main-section,
     #right-section {
@@ -328,14 +358,13 @@
     }
 
     .tab-section {
-        display: none;
+        display: none !important;
     }
 
     #tab-buttons {
         display: flex !important;
     }
 
-    /* Show only the active tab */
     .tab-section.active-tab {
         display: block !important;
     }

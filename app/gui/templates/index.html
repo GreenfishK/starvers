@@ -18,7 +18,7 @@
 </div>
 
 <div id="layout-wrapper">
-    <div id="left-section" class="tab-section"></div>
+    <section id="left-section" class="section tab-section"></section>
 
     <section id="main-section" class="section tab-section">
         <h1 class="title">Starvers</h1>
@@ -83,8 +83,7 @@
                                     type="text"
                                     name="timestamp"
                                     placeholder="{{ ts_end_iso8601 }}"
-                                    value="{{ selected_timestamp or ts_end_iso8601 }}"
-                                    style="width: 23ch;">
+                                    value="{{ selected_timestamp or ts_end_iso8601 }}">
 
                             <!-- gets updated via showTooltip() javascript function -->
                             <p id="timestamp-help"
