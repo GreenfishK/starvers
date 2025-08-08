@@ -473,10 +473,9 @@ function showTab(tab) {
 
 
 function switchRightSectionTabs(tab) {
-    console.log("Test")
-    // Remove 'is-active' from all buttons
-    document.querySelectorAll('#right-section-tabs .button').forEach(btn => {
-        btn.classList.remove('is-active');
+    // Remove 'is-active' from all tab <li> elements
+    document.querySelectorAll('#right-section-tabs li').forEach(li => {
+        li.classList.remove('is-active');
     });
 
     // Hide all tab panes
@@ -484,8 +483,13 @@ function switchRightSectionTabs(tab) {
         pane.style.display = 'none';
     });
 
-    // Show selected tab and highlight button
-    document.querySelector(`#right-section-tab-${tab}`).style.display = 'block';
-    document.querySelector(`#right-section-tabs .button[onclick*="${tab}"]`).classList.add('is-active');
+    // Show the selected tab pane
+    document.querySelector(`#right-section-tab-${tab}`).style.display = 'flex';
+
+    // Add 'is-active' to the clicked tab's <li>
+    document
+        .querySelector(`#right-section-tabs a[onclick*="${tab}"]`)
+        .closest('li')
+        .classList.add('is-active');
 }
 
