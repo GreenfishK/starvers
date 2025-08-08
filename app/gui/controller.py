@@ -230,30 +230,23 @@ class GuiContr:
             G.add_node(child)
             G.add_edge(parent, child)
 
-        # Aggregate statistics for a given node
         def aggregate_stats(node):
-            if node not in class_data:
-                return {
-                    "cnt_class_instances_current": 0,
-                    "cnt_class_instances_prev": 0,
-                    "cnt_classes_added": 0,
-                    "cnt_classes_deleted": 0,
-                }
+            # Start with this node's own counts (0 if not in class_data)
+            own_stats = {
+                "cnt_class_instances_current": class_data.get(node, {}).get("cnt_class_instances_current", 0),
+                "cnt_class_instances_prev": class_data.get(node, {}).get("cnt_class_instances_prev", 0),
+                "cnt_classes_added": class_data.get(node, {}).get("cnt_classes_added", 0),
+                "cnt_classes_deleted": class_data.get(node, {}).get("cnt_classes_deleted", 0),
+            }
+
+            # Add stats from all children
+            for child in G.successors(node):
+                child_stats = aggregate_stats(child)
+                for k in own_stats:
+                    own_stats[k] += child_stats[k]
+
+            return own_stats
         
-            if node == "http://orkg.org/orkg/class/Contribution":
-                logging.info("node in class_data")
-
-            children = list(G.successors(node))
-            if not children:
-                return class_data[node]
-
-            agg = class_data[node]
-            for child in children:
-                child_agg = aggregate_stats(child)
-                for k in agg:
-                    agg[k] += child_agg[k]
-            return agg
-
         # Build the tree from a node recursively
         def build_tree(node):
             stats = aggregate_stats(node)

@@ -246,6 +246,11 @@
 /* right-section */
 /* ############################################### */
 #right-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;           
+    min-height: 0;    
+    height: 100%;
     width: 25%;  
     padding: 1rem;
     box-sizing: border-box;
@@ -253,27 +258,39 @@
     background-color: #f9f9f9;
 }
 
-/* right-sectin -> right-section-tabs */
+/* right-section -> right-section-tabs */
 #right-section-tabs {
     margin-bottom: 1rem;
     margin-top: 1rem;
 }
 
-.right-section-tab-pane {
-    width: 100%;
-    padding-bottom: 1rem;
+/* right-section -> right-section-tab-content */
+#right-section-tab-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;           
+    min-height: 0;     
 }
 
-/* right-sectin -> right-section-tab-content -> snapshot-tree */
+/* right-section -> right-section-tab-content -> right-section-tab-pane */
+.right-section-tab-pane {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; 
+    box-sizing: border-box;
+}
+
+/* right-sectin -> right-section-tab-content -> right-section-tab-pane -> snapshot-tree */
 #snapshot-tree {
-  width: 100%;
-  min-height: 0;
-  max-height: 86.5vh;
-  padding-bottom: 1rem;
-  overflow-y: auto;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.4;
+    flex: 1;
+    min-height: 0; 
+    overflow-y: auto;
+    overflow-x: auto; 
+    padding-bottom: 1rem;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
 }
 
 /* Scope all rules inside #snapshot-tree */

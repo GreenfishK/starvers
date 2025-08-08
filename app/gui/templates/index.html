@@ -146,9 +146,19 @@
 
     <section id="right-section" class="section tab-section"> 
         <!-- New tab buttons -->
-        <div id="right-section-tabs" class="buttons has-addons is-centered mb-3">
-            <button class="button is-link is-light is-active" onclick="switchRightSectionTabs('classes')">Classes</button>
-            <button class="button is-link is-light" onclick="switchRightSectionTabs('properties')">Properties</button>
+        <div class="tabs is-centered is-fullwidth" id="right-section-tabs">
+        <ul>
+            <li class="is-active">
+            <a onclick="switchRightSectionTabs('classes')">
+                <span>Classes</span>
+            </a>
+            </li>
+            <li>
+            <a onclick="switchRightSectionTabs('properties')">
+                <span>Properties</span>
+            </a>
+            </li>
+        </ul>
         </div>
 
         <!-- New tab content containers -->
