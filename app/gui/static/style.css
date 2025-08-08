@@ -37,8 +37,11 @@
     min-height: 0;    
     height: 100%;
     width: 20%;  
+    padding-left: 1rem;
+    padding-right: 1rem;
     box-sizing: border-box;
     background-color: #f9f9f9;
+
 }
 
 /* ############################################### */
@@ -315,8 +318,7 @@
 /* ############################################### */
 #right-section{
     border-left: 1px solid #ccc;
-    padding-left: 1rem;
-    padding-right: 1rem;
+
 
 }
 
