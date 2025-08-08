@@ -11,39 +11,45 @@
 </head>
 
 <body>
-<div id="tab-buttons" class="buttons has-addons is-centered is-hidden">
-    <button class="button is-link is-light" onclick="showTab('left')">Sidebar</button>
-    <button class="button is-link is-light is-active" onclick="showTab('main')">Main</button>
-    <button class="button is-link is-light" onclick="showTab('right')">Snapshots</button>
-</div>
 
 <div id="layout-wrapper">
-    <section id="left-section" class="section tab-section"></section>
+    <div id="mobile-tabs" class="tabs is-toggle is-fullwidth is-hidden">
+        <ul>
+            <li data-tab="left"><a>Sidebar</a></li>
+            <li class="is-active" data-tab="main"><a>Main</a></li>
+            <li data-tab="right"><a>Snapshots</a></li>
+        </ul>
+    </div>
+    <section id="left-section" class="section tab-section">
+        <div class="section-header">
+            <h3 class="title is-5">Knowledge Graph or Ontology</h3>
+        </div>
+        <div id="meta-info" class="field">
+            <div id="onto-infos" class="is-flex is-flex-wrap-wrap"> 
+                <div id="repo-select-container" class="control select">
+                    <select name="repo" id="repo-select" form="sparql-form">
+                        {% for label, value in repo_options.items() %}
+                            <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if rdf_dataset_url and polling_interval %}
+                <div id="tracking-infos" class="mt-2 is-flex is-flex-wrap-wrap">
+                    <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
+                    <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
+                    <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
 
     <section id="main-section" class="section tab-section">
-        <h1 class="title">Starvers</h1>
-        <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
-
+        <div class="section-header">
+            <h1 class="title">Starvers</h1>
+            <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
+        </div>
         <form id="sparql-form">
-            <div id="meta-info" class="field">
-                <h3 class="title is-5">Knowledge Graph or Ontology</h3>
-                <div id="onto-infos" class="is-flex is-flex-wrap-wrap"> 
-                    <div id="repo-select-container" class="control select">
-                        <select name="repo" id="repo-select">
-                            {% for label, value in repo_options.items() %}
-                                <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% if rdf_dataset_url and polling_interval %}
-                    <div id="tracking-infos" class="mt-2 is-flex is-flex-wrap-wrap">
-                        <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
-                        <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
-                        <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
 
             <!-- Plotly chart -->   
             <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
@@ -146,19 +152,19 @@
 
     <section id="right-section" class="section tab-section"> 
         <!-- New tab buttons -->
-        <div class="tabs is-centered is-fullwidth" id="right-section-tabs">
-        <ul>
-            <li class="is-active">
-            <a onclick="switchRightSectionTabs('classes')">
-                <span>Classes</span>
-            </a>
-            </li>
-            <li>
-            <a onclick="switchRightSectionTabs('properties')">
-                <span>Properties</span>
-            </a>
-            </li>
-        </ul>
+        <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
+            <ul>
+                <li class="is-active">
+                <a onclick="switchRightSectionTabs('classes')">
+                    <span>Classes</span>
+                </a>
+                </li>
+                <li>
+                <a onclick="switchRightSectionTabs('properties')">
+                    <span>Properties</span>
+                </a>
+                </li>
+            </ul>
         </div>
 
         <!-- New tab content containers -->

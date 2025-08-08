@@ -16,12 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const defaultBtn = document.getElementById("day_button")
 
     if (window.innerWidth <= 900) {
-        showTab('main');  
-    } else {
-        ['left-section', 'main-section', 'right-section'].forEach(id => {
-            document.getElementById(id).classList.add('active-tab');
-        });
-    }
+        activateTab('main');  
+    } 
 
     if (defaultBtn) {
         changeAgg('DAY', defaultBtn);
@@ -448,29 +444,49 @@ function attachTreeToggleHandlers() {
     });
 }
 
-function showTab(tab) {
+function activateTab(tabId) {
     const sections = {
         left: document.getElementById('left-section'),
         main: document.getElementById('main-section'),
         right: document.getElementById('right-section')
     };
 
-    // Remove active-tab class from all
-    for (let key in sections) {
-        sections[key].classList.remove('active-tab');
+    // Remove from all sections
+    Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
+
+    // Set the correct one
+    if (sections[tabId]) {
+        sections[tabId].classList.add('is-active-tab');
     }
 
-    // Add active-tab to selected
-    if (sections[tab]) {
-        sections[tab].classList.add('active-tab');
-    }
-
-    // Update button styles
-    document.querySelectorAll('#tab-buttons .button').forEach(btn => btn.classList.remove('is-active'));
-    const tabIndex = tab === 'left' ? 0 : tab === 'main' ? 1 : 2;
-    document.querySelectorAll('#tab-buttons .button')[tabIndex].classList.add('is-active');
+    // Update tab UI
+    document.querySelectorAll('#mobile-tabs li').forEach(li => li.classList.remove('is-active'));
+    const activeLi = document.querySelector(`#mobile-tabs li[data-tab="${tabId}"]`);
+    if (activeLi) activeLi.classList.add('is-active');
 }
 
+// Tab click listener
+document.querySelectorAll('#mobile-tabs li').forEach(li => {
+    li.addEventListener('click', () => {
+        const tabId = li.getAttribute('data-tab');
+        activateTab(tabId);
+    });
+});
+
+// Re-evaluate on resize
+window.addEventListener('resize', () => {
+    if (window.innerWidth <= 900) {
+        const activeLi = document.querySelector('#mobile-tabs li.is-active');
+        const activeTabId = activeLi ? activeLi.getAttribute('data-tab') : 'main';
+        activateTab(activeTabId);
+    } else {
+        // Show all three sections again
+        ['left-section', 'main-section', 'right-section'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('is-active-tab');
+        });
+    }
+});
 
 function switchRightSectionTabs(tab) {
     // Remove 'is-active' from all tab <li> elements
