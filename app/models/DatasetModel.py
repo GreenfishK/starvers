@@ -14,13 +14,17 @@ class DatasetBase(SQLModel):
     name: str
     repository_name: str
     rdf_dataset_url: HttpUrlString = Field(sa_type=AutoString)
-    polling_interval: int # polling intervall in seconds
+    polling_interval: int = Field(default=None) # polling intervall in seconds
     delta_type: DeltaType = Field(sa_type=Enum(DeltaType), default=DeltaType.ITERATIVE)
     notification_webhook: Optional[HttpUrlString] = Field(sa_type=AutoString, default=None)
     created_at: Optional[datetime] = Field(default_factory=datetime.now)
     last_modified: Optional[datetime] = Field(default_factory=datetime.now)
     active: Optional[bool] = Field(default=True)
     next_run: Optional[datetime] = Field(default=None)
+    cnt_triples_static: int = Field(default=None)
+    cnt_triples_version_oblivious: int = Field(default=None)
+    ratio_avg_data_growth: float = Field(default=None)
+    ratio_avg_change: float = Field(default=None)
 
 class Dataset(DatasetBase, table=True):
     id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
@@ -36,6 +40,9 @@ class Snapshot(SQLModel, table=True):
     cnt_class_instances_prev: int = Field(default=None)
     cnt_classes_added: int = Field(default=None)
     cnt_classes_deleted: int = Field(default=None)
+    ratio_change: float = Field(default=None)
+    ratio_data_growth: float =Field(default=None)
+
     
 
 

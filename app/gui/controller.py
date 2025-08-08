@@ -206,6 +206,7 @@ class GuiContr:
 
         snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
         raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
+        # DEBUG
         raw_df.to_csv("/code/logs/class_tree.csv", header=True)
         
         G = nx.DiGraph()

@@ -2,6 +2,17 @@
     margin-top: 1rem;
 }
 
+.section-header {
+    display: flex;
+    flex-direction: column;   
+    box-sizing: border-box;
+    align-items: flex-start;  
+    justify-content: flex-end; 
+    height: 5rem; 
+    margin-bottom: 2rem !important;            
+
+}
+
 /* top container */
 #layout-wrapper {
     display: flex;
@@ -10,15 +21,54 @@
 }
 
 .tab-section {
-    
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
     overflow-y: auto;
+}
+
+/* ############################################### */
+/* right-section and left-section */
+/* ############################################### */
+
+#right-section, #left-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;           
+    min-height: 0;    
+    height: 100%;
+    width: 20%;  
+    box-sizing: border-box;
+    background-color: #f9f9f9;
 }
 
 /* ############################################### */
 /* left-section */
 /* ############################################### */
-#left-section {
-    width: 25%;
+#left-section{
+    border-right: 1px solid #ccc;
+}
+
+#onto-infos {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: flex-start;  
+}
+
+
+/* left-section -> meta-info -> onto-infos */
+#onto-infos{
+    gap: 1rem;
+}
+
+/* left-section-> meta-info -> onto-infos -> repo-select-container */
+
+
+/* left-section -> meta-info -> onto-infos -> tracking-infos */
+#tracking-infos{
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 /* ############################################### */
@@ -27,11 +77,10 @@
 #main-section {
     display: flex;
     flex-direction: column;
-    width: 50%;
-
+    width: 60%;
     -ms-overflow-style: none;  /* IE 10+ */
     scrollbar-width: none; /* Firefox */
-    padding: 2rem;
+    
 }
 
 #main-section::-webkit-scrollbar {
@@ -39,34 +88,26 @@
 }
 
 /* main-section -> sparql-form */
-
-
-/* main-section -> sparql-form -> meta-info -> onto-infos */
-#onto-infos{
-    gap: 1rem;
+#sparql-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
-/* main-section -> sparql-form -> meta-info -> onto-infos -> repo-select-container */
-
-
-/* main-section -> sparql-form -> meta-info -> onto-infos -> tracking-infos */
-#tracking-infos{
-    gap: 1rem;
-}
 
 /* main-section -> sparql-form -> plot-container */
 #plot-container {
     display: flex;
     flex-direction: column;
-    width: 100%;
     overflow-y: auto; 
-
     gap: 1rem;
-    margin-top: 3rem;
     margin-bottom: 1rem;
 }
 
 /* main-section -> sparql-form -> plot-container -> plot-box */
+#plot-box {
+     width: 100%;
+}
 
 
 /* main-section -> sparql-form -> plot-container -> plot-box -> external_buttons */
@@ -109,17 +150,33 @@
 /* injected via routes.get_repo_infos() and routes.index() */
 
 /* main-section -> sparql-form -> sparlq-container-total */
+#sparlq-container-total{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
 
 
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container */
+#sparlq-container {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+}
+
 .query-editor-labels {
     display: flex;
-    flex-direction: row; 
     align-items: center;
     min-height: 3.5rem; 
 }
 
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left */
+#sparql-container-left{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> timestamp-input-container*/
@@ -163,6 +220,9 @@
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-left 
 -> CodeMirror */
 .CodeMirror {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     border: 1px solid #dbdbdb;
     border-radius: 4px;
     box-shadow: inset 0 1px 2px rgba(10,10,10,0.1);
@@ -173,13 +233,21 @@
 }
 
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right */
-
+#sparql-container-right {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right
 ->  timestamped-query-label*/
 
 /* main-section -> sparql-form -> sparlq-container-total -> sparql-container -> sparql-container-right
 ->  timestamped-query*/
-
+#timestamped-query {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
 
 /* main-section -> result-retrieval-error */
 
@@ -245,23 +313,17 @@
 /* ############################################### */
 /* right-section */
 /* ############################################### */
-#right-section {
-    display: flex;
-    flex-direction: column;
-    flex: 1;           
-    min-height: 0;    
-    height: 100%;
-    width: 25%;  
-    padding: 1rem;
-    box-sizing: border-box;
+#right-section{
     border-left: 1px solid #ccc;
-    background-color: #f9f9f9;
+    padding-left: 1rem;
+    padding-right: 1rem;
+
 }
 
 /* right-section -> right-section-tabs */
-#right-section-tabs {
-    margin-bottom: 1rem;
-    margin-top: 1rem;
+#right-section-tabs ul {
+  display: flex;
+  align-items: flex-end;
 }
 
 /* right-section -> right-section-tab-content */
@@ -348,33 +410,55 @@
 }
 
 #snapshot-tree .tree-node.expanded > .expand-btn::before {
-  content: "−"; /* minus sign */
+  content: "−"; 
 }
 
 
-/* Show tab buttons and hide layout on small screens */
+/* Hide tab sections by default on small screens */
 @media (max-width: 900px) {
     #layout-wrapper {
+        display: flex;
         flex-direction: column;
+        flex:1
+    }
+
+    .tab-section {
+        display: none !important;
+        flex: 1;
+        width: 100%;
+    }
+
+    .tab-section.is-active-tab {
+        display: flex !important;
+        width: 100% !important;
+    }
+
+    .section-header {
+        display: flex;
         height: auto;
+    }
+
+    #mobile-tabs {
+        display: block !important;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: white;
+        padding: 0.5rem 1rem;
+        margin-bottom: 0;
+    }
+
+}
+
+/* Default display on larger screens */
+@media (min-width: 901px) {
+    #mobile-tabs {
+        display: none !important;
     }
 
     #left-section,
     #main-section,
     #right-section {
-        width: 100%;
-    }
-
-    .tab-section {
-        display: none !important;
-    }
-
-    #tab-buttons {
         display: flex !important;
     }
-
-    .tab-section.active-tab {
-        display: block !important;
-    }
 }
-

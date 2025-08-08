@@ -3,67 +3,77 @@ TODO: Implement support for multiple RDF serializations including file archives 
 
 TODO: Investigate why import fails for for https://bimerr.iot.linkeddata.es/def/weather/ontology.nt
 
-TODO: Implement stop versioning
-* Not sure what we want. Delete TODO?
-
-TODO: Fix bug
-* Wrongly packaged orkg_iterative files. The timestamps in the filenames in the zip archives do not reflect the timestamps of the zip archives
-
 TODO: GUI
 * Distinguish between days were the service was not running and days when there were no inserts. Use colors or symbols to display this in the plot.
 
 TODO: GUI
-Add information about the inserts and deletes (metrics) in a side view or different tab:
-* number of distinct classes
-* number of added instances per class in the delta set
+Add information about the inserts and deletes (metrics) of a snapshot in a side view or different tab:
+* number of total classes
+* number of total instance
+* number of total, added, and deleted instances per class: done
 * number of instances with no class
 * number of distinct object properties
 * number of distinct data properties
-* change ratio between two versions (BEAR)
+
+
+TODO: GUI, DatasetModel
+Add information about the whole dataset in the left side section.
+* static core (BEAR)
+    * $C_A$ (in BEAR paper): take the first version and applying all the subsequent deletions. Count the triples
+    * $C_A$ (in Starvers): query all triples that have an artificial end timestamp
+    * Add a new field to the Dataset "cnt_triples_static"
+    * Update the field after every versioning task
+* total version-oblivious triples (BEAR)
+    * $O_A$: Number of different triples regardless of the timestamp: Query data triples (inner-most triples) that have a start and end timestamp and count the distinct triples
+    * Add a new field to the Dataset "cnt_triples_version_oblivious"
+    * Update the field after every versioning task
+* average data growth
+    * $growth = \sum_{i=0, j = i+1}^N\frac{|IC_j|}{|IC_i|}$
+    * $avg(growth)$
+    * Add a new field to the Snapshot "ratio_data_growth"
+    * Add a new field to the Dataset "ratio_avg_data_growth"
+    * Update the field after every versioning task
+* average change ratio
     * $\delta_{i,j} = \frac{|\Delta⁺_{i,j} \cup \Delta⁻_{i,j}|}{|IC_i \cup IC_j|}$
     * $\delta⁺_{i,j} = \frac{|\Delta⁺_{i,j}|}{|IC_i|}$
     * $\delta⁻_{i,j} = \frac{|\Delta⁻_{i,j}|}{|IC_i|}$
-    * positive and negative change ratios can be part of the tooltip/hovertemplate on individual bars on the insert/delete trace
-* data growth  (BEAR)
-    * $growth = \frac{|IC_j|}{|IC_i|}$
-    * can be part of the tooltip/hovertemplate on individual points on the total triples trace
-* static core (BEAR)
-    * $C_A$ : take the first version and applying all the subsequent deletions.
-* total version-oblivious triples  (BEAR)
-    * $O_A$: number of different triples regardless of the timestamp
-
+    * $1/N \times \sum_{i=0, j=i+1}^N\delta_{i,j}$
+    * Add a new field to the Snapshot "ratio_change"
+    * Add a new field to the Dataset "ratio_avg_change"
 
 TODO: GUI
 * fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
 
-TODO: GUI
-Update view of timestamp of x-axis
+TODO: GUI: Update view of timestamp of x-axis
 * HOUR view: Hours, day, month, and year should be shown in a 4 layer view to avoid repeating the day, month, and year for every hour
 * DAY view: Year, month, and day should be shown in a 3-layer view to avoid repeating the month and year for every day
 * Week view: like day view
 
+TODO: GUI, controller: In addition to hour, day, and week, add a view for actual snapshot intervals
+
+TODO: Consider adding a trace (curve) for change ratios between snapshots. Note: Change ratios can be computed between individual snapshots but one has to be careful when aggregating ratios, e.g. for a day or week, as they can overstate the change. For example, if a triple was added between v1 and v2 and then deleted in v3 again within one day, the net result is no change but the change ratio for v1_v2 and v2_v3 would be be > 0.
+
 # Done
-TODO: Implement client to pass a URL with an ontology behind to start the versioning
+Implement client to pass a URL with an ontology behind to start the versioning
 
-TODO: Persist Postegresql Database
+Persist Postegresql Database
 
-TODO: GUI
+GUI
 When selecting one data point (blue points) in the plot, the timestamp in the input field should take the value of the corresponding timestamp. 
     * For days and weeks the timestamp should be: yyyy-MM-ddT23:59:59, thereby taking the last minute of the day or week
     * For hours the timestamp should be: yyyy-MM-ddThh:mm:ss, the same as in the data point
 
-TODO: Resume service: If the repository exists, the tracking should be ressumed after a container shutdown or even deletion
+Resume service: If the repository exists, the tracking should be ressumed after a container shutdown or even deletion
 
-TODO: timings_csv: add headers
+timings_csv: add headers
 
-TODO: Implement logs
+Implement logs
 
-TODO: A service that iterates through all zip files, 
+A service that iterates through all zip files, 
 calculates deltas between the consecutive snapshots 
 and inserts them with the corresponding timestamp: -> retroVersioning service
 
-TODO: 
-* Add a new table ClassHierarchy to the database
+Add a new table ClassHierarchy to the database
     * dataset_id: foreign key
     * snapshot_id: foreign_key
     * snapshot_id_prev: foreign_key (non-identifying)
@@ -74,7 +84,7 @@ TODO:
     * cnt_added_instances: done
     * cnt_deleted_instances: done
 
-TODO: Feasability analysis: A SPARQL query that takes two 
+Feasability analysis: A SPARQL query that takes two 
 versions and retrieves the class, parent class, number of total instances, 
 number of new instances, is_new_class -> utils/graphdb/query_snapshot_metrics.sparql
 
