@@ -18,6 +18,7 @@
     display: flex;
     flex-direction: row;
     height: 100vh; 
+    
 }
 
 .tab-section {
@@ -35,7 +36,7 @@
     flex-direction: column;
     flex: 1;           
     min-height: 0;    
-    height: 100%;
+    
     width: 20%;  
     padding-left: 1rem;
     padding-right: 1rem;
@@ -78,17 +79,25 @@
 /* main-section */
 /* ############################################### */
 #main-section {
-    display: flex;
-    flex-direction: column;
+    display: block;  
     width: 60%;
     -ms-overflow-style: none;  /* IE 10+ */
-    scrollbar-width: none; /* Firefox */
-    
+    scrollbar-width: none; /* Firefox */ 
+       
 }
 
 #main-section::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
 }
+
+/* main-section -> sparql-form */
+#plot-and-query {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+}
+
 
 /* main-section -> sparql-form */
 #sparql-form {
@@ -109,7 +118,7 @@
 
 /* main-section -> sparql-form -> plot-container -> plot-box */
 #plot-box {
-     width: 100%;
+    width: 100%;
 }
 
 
@@ -255,9 +264,14 @@
 /* main-section -> result-retrieval-error */
 
 /* main-section -> data-section */
+#data-section {
+    display: none;
+}
 
 /* main-section -> data-section -> result-container */
 #result-container {
+    display: flex;
+    flex-direction: column;
     position: relative;
     border: none;
 }
@@ -430,8 +444,13 @@
         width: 100%;
     }
 
+    #main-section{
+        flex-wrap: wrap;
+    }
+
     .tab-section.is-active-tab {
         display: flex !important;
+        flex: 1 !important;
         width: 100% !important;
     }
 
@@ -458,9 +477,20 @@
         display: none !important;
     }
 
+    #main-section{
+        display: block !important;
+    }
+
     #left-section,
-    #main-section,
     #right-section {
+        display: flex !important;
+    }
+
+    .tab-section {
+        display: none !important;
+    }
+
+    .tab-section.is-active-tab {
         display: flex !important;
     }
 }

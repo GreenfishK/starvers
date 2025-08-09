@@ -45,87 +45,88 @@
     </section>
 
     <section id="main-section" class="section tab-section">
-        <div class="section-header">
-            <h1 class="title">Starvers</h1>
-            <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
+        <div id="plot-and-query">
+            <div class="section-header">
+                <h1 class="title">Starvers</h1>
+                <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
+            </div>
+            <form id="sparql-form">
+                <!-- Plotly chart -->   
+                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                    {% if evo_plot %}
+                    <div id="plot-box">
+                        <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
+                            <!-- Time aggregation buttons -->
+                            <div id="plot-box-buttons" class="is-flex is-align-items-center">
+                                <button id="hour_button" type="button" class="button agg-button is-link is-light is-small" data-agg="HOUR">Hour</button>
+                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small" data-agg="DAY">Day</button>
+                                <button id="week_button" type="button" class="button agg-button is-link is-light is-small" data-agg="WEEK">Week</button>
+                            </div>
+
+                            <!-- Custom Legend -->
+                            <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
+                                <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
+                                <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
+                                <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
+                            </div>
+                        </div>
+                        {{ evo_plot | safe }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="sparlq-container-total" class="mb-2">
+                    <h3 class="title is-5">SPARQL Query Editor</h3>
+
+                    <div id ="sparlq-container" class="columns is-multiline">
+                        <!-- Left side: Label + Input + Help + Query Editor -->
+                        <div id="sparql-container-left" class="column is-half">
+                            <div id="timestamp-input-container" class="query-editor-labels">
+                                <label id="timestamp_input-label" class="label" for="timestamp_input">Timestamp</label>
+                                <input id="timestamp_input"
+                                        class="input"
+                                        onclick="showTooltip(this)"
+                                        type="text"
+                                        name="timestamp"
+                                        placeholder="{{ ts_end_iso8601 }}"
+                                        value="{{ selected_timestamp or ts_end_iso8601 }}">
+
+                                <!-- gets updated via showTooltip() javascript function -->
+                                <p id="timestamp-help"
+                                title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
+                                style="display: none;">
+                                </p>
+                            </div>
+
+                            <!-- SPARQL editor -->
+                            <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
+                        </div>
+
+                        <!-- right side: Label + Timestamped query -->
+                        <div id="sparql-container-right" class="column is-half">
+                            <div id="query-editor-label-container" class="query-editor-labels">
+                                <label id="timestamped-query-label" class="label">Timestamped Query</label>
+                            </div>
+                            <div id="timestamped-query"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-link mb-2">Execute Query</button>
+                    </div>
+                </div>
+            </form>
         </div>
-        <form id="sparql-form">
 
-            <!-- Plotly chart -->   
-            <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
-                {% if evo_plot %}
-                <div id="plot-box">
-                    <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
-                        <!-- Time aggregation buttons -->
-                        <div id="plot-box-buttons" class="is-flex is-align-items-center">
-                            <button id="hour_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('HOUR', this)">Hour</button>
-                            <button id="day_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('DAY', this)">Day</button>
-                            <button id="week_button" type="button" class="button agg-button is-link is-light is-small" onclick="changeAgg('WEEK', this)">Week</button>
-                        </div>
-
-                        <!-- Custom Legend -->
-                        <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
-                            <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
-                            <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
-                            <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
-                        </div>
-                    </div>
-                    {{ evo_plot | safe }}
-                </div>
-                {% endif %}
+        <div id="data-section">
+            {% if error %}
+            <div id="result-retrieval-error" class="notification is-danger mt-4">
+                <strong>Error:</strong> {{ error }}
             </div>
-            
-            <div id="sparlq-container-total" class="mb-2">
-                <h3 class="title is-5">SPARQL Query Editor</h3>
+            {% endif %}
 
-                <div id ="sparlq-container" class="columns is-multiline">
-                    <!-- Left side: Label + Input + Help + Query Editor -->
-                    <div id="sparql-container-left" class="column is-half">
-                        <div id="timestamp-input-container" class="query-editor-labels">
-                            <label id="timestamp_input-label" class="label" for="timestamp_input">Timestamp</label>
-                            <input id="timestamp_input"
-                                    class="input"
-                                    onclick="showTooltip(this)"
-                                    type="text"
-                                    name="timestamp"
-                                    placeholder="{{ ts_end_iso8601 }}"
-                                    value="{{ selected_timestamp or ts_end_iso8601 }}">
-
-                            <!-- gets updated via showTooltip() javascript function -->
-                            <p id="timestamp-help"
-                            title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
-                            style="display: none;">
-                            </p>
-                        </div>
-
-                        <!-- SPARQL editor -->
-                        <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
-                    </div>
-
-                    <!-- right side: Label + Timestamped query -->
-                    <div id="sparql-container-right" class="column is-half">
-                        <div id="query-editor-label-container" class="query-editor-labels">
-                            <label id="timestamped-query-label" class="label">Timestamped Query</label>
-                        </div>
-                        <div id="timestamped-query"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="field">
-                <div class="control">
-                    <button type="submit" class="button is-link mb-2">Execute Query</button>
-                </div>
-            </div>
-        </form>
-
-        {% if error %}
-        <div id="result-retrieval-error" class="notification is-danger mt-4">
-            <strong>Error:</strong> {{ error }}
-        </div>
-        {% endif %}
-
-        <div id="data-section" class="mt-5 mb-5" style="display: none;">
             <div id="result-container">
                 <h3 class="title is-5">Query Result</h3>
 
@@ -154,25 +155,17 @@
         <!-- New tab buttons -->
         <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
             <ul>
-                <li class="is-active">
-                <a onclick="switchRightSectionTabs('classes')">
-                    <span>Classes</span>
-                </a>
-                </li>
-                <li>
-                <a onclick="switchRightSectionTabs('properties')">
-                    <span>Properties</span>
-                </a>
-                </li>
+                <li data-tab="classes" class="is-active"><a>Classes</a></li>
+                <li data-tab="properties"><a>Properties</a></li>
             </ul>
         </div>
 
         <!-- New tab content containers -->
         <div id="right-section-tab-content">
-            <div id="right-section-tab-classes" class="right-section-tab-pane">
+            <div id="right-section-tab-classes" class="right-section-tab-pane tab-section">
                 <!-- Snapshot tree content goes here -->
             </div>
-            <div id="right-section-tab-properties" class="right-section-tab-pane" style="display: none;">
+            <div id="right-section-tab-properties" class="right-section-tab-pane tab-section">
                 <p>Properties content will go here.</p>
             </div>
         </div>
