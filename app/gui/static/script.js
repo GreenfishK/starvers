@@ -15,169 +15,20 @@ document.addEventListener("DOMContentLoaded", function () {
     const plotDiv = document.getElementById("evo-plot");
     const defaultBtn = document.getElementById("day_button")
 
+    // Default tabs and views
     if (window.innerWidth <= 900) {
-        activateTab('main');  
-    } 
+        activateTabMain('main');  
+    }
+    
+    activateTabRight("classes"); 
 
     if (defaultBtn) {
-        changeAgg('DAY', defaultBtn);
+        changeTimelinePeriod('DAY', defaultBtn);
     }
 
-
     if (plotDiv) {
-        let relayoutTimeout = null;
-        let lastYRange = null;
-
-        plotDiv.on("plotly_click", function(eventData) {
-            if (!eventData || !eventData.points || eventData.points.length === 0) return;
-
-            const point = eventData.points[0];
-            const rawTimestamp = point.x;
-
-            const [day, month, year] = rawTimestamp.split(".");
-            if (!day || !month || !year) return;
-
-            const formattedTimestamp =
-                activeAggLevel === "HOUR"
-                    ? point.x
-                    : `${year}-${month}-${day}T23:59:59`;
-
-            document.getElementById("timestamp_input").value = formattedTimestamp;
-
-            fetch(`/statistics?repo=${dropdown.value}&timestamp=${encodeURIComponent(formattedTimestamp)}`, {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json" 
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
-                }
-                return response.json(); 
-            })
-            .then(data => {
-                const classHierarchy = document.getElementById("right-section-tab-classes");
-                if (classHierarchy && data.snapshot_stats) {
-                    if (data.snapshot_stats.length === 0 && data.snapshot_ts == null) {
-                        classHierarchy.innerHTML = `
-                            <div class="notification is-warning mt-2">
-                                <strong>Notice:</strong> No snapshot statistics available for this repository.
-                            </div>
-                        `;                    
-                    } else {
-                        classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
-                        attachTreeToggleHandlers();
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Error fetching snapshot statistics:", error);
-            });
-
-            // Add halo marker
-            const highlightTrace = {
-                x: [point.x],
-                y: [point.y],
-                mode: "markers",
-                marker: {
-                    size: 20,
-                    color: "rgba(0, 150, 255, 0.4)",  // translucent blue halo
-                    line: {
-                        width: 2,
-                        color: "rgba(0, 150, 255, 1.0)"
-                    },
-                    symbol: "circle"
-                },
-                name: "Selection Halo",
-                hoverinfo: "skip",
-                showlegend: false
-            };
-
-            // Add it as the last trace
-            Plotly.addTraces(plotDiv, highlightTrace).then(() => {
-                // Remove it after 300ms
-                setTimeout(() => {
-                    const currentDataLength = plotDiv.data.length;
-                    Plotly.deleteTraces(plotDiv, currentDataLength - 1);
-                }, 100);
-            });
-        });
-
-        plotDiv.on("plotly_relayout", (eventdata) => {
-            console.log("Plotly relayout event triggered:", eventdata);
-
-            if (!("xaxis.range[0]" in eventdata) || !("xaxis.range[1]" in eventdata)) {
-                console.log("Skipped: No xaxis range in eventdata.");
-                return;
-            }
-
-            const xVals = plotDiv.data[0].x;
-            const xStart = eventdata['xaxis.range[0]'];
-            const xEnd = eventdata['xaxis.range[1]'];
-
-            const startIndex = Math.max(0, Math.floor(xStart));
-            const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
-
-            if (startIndex > endIndex) {
-                console.log("No visible data in range.");
-                return;
-            }
-
-            // Find the "Total Triples" trace
-            const traceTotal = plotDiv.data.find(t => t.name === "Total Triples");
-            if (!traceTotal) {
-                console.warn("Total Triples trace not found, skipping relayout.");
-                return;
-            }
-
-            // Extract y data as plain array, handling typed arrays
-            let yData = traceTotal.y;
-            if (!Array.isArray(yData)) {
-                if (yData && '_inputArray' in yData) {
-                    yData = Array.from(yData._inputArray);
-                } else {
-                    console.warn("Total Triples y data unavailable or invalid, skipping relayout.");
-                    return;
-                }
-            }
-
-            const visibleTotals = yData.slice(startIndex, endIndex + 1);
-            if (visibleTotals.length === 0) {
-                console.log("No visible y-values in Total Triples trace, skipping relayout.");
-                return;
-            }
-
-            const yMin = Math.min(...visibleTotals);
-            const yMax = Math.max(...visibleTotals);
-            const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
-            const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
-
-            // to show the first bar
-            if (xStart < 0.20) {
-                    yRange[0] = Math.min(0, yRange[0]);
-                }
-
-            if (
-                lastYRange &&
-                Math.abs(lastYRange[0] - yRange[0]) < 1e-3 &&
-                Math.abs(lastYRange[1] - yRange[1]) < 1e-3
-            ) {
-                console.log("y-axis range unchanged, skipping relayout.");
-                return;
-            }
-            lastYRange = yRange;
-
-            if (relayoutTimeout) clearTimeout(relayoutTimeout);
-            relayoutTimeout = setTimeout(() => {
-                Plotly.relayout(plotDiv, {
-                    "yaxis.autorange": false,
-                    "yaxis.range": yRange,
-                }).catch((err) => {
-                    console.warn("Plotly relayout error:", err);
-                });
-            }, 100); // debounce 100ms
-        });
+        plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown));
+        plotDiv.on("plotly_relayout", (eventData) => plotly_relayout(eventData, plotDiv));
     }
 
     console.log("Initializing SPARQL editor.");
@@ -185,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
         mode: 'sparql',
         lineNumbers: true
     });
-    //editor.setSize(null, "420px");
 
     console.log("Initializing SPARQL-star view.")
     const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
@@ -195,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
         theme: "default",
         readOnly: "nocursor" 
     });
-    //timestampedEditor.setSize(null, "420px");
+
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
 
     console.log("Initializing listener for the repository dropdown menu.")
@@ -225,7 +75,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         console.log("Executing query.")
         // show result container
-        document.getElementById("data-section").style.display = "block";
+        document.getElementById("data-section").style.display = "flex";
+        document.getElementById("data-section").style.flexDirection = "column";
+        document.getElementById("data-section").style.flex = "1";
+        document.getElementById("data-section").style.paddingTop = "1rem";
         
 
         fetch("/query", {
@@ -270,6 +123,204 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+
+/******************************************************************
+ * Listeners
+ ******************************************************************/
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth <= 900) {
+        const activeLi = document.querySelector('#mobile-tabs li.is-active');
+        const activeTabId = activeLi ? activeLi.getAttribute('data-tab') : 'main';
+        activateTabMain(activeTabId);
+    } else {
+        ['left-section', 'main-section', 'right-section'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('is-active-tab');
+        });
+    }
+});
+
+document.querySelectorAll('#mobile-tabs li').forEach(li => {
+    li.addEventListener('click', () => {
+        const tabId = li.getAttribute('data-tab');
+        activateTabMain(tabId);
+    });
+});
+
+
+document.querySelectorAll('#right-section-tabs li').forEach(li => {
+    li.addEventListener('click', () => {
+        const tabId = li.getAttribute('data-tab');
+        activateTabRight(tabId);
+    });
+});
+
+
+document.querySelectorAll(".agg-button").forEach(button => {
+    button.addEventListener("click", function() {
+        const level = this.getAttribute("data-agg");
+        changeTimelinePeriod(level, this);
+    });
+});
+
+
+/******************************************************************
+ * Functions
+ ******************************************************************/
+function plotly_relayout(eventData, plotDiv) {
+    console.log("Plotly relayout event triggered:", eventData);
+    let relayoutTimeout = null;
+    let lastYRange = null;
+
+    if (!("xaxis.range[0]" in eventData) || !("xaxis.range[1]" in eventData)) {
+        console.log("Skipped: No xaxis range in eventdata.");
+        return;
+    }
+
+    const xVals = plotDiv.data[0].x;
+    const xStart = eventData['xaxis.range[0]'];
+    const xEnd = eventData['xaxis.range[1]'];
+
+    const startIndex = Math.max(0, Math.floor(xStart));
+    const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
+
+    if (startIndex > endIndex) {
+        console.log("No visible data in range.");
+        return;
+    }
+
+    // Find the "Total Triples" trace
+    const traceTotal = plotDiv.data.find(t => t.name === "Total Triples");
+    if (!traceTotal) {
+        console.warn("Total Triples trace not found, skipping relayout.");
+        return;
+    }
+
+    // Extract y data as plain array, handling typed arrays
+    let yData = traceTotal.y;
+    if (!Array.isArray(yData)) {
+        if (yData && '_inputArray' in yData) {
+            yData = Array.from(yData._inputArray);
+        } else {
+            console.warn("Total Triples y data unavailable or invalid, skipping relayout.");
+            return;
+        }
+    }
+
+    const visibleTotals = yData.slice(startIndex, endIndex + 1);
+    if (visibleTotals.length === 0) {
+        console.log("No visible y-values in Total Triples trace, skipping relayout.");
+        return;
+    }
+
+    const yMin = Math.min(...visibleTotals);
+    const yMax = Math.max(...visibleTotals);
+    const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
+    const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
+
+    // to show the first bar
+    if (xStart < 0.20) {
+            yRange[0] = Math.min(0, yRange[0]);
+        }
+
+    if (
+        lastYRange &&
+        Math.abs(lastYRange[0] - yRange[0]) < 1e-3 &&
+        Math.abs(lastYRange[1] - yRange[1]) < 1e-3
+    ) {
+        console.log("y-axis range unchanged, skipping relayout.");
+        return;
+    }
+    lastYRange = yRange;
+
+    if (relayoutTimeout) clearTimeout(relayoutTimeout);
+    relayoutTimeout = setTimeout(() => {
+        Plotly.relayout(plotDiv, {
+            "yaxis.autorange": false,
+            "yaxis.range": yRange,
+        }).catch((err) => {
+            console.warn("Plotly relayout error:", err);
+        });
+    }, 100); // debounce 100ms
+}
+
+function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
+    if (!eventData || !eventData.points || eventData.points.length === 0) return;
+
+    const point = eventData.points[0];
+    const rawTimestamp = point.x;
+
+    const [day, month, year] = rawTimestamp.split(".");
+    if (!day || !month || !year) return;
+
+    const formattedTimestamp =
+        activeAggLevel === "HOUR"
+            ? point.x
+            : `${year}-${month}-${day}T23:59:59`;
+
+    document.getElementById("timestamp_input").value = formattedTimestamp;
+
+    fetch(`/statistics?repo=${dropdown.value}&timestamp=${encodeURIComponent(formattedTimestamp)}`, {
+        method: "GET",
+        headers: {
+            "Accept": "application/json" 
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        return response.json(); 
+    })
+    .then(data => {
+        const classHierarchy = document.getElementById("right-section-tab-classes");
+        if (classHierarchy && data.snapshot_stats) {
+            if (data.snapshot_stats.length === 0 && data.snapshot_ts == null) {
+                classHierarchy.innerHTML = `
+                    <div class="notification is-warning mt-2">
+                        <strong>Notice:</strong> No snapshot statistics available for this repository.
+                    </div>
+                `;                    
+            } else {
+                classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
+                attachTreeToggleHandlers();
+            }
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching snapshot statistics:", error);
+    });
+
+    // Add halo marker
+    const highlightTrace = {
+        x: [point.x],
+        y: [point.y],
+        mode: "markers",
+        marker: {
+            size: 20,
+            color: "rgba(0, 150, 255, 0.4)",  // translucent blue halo
+            line: {
+                width: 2,
+                color: "rgba(0, 150, 255, 1.0)"
+            },
+            symbol: "circle"
+        },
+        name: "Selection Halo",
+        hoverinfo: "skip",
+        showlegend: false
+    };
+
+    // Add it as the last trace
+    Plotly.addTraces(plotDiv, highlightTrace).then(() => {
+        // Remove it after 300ms
+        setTimeout(() => {
+            const currentDataLength = plotDiv.data.length;
+            Plotly.deleteTraces(plotDiv, currentDataLength - 1);
+        }, 100);
+    });
+}
+
 function repoChange(dropdown, timestampedEditor) {
     const selectedRepo = dropdown.value;
     const downloadButton = document.getElementById("download-btn");
@@ -281,7 +332,7 @@ function repoChange(dropdown, timestampedEditor) {
 
     //Toggle DAY button
     if (defaultBtn) {
-        changeAgg('DAY', defaultBtn);
+        changeTimelinePeriod('DAY', defaultBtn);
     }
 
     // Remove download button if it exists
@@ -306,7 +357,6 @@ function repoChange(dropdown, timestampedEditor) {
                     <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
                     <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
                     <p><strong>Next run (UTC): </strong>${data.next_run}</p>
-
                 `;
     
                 document.getElementById("data-section").style.display = "none";
@@ -331,12 +381,11 @@ function repoChange(dropdown, timestampedEditor) {
     timestampedEditor.setValue("");
 
     // Show class hierarchy and activate classes tab
-    switchRightSectionTabs("classes");
+    activateTabRight("classes");
     
 };
 
-// hour, day, week buttons listener
-function changeAgg(level, clickedButton) {
+function changeTimelinePeriod(level, clickedButton) {
     activeAggLevel = level;  // Track current aggregation
     const repo = document.getElementById("repo-select").value;
     const plotContainer = document.getElementById("plot-container");
@@ -363,7 +412,6 @@ function changeAgg(level, clickedButton) {
       });
   }
 
-// Timestamp seleciton tooltip
 function showTooltip(inputField) {
     const timestampTooltip = document.getElementById("timestamp-help");
     if (timestampTooltip && timestampTooltip.title && inputField) {
@@ -393,9 +441,7 @@ function showTooltip(inputField) {
     }
 }
 
-
 function renderSnapshotStats(stats) {
-    // Example: recursive function to build nested HTML list from stats hierarchy
 
     function renderNode(node) {
         const { id, cnt_class_instances, cnt_classes_added, cnt_classes_deleted, children } = node;
@@ -444,7 +490,10 @@ function attachTreeToggleHandlers() {
     });
 }
 
-function activateTab(tabId) {
+/******************************************************************
+ * Functions - Tab Functions
+ ******************************************************************/
+function activateTabMain(tabId) {
     const sections = {
         left: document.getElementById('left-section'),
         main: document.getElementById('main-section'),
@@ -465,47 +514,26 @@ function activateTab(tabId) {
     if (activeLi) activeLi.classList.add('is-active');
 }
 
-// Tab click listener
-document.querySelectorAll('#mobile-tabs li').forEach(li => {
-    li.addEventListener('click', () => {
-        const tabId = li.getAttribute('data-tab');
-        activateTab(tabId);
-    });
-});
 
-// Re-evaluate on resize
-window.addEventListener('resize', () => {
-    if (window.innerWidth <= 900) {
-        const activeLi = document.querySelector('#mobile-tabs li.is-active');
-        const activeTabId = activeLi ? activeLi.getAttribute('data-tab') : 'main';
-        activateTab(activeTabId);
-    } else {
-        // Show all three sections again
-        ['left-section', 'main-section', 'right-section'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('is-active-tab');
-        });
+function activateTabRight(tabId) {
+    console.log("Switched tab")
+    const sections = {
+        classes: document.getElementById('right-section-tab-classes'),
+        properties: document.getElementById('right-section-tab-properties'),
+    };
+
+    // Remove from all sections
+    Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
+
+    // Set the correct one
+    if (sections[tabId]) {
+        sections[tabId].classList.add('is-active-tab');
     }
-});
 
-function switchRightSectionTabs(tab) {
-    // Remove 'is-active' from all tab <li> elements
-    document.querySelectorAll('#right-section-tabs li').forEach(li => {
-        li.classList.remove('is-active');
-    });
-
-    // Hide all tab panes
-    document.querySelectorAll('.right-section-tab-pane').forEach(pane => {
-        pane.style.display = 'none';
-    });
-
-    // Show the selected tab pane
-    document.querySelector(`#right-section-tab-${tab}`).style.display = 'flex';
-
-    // Add 'is-active' to the clicked tab's <li>
-    document
-        .querySelector(`#right-section-tabs a[onclick*="${tab}"]`)
-        .closest('li')
-        .classList.add('is-active');
+    // Update tab UI
+    document.querySelectorAll('#right-section-tabs li').forEach(li => li.classList.remove('is-active'));
+    const activeLi = document.querySelector(`#right-section-tabs li[data-tab="${tabId}"]`);
+    if (activeLi) activeLi.classList.add('is-active');
 }
+
 
