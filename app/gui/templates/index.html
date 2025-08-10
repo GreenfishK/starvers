@@ -12,21 +12,21 @@
 
 <body>
 
-<div id="layout-wrapper">
-    <div id="mobile-tabs" class="tabs is-toggle is-fullwidth is-hidden">
+<div id="layout-wrapper" class="is-flex">
+    <div id="mobile-tabs" class="tabs is-toggle is-fullwidth is-hidden mb-0">
         <ul>
             <li data-tab="left"><a>Sidebar</a></li>
             <li class="is-active" data-tab="main"><a>Main</a></li>
             <li data-tab="right"><a>Snapshots</a></li>
         </ul>
     </div>
-    <section id="left-section" class="section tab-section">
-        <div class="section-header">
+    <section id="left-section" class="">
+        <div class="section-header mb-3">
             <h3 class="title is-5">Knowledge Graph or Ontology</h3>
         </div>
         <div id="meta-info" class="field">
-            <div id="onto-infos" class="is-flex is-flex-wrap-wrap"> 
-                <div id="repo-select-container" class="control select">
+            <div id="onto-infos" class="is-flex is-flex-direction-column is-flex-wrap-wrap"> 
+                <div id="repo-select-container" class="control select mb-2">
                     <select name="repo" id="repo-select" form="sparql-form">
                         {% for label, value in repo_options.items() %}
                             <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
@@ -34,27 +34,27 @@
                     </select>
                 </div>
                 {% if rdf_dataset_url and polling_interval %}
-                <div id="tracking-infos" class="mt-2 is-flex is-flex-wrap-wrap">
-                    <label><strong>Tracked URL:</strong> {{ rdf_dataset_url }}</label>
-                    <label><strong>Polling Interval:</strong> {{ polling_interval }} seconds</label>
-                    <label><strong>Next run (UTC):</strong> {{ next_run }}</label>
+                <div id="tracking-infos" class="is-flex is-flex-direction-column is-flex-wrap-wrap">
+                    <label class="mb-2"><strong>Tracked URL: </strong> {{ rdf_dataset_url }}</label>
+                    <label class="mb-2"><strong>Polling Interval: </strong> {{ polling_interval }} seconds</label>
+                    <label class="mb-2"><strong>Next run (UTC): </strong> {{ next_run }}</label>
                 </div>
                 {% endif %}
             </div>
         </div>
     </section>
 
-    <section id="main-section" class="section tab-section">
-        <div id="plot-and-query">
-            <div class="section-header">
+    <section id="main-section" class="pl-5 pr-5 is-flex">
+        <div id="plot-and-query" class="mb-5 is-flex">
+            <div class="section-header mb-3">
                 <h1 class="title">Starvers</h1>
                 <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
             </div>
-            <form id="sparql-form">
+            <form id="sparql-form" class="is-flex">
                 <!-- Plotly chart -->   
-                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box mb-3">
                     {% if evo_plot %}
-                    <div id="plot-box">
+                    <div id="plot-box" class="is-flex-grow-1">
                         <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
                             <!-- Time aggregation buttons -->
                             <div id="plot-box-buttons" class="is-flex is-align-items-center">
@@ -75,14 +75,14 @@
                     {% endif %}
                 </div>
                 
-                <div id="sparlq-container-total" class="mb-2">
+                <div id="sparql-container-total" class="mb-2 is-flex">
                     <h3 class="title is-5">SPARQL Query Editor</h3>
 
-                    <div id ="sparlq-container" class="columns is-multiline">
+                    <div id ="sparql-container" class="is-flex is-flex-wrap-wrap">
                         <!-- Left side: Label + Input + Help + Query Editor -->
-                        <div id="sparql-container-left" class="column is-half">
-                            <div id="timestamp-input-container" class="query-editor-labels">
-                                <label id="timestamp_input-label" class="label" for="timestamp_input">Timestamp</label>
+                        <div id="sparql-container-left" class="is-flex is-flex-direction-column is-flex-grow-1">
+                            <div id="timestamp-input-container" class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
+                                <label id="timestamp_input-label" class="label mr-2" for="timestamp_input">Timestamp</label>
                                 <input id="timestamp_input"
                                         class="input"
                                         onclick="showTooltip(this)"
@@ -100,14 +100,15 @@
 
                             <!-- SPARQL editor -->
                             <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
+                            <!-- CodeMirror is injected here -->
                         </div>
 
                         <!-- right side: Label + Timestamped query -->
-                        <div id="sparql-container-right" class="column is-half">
-                            <div id="query-editor-label-container" class="query-editor-labels">
-                                <label id="timestamped-query-label" class="label">Timestamped Query</label>
+                        <div id="sparql-container-right" class="is-flex is-flex-direction-column  is-flex-grow-1">
+                            <label id="timestamped-query-label" class="label mb-2 mt-4">Timestamped Query</label>
+                            <div id="timestamped-query" class="is-flex is-flex-direction-column is-flex-grow-1">
+                                <!-- CodeMirror is injected here -->
                             </div>
-                            <div id="timestamped-query"></div>
                         </div>
                     </div>
                 </div>
@@ -120,7 +121,7 @@
             </form>
         </div>
 
-        <div id="data-section">
+        <div id="data-section" class="is-hidden">
             {% if error %}
             <div id="result-retrieval-error" class="notification is-danger mt-4">
                 <strong>Error:</strong> {{ error }}
@@ -136,7 +137,7 @@
                     </div>
                 </div>
         
-                <div id="result-table">
+                <div id="result-table" class="table-container">
                     {% if result %}
                         {{ result|safe }}
                     {% endif %}
@@ -151,10 +152,10 @@
   
     </section>
 
-    <section id="right-section" class="section tab-section"> 
+    <section id="right-section" class=""> 
         <!-- New tab buttons -->
         <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
-            <ul>
+            <ul class="is-align-items-end">
                 <li data-tab="classes" class="is-active"><a>Classes</a></li>
                 <li data-tab="properties"><a>Properties</a></li>
             </ul>
@@ -166,7 +167,7 @@
                 <!-- Snapshot tree content goes here -->
             </div>
             <div id="right-section-tab-properties" class="right-section-tab-pane tab-section">
-                <p>Properties content will go here.</p>
+                Properties content will go here.
             </div>
         </div>
     
