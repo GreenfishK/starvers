@@ -17,7 +17,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Default tabs and views
     if (window.innerWidth <= 900) {
+        document.getElementById("mobile-tabs").classList.remove("is-hidden")
         activateTabMain('main');  
+        document.getElementById("layout-wrapper").style.flexDirection = "column";
+
+    } else {
+        document.getElementById("mobile-tabs").classList.add("is-hidden")
+
+        // show all tabs
+        const sections = {
+            left: document.getElementById('left-section'),
+            main: document.getElementById('main-section'),
+            right: document.getElementById('right-section')
+        };
+        Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
+
     }
     
     activateTabRight("classes"); 
@@ -75,11 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         console.log("Executing query.")
         // show result container
-        document.getElementById("data-section").style.display = "flex";
-        document.getElementById("data-section").style.flexDirection = "column";
-        document.getElementById("data-section").style.flex = "1";
-        document.getElementById("data-section").style.paddingTop = "1rem";
-        
+        document.getElementById("data-section").classList.remove("is-hidden");
 
         fetch("/query", {
             method: "POST",
@@ -109,6 +119,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
                     resultTable.parentElement.appendChild(downloadLink);
                 }
+
+         
             }
         })
         .catch(err => {
@@ -129,15 +141,31 @@ document.addEventListener("DOMContentLoaded", function () {
  ******************************************************************/
 
 window.addEventListener('resize', () => {
+    const sections = {
+        left: document.getElementById('left-section'),
+        main: document.getElementById('main-section'),
+        right: document.getElementById('right-section')
+    };
+
     if (window.innerWidth <= 900) {
         const activeLi = document.querySelector('#mobile-tabs li.is-active');
         const activeTabId = activeLi ? activeLi.getAttribute('data-tab') : 'main';
         activateTabMain(activeTabId);
+
+        document.getElementById("mobile-tabs").classList.remove("is-hidden") 
+        document.getElementById("layout-wrapper").style.flexDirection = "column";
     } else {
-        ['left-section', 'main-section', 'right-section'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.classList.remove('is-active-tab');
-        });
+        Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
+        document.getElementById("mobile-tabs").classList.add("is-hidden")
+
+        // show all tabs
+        Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
+        document.getElementById("layout-wrapper").style.flexDirection = "row";
+        sections["left"].style.width = "20%";
+        sections["main"].style.width = "60%"
+        sections["right"].style.width = "20%"
+
+
     }
 });
 
@@ -346,21 +374,33 @@ function repoChange(dropdown, timestampedEditor) {
         })
         .then(data => {
             console.log("Data received for repo:", selectedRepo);
+            const labels = trackingInfo.querySelectorAll("label");
             if (data.error) {
                 plotContainer.innerHTML = `<p class='has-text-danger'>${data.error}</p>`;
-                trackingInfo.innerHTML = "";
+                labels[0].lastChild.textContent = "";
+                labels[1].lastChild.textContent = "";
+                labels[2].lastChild.textContent = "";
             } else {
                 const evoPlotObj = JSON.parse(data.evo_plot);
-                Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
+                //Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
                 
-                trackingInfo.innerHTML = `
-                    <p><strong>Tracked URL:</strong> <span id="tracked-url">${data.rdf_dataset_url}</span></p>
-                    <p><strong>Polling Interval:</strong> <span id="polling-interval">${data.polling_interval}</span> seconds</p>
-                    <p><strong>Next run (UTC): </strong>${data.next_run}</p>
-                `;
-    
-                document.getElementById("data-section").style.display = "none";
+                labels[0].lastChild.textContent = data.rdf_dataset_url;
+                labels[1].lastChild.textContent = `${data.polling_interval} seconds`;
+                labels[2].lastChild.textContent = data.next_run;
+                    
+                // clear data section
+                document.getElementById("data-section").classList.add("is-hidden")
+                document.getElementById("result-table").innerHTML = "";
 
+                // Clear class hierarchy
+                console.log("Clearing class hierarchy")
+                document.getElementById("right-section-tab-classes").innerHTML = "";
+
+                // Clear the timestamped editor 
+                timestampedEditor.setValue("");
+
+                // Show class hierarchy and activate classes tab
+                activateTabRight("classes");
             }
         })
         .catch(error => {
@@ -369,19 +409,7 @@ function repoChange(dropdown, timestampedEditor) {
             trackingInfo.innerHTML = "<p class='has-text-danger'>Failed to load tracking info.</p>";
         });
 
-    // Clear previous query results on repo change
-    console.log("Clearing result table")
-    document.getElementById("result-table").innerHTML = "";
 
-    // Clear class hierarchy
-    console.log("Clearing class hierarchy")
-    document.getElementById("right-section-tab-classes").innerHTML = "";
-
-    // Clear the timestamped editor
-    timestampedEditor.setValue("");
-
-    // Show class hierarchy and activate classes tab
-    activateTabRight("classes");
     
 };
 
@@ -455,12 +483,16 @@ function renderSnapshotStats(stats) {
         }
 
         html += `<span class="class-label">${id}</span>`;
+
+        // Wrap info spans in a div for layout control
+        html += `<div class="info-row">`;
         html += `<span class="info">Instances: ${cnt_class_instances}</span>`;
         html += `<span class="info">Added: ${cnt_classes_added}</span>`;
         html += `<span class="info">Deleted: ${cnt_classes_deleted}</span>`;
+        html += `</div>`;
 
         if (hasChildren) {
-            html += `<section class="children">`;  // <-- Removed inline style here
+            html += `<section class="children">`;
             children.forEach(child => {
                 html += renderNode(child);
             });
@@ -470,6 +502,7 @@ function renderSnapshotStats(stats) {
         html += `</section>`;
         return html;
     }
+
 
     let fullHtml = `<section id="snapshot-tree">`;
     stats.forEach(node => {
@@ -502,10 +535,13 @@ function activateTabMain(tabId) {
 
     // Remove from all sections
     Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
+    Object.values(sections).forEach(section => section.classList.add("is-hidden"));
 
     // Set the correct one
     if (sections[tabId]) {
         sections[tabId].classList.add('is-active-tab');
+        sections[tabId].classList.remove('is-hidden');
+        sections[tabId].style.width = "100%"
     }
 
     // Update tab UI
@@ -523,11 +559,15 @@ function activateTabRight(tabId) {
     };
 
     // Remove from all sections
-    Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
+    Object.values(sections).forEach(section => {
+        section.classList.remove('is-active-tab');
+        section.style.display = 'none';
+    });
 
     // Set the correct one
     if (sections[tabId]) {
         sections[tabId].classList.add('is-active-tab');
+        sections[tabId].style.display = "block"
     }
 
     // Update tab UI
