@@ -80,7 +80,7 @@
 
                     <div id ="sparql-container" class="is-flex is-flex-wrap-wrap">
                         <!-- Left side: Label + Input + Help + Query Editor -->
-                        <div id="sparql-container-left" class="is-flex is-flex-direction-column is-flex-grow-1">
+                        <div id="sparql-container-left" class="is-flex is-flex-wrap-wrap">
                             <div id="timestamp-input-container" class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
                                 <label id="timestamp_input-label" class="label mr-2" for="timestamp_input">Timestamp</label>
                                 <input id="timestamp_input"
@@ -104,11 +104,9 @@
                         </div>
 
                         <!-- right side: Label + Timestamped query -->
-                        <div id="sparql-container-right" class="is-flex is-flex-direction-column  is-flex-grow-1">
+                        <div id="sparql-container-right" class="is-flex is-flex-wrap-wrap">
                             <label id="timestamped-query-label" class="label mb-2 mt-4">Timestamped Query</label>
-                            <div id="timestamped-query" class="is-flex is-flex-direction-column is-flex-grow-1">
-                                <!-- CodeMirror is injected here -->
-                            </div>
+                            <textarea id="timestamped-query" class="textarea" name="sparql" rows="10"></textarea>
                         </div>
                     </div>
                 </div>
@@ -152,7 +150,7 @@
   
     </section>
 
-    <section id="right-section" class=""> 
+    <section id="right-section" class="is-flex"> 
         <!-- New tab buttons -->
         <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
             <ul class="is-align-items-end">
@@ -162,7 +160,7 @@
         </div>
 
         <!-- New tab content containers -->
-        <div id="right-section-tab-content">
+        <div id="right-section-tab-content" class="is-flex">
             <div id="right-section-tab-classes" class="right-section-tab-pane tab-section">
                 <!-- Snapshot tree content goes here -->
             </div>
