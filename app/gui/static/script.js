@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     console.log("Initializing SPARQL-star view.")
-    const timestampedEditor = CodeMirror(document.getElementById("timestamped-query"), {
+    const timestampedEditor = CodeMirror.fromTextArea(document.getElementById('timestamped-query'), {
         value: "",
         mode: "sparql",
         lineNumbers: true,
@@ -98,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(res => res.json())
         .then(data => {
             // show timestamped query
+            console.log(data.timestamped_query)
             timestampedEditor.setValue(data.timestamped_query || "");
 
             clearInterval(timerInterval);

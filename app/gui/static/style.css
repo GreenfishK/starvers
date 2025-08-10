@@ -9,7 +9,6 @@ html, body {
   gap: 1rem;
   box-sizing: border-box;
   column-gap: 0;
-  /* Make the #layout-wrapper a horizontal flex container */
 }
 
 
@@ -27,30 +26,63 @@ html, body {
 #right-section {
     padding-left: 2rem;
     padding-right: 2rem;
-    width: 20%;
+    margin-bottom: 5rem;
+    flex-wrap: wrap;
+    align-content: flex-start;
+
+    flex: 0 1 22rem;
+    min-width: 12rem; /* prevent them from collapsing too small */
+
+}
+
+
+#right-section-tab-content{
+    height: 95%;
+    overflow:auto;
+    flex-grow: 1;
+}
+
+#right-section-tab-classes{
+  
 }
 
 
 
 #main-section {
     align-items: start;
-    width: 60%;
+    flex-wrap: wrap;
+    max-height: 100%;
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-width: 0; 
+
+    -ms-overflow-style: none;  /* IE 10+ */
+    scrollbar-width: none; /* Firefox */ 
+}
+
+#main-section::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+#data-section {
+    max-width: 100%;
 }
 
 #plot-container {
-    width: 100%
+    width: 100%;
+    flex-grow: 1;
 }
-
 
 #plot-and-query {
     flex-wrap: wrap;
     flex-grow: 1;
-    width: 100%;
+    max-width: 100%;
 }
 
 #sparql-form {
     flex-wrap: wrap;
     flex-grow: 1;
+    max-width: 100%;
 }
 
 #sparql-container-total {
@@ -63,14 +95,38 @@ html, body {
 }
 
 #sparql-container {
+    justify-content: space-between;
     width: 100%;    
 }
 
 #sparql-container-left,
 #sparql-container-right{
-    flex-grow: 1;
-    flex-basis: 50%;
+    flex-grow: 0;
+    flex-shrink: 1;
+    flex-basis: 49%;
+    max-width: 49%;
 }
+
+#timestamp-input-container{
+  width:100%;
+}
+
+.CodeMirror{
+  flex-grow: 1;
+  max-width: 100%;
+
+}
+
+#sparql-editor + .CodeMirror{
+    border: 1px solid #444;   /* Dark gray border */
+    border-radius: 4px;       /* Optional rounded corners */
+}
+
+
+#timestamped-query-label {
+  width:100%; 
+}
+
 
 #tracking-infos label {
   overflow-wrap: anywhere; 
@@ -121,12 +177,13 @@ html, body {
 
 #result-table {
     max-height: 460px;
-    overflow-y: auto;
+    overflow: auto;
 }
 
 .table {
     border-collapse: collapse;
     border: none;
+
 }
 
 .table thead th {
