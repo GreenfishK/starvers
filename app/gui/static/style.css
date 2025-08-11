@@ -67,15 +67,13 @@ html, body {
 }
 
 
-
-
-
 #main-section::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
 }
 
 #data-section {
-    max-width: 100%;
+    width: 100%;
+    max-height:100%;
 }
 
 #plot-container {
@@ -184,11 +182,52 @@ html, body {
   width: 100%;            
 }
 
+/* TODO: Overlay css */
 
+#loading-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    z-index: 20;
+    pointer-events: all; /* block clicks to underlying table */
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333;
+    background: rgba(240, 240, 240, 0.8);
+}
+
+#loading-overlay span {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+#timer {
+    font-size: 1rem;
+}
+
+#result-container{
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    flex-grow: 1;
+    position: relative;
+    border: none;
+
+}
+
+#result-container .title{
+  width: 100%;
+}
 
 #result-table {
-    max-height: 460px;
+    position: relative; /* needed to position overlay absolutely inside */
+    height: 460px;
     overflow: auto;
+    flex-grow: 1;
 }
 
 .table {

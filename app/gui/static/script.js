@@ -145,6 +145,8 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     const formData = new FormData(sparqlForm);
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
+    const mainSection = document.getElementById("main-section");
+
 
     let seconds = 0;
     timerEl.textContent = "0";
@@ -163,6 +165,10 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     console.log("Executing query.")
     // show result container
     document.getElementById("data-section").classList.remove("is-hidden");
+
+    // Scroll main-section to bottom so new data-section is visible
+    mainSection.scrollTo({ top: mainSection.scrollHeight, behavior: 'smooth' });
+
 
     fetch("/query", {
         method: "POST",
@@ -191,8 +197,10 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
                 downloadLink.href = "/download";
                 downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
                 resultTable.parentElement.appendChild(downloadLink);
-            }
 
+                // Scroll main-section to bottom so new data-section is visible
+                 mainSection.scrollTo({ top: mainSection.scrollHeight, behavior: 'smooth' });
+            }
         
         }
     })

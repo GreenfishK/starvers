@@ -43,12 +43,9 @@ class PollingTask():
     def time_func(self):
         return self.__time_func
 
-    def __get_next_run(self) -> int:
-        return self.__time_func() + self.period
-
     def set_next_run(self, time_taken: int = 0) -> None:
         self.__is_initial = False
-        self.next_run = self.__get_next_run() - time_taken
+        self.next_run = self.__time_func() + self.period - time_taken
 
     def __lt__(self, other) -> bool:
         return self.next_run < other.next_run
@@ -69,6 +66,7 @@ class PollingTask():
                     self.__stopped = self.__run(session, dataset, version_timestamp)
                     end_time = time.time_ns()
                     time_taken = (end_time - start_time) / 1_000_000_000 # convert ns to s
+                    
                     self.set_next_run(time_taken)
                     next_delay = self.period - time_taken
 
@@ -94,7 +92,6 @@ class PollingTask():
 
                     snapshots = []
                     for _, row in df_metrics.iterrows():
-                        LOG.info(f'Parent class: {row["parent_onto_class"]}; Type: {type(row["parent_onto_class"])}')
                         snapshot = Snapshot(
                             dataset_id=self.dataset_id,
                             snapshot_ts=version_timestamp,
@@ -129,12 +126,13 @@ class PollingTask():
                 return
             
             # Re-schedule task
-            LOG.info(f"Repository name: {self.repository_name}: Re-scheduling task for dataset to run at {datetime.fromtimestamp(self.next_run)} (next run time).")
             if next_delay < 0 or self.next_run <= self.__time_func():
-                self.executor_ctx._put(self, 0)
+                LOG.info(f"Repository name: {self.repository_name}: Next run is in the past. Scheduling task immediatelly.")
+                self.executor_ctx._put(self, self.repository_name, 0)
             else:
-                self.executor_ctx._put(self, next_delay)
-            
+                LOG.info(f"Repository name: {self.repository_name}: Scheduled task to run at {datetime.fromtimestamp(self.next_run)} with delay {next_delay}.")
+                self.executor_ctx._put(self, self.repository_name, next_delay)
+
 
             
     def __run(self, session: Session, dataset: Dataset, version_timestamp: datetime) -> bool:
