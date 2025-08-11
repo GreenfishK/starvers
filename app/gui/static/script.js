@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdown.addEventListener("change",  () => repoChange(dropdown, timestampedEditor));
 
     console.log("Initializing listener for the SPARQL form submission.")
-    sparqlForm.addEventListener("submit", () => executeQuery(timestampedEditor));
+    sparqlForm.addEventListener("submit", (e) => executeQuery(e, sparqlForm, timestampedEditor));
 });
 
 
@@ -137,7 +137,7 @@ document.querySelectorAll(".agg-button").forEach(button => {
 /******************************************************************
  * Functions
  ******************************************************************/
-function executeQuery(timestampedEditor) {
+function executeQuery(e, sparqlForm, timestampedEditor) {
     console.log("Form submitted.");
     e.preventDefault(); 
     
@@ -171,7 +171,6 @@ function executeQuery(timestampedEditor) {
     .then(res => res.json())
     .then(data => {
         // show timestamped query
-        console.log(data.timestamped_query)
         timestampedEditor.setValue(data.timestamped_query || "");
 
         clearInterval(timerInterval);
