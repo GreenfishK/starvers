@@ -4,14 +4,13 @@
 
 // Global variables
 let activeAggLevel = 'DAY'; 
+let currentHaloTraceIndex = null; 
 
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Document loaded.");
 
     const dropdown = document.getElementById("repo-select");
     const sparqlForm = document.getElementById("sparql-form");
-    const overlay = document.getElementById("loading-overlay");
-    const timerEl = document.getElementById("timer");
     const plotDiv = document.getElementById("evo-plot");
     const defaultBtn = document.getElementById("day_button")
 
@@ -19,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (window.innerWidth <= 900) {
         document.getElementById("mobile-tabs").classList.remove("is-hidden")
         activateTabMain('main');  
-        document.getElementById("layout-wrapper").style.flexDirection = "column";
+        document.getElementById("layout-wrapper").style.flexWrap = "wrap";
 
     } else {
         document.getElementById("mobile-tabs").classList.add("is-hidden")
@@ -31,6 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
             right: document.getElementById('right-section')
         };
         Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
+
+        document.getElementById("layout-wrapper").style.flexWrap = "nowrap";
 
     }
     
@@ -66,73 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdown.addEventListener("change",  () => repoChange(dropdown, timestampedEditor));
 
     console.log("Initializing listener for the SPARQL form submission.")
-    let timerInterval;
-    sparqlForm.addEventListener("submit", function (e) {
-        console.log("Form submitted.");
-        e.preventDefault(); 
-        
-        const downloadButton = document.getElementById("download-btn");
-        const formData = new FormData(sparqlForm);
-
-        let seconds = 0;
-        timerEl.textContent = "0";
-
-        // Remove old download button if it exists
-        if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
-
-        // Show loading overlay and start timer
-        overlay.style.display = "flex";
-        timerInterval = setInterval(() => {
-            seconds += 1;
-            timerEl.textContent = seconds;
-        }, 1000);
-
-        console.log("Executing query.")
-        // show result container
-        document.getElementById("data-section").classList.remove("is-hidden");
-
-        fetch("/query", {
-            method: "POST",
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            // show timestamped query
-            console.log(data.timestamped_query)
-            timestampedEditor.setValue(data.timestamped_query || "");
-
-            clearInterval(timerInterval);
-            overlay.style.display = "none";
-
-            const resultTable = document.getElementById("result-table");
-            if (data.error) {
-                resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
-            } else {
-
-                resultTable.innerHTML = data.result_set;
-                console.log("Result successfully retrieved.");
-
-                // Check if the download button already exists
-                if (!downloadButton) {
-                    console.log("Adding download button.");
-                    const downloadLink = document.createElement("a");
-                    downloadLink.href = "/download";
-                    downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
-                    resultTable.parentElement.appendChild(downloadLink);
-                }
-
-         
-            }
-        })
-        .catch(err => {
-            clearInterval(timerInterval);
-            overlay.style.display = "none";
-
-            console.error("Query execution failed:", err);
-            document.getElementById("result-table").innerHTML =
-                `<div class="notification is-danger"><strong>Error:</strong> Failed to execute query.</div>`;
-        });
-    });
+    sparqlForm.addEventListener("submit", () => executeQuery(timestampedEditor));
 });
 
 
@@ -154,17 +89,22 @@ window.addEventListener('resize', () => {
         activateTabMain(activeTabId);
 
         document.getElementById("mobile-tabs").classList.remove("is-hidden") 
-        document.getElementById("layout-wrapper").style.flexDirection = "column";
+        document.getElementById("layout-wrapper").style.flexWrap = "wrap";
+
+        sections["left"].style.flexGrow = "1";
+        sections["main"].style.flexGrow = "1";
+        sections["right"].style.flexGrow = "1";
     } else {
         Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
         document.getElementById("mobile-tabs").classList.add("is-hidden")
 
         // show all tabs
         Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
-        document.getElementById("layout-wrapper").style.flexDirection = "row";
-        sections["left"].style.width = "20%";
-        sections["main"].style.width = "60%"
-        sections["right"].style.width = "20%"
+        document.getElementById("layout-wrapper").style.flexWrap = "nowrap";
+
+        sections["left"].style.flexGrow = "0";
+        sections["main"].style.flexGrow = "1";
+        sections["right"].style.flexGrow = "0";
 
 
     }
@@ -197,6 +137,76 @@ document.querySelectorAll(".agg-button").forEach(button => {
 /******************************************************************
  * Functions
  ******************************************************************/
+function executeQuery(timestampedEditor) {
+    console.log("Form submitted.");
+    e.preventDefault(); 
+    
+    const downloadButton = document.getElementById("download-btn");
+    const formData = new FormData(sparqlForm);
+    const overlay = document.getElementById("loading-overlay");
+    const timerEl = document.getElementById("timer");
+
+    let seconds = 0;
+    timerEl.textContent = "0";
+
+    // Remove old download button if it exists
+    if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
+
+    // Show loading overlay and start timer
+    overlay.style.display = "flex";
+    let timerInterval;
+    timerInterval = setInterval(() => {
+        seconds += 1;
+        timerEl.textContent = seconds;
+    }, 1000);
+
+    console.log("Executing query.")
+    // show result container
+    document.getElementById("data-section").classList.remove("is-hidden");
+
+    fetch("/query", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        // show timestamped query
+        console.log(data.timestamped_query)
+        timestampedEditor.setValue(data.timestamped_query || "");
+
+        clearInterval(timerInterval);
+        overlay.style.display = "none";
+
+        const resultTable = document.getElementById("result-table");
+        if (data.error) {
+            resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
+        } else {
+
+            resultTable.innerHTML = data.result_set;
+            console.log("Result successfully retrieved.");
+
+            // Check if the download button already exists
+            if (!downloadButton) {
+                console.log("Adding download button.");
+                const downloadLink = document.createElement("a");
+                downloadLink.href = "/download";
+                downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
+                resultTable.parentElement.appendChild(downloadLink);
+            }
+
+        
+        }
+    })
+    .catch(err => {
+        clearInterval(timerInterval);
+        overlay.style.display = "none";
+
+        console.error("Query execution failed:", err);
+        document.getElementById("result-table").innerHTML =
+            `<div class="notification is-danger"><strong>Error:</strong> Failed to execute query.</div>`;
+    });
+}
+
 function plotly_relayout(eventData, plotDiv) {
     console.log("Plotly relayout event triggered:", eventData);
     let relayoutTimeout = null;
@@ -321,8 +331,13 @@ function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
         console.error("Error fetching snapshot statistics:", error);
     });
 
+    // remove previous halo markers
+     if (currentHaloTraceIndex !== null) {
+        Plotly.deleteTraces(plotDiv, currentHaloTraceIndex);
+        currentHaloTraceIndex = null;
+    }
     // Add halo marker
-    const highlightTrace = {
+    highlightTrace = {
         x: [point.x],
         y: [point.y],
         mode: "markers",
@@ -342,11 +357,7 @@ function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
 
     // Add it as the last trace
     Plotly.addTraces(plotDiv, highlightTrace).then(() => {
-        // Remove it after 300ms
-        setTimeout(() => {
-            const currentDataLength = plotDiv.data.length;
-            Plotly.deleteTraces(plotDiv, currentDataLength - 1);
-        }, 100);
+        currentHaloTraceIndex = plotDiv.data.length - 1;
     });
 }
 
@@ -402,6 +413,9 @@ function repoChange(dropdown, timestampedEditor) {
 
                 // Show class hierarchy and activate classes tab
                 activateTabRight("classes");
+
+                //Reset halo marker index
+                currentHaloTraceIndex = null;
             }
         })
         .catch(error => {
@@ -423,6 +437,9 @@ function changeTimelinePeriod(level, clickedButton) {
     const allAggButtons = document.querySelectorAll(".agg-button");
     allAggButtons.forEach(btn => btn.classList.remove("is-active"));
     clickedButton.classList.add("is-active");
+
+    //Reset halo marker index
+    currentHaloTraceIndex = null;
 
     fetch(`/infos/${repo}?agg=${level}`)
       .then(response => response.json())

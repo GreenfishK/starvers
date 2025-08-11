@@ -9,6 +9,12 @@ html, body {
   gap: 1rem;
   box-sizing: border-box;
   column-gap: 0;
+  padding-bottom:3rem;
+
+}
+
+#mobile-tabs {
+  width: 100%;
 }
 
 
@@ -22,6 +28,18 @@ html, body {
     
 }
 
+#main-section {
+    align-items: start;
+    flex-wrap: wrap;
+    max-height: 100%;
+    overflow-y: auto;
+    flex: 1 1 0;
+    min-width: 0; 
+
+    -ms-overflow-style: none;  /* IE 10+ */
+    scrollbar-width: none; /* Firefox */ 
+}
+
 #left-section,
 #right-section {
     padding-left: 2rem;
@@ -29,6 +47,8 @@ html, body {
     margin-bottom: 5rem;
     flex-wrap: wrap;
     align-content: flex-start;
+    box-sizing: border-box;
+    height: 95%;
 
     flex: 0 1 22rem;
     min-width: 12rem; /* prevent them from collapsing too small */
@@ -48,17 +68,7 @@ html, body {
 
 
 
-#main-section {
-    align-items: start;
-    flex-wrap: wrap;
-    max-height: 100%;
-    overflow-y: auto;
-    flex: 1 1 0;
-    min-width: 0; 
 
-    -ms-overflow-style: none;  /* IE 10+ */
-    scrollbar-width: none; /* Firefox */ 
-}
 
 #main-section::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
@@ -91,7 +101,7 @@ html, body {
 }
 
 #sparql-container-total .title{
-    width:100%
+    width:100%;
 }
 
 #sparql-container {
