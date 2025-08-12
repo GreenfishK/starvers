@@ -3,6 +3,7 @@
 <head>
     <title>Starvers: Time-traveling SPARQL Interface</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='codemirror.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
@@ -20,7 +21,8 @@
             </p>
         </div>
         <div class="header-logo">
-        <img src="{{ url_for('static', filename='images/TU_Logo_weiss_RGB.svg') }}" alt="Logo">
+            <img src="{{ url_for('static', filename='images/DS_white_hiRes.png') }}" alt="Logo">
+            <img src="{{ url_for('static', filename='images/TU_Logo_weiss_RGB.svg') }}" alt="Logo">
         </div>
     </div>
 </header>

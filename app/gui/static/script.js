@@ -350,10 +350,10 @@ function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
         mode: "markers",
         marker: {
             size: 20,
-            color: "rgba(0, 150, 255, 0.4)",  // translucent blue halo
+            color: "rgba(0, 102, 153, 0.4)",  // translucent blue halo
             line: {
                 width: 2,
-                color: "rgba(0, 150, 255, 1.0)"
+                color: "rgba(0, 102, 153, 1.0)"
             },
             symbol: "circle"
         },
