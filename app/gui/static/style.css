@@ -31,6 +31,7 @@ html, body {
   width: 90%;        /* optional: responsive width */
   white-space: normal; /* allow wrapping */
 }
+
 .header-logo {
   margin-left: auto;
 }
