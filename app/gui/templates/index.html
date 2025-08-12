@@ -11,7 +11,19 @@
 </head>
 
 <body>
-
+<header class="header mb-3">
+    <div class="header-content">
+        <div class="header-text">
+            <h1 class="header-title">Starvers</h1>
+            <p class="header-subtitle">
+                View Knowledge Graphs and Ontologies as they existed at specific points in time
+            </p>
+        </div>
+        <div class="header-logo">
+        <img src="{{ url_for('static', filename='images/TU_Logo_weiss_RGB.svg') }}" alt="Logo">
+        </div>
+    </div>
+</header>
 <div id="layout-wrapper" class="is-flex">
     <div id="mobile-tabs" class="tabs is-toggle is-fullwidth is-hidden mb-0">
         <ul class="is-align-items-start">
@@ -46,10 +58,6 @@
 
     <section id="main-section" class="pl-5 pr-5 is-flex">
         <div id="plot-and-query" class="mb-5 is-flex">
-            <div class="section-header mb-3">
-                <h1 class="title">Starvers</h1>
-                <h2 class="subtitle">View Knowledge Graphs and Ontologies as they existed at specific points in time</h2>
-            </div>
             <form id="sparql-form" class="is-flex">
                 <!-- Plotly chart -->   
                 <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box mb-3">
@@ -113,13 +121,13 @@
                 
                 <div class="field">
                     <div class="control">
-                        <button type="submit" class="button is-link mb-2">Execute Query</button>
+                        <button id="executeQuery" type="submit" class="button is-link mb-2">Execute Query</button>
                     </div>
                 </div>
             </form>
         </div>
 
-        <div id="data-section" class="is-hidden">
+        <div id="data-section" class="is-flex is-hidden">
             {% if error %}
             <div id="result-retrieval-error" class="notification is-danger mt-4">
                 <strong>Error:</strong> {{ error }}
@@ -143,7 +151,7 @@
             </div>
             {% if result %}
             <a href="{{ url_for('routes.download') }}">
-                <button class="button is-success mt-3">Download CSV</button>
+                <button id="download-btn" class="button is-success mt-3">Download CSV</button>
             </a>
             {% endif %}
         </div>
