@@ -120,7 +120,7 @@ class GuiContr:
             x=timestamps,
             y=ins_y,
             base=ins_base,
-            marker_color="green",
+            marker_color="#007E71",
             name="Insertions",
             width=widths_ins,
             hovertemplate=hovertemplates_ins
@@ -130,7 +130,7 @@ class GuiContr:
             x=timestamps,
             y=del_y,
             base=del_base,
-            marker_color="red",
+            marker_color="#BA4682",
             name="Deletions",
             width=widths_del,
             hovertemplate=hovertemplates_del
@@ -141,7 +141,7 @@ class GuiContr:
             y=total.tolist(),
             mode="lines+markers",
             name='Total Triples',
-            line=dict(color="blue", width=1)
+            line=dict(color="#5485AB", width=1)
         ))
 
         fig.update_layout(

@@ -3,9 +3,69 @@ html, body {
   margin: 0;
 }
 
+.header {
+  position: relative; /* for absolute children */
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: linear-gradient(180deg, #5485AB 0%, #006699 100%);
+}
+
+.header-content {
+  width: 100%;
+  position: relative;
+  display: flex;          
+  align-items: center;  
+  
+}
+
+.header-text {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px; /* or whatever max width fits your layout */
+  width: 90%;        /* optional: responsive width */
+  white-space: normal; /* allow wrapping */
+}
+.header-logo {
+  margin-left: auto;
+}
+
+.header-logo img{
+    height: 60px; 
+    width: auto;
+}
+
+.header-subtitle {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #e0f7fa;
+  margin-top: 0.25rem;
+  width:100%;
+}
+
+.header-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  width:100%;
+}
+
+.header-separator {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: white; /* contrasting golden accent */
+}
+
+
 #layout-wrapper {
   height: 100vh;
   display: flex;
+  /*flex-wrap: wrap;*/
   gap: 1rem;
   box-sizing: border-box;
   column-gap: 0;
@@ -17,6 +77,17 @@ html, body {
   width: 100%;
 }
 
+
+#mobile-tabs ul li{
+  background-color: #DFF2FD;
+  color: #006699;
+}
+
+#mobile-tabs li.is-active a {
+  background-color: #5485AB;
+  color: white;
+  border-color: #006699;
+}
 
 .section-header {
     display: flex;
@@ -71,9 +142,10 @@ html, body {
     display: none; /* Chrome, Safari, Opera */
 }
 
-#data-section {
-    width: 100%;
-    max-height:100%;
+.tabs li.is-active a {
+  background-color: #5485AB; 
+  color: #fff !important; 
+  border-color: #006699;     
 }
 
 #plot-container {
@@ -85,7 +157,8 @@ html, body {
     flex-wrap: wrap;
     flex-grow: 1;
     max-width: 100%;
-    height: 100%;
+    /*height: 100%;*/
+    align-content:flex-start;
 }
 
 #sparql-form {
@@ -104,17 +177,22 @@ html, body {
 }
 
 #sparql-container {
-    justify-content: space-between;
-    width: 100%;    
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  flex-wrap: wrap; 
+  gap: 1rem; 
 }
 
+/* Both sides get equal width */
 #sparql-container-left,
-#sparql-container-right{
-    flex-grow: 0;
-    flex-shrink: 1;
-    flex-basis: 49%;
-    max-width: 49%;
+#sparql-container-right {
+  flex: 1 1 49%;  
+  overflow: auto; 
+  min-width: 300px; 
+  box-sizing: border-box; 
 }
+
 
 #timestamp-input-container{
   width:100%;
@@ -131,16 +209,34 @@ html, body {
     border-radius: 4px;       /* Optional rounded corners */
 }
 
+#plot-box-buttons .button{
+  background-color: #DFF2FD;
+  color: #006699;
+}
+
+#plot-box-buttons .is-active{
+  background-color: #5485AB;
+  color:white;
+}
 
 #timestamped-query-label {
   width:100%; 
 }
 
+#sparql-container-right .CodeMirror{
+  background-color: #D0D0D0 !important;
+}
+
+.CodeMirror .CodeMirror-scroll .CodeMirror-gutters{
+  background-color: #EDEDED !important;
+}
 
 #tracking-infos label {
   overflow-wrap: anywhere; 
   word-break: break-all;  
 }
+
+
 
 #plot-box-legend {
     gap: 1rem;
@@ -155,15 +251,15 @@ html, body {
 }
 
 #legend-insertions {
-    background: green;
+    background: #007E71;
 }
 
 #legend-deletions {
-    background: red;
+    background: #BA4682;
 }
 
 #legend-total {
-    background: blue;
+    background: #5485AB;
 }
 
 
@@ -182,76 +278,12 @@ html, body {
   width: 100%;            
 }
 
-/* TODO: Overlay css */
 
-#loading-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255, 255, 255, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    z-index: 20;
-    pointer-events: all; /* block clicks to underlying table */
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #333;
-    background: rgba(240, 240, 240, 0.8);
-}
-
-#loading-overlay span {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-#timer {
-    font-size: 1rem;
-}
-
-#result-container{
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    flex-grow: 1;
-    position: relative;
-    border: none;
-
-}
-
-#result-container .title{
-  width: 100%;
-}
-
-#result-table {
-    position: relative; /* needed to position overlay absolutely inside */
-    height: 460px;
-    overflow: auto;
-    flex-grow: 1;
-}
-
-.table {
-    border-collapse: collapse;
-    border: none;
-
-}
-
-.table thead th {
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 10; 
-    box-shadow: inset 0 -3px 0 #ccc; 
-    border: none;
-    padding: 8px;
-    text-align: left;
-}
 
 #snapshot-tree {
     flex: 1;
     min-height: 0; 
-    overflow-y: auto;
-    overflow-x: auto; 
+    overflow: auto;
     padding-bottom: 1rem;
     font-family: Arial, sans-serif;
     font-size: 14px;
@@ -316,9 +348,97 @@ html, body {
   display: inline-block;
   width: 1em;
   text-align: center;
+  color: #006699;
 }
 
 #snapshot-tree .tree-node.expanded > .expand-btn::before {
   content: "−"; 
+  color: #006699;
+
 }
 
+#executeQuery {
+  background-color: #006699;
+}
+
+
+#data-section {
+    flex-wrap: wrap;
+    flex-grow: 1 0 0;
+    width: 100%;
+    align-content: flex-start;
+}
+
+
+#result-container{
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    flex-grow: 1;
+    position: relative;
+    border: none;
+
+}
+
+#result-container .title{
+  width: 100%;
+}
+
+#result-table {
+    position: relative; /* needed to position overlay absolutely inside */
+    height: 460px;
+    overflow: auto;
+    flex-grow: 1;
+}
+
+.table {
+    border-collapse: collapse;
+    border: none;
+
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10; 
+    box-shadow: inset 0 -3px 0 #ccc; 
+    border: none;
+    padding: 8px;
+    text-align: left;
+}
+
+.table tbody td a{
+  color:#5485AB;
+}
+
+/* TODO: Overlay css */
+
+#loading-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    z-index: 20;
+    pointer-events: all; /* block clicks to underlying table */
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333;
+    background: rgba(240, 240, 240, 0.8);
+}
+
+#loading-overlay span {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+#timer {
+    font-size: 1rem;
+}
+
+#download-btn {
+  background-color: #007E71;
+}
