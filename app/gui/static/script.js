@@ -5,6 +5,7 @@
 // Global variables
 let activeAggLevel = 'DAY'; 
 let currentHaloTraceIndex = null; 
+const mediaQuery = window.matchMedia("(max-width: 900px)");
 
 document.addEventListener("DOMContentLoaded", function () {
     console.log("Document loaded.");
@@ -13,28 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const sparqlForm = document.getElementById("sparql-form");
     const plotDiv = document.getElementById("evo-plot");
     const defaultBtn = document.getElementById("day_button")
-
-    // Default tabs and views
-    if (window.innerWidth <= 900) {
-        document.getElementById("mobile-tabs").classList.remove("is-hidden")
-        activateTabMain('main');  
-        document.getElementById("layout-wrapper").style.flexWrap = "wrap";
-
-    } else {
-        document.getElementById("mobile-tabs").classList.add("is-hidden")
-
-        // show all tabs
-        const sections = {
-            left: document.getElementById('left-section'),
-            main: document.getElementById('main-section'),
-            right: document.getElementById('right-section')
-        };
-        Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
-
-        document.getElementById("layout-wrapper").style.flexWrap = "nowrap";
-
-    }
     
+    handleScreenChange(mediaQuery);
     activateTabRight("classes"); 
 
     if (defaultBtn) {
@@ -75,40 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
 /******************************************************************
  * Listeners
  ******************************************************************/
-
-window.addEventListener('resize', () => {
-    const sections = {
-        left: document.getElementById('left-section'),
-        main: document.getElementById('main-section'),
-        right: document.getElementById('right-section')
-    };
-
-    if (window.innerWidth <= 900) {
-        const activeLi = document.querySelector('#mobile-tabs li.is-active');
-        const activeTabId = activeLi ? activeLi.getAttribute('data-tab') : 'main';
-        activateTabMain(activeTabId);
-
-        document.getElementById("mobile-tabs").classList.remove("is-hidden") 
-        document.getElementById("layout-wrapper").style.flexWrap = "wrap";
-
-        sections["left"].style.flexGrow = "1";
-        sections["main"].style.flexGrow = "1";
-        sections["right"].style.flexGrow = "1";
-    } else {
-        Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
-        document.getElementById("mobile-tabs").classList.add("is-hidden")
-
-        // show all tabs
-        Object.values(sections).forEach(section => section.classList.remove('is-hidden'));
-        document.getElementById("layout-wrapper").style.flexWrap = "nowrap";
-
-        sections["left"].style.flexGrow = "0";
-        sections["main"].style.flexGrow = "1";
-        sections["right"].style.flexGrow = "0";
-
-
-    }
-});
+mediaQuery.addEventListener("change", handleScreenChange);
 
 document.querySelectorAll('#mobile-tabs li').forEach(li => {
     li.addEventListener('click', () => {
@@ -134,9 +82,21 @@ document.querySelectorAll(".agg-button").forEach(button => {
 });
 
 
+
+
 /******************************************************************
  * Functions
  ******************************************************************/
+function handleScreenChange(e) {
+    if (e.matches) { 
+        // Now <= 900px
+        activateTabMain('main');
+    } else {
+        Array.from(document.getElementsByClassName('content-section'))
+        .forEach(section => section.style.display = "flex");    
+    }
+}
+
 function executeQuery(e, sparqlForm, timestampedEditor) {
     console.log("Form submitted.");
     e.preventDefault(); 
@@ -559,13 +519,13 @@ function activateTabMain(tabId) {
     };
 
     // Remove from all sections
-    Object.values(sections).forEach(section => section.classList.remove('is-active-tab'));
-    Object.values(sections).forEach(section => section.classList.add("is-hidden"));
+    Object.values(sections).forEach(section => section.style.display = "none");
 
     // Set the correct one
     if (sections[tabId]) {
-        sections[tabId].classList.add('is-active-tab');
-        sections[tabId].classList.remove('is-hidden');
+        //sections[tabId].classList.add('is-active-tab');
+        //sections[tabId].classList.remove('is-hidden');
+        sections[tabId].style.display = "flex"
         sections[tabId].style.width = "100%"
     }
 
