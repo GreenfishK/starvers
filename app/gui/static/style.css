@@ -4,70 +4,74 @@ html, body {
 }
 
 .header {
-  position: relative; /* for absolute children */
-  display: flex;
-  align-items: center;
   padding: 1rem;
   background: linear-gradient(180deg, #5485AB 0%, #006699 100%);
 }
 
 .header-content {
-  width: 100%;
-  position: relative;
-  display: flex;          
-  align-items: center;  
-  
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  position: relative; /* for absolute centering */
+  justify-content: space-between;
+
 }
 
 .header-text {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 600px; /* or whatever max width fits your layout */
-  width: 90%;        /* optional: responsive width */
-  white-space: normal; /* allow wrapping */
+  /*max-width: 600px; */
+  white-space: normal;
+  width:60%;
 }
 
 .header-logo {
-  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+  /*margin-left: auto;*/
+  width:20%;
+  flex-shrink: 0;
 }
 
-.header-logo img{
-    height: 60px; 
-    width: auto;
+#header-logo-right{
+  justify-content: flex-end;
 }
+
+.header-logo img {
+  height: 60px;
+  width: auto;
+}
+
+#TU_signet{
+  display: none;
+}
+
+#TU_logo {
+  display: block;
+}
+
+/* When logo wraps to next line, center it */
+
 
 .header-subtitle {
   font-size: 1rem;
   font-weight: 400;
   color: #e0f7fa;
   margin-top: 0.25rem;
-  width:100%;
 }
 
 .header-title {
   font-size: 2rem;
   font-weight: 700;
   color: #ffffff;
-  width:100%;
 }
-
-.header-separator {
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: white; /* contrasting golden accent */
-}
-
 
 #layout-wrapper {
   height: 100vh;
   display: flex;
-  /*flex-wrap: wrap;*/
-  gap: 1rem;
+  gap: 0;
   box-sizing: border-box;
   column-gap: 0;
   padding-bottom:3rem;
@@ -75,7 +79,7 @@ html, body {
 }
 
 #mobile-tabs {
-  width: 100%;
+  display: none;
 }
 
 
@@ -93,14 +97,15 @@ html, body {
 .section-header {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: flex-start;
-    height: 5rem;
+    /*height: 5rem;*/
     width: 100%;
     
 }
 
 #main-section {
+    display: flex;
     align-items: start;
     flex-wrap: wrap;
     max-height: 100%;
@@ -114,9 +119,11 @@ html, body {
 
 #left-section,
 #right-section {
+    display: flex;
     padding-left: 2rem;
     padding-right: 2rem;
     margin-bottom: 5rem;
+    margin-top: 1rem;
     flex-wrap: wrap;
     align-content: flex-start;
     box-sizing: border-box;
@@ -127,6 +134,9 @@ html, body {
 
 }
 
+#right-section-tabs ul{
+  border-bottom: none;
+}
 
 #right-section-tab-content{
     height: 95%;
@@ -442,4 +452,28 @@ html, body {
 
 #download-btn {
   background-color: #007E71;
+}
+
+
+@media (max-width: 900px) {
+  #layout-wrapper {
+    flex-wrap: wrap;
+  }
+
+  #mobile-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  #TU_signet {
+    display: block;
+  }
+
+  #TU_logo {
+    display: none;
+  }
+
+  #left-section, #main-section, #right-section {
+    flex-grow: 1;
+  }
 }
