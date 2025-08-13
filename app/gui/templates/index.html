@@ -30,11 +30,11 @@
     </div>
 </header>
 <div id="layout-wrapper" class="is-flex">
-    <div id="mobile-tabs" class="tabs is-toggle is-fullwidth mb-0">
+    <div id="mobile-tabs" class="tabs is-fullwidth mb-0">
         <ul class="is-align-items-start">
-            <li data-tab="left"><a>Sidebar</a></li>
-            <li class="is-active" data-tab="main"><a>Main</a></li>
-            <li data-tab="right"><a>Snapshots</a></li>
+            <li data-tab="left"><a class="tab-selector">Sidebar</a></li>
+            <li class="is-active" data-tab="main"><a class="tab-selector">Main</a></li>
+            <li data-tab="right"><a class="tab-selector">Snapshots</a></li>
         </ul>
     </div>
     <section id="left-section" class="content-section">
@@ -71,9 +71,9 @@
                         <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
                             <!-- Time aggregation buttons -->
                             <div id="plot-box-buttons" class="is-flex is-align-items-center">
-                                <button id="hour_button" type="button" class="button agg-button is-link is-light is-small" data-agg="HOUR">Hour</button>
-                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small" data-agg="DAY">Day</button>
-                                <button id="week_button" type="button" class="button agg-button is-link is-light is-small" data-agg="WEEK">Week</button>
+                                <button id="hour_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="HOUR">Hour</button>
+                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="DAY">Day</button>
+                                <button id="week_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="WEEK">Week</button>
                             </div>
 
                             <!-- Custom Legend -->
@@ -167,8 +167,8 @@
         <!-- New tab buttons -->
         <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
             <ul class="is-align-items-start">
-                <li data-tab="classes" class="is-active"><a>Classes</a></li>
-                <li data-tab="properties"><a>Properties</a></li>
+                <li data-tab="classes" class="is-active"><a class="tab-selector">Classes</a></li>
+                <li data-tab="properties"><a class="tab-selector">Properties</a></li>
             </ul>
         </div>
 
