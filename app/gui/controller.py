@@ -48,11 +48,18 @@ class GuiContr:
         # Aggregate by given time interval
         df = df.set_index("timestamp")
         logging.info(f"Aggregating data by {time_aggr.value} intervals")
-        agg = df.resample(time_aggr.value).agg({
-            "insertions": "sum",
-            "deletions": "sum",
-            "cnt_triples": "last"
-        })
+        if time_aggr.name == "WEEK":
+            agg = df.resample(time_aggr.value, label='right', closed='right').agg({
+                "insertions": "sum",
+                "deletions": "sum",
+                "cnt_triples": "last"
+            })
+        else:
+            agg = df.resample(time_aggr.value).agg({
+                "insertions": "sum",
+                "deletions": "sum",
+                "cnt_triples": "last"
+            })
 
         # Fill missing values
         agg["insertions"] = agg["insertions"].fillna(0).astype(int)
@@ -144,6 +151,8 @@ class GuiContr:
             line=dict(color="#5485AB", width=1)
         ))
 
+        # Multi-line hierarchical tick labels
+
         fig.update_layout(
             xaxis_title="Time",
             yaxis_title="Triple Count",
@@ -159,7 +168,8 @@ class GuiContr:
                 gridcolor='lightgray', 
                 gridwidth=1,
                 rangeslider=dict(visible=False),
-                fixedrange=False
+                fixedrange=False,
+
             ),
             yaxis=dict(
                 showgrid=True,
