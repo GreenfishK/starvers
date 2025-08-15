@@ -78,7 +78,7 @@ services:
   
 
   # Creates a timestamped RDF-star dataset from individual snapshots
-  retroVersioning:
+  compute:
     image: starversserver_dev
     env_file: "./dev.env"
     depends_on:
@@ -92,7 +92,7 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/RetroVersioning.py", 
+    entrypoint: ["python", "app/utils/Compute.py", 
       "air_quality_ontology_iterative", "ITERATIVE"] # "20250523-174303_935", "catch_up"
 
   # Creates plots from the timing files

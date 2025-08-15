@@ -20,7 +20,7 @@ import fnmatch
 from app.services.VersioningService import StarVersService
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.graphdb.GraphDatabaseUtils import recreate_repository, \
- get_snapshot_metrics_template, get_dataset_static_core_template, \
+ get_snapshot_metrics_template, get_dataset_static_core_template, get_all_creation_timestamps, \
  get_dataset_version_oblivious_template, create_engine
 from app.enums.DeltaTypeEnum import DeltaType
 from app.LoggingConfig import get_logger, setup_logging
@@ -36,8 +36,8 @@ from app.AppConfig import Settings
 #######################################
 repo_name = sys.argv[1]
 delta_calc_method = sys.argv[2].upper()
-start_timestamp = sys.argv[3] if len(sys.argv) == 4 else None
-versioning_mode = sys.argv[4] if len(sys.argv) == 5 else "initial"
+versioning_mode = sys.argv[3] if len(sys.argv) == 4 else "from_scratch"
+start_timestamp = sys.argv[4] if len(sys.argv) == 5 else None
 
 #######################################
 # Logging
@@ -49,9 +49,13 @@ setup_logging()
 # Validation
 #######################################
 # Validate versioning_mode 
-allowed_modes = ["initial", "catch_up"]
+allowed_modes = ["from_scratch", "from_version"]
 if versioning_mode not in allowed_modes:
     raise ValueError(f"Invalid versioning mode: '{versioning_mode}'. Allowed values: {allowed_modes}")
+
+# Validate combination: from_version requires timestamp 
+if versioning_mode == "from_version" and start_timestamp is None:
+        raise ValueError("Versioning mode 'from_version' requires a valid start timestamp.")
 
 # Validate start_timestamp
 if start_timestamp:
@@ -59,14 +63,36 @@ if start_timestamp:
         raise ValueError(
             f"Invalid timestamp format: '{start_timestamp}'. Expected 'yyyyMMdd-hhmmss_SSS'."
         )
+    start_timestamp_iso = convert_timestamp_str_to_iso(start_timestamp)
 
-# TODO: Validate start_timestamp by checking whether it is present in GraphDB, if versioning_mode = catch_up
-# if yes, return an error
-# Resuming can only be done with data that is not yet in GraphDB
+sparql_engine = create_engine(repo_name)
+if versioning_mode == "from_version":
+    query = get_all_creation_timestamps()
+    sparql_engine.setQuery(query)
+    response = sparql_engine.query().convert() 
+    csv_text = response.decode('utf-8')
+    df_creation_timestamps = pd.read_csv(StringIO(csv_text))
 
-# Validate combination: catch_up requires timestamp 
-if start_timestamp is None and versioning_mode == "catch_up":
-    raise ValueError("Versioning mode 'catch_up' requires a valid start timestamp.")
+    # Convert df_creation_timestamps['valid_from'] to datetime
+    df_creation_timestamps["valid_from"] = pd.to_datetime(
+        df_creation_timestamps["valid_from"],
+        format="%Y-%m-%dT%H:%M:%S.%f",  # Adjust if your SPARQL returns a different format
+        errors="coerce"
+    )
+
+    if df_creation_timestamps.empty:
+        raise ValueError("No valid creation timestamps found in triple store.")
+
+    latest_ts = df_creation_timestamps["valid_from"].max()
+
+    # Compare
+    if start_timestamp_iso <= latest_ts:
+        raise ValueError(
+            f"In the 'from_version' versioning mode, the timestamp needs to be a snapshot timestamp "
+            f"that is newer than the latest timestamp in the triple store.\n"
+            f"Provided: {start_dt}, Latest in store: {latest_ts}"
+        )
+
 
 # Validate delta type 
 try:
@@ -139,23 +165,15 @@ def compute_dataset_metrics(sparql_engine, session, dataset):
     dataset.cnt_triples_version_oblivious = int(value_int64) if pd.notna(value_int64) else None
 
     logger.info(
-        f"Repository name: {repo_name}: "
-        f"Updating next runtime to {dataset.next_run}"
-        f"Updating static core triples to {dataset.cnt_triples_static_core} "
+        f"Repository name: {repo_name}:\n"
+        f"Updating next runtime to {dataset.next_run}\n"
+        f"Updating static core triples to {dataset.cnt_triples_static_core}\n"
         f"and version oblivious triples to {dataset.cnt_triples_version_oblivious} in 'dataset' table."
     )
 
     session.commit()
     session.refresh(dataset)
-
-
-def version_snapshot(versioning_service: StarVersService, version_timestamp: datetime, file):
-    versioning_service.run_versioning(version_timestamp=version_timestamp)
     
-    # Clean up
-    logger.info(f"Deleting RDF file: {file}")
-    os.remove(file)
-
 
 def convert_timestamp_str_to_iso(timestamp_str) -> datetime:
     """
@@ -249,8 +267,6 @@ file_timestamp_pairs.sort(key=lambda x: convert_timestamp_str_to_iso(x[0]))
 # Set start index for file_timestamp_pairs based on versioning mode and start_timestamp
 start_idx = 0
 if start_timestamp:
-    start_timestamp_iso = convert_timestamp_str_to_iso(start_timestamp)
-
     # Ensure start_timestamp is in the list
     timestamps_list = [ts for ts, _ in file_timestamp_pairs]
     if start_timestamp not in timestamps_list:
@@ -263,11 +279,9 @@ if start_timestamp:
     if start_timestamp == timestamps_list[0]:
         logger.warning(
             f"Start timestamp '{start_timestamp}' is the first available timestamp. "
-            f"Switching versioning mode from '{versioning_mode}' to 'initial'."
+            f"Switching versioning mode from '{versioning_mode}' to 'from_scratch'."
         )
-        versioning_mode = "initial"
-
-    start_dt = convert_timestamp_str_to_iso(start_timestamp)
+        versioning_mode = "from_scratch"
 
     # Find index of start_timestamp in sorted list
     start_idx = timestamps_list.index(start_timestamp)
@@ -276,7 +290,7 @@ if start_timestamp:
 # Delete snapshot table where dataset_id corresponds to the repository_name
 logger.info(f"Deleting snapshot metrics for {repo_name}")
 with Session(engine) as session:
-    if start_timestamp and versioning_mode == "catch_up":
+    if start_timestamp and versioning_mode == "from_version":
         delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso, session)
     else:
         # Delete all snapshot metrics
@@ -351,10 +365,7 @@ with Session(engine) as session:
     dataset_id = get_id_by_repo_name(repo_name, session)
     dataset = session.get(Dataset, dataset_id)
 
-    # Setup connection to GraphDB for retrieving snapshot metrics
-    sparql_engine = create_engine(repo_name)
-
-    if versioning_mode == "initial":
+    if versioning_mode == "from_scratch":
         # Run initial versioning for the tracking task
         init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
         logger.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
@@ -363,19 +374,16 @@ with Session(engine) as session:
 
         versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
 
-        # Remove first RDF file after initial versioning
-        os.remove(first_file)
-
         # Compute metrics for initial snapshot
         compute_snapshot_statistics(sparql_engine, session, dataset_id, init_version_timestmap_iso, init_version_timestmap_iso)
 
         # Iterate over all files, starting from the second oldest
         latest_timestamp = init_version_timestmap_iso
-        for timestamp_str, file in file_timestamp_pairs[start_idx+1:]:
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
 
             # version snapshot
-            version_snapshot(versioning_service, version_timestamp, file)
+            versioning_service.run_versioning(version_timestamp=version_timestamp)
 
             # compute snapshot metrics
             compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
@@ -383,16 +391,16 @@ with Session(engine) as session:
 
             # Compute dataset metrics
             compute_dataset_metrics(sparql_engine, session, dataset)
-    else: # catch_up 
+    else: # from_version 
         # Get the latest timestamp
         latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
         
         # Iterate over all files, starting from the second oldest
-        for timestamp_str, file in file_timestamp_pairs[start_idx:]:
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
 
             # version snapshot
-            version_snapshot(versioning_service, version_timestamp, file)
+            versioning_service.run_versioning(version_timestamp=version_timestamp)
 
             # compute snapshot metrics
             compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
@@ -400,6 +408,12 @@ with Session(engine) as session:
 
         # Compute dataset metrics
         compute_dataset_metrics(sparql_engine, session, dataset)
+
+# Clean up
+logger.info(f"Deleting all *.raw.nt files")
+raw_files = glob.glob(os.path.join(evaluation_dir, "*.raw.nt"))
+for raw_file in raw_files:
+    os.remove(raw_file)
 
 logger.info("Retro versioning completed successfully.")
 

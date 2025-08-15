@@ -71,7 +71,7 @@ Implement logs
 
 A service that iterates through all zip files, 
 calculates deltas between the consecutive snapshots 
-and inserts them with the corresponding timestamp: -> retroVersioning service
+and inserts them with the corresponding timestamp: -> compute service
 
 Add a new table ClassHierarchy to the database
     * dataset_id: foreign key
