@@ -125,10 +125,12 @@ def poll_import_status(file_name: str, repository_name: str):
 
         time.sleep(1)
 
+
 def delete_serverfile(file_name: str, repository_name: str):
     get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Remove serverfile {file_name}")
     import_path = f"/graphdb-import/{file_name}"
     os.remove(import_path)
+
 
 @lru_cache
 def __load_repo_config_file() -> str:
@@ -181,7 +183,12 @@ def get_delta_query_insertions_template(timestamp, graph_name: str) -> str:
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
         template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
-    
+
+def get_all_creation_timestamps() -> str:
+    with open('app/utils/graphdb/query_creation_timestamps.sparql', 'r') as f:
+        template = f.read()
+        return template
+
 # Metric
 def get_snapshot_metrics_template(ts_current: datetime, ts_prev: datetime) -> str:
     with open('app/utils/graphdb/query_snapshot_metrics.sparql', 'r') as f:
