@@ -36,70 +36,15 @@ from app.AppConfig import Settings
 #######################################
 repo_name = sys.argv[1]
 delta_calc_method = sys.argv[2].upper()
-versioning_mode = sys.argv[3] if len(sys.argv) == 4 else "from_scratch"
-start_timestamp = sys.argv[4] if len(sys.argv) == 5 else None
+versioning_mode = sys.argv[3] if len(sys.argv) >= 4 else "from_scratch"
+start_timestamp = sys.argv[4] if len(sys.argv) >= 5 else None
+
 
 #######################################
 # Logging
 #######################################
 logger = get_logger(__name__, f"tracking_{repo_name}.log")
 setup_logging()
-
-#######################################
-# Validation
-#######################################
-# Validate versioning_mode 
-allowed_modes = ["from_scratch", "from_version"]
-if versioning_mode not in allowed_modes:
-    raise ValueError(f"Invalid versioning mode: '{versioning_mode}'. Allowed values: {allowed_modes}")
-
-# Validate combination: from_version requires timestamp 
-if versioning_mode == "from_version" and start_timestamp is None:
-        raise ValueError("Versioning mode 'from_version' requires a valid start timestamp.")
-
-# Validate start_timestamp
-if start_timestamp:
-    if not re.fullmatch(r"\d{8}-\d{6}_\d{3}", start_timestamp):
-        raise ValueError(
-            f"Invalid timestamp format: '{start_timestamp}'. Expected 'yyyyMMdd-hhmmss_SSS'."
-        )
-    start_timestamp_iso = convert_timestamp_str_to_iso(start_timestamp)
-
-sparql_engine = create_engine(repo_name)
-if versioning_mode == "from_version":
-    query = get_all_creation_timestamps()
-    sparql_engine.setQuery(query)
-    response = sparql_engine.query().convert() 
-    csv_text = response.decode('utf-8')
-    df_creation_timestamps = pd.read_csv(StringIO(csv_text))
-
-    # Convert df_creation_timestamps['valid_from'] to datetime
-    df_creation_timestamps["valid_from"] = pd.to_datetime(
-        df_creation_timestamps["valid_from"],
-        format="%Y-%m-%dT%H:%M:%S.%f",  # Adjust if your SPARQL returns a different format
-        errors="coerce"
-    )
-
-    if df_creation_timestamps.empty:
-        raise ValueError("No valid creation timestamps found in triple store.")
-
-    latest_ts = df_creation_timestamps["valid_from"].max()
-
-    # Compare
-    if start_timestamp_iso <= latest_ts:
-        raise ValueError(
-            f"In the 'from_version' versioning mode, the timestamp needs to be a snapshot timestamp "
-            f"that is newer than the latest timestamp in the triple store.\n"
-            f"Provided: {start_dt}, Latest in store: {latest_ts}"
-        )
-
-
-# Validate delta type 
-try:
-    delta_type = DeltaType[delta_calc_method]
-except KeyError:
-    logger.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
-    sys.exit(1)
 
 
 #######################################
@@ -110,7 +55,6 @@ def compute_snapshot_statistics(sparql_engine, session: Session, dataset_id, sna
     logger.info(f"Repository name: {repo_name}: Querying snapshot metrics from GraphDB")
 
     query = get_snapshot_metrics_template(ts_current=snapshot_ts, ts_prev=snapshot_ts_prev)
-    logger.info(query)
     sparql_engine.setQuery(query)
     response = sparql_engine.query().convert() 
 
@@ -229,6 +173,67 @@ def extract_timestamp(file_path):
     timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})')
     match = timestamp_pattern.search(filename)
     return match.group(1) if match else ''
+
+
+#######################################
+# Validation
+#######################################
+# Validate versioning_mode 
+allowed_modes = ["from_scratch", "from_version"]
+if versioning_mode not in allowed_modes:
+    raise ValueError(f"Invalid versioning mode: '{versioning_mode}'. Allowed values: {allowed_modes}")
+
+# Validate combination: from_version requires timestamp 
+if versioning_mode == "from_version" and start_timestamp is None:
+        raise ValueError("Versioning mode 'from_version' requires a valid start timestamp.")
+
+# Validate start_timestamp
+if start_timestamp:
+    if not re.fullmatch(r"\d{8}-\d{6}_\d{3}", start_timestamp):
+        raise ValueError(
+            f"Invalid timestamp format: '{start_timestamp}'. Expected 'yyyyMMdd-hhmmss_SSS'."
+        )
+    start_timestamp_iso = convert_timestamp_str_to_iso(start_timestamp)
+
+sparql_engine = create_engine(repo_name)
+logger.info(f"Versioning mode: {versioning_mode}")
+if versioning_mode == "from_version":
+    query = get_all_creation_timestamps()
+    sparql_engine.setQuery(query)
+    response = sparql_engine.query().convert() 
+    csv_text = response.decode('utf-8')
+    df_creation_timestamps = pd.read_csv(StringIO(csv_text))
+
+    # Convert df_creation_timestamps['valid_from'] to datetime
+    df_creation_timestamps["valid_from"] = pd.to_datetime(
+        df_creation_timestamps["valid_from"],
+        format="%Y-%m-%dT%H:%M:%S.%f",  # Adjust if your SPARQL returns a different format
+        errors="coerce"
+    )
+
+    if df_creation_timestamps.empty:
+        raise ValueError("No valid creation timestamps found in triple store.")
+
+    latest_ts_iso = df_creation_timestamps["valid_from"].max()
+
+    # Compare
+    if start_timestamp_iso <= latest_ts_iso:
+        raise ValueError(
+            f"In the 'from_version' versioning mode, the timestamp needs to be a snapshot timestamp "
+            f"that is newer than the latest timestamp in the triple store.\n"
+            f"Provided: {start_timestamp_iso}, Latest in store: {latest_ts_iso}"
+        )
+
+
+# Validate delta type 
+try:
+    delta_type = DeltaType[delta_calc_method]
+except KeyError:
+    logger.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
+    sys.exit(1)
+
+
+
 
 #######################################
 # Cleaning and preparation
