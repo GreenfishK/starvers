@@ -182,12 +182,26 @@ def get_delta_query_insertions_template(timestamp, graph_name: str) -> str:
         template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
+# Metric
 def get_snapshot_metrics_template(ts_current: datetime, ts_prev: datetime) -> str:
     with open('app/utils/graphdb/query_snapshot_metrics.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
         template = template.replace('{:ts_prev}', _versioning_timestamp_format(ts_prev))
         return template
+
+# Metric
+def get_dataset_static_core_template() -> str:
+    with open('app/utils/graphdb/query_static_core_triples.sparql', 'r') as f:
+        template = f.read()
+        return template
+
+# Metric
+def get_dataset_version_oblivious_template() -> str:
+    with open('app/utils/graphdb/query_version_oblivious_triples.sparql', 'r') as f:
+        template = f.read()
+        return template
+
     
 def _versioning_timestamp_format(timestamp: datetime) -> str:
     # TODO use same method as starvers library does

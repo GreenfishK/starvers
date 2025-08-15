@@ -28,7 +28,7 @@ update dataset set active = True where repository_name = 'schema_org_ontology' o
 update dataset set next_run = null;
 update dataset set next_run = '2025-08-04 16:35:11.064284';
 
-delete from snapshot where dataset_id = '1ede0112-ee5e-4b56-88bb-e76904e9e929';
+delete from snapshot where dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
 
 select * from snapshot where dataset_id = '1ede0112-ee5e-4b56-88bb-e76904e9e929' and snapshot_ts = '2025-05-08 08:06:13.736';
 
@@ -58,6 +58,10 @@ CREATE TABLE dataset (
     last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN DEFAULT TRUE,
     next_run TIMESTAMP WITHOUT TIME ZONE
+    cnt_triples_static_core INTEGER,
+    cnt_triples_version_oblivious INTEGER,
+    ratio_avg_data_growth DOUBLE PRECISION,
+    ratio_avg_change DOUBLE PRECISION
 );
 
 CREATE TABLE snapshot (
@@ -71,6 +75,8 @@ CREATE TABLE snapshot (
     cnt_class_instances_prev INTEGER,
     cnt_classes_added INTEGER,
     cnt_classes_deleted INTEGER
+    ratio_data_growth DOUBLE PRECISION,
+    ratio_change DOUBLE PRECISION
 );
 
 INSERT INTO dataset (
@@ -177,3 +183,12 @@ INSERT INTO dataset (
     'f2d3c6e1-72b6-4e4f-96c6-2a8f4f61e9d7',
     '2025-08-01 16:36:55.611705'
 );
+
+
+# Alter table
+alter table dataset add column cnt_triples_static_core INTEGER; 
+alter table dataset add column cnt_triples_version_oblivious INTEGER; 
+alter table dataset add column ratio_avg_data_growth DOUBLE PRECISION;
+alter table dataset add column ratio_avg_change DOUBLE PRECISION;
+alter table snapshot add column ratio_data_growth DOUBLE PRECISION;
+alter table snapshot add column ratio_change DOUBLE PRECISION;

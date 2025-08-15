@@ -9,7 +9,7 @@ from app.Database import Session, engine
 from app.models.DatasetModel import Dataset, Snapshot
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
-from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_metrics_template, create_engine
+from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_metrics_template, get_dataset_static_core_template, get_dataset_version_oblivious_template, create_engine
 from app.LoggingConfig import get_logger
 
 
@@ -69,17 +69,48 @@ class PollingTask():
                     
                     self.set_next_run(time_taken)
                     next_delay = self.period - time_taken
-
-                    # Update dataset table: next run time
-                    LOG.info(f"Repository name: {self.repository_name}: Updating 'dataset' table: next run time")
-                    dataset.next_run = datetime.fromtimestamp(self.next_run)
-                    session.commit()
-                    session.refresh(dataset)
                     
+                    # Update dataset table
+                    LOG.info(f"Repository name: {self.repository_name}: Updating 'dataset' table")
+
                     # Setup connection to GraphDB for retrieving snapshot metrics
                     sparql_engine = create_engine(dataset.repository_name)
 
-                    # Retrieve metrics from GraphDB via SPARQL query in the csv format
+                    # Update dataset table: next run time
+                    dataset.next_run = datetime.fromtimestamp(self.next_run)
+
+                    # Update dataset table: static core triples 
+                    query = get_dataset_static_core_template()
+                    sparql_engine.setQuery(query)
+                    response = sparql_engine.query().convert() 
+                    csv_text = response.decode('utf-8')
+                    df_static_core = pd.read_csv(StringIO(csv_text))
+                    value_int64 = df_static_core.at[0, "cnt_triples_static_core"]
+                    dataset.cnt_triples_static_core = int(value_int64) if pd.notna(value_int64) else None
+                    
+                    # Update dataset table: version oblivious triples 
+                    query = get_dataset_version_oblivious_template()
+                    sparql_engine.setQuery(query)
+                    response = sparql_engine.query().convert() 
+                    csv_text = response.decode('utf-8')
+                    df_vers_obl = pd.read_csv(StringIO(csv_text))
+                    value_int64 = df_vers_obl.at[0, "cnt_triples_version_oblivious"]
+                    dataset.cnt_triples_version_oblivious = int(value_int64) if pd.notna(value_int64) else None
+
+                    LOG.info(
+                        f"Repository name: {self.repository_name}: "
+                        f"Updating next runtime to {dataset.next_run}"
+                        f"Updating static core triples to {dataset.cnt_triples_static_core} "
+                        f"and version oblivious triples to {dataset.cnt_triples_version_oblivious} in 'dataset' table."
+                    )
+
+                    session.commit()
+                    session.refresh(dataset)
+                    
+                    # Update snapshot table
+                    LOG.info(f"Repository name: {self.repository_name}: Updating 'snapshot' table")
+
+                    # Retrieve class metrics from GraphDB via SPARQL query in the csv format
                     LOG.info(f"Repository name: {self.repository_name}: Querying snapshot metrics from GraphDB")
                     if self.latest_timestamp:
                         query = get_snapshot_metrics_template(ts_current=version_timestamp, ts_prev=self.latest_timestamp)
@@ -88,10 +119,11 @@ class PollingTask():
                     sparql_engine.setQuery(query)
                     response = sparql_engine.query().convert() 
                     csv_text = response.decode('utf-8')
-                    df_metrics = pd.read_csv(StringIO(csv_text))
+                    df_class_metrics = pd.read_csv(StringIO(csv_text))
 
+                    # Update snapshot table
                     snapshots = []
-                    for _, row in df_metrics.iterrows():
+                    for _, row in df_class_metrics.iterrows():
                         snapshot = Snapshot(
                             dataset_id=self.dataset_id,
                             snapshot_ts=version_timestamp,
@@ -112,7 +144,7 @@ class PollingTask():
                         for snap in snapshots:
                             session.refresh(snap) 
                     else:
-                        LOG.info(f"Repository name: {self.repository_name}: Query returned no metrics. Nothing will be inserted.")
+                        LOG.warning(f"Repository name: {self.repository_name}: Query returned no metrics. Nothing will be inserted.")
                 else:
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()
