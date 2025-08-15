@@ -1,0 +1,17 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT (count(*) as ?cnt_triples_static_core)
+WHERE {
+    << <<?s ?p ?o>> vers:valid_from ?init_creation_timestamp >> vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime
+    {
+        select (?valid_from as ?init_creation_timestamp) {
+           << <<?s ?p ?o>> vers:valid_from ?valid_from >> vers:valid_until ?valid_until
+
+        } order by ?valid_from
+        limit 1
+    }
+}

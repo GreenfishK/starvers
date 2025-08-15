@@ -20,7 +20,7 @@ TODO: GUI, DatasetModel
 Add information about the whole dataset in the left side section.
 * static core (BEAR)
     * $C_A$ (in BEAR paper): take the first version and applying all the subsequent deletions. Count the triples
-    * $C_A$ (in Starvers): query all triples that have an artificial end timestamp
+    * $C_A$ (in Starvers): query all triples that have an artificial end timestamp and a creation timestamp from the first snapshot.
     * Add a new field to the Dataset "cnt_triples_static"
     * Update the field after every versioning task
 * total version-oblivious triples (BEAR)
