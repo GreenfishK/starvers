@@ -12,9 +12,8 @@ Add information about the inserts and deletes (metrics) of a snapshot in a side 
 * number of total instance
 * number of total, added, and deleted instances per class: done
 * number of instances with no class
-* number of distinct object properties
-* number of distinct data properties
-
+* number of total object properties
+* number of total data properties
 
 TODO: GUI, DatasetModel
 Add information about the whole dataset in the left side section.
@@ -41,9 +40,6 @@ Add information about the whole dataset in the left side section.
     * Add a new field to the Snapshot "ratio_change"
     * Add a new field to the Dataset "ratio_avg_change"
 
-TODO: GUI
-* fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
-
 TODO: GUI: Update view of timestamp of x-axis
 * HOUR view: Hours, day, month, and year should be shown in a 4 layer view to avoid repeating the day, month, and year for every hour
 * DAY view: Year, month, and day should be shown in a 3-layer view to avoid repeating the month and year for every day
@@ -53,7 +49,11 @@ TODO: GUI, controller: In addition to hour, day, and week, add a view for actual
 
 TODO: Consider adding a trace (curve) for change ratios between snapshots. Note: Change ratios can be computed between individual snapshots but one has to be careful when aggregating ratios, e.g. for a day or week, as they can overstate the change. For example, if a triple was added between v1 and v2 and then deleted in v3 again within one day, the net result is no change but the change ratio for v1_v2 and v2_v3 would be be > 0.
 
+TODO: Add an "summarize" button that summarizes the changes between two versions using AI.
+
 # Done
+fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
+
 Implement client to pass a URL with an ontology behind to start the versioning
 
 Persist Postegresql Database

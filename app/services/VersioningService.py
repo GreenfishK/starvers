@@ -155,6 +155,8 @@ class StarVersService(VersioningService):
                 with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
                     dump_file.writelines(map(lambda x: "- " + x + '\n', deletions_n3))
                     dump_file.writelines(map(lambda x: "+ " + x + '\n', insertions_n3))
+            
+            # zip files
             self.LOG.info(f"Repository name: {self.repository_name}: Creating zip {path}{get_timestamp(version_timestamp)}")
             shutil.make_archive(f"{path}{get_timestamp(version_timestamp)}", "zip", f"{path}{get_timestamp(version_timestamp)}")
             shutil.rmtree(f"{path}{get_timestamp(version_timestamp)}")
