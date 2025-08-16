@@ -340,7 +340,7 @@ for _, zip_file in file_timestamp_pairs[start_idx:]:
 
 
 # Delete all zip archives
-logger.info(f"Unzipping archives in {evaluation_dir}")
+logger.info(f"Removing archives in {evaluation_dir}")
 for zip_file in zip_files[start_idx:]:
     # Extract timestamp from filename (without path/extension)
     if start_timestamp:
@@ -397,8 +397,9 @@ with Session(engine) as session:
             # Compute dataset metrics
             compute_dataset_metrics(sparql_engine, session, dataset)
     else: # from_version 
-        # Get the latest timestamp
+        # Get the latest timestamp (previouss), considering that the version at start_idx is being processed
         latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
+        latest_timestamp = convert_timestamp_str_to_iso(latest_timestamp)
         
         # Iterate over all files, starting from the second oldest
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:

@@ -77,7 +77,7 @@ services:
       - "host.docker.internal:host-gateway"
   
 
-  # Creates a timestamped RDF-star dataset from individual snapshots
+  # Creates and ingest a timestamped RDF-star dataset and metrics from individual snapshots
   compute:
     image: starversserver_dev
     env_file: "./dev.env"
@@ -92,7 +92,8 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/Compute.py", "air_quality_ontology_iterative", "ITERATIVE",  "from_version", "20250523-174303_935"]
+    entrypoint: ["python", "app/utils/Compute.py", "air_quality_ontology_iterative", "ITERATIVE"]
+  
   # Creates plots from the timing files
   evaluate:
     image: starversserver_dev
