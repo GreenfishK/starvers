@@ -32,28 +32,47 @@ from app.services.ManagementService import get_id_by_repo_name, \
 from app.AppConfig import Settings
 
 #######################################
+# Logging
+#######################################
+logger = get_logger(__name__, f"compute.log")
+setup_logging()
+
+#######################################
 # Input parameters
 #######################################
 repo_name = sys.argv[1]
 delta_calc_method = sys.argv[2].upper()
-versioning_mode = sys.argv[3] if len(sys.argv) >= 4 else "from_scratch"
-start_timestamp = sys.argv[4] if len(sys.argv) >= 5 else None
 
+# Defaults
+versioning_mode = "from_scratch"
+functions_to_run = {"v", "sm", "dm"}  # run all by default
+start_timestamp = None
 
-#######################################
-# Logging
-#######################################
-logger = get_logger(__name__, f"tracking_{repo_name}.log")
-setup_logging()
+# Parse remaining arguments (order-invariant)
+for arg in sys.argv[3:]:
+    if arg in ["from_scratch", "from_version"]:
+        versioning_mode = arg
+    elif re.fullmatch(r"\d{8}-\d{6}_\d{3}", arg):  # timestamp
+        start_timestamp = arg
+    else:
+        # parse functions list
+        funcs = [f.strip().lower() for f in arg.split(",")]
+        valid_funcs = {"v", "sm", "dm"}
+        invalid = [f for f in funcs if f not in valid_funcs]
+        if invalid:
+            raise ValueError(f"Invalid function(s): {invalid}. Allowed: {valid_funcs}")
+        functions_to_run = set(funcs)
 
+logger.info(f"Parsed arguments: repo={repo_name}, delta_type={delta_calc_method}, "
+            f"mode={versioning_mode}, timestamp={start_timestamp}, "
+            f"functions={functions_to_run}")
 
 #######################################
 # Functions
 #######################################
 def compute_snapshot_statistics(sparql_engine, session: Session, dataset_id, snapshot_ts_prev: datetime, snapshot_ts: datetime = None):
     # Retrieve metrics from GraphDB via SPARQL query in the csv format
-    logger.info(f"Repository name: {repo_name}: Querying snapshot metrics from GraphDB")
-
+    logger.info(f"Repository name: {repo_name}: Querying snapshot metrics from GraphDB with ts_current={snapshot_ts} and ts_rev={snapshot_ts_prev}")
     query = get_snapshot_metrics_template(ts_current=snapshot_ts, ts_prev=snapshot_ts_prev)
     sparql_engine.setQuery(query)
     response = sparql_engine.query().convert() 
@@ -168,15 +187,137 @@ def wait_for_graphdb(url: str, timeout: int = 60, interval: int = 3):
     sys.exit(1)
 
 
-def extract_timestamp(file_path):
-    filename = os.path.basename(file_path)
-    timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})')
-    match = timestamp_pattern.search(filename)
+def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp_pairs, start_idx, versioning_mode, tracking_task):
+    logger.info(f"Run preparations for versioning")
+
+    # Delete all directory starting with a timestamp
+    logger.info(f"Deleting all temporary directories starting with a timestamp in {evaluation_dir}")
+    for entry in os.listdir(evaluation_dir):
+        full_path = os.path.join(evaluation_dir, entry)
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+
+    # Unzip all zip files. 
+    logger.info(f"Unzipping archives (only *raw.nt) in {evaluation_dir}")
+    for _, zip_file in file_timestamp_pairs[start_idx:]:
+        # Extract timestamp from filename (without path/extension)
+        if start_timestamp:
+            filename = os.path.basename(zip_file).replace(".zip", "")
+            try:
+                file_dt_iso = convert_timestamp_str_to_iso(filename)
+            except ValueError:
+                logger.warning(f"Skipping file with invalid timestamp format: {filename}")
+                continue
+
+            if file_dt_iso < start_timestamp_iso:
+                continue
+            
+        try:
+            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                for member in zip_ref.namelist():
+                    if fnmatch.fnmatch(member, "*raw.nt"):
+                        logger.debug(f"Extracting {member}")
+                        zip_ref.extract(member, evaluation_dir)
+        except zipfile.BadZipFile:
+            logger.error(f"Bad zip file: {zip_file}")
+
+    # Delete all zip archives
+    logger.info(f"Removing archives in {evaluation_dir}")
+    for zip_file in zip_files[start_idx:]:
+        # Extract timestamp from filename (without path/extension)
+        if start_timestamp:
+            filename = os.path.basename(zip_file).replace(".zip", "")
+            try:
+                file_dt_iso = convert_timestamp_str_to_iso(filename)
+            except ValueError:
+                logger.warning(f"Skipping file with invalid timestamp format: {filename}")
+                continue
+
+            if file_dt_iso < start_timestamp_iso:
+                continue
+
+        os.remove(zip_file)
+    
+    logger.info("Preparation finished.")
+
+    logger.info("Starting with building an RDF-star dataset from individual snapshots...")
+    versioning_service = StarVersService(tracking_task, repo_name)
+    versioning_service.local_file = True 
+
+    if versioning_mode == "from_scratch":
+        # Recreating GraphDB repository
+        recreate_repository(repo_name)
+
+        # Run initial versioning for the tracking task
+        init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
+        logger.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
+        
+        init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
+        logger.info(f"Initial version timestamp: {init_version_timestmap_iso}")
+
+        versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
+
+        # Iterate over all files, starting from the second oldest
+        latest_timestamp = init_version_timestmap_iso
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
+            # version snapshot
+            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
+            versioning_service.run_versioning(version_timestamp=version_timestamp)
+
+    else: # from_version         
+        # Iterate over all files, starting from the second oldest
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
+            # version snapshot
+            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
+            versioning_service.run_versioning(version_timestamp=version_timestamp)
+    
+    # Clean up
+    logger.info(f"Cleaning up. Deleting all *.raw.nt files")
+    raw_files = glob.glob(os.path.join(evaluation_dir, "*.raw.nt"))
+    for raw_file in raw_files:
+        os.remove(raw_file)
+
+
+def run_snapshot_metrics_computation(sparql_engine, session, dataset_id, file_timestamp_pairs, start_idx, versioning_mode, start_timestamp_iso): 
+    if versioning_mode == "from_version":
+        # Delete all snapshot metrics starting from start_timestamp_iso
+        logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
+        delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso, session)
+    
+        logger.info(f"Computing metrics for all snapshots starting from version {start_timestamp_iso}.")
+        latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
+            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
+            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
+            latest_timestamp = version_timestamp
+    
+    else: # from_scratch
+        # Delete all snapshot metrics
+        delete_snapshot_metrics_by_dataset_id(repo_name, session)
+    
+        # Compute metrics for initial snapshot
+        logger.info(f"Computing metrics for initial snapshot,")
+        init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
+        init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
+        compute_snapshot_statistics(sparql_engine, session, dataset_id, init_version_timestmap_iso, init_version_timestmap_iso)
+
+        logger.info(f"Computing metrics for all other snapshot.")
+        latest_timestamp = init_version_timestmap_iso
+        for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
+            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
+            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
+            latest_timestamp = version_timestamp
+
+
+def extract_timestamp(file_path): 
+    filename = os.path.basename(file_path) 
+    timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})') 
+    match = timestamp_pattern.search(filename) 
     return match.group(1) if match else ''
 
 
 #######################################
-# Validation
+# Validation and Preparation
 #######################################
 # Validate versioning_mode 
 allowed_modes = ["from_scratch", "from_version"]
@@ -188,6 +329,7 @@ if versioning_mode == "from_version" and start_timestamp is None:
         raise ValueError("Versioning mode 'from_version' requires a valid start timestamp.")
 
 # Validate start_timestamp
+start_timestamp_iso = None
 if start_timestamp:
     if not re.fullmatch(r"\d{8}-\d{6}_\d{3}", start_timestamp):
         raise ValueError(
@@ -224,7 +366,6 @@ if versioning_mode == "from_version":
             f"Provided: {start_timestamp_iso}, Latest in store: {latest_ts_iso}"
         )
 
-
 # Validate delta type 
 try:
     delta_type = DeltaType[delta_calc_method]
@@ -232,14 +373,6 @@ except KeyError:
     logger.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
     sys.exit(1)
 
-
-
-
-#######################################
-# Cleaning and preparation
-#######################################
-logger.info("Starting with building an RDF-star dataset from individual snapshots...")
-logger.info(f"Repository name: {repo_name}, Delta type: {delta_type}, Versioning mode: {versioning_mode}, start_timestamp: {start_timestamp}")
 
 # Define tracking task with input parameters
 tracking_task = TrackingTaskDto(
@@ -291,136 +424,34 @@ if start_timestamp:
     # Find index of start_timestamp in sorted list
     start_idx = timestamps_list.index(start_timestamp)
 
-
-# Delete snapshot table where dataset_id corresponds to the repository_name
-logger.info(f"Deleting snapshot metrics for {repo_name}")
-with Session(engine) as session:
-    if start_timestamp and versioning_mode == "from_version":
-        delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso, session)
-    else:
-        # Delete all snapshot metrics
-        delete_snapshot_metrics_by_dataset_id(repo_name, session)
-        
-        # Recreate repository
-        wait_for_graphdb(f"{Settings().graph_db_url}/rest/repositories")
-        recreate_repository(repo_name)
+# Wait for GraphDB to startup
+wait_for_graphdb(f"{Settings().graph_db_url}/rest/repositories")
 
 
-# Delete all directory starting with a timestamp
-logger.info(f"Deleting all temporary directories starting with a timestamp in {evaluation_dir}")
-for entry in os.listdir(evaluation_dir):
-    full_path = os.path.join(evaluation_dir, entry)
-    if os.path.isdir(full_path):
-        shutil.rmtree(full_path)
 
-
-# Unzip all zip files. 
-logger.info(f"Unzipping archives (only *raw.nt) in {evaluation_dir}")
-for _, zip_file in file_timestamp_pairs[start_idx:]:
-    # Extract timestamp from filename (without path/extension)
-    if start_timestamp:
-        filename = os.path.basename(zip_file).replace(".zip", "")
-        try:
-            file_dt_iso = convert_timestamp_str_to_iso(filename)
-        except ValueError:
-            logger.warning(f"Skipping file with invalid timestamp format: {filename}")
-            continue
-
-        if file_dt_iso < start_timestamp_iso:
-            continue
-        
-    try:
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            for member in zip_ref.namelist():
-                if fnmatch.fnmatch(member, "*raw.nt"):
-                    logger.debug(f"Extracting {member}")
-                    zip_ref.extract(member, evaluation_dir)
-    except zipfile.BadZipFile:
-        logger.error(f"Bad zip file: {zip_file}")
-
-
-# Delete all zip archives
-logger.info(f"Removing archives in {evaluation_dir}")
-for zip_file in zip_files[start_idx:]:
-    # Extract timestamp from filename (without path/extension)
-    if start_timestamp:
-        filename = os.path.basename(zip_file).replace(".zip", "")
-        try:
-            file_dt_iso = convert_timestamp_str_to_iso(filename)
-        except ValueError:
-            logger.warning(f"Skipping file with invalid timestamp format: {filename}")
-            continue
-
-        if file_dt_iso < start_timestamp_iso:
-            continue
-
-    os.remove(zip_file)
-
-logger.info("Preparation finished.")
 
 #######################################
 # Versioning and statistics compution
 #######################################
-versioning_service = StarVersService(tracking_task, repo_name)
-versioning_service.local_file = True 
-
-
 with Session(engine) as session:
     # Get id by repo name
     dataset_id = get_id_by_repo_name(repo_name, session)
     dataset = session.get(Dataset, dataset_id)
 
-    if versioning_mode == "from_scratch":
-        # Run initial versioning for the tracking task
-        init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
-        logger.info(f"First file: {first_file}, Timestamp: {init_version_timestmap}")
-        init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
-        logger.info(f"Initial version timestamp: {init_version_timestmap_iso}")
+    # run versioning
+    if "v" in functions_to_run:
+        run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp_pairs, 
+            start_idx, versioning_mode, tracking_task)
 
-        versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
+    # Compute metrics for all snapshots
+    if "sm" in functions_to_run:
+        run_snapshot_metrics_computation(sparql_engine, session, dataset_id, file_timestamp_pairs,
+            start_idx, versioning_mode, start_timestamp_iso)
 
-        # Compute metrics for initial snapshot
-        compute_snapshot_statistics(sparql_engine, session, dataset_id, init_version_timestmap_iso, init_version_timestmap_iso)
-
-        # Iterate over all files, starting from the second oldest
-        latest_timestamp = init_version_timestmap_iso
-        for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
-            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-
-            # version snapshot
-            versioning_service.run_versioning(version_timestamp=version_timestamp)
-
-            # compute snapshot metrics
-            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
-            latest_timestamp = version_timestamp
-
-            # Compute dataset metrics
-            compute_dataset_metrics(sparql_engine, session, dataset)
-    else: # from_version 
-        # Get the latest timestamp (previouss), considering that the version at start_idx is being processed
-        latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
-        latest_timestamp = convert_timestamp_str_to_iso(latest_timestamp)
-        
-        # Iterate over all files, starting from the second oldest
-        for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
-            version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-
-            # version snapshot
-            versioning_service.run_versioning(version_timestamp=version_timestamp)
-
-            # compute snapshot metrics
-            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
-            latest_timestamp = version_timestamp
-
-        # Compute dataset metrics
+    # Compute dataset metrics
+    if "dm" in functions_to_run:
         compute_dataset_metrics(sparql_engine, session, dataset)
 
-# Clean up
-logger.info(f"Deleting all *.raw.nt files")
-raw_files = glob.glob(os.path.join(evaluation_dir, "*.raw.nt"))
-for raw_file in raw_files:
-    os.remove(raw_file)
-
-logger.info("Retro versioning completed successfully.")
+logger.info("Task completed successfully.")
 
 
