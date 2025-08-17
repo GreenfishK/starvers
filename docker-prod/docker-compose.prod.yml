@@ -85,6 +85,24 @@ services:
     networks:
       - starvers_prod_net
 
+  compute:
+    image: starversserver
+    env_file: "./prod.env"
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    ports: 
+      - 80:80
+    networks:
+      - starvers_prod_net
+    volumes:
+      - ${data_storage}/evaluation:/code/evaluation
+      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+    entrypoint: ["python", "app/utils/Compute.py", "orkg_iterative", "ITERATIVE", "from_version", "20250817-214936_380", "sm, dm"]
+
 networks:
   starvers_prod_net:
     driver: bridge

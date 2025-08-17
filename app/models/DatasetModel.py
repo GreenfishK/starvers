@@ -40,6 +40,12 @@ class Snapshot(SQLModel, table=True):
     cnt_class_instances_prev: int = Field(default=None)
     cnt_classes_added: int = Field(default=None)
     cnt_classes_deleted: int = Field(default=None)
+    onto_property: str = Field(default=None)
+    parent_property: Optional[str] = Field(default=None)
+    cnt_property_instances_current: int = Field(default=None)
+    cnt_property_instances_prev: int = Field(default=None)
+    cnt_properties_added: int = Field(default=None)
+    cnt_properties_deleted: int = Field(default=None)
     ratio_change: float = Field(default=None)
     ratio_data_growth: float =Field(default=None)
 

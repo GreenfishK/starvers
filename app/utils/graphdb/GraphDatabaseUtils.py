@@ -190,8 +190,16 @@ def get_all_creation_timestamps() -> str:
         return template
 
 # Metric
-def get_snapshot_metrics_template(ts_current: datetime, ts_prev: datetime) -> str:
-    with open('app/utils/graphdb/query_snapshot_metrics.sparql', 'r') as f:
+def get_snapshot_classes_template(ts_current: datetime, ts_prev: datetime) -> str:
+    with open('app/utils/graphdb/query_snapshot_classes.sparql', 'r') as f:
+        template = f.read()
+        template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
+        template = template.replace('{:ts_prev}', _versioning_timestamp_format(ts_prev))
+        return template
+        
+# Metric
+def get_snapshot_properties_template(ts_current: datetime, ts_prev: datetime) -> str:
+    with open('app/utils/graphdb/query_snapshot_properties.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
         template = template.replace('{:ts_prev}', _versioning_timestamp_format(ts_prev))

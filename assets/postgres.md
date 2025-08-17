@@ -36,13 +36,14 @@ update snapshot set parent_onto_class = NULL
 where parent_onto_class = 'NaN' 
 and dataset_id = '831764af-25d9-4830-b653-9780e69ed53e';
 
-
 update snapshot set parent_onto_class = NULL 
 where parent_onto_class = 'NaN' 
 and dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
 
 select dataset_id, snapshot_ts, cnt_class_instances_current, cnt_class_instances_prev from snapshot where dataset_id = '32a0d2ce-b65b-4a5c-9d5d-39815e035969' 
 and abs(cnt_class_instances_current - cnt_class_instances_prev) > 0;
+
+select distinct b.snapshot_ts, a.repository_name, a.next_run, count(b.*) from dataset a join snapshot b on a.id = b.dataset_id where a.repository_name = 'schema_org_ontology_iterative' group by b.snapshot_ts, a.repository_name, a.next_run  order by snapshot_ts desc;
 
 
 # Create tables and insert data
@@ -74,7 +75,13 @@ CREATE TABLE snapshot (
     cnt_class_instances_current INTEGER,
     cnt_class_instances_prev INTEGER,
     cnt_classes_added INTEGER,
-    cnt_classes_deleted INTEGER
+    cnt_classes_deleted INTEGER,
+    onto_property TEXT,
+    parent_property TEXT,
+    cnt_property_instances_current INTEGER,
+    cnt_property_instances_prev INTEGER,
+    cnt_properties_added INTEGER,
+    cnt_properties_deleted INTEGER
     ratio_data_growth DOUBLE PRECISION,
     ratio_change DOUBLE PRECISION
 );
@@ -192,3 +199,10 @@ alter table dataset add column ratio_avg_data_growth DOUBLE PRECISION;
 alter table dataset add column ratio_avg_change DOUBLE PRECISION;
 alter table snapshot add column ratio_data_growth DOUBLE PRECISION;
 alter table snapshot add column ratio_change DOUBLE PRECISION;
+
+alter table snapshot add column onto_property TEXT;
+alter table snapshot add column parent_property TEXT;
+alter table snapshot add column cnt_property_instances_current INTEGER;
+alter table snapshot add column cnt_property_instances_prev INTEGER;
+alter table snapshot add column cnt_properties_added INTEGER;
+alter table snapshot add column cnt_properties_deleted INTEGER;

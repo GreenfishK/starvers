@@ -20,16 +20,15 @@ import fnmatch
 from app.services.VersioningService import StarVersService
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.graphdb.GraphDatabaseUtils import recreate_repository, \
- get_snapshot_metrics_template, get_dataset_static_core_template, get_all_creation_timestamps, \
+ get_snapshot_classes_template, get_dataset_static_core_template, get_all_creation_timestamps, \
  get_dataset_version_oblivious_template, create_engine
 from app.enums.DeltaTypeEnum import DeltaType
 from app.LoggingConfig import get_logger, setup_logging
 from app.Database import Session, engine
 from app.models.DatasetModel import Dataset, Snapshot
-from app.services.ManagementService import get_id_by_repo_name, \
- delete_snapshot_metrics_by_dataset_id, \
- delete_snapshot_metrics_by_dataset_id_and_ts
+from app.services.ManagementService import get_id_by_repo_name
 from app.AppConfig import Settings
+from app.services.MetricsService import MetricsService
 
 #######################################
 # Logging
@@ -70,78 +69,9 @@ logger.info(f"Parsed arguments: repo={repo_name}, delta_type={delta_calc_method}
 #######################################
 # Functions
 #######################################
-def compute_snapshot_statistics(sparql_engine, session: Session, dataset_id, snapshot_ts_prev: datetime, snapshot_ts: datetime = None):
-    # Retrieve metrics from GraphDB via SPARQL query in the csv format
-    logger.info(f"Repository name: {repo_name}: Querying snapshot metrics from GraphDB with ts_current={snapshot_ts} and ts_rev={snapshot_ts_prev}")
-    query = get_snapshot_metrics_template(ts_current=snapshot_ts, ts_prev=snapshot_ts_prev)
-    sparql_engine.setQuery(query)
-    response = sparql_engine.query().convert() 
-
-    # Parse CSV using pandas
-    csv_text = response.decode('utf-8')
-    df_metrics = pd.read_csv(StringIO(csv_text))
-
-    snapshots = []
-    for _, row in df_metrics.iterrows():
-        snapshot = Snapshot(
-            dataset_id=dataset_id,
-            snapshot_ts=snapshot_ts,
-            snapshot_ts_prev=snapshot_ts_prev,
-            onto_class=row["onto_class"],
-            parent_onto_class=row["parent_onto_class"] if pd.notna(row["parent_onto_class"]) else None,
-            cnt_class_instances_current=row["cnt_class_instances_current"],
-            cnt_class_instances_prev=row["cnt_class_instances_prev"],
-            cnt_classes_added=row["cnt_classes_added"],
-            cnt_classes_deleted=row["cnt_classes_deleted"]
-        )
-        snapshots.append(snapshot)
-    
-    if snapshots:
-        logger.info(f"Repository name: {repo_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table: set all fields")
-        session.add_all(snapshots)
-        session.commit()
-        for snap in snapshots:
-            session.refresh(snap)         
-
-
-def compute_dataset_metrics(sparql_engine, session, dataset):
-    # Update dataset table
-    logger.info(f"Repository name: {repo_name}: Updating 'dataset' table")
-
-    # Update dataset table: static core triples 
-    query = get_dataset_static_core_template()
-    sparql_engine.setQuery(query)
-    response = sparql_engine.query().convert() 
-    csv_text = response.decode('utf-8')
-    df_static_core = pd.read_csv(StringIO(csv_text))
-    value_int64 = df_static_core.at[0, "cnt_triples_static_core"]
-    dataset.cnt_triples_static_core = int(value_int64) if pd.notna(value_int64) else None
-
-    # Update dataset table: version oblivious triples 
-    query = get_dataset_version_oblivious_template()
-    sparql_engine.setQuery(query)
-    response = sparql_engine.query().convert() 
-    csv_text = response.decode('utf-8')
-    df_vers_obl = pd.read_csv(StringIO(csv_text))
-    df_vers_obl = pd.read_csv(StringIO(csv_text))
-    value_int64 = df_vers_obl.at[0, "cnt_triples_version_oblivious"]
-    dataset.cnt_triples_version_oblivious = int(value_int64) if pd.notna(value_int64) else None
-
-    logger.info(
-        f"Repository name: {repo_name}:\n"
-        f"Updating next runtime to {dataset.next_run}\n"
-        f"Updating static core triples to {dataset.cnt_triples_static_core}\n"
-        f"and version oblivious triples to {dataset.cnt_triples_version_oblivious} in 'dataset' table."
-    )
-
-    session.commit()
-    session.refresh(dataset)
-    
-
 def convert_timestamp_str_to_iso(timestamp_str) -> datetime:
     """
     Convert a timestamp string 'yyyyMMdd-hhmmss_SSS' to a datetime object.
-    Validates the format strictly and ensures milliseconds are padded.
     """
     if not timestamp_str:
         raise ValueError("Timestamp string cannot be empty or None.")
@@ -151,12 +81,8 @@ def convert_timestamp_str_to_iso(timestamp_str) -> datetime:
             f"Invalid timestamp format: '{timestamp_str}'. Expected 'yyyyMMdd-hhmmss_SSS'."
         )
 
-    # Pad milliseconds to microseconds for parsing
-    base, millis = timestamp_str.split('_')
-    padded = f"{base}_{millis.ljust(6, '0')}"
-
     try:
-        dt = datetime.strptime(padded, "%Y%m%d-%H%M%S_%f")
+        dt = datetime.strptime(timestamp_str, "%Y%m%d-%H%M%S_%f")
     except ValueError as e:
         raise ValueError(
             f"Timestamp contains invalid date/time values: '{timestamp_str}'"
@@ -278,34 +204,35 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
         os.remove(raw_file)
 
 
-def run_snapshot_metrics_computation(sparql_engine, session, dataset_id, file_timestamp_pairs, start_idx, versioning_mode, start_timestamp_iso): 
+def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp_pairs, start_idx, versioning_mode, start_timestamp_iso): 
     if versioning_mode == "from_version":
         # Delete all snapshot metrics starting from start_timestamp_iso
         logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
-        delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso, session)
+        metrics_service.delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso)
     
         logger.info(f"Computing metrics for all snapshots starting from version {start_timestamp_iso}.")
         latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
+        latest_timestamp = convert_timestamp_str_to_iso(latest_timestamp)
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
+            metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
             latest_timestamp = version_timestamp
     
     else: # from_scratch
         # Delete all snapshot metrics
-        delete_snapshot_metrics_by_dataset_id(repo_name, session)
+        metrics_service.delete_snapshot_metrics_by_dataset_id(repo_name)
     
         # Compute metrics for initial snapshot
         logger.info(f"Computing metrics for initial snapshot,")
         init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
         init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
-        compute_snapshot_statistics(sparql_engine, session, dataset_id, init_version_timestmap_iso, init_version_timestmap_iso)
+        metrics_service.update_class_statistics(dataset_id, repo_name, init_version_timestmap_iso, init_version_timestmap_iso)
 
         logger.info(f"Computing metrics for all other snapshot.")
         latest_timestamp = init_version_timestmap_iso
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-            compute_snapshot_statistics(sparql_engine, session, dataset_id, latest_timestamp, version_timestamp)
+            metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
             latest_timestamp = version_timestamp
 
 
@@ -340,16 +267,17 @@ if start_timestamp:
 sparql_engine = create_engine(repo_name)
 logger.info(f"Versioning mode: {versioning_mode}")
 if versioning_mode == "from_version":
+    logger.info("Querying all creation timestamps.")
     query = get_all_creation_timestamps()
     sparql_engine.setQuery(query)
     response = sparql_engine.query().convert() 
     csv_text = response.decode('utf-8')
     df_creation_timestamps = pd.read_csv(StringIO(csv_text))
 
+
     # Convert df_creation_timestamps['valid_from'] to datetime
     df_creation_timestamps["valid_from"] = pd.to_datetime(
         df_creation_timestamps["valid_from"],
-        format="%Y-%m-%dT%H:%M:%S.%f",  # Adjust if your SPARQL returns a different format
         errors="coerce"
     )
 
@@ -359,11 +287,19 @@ if versioning_mode == "from_version":
     latest_ts_iso = df_creation_timestamps["valid_from"].max()
 
     # Compare
-    if start_timestamp_iso <= latest_ts_iso:
+    if start_timestamp_iso <= latest_ts_iso and "v" in functions_to_run:
         raise ValueError(
-            f"In the 'from_version' versioning mode, the timestamp needs to be a snapshot timestamp "
+            f"In the 'from_version' mode and the 'v(ersion)' function, the start timestamp needs to be a snapshot timestamp "
             f"that is newer than the latest timestamp in the triple store.\n"
             f"Provided: {start_timestamp_iso}, Latest in store: {latest_ts_iso}"
+        )
+    
+    if not (df_creation_timestamps["valid_from"] == start_timestamp_iso).any() \
+        and ('sm' in functions_to_run or 'dm' in functions_to_run):
+        raise ValueError(
+            f"In the 'from_version' mode and the 'dm' or 'sm' functions, the start timestamp "
+            f"needs to be inside the snapshot timestamps that are present in the repository {repo_name}. "
+            f"I.e., snapshot and dataset metrics can only be computed for existing snapshots."
         )
 
 # Validate delta type 
@@ -429,7 +365,6 @@ wait_for_graphdb(f"{Settings().graph_db_url}/rest/repositories")
 
 
 
-
 #######################################
 # Versioning and statistics compution
 #######################################
@@ -443,14 +378,16 @@ with Session(engine) as session:
         run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp_pairs, 
             start_idx, versioning_mode, tracking_task)
 
+    metrics_service = MetricsService(sparql_engine, session)
     # Compute metrics for all snapshots
     if "sm" in functions_to_run:
-        run_snapshot_metrics_computation(sparql_engine, session, dataset_id, file_timestamp_pairs,
+        run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp_pairs,
             start_idx, versioning_mode, start_timestamp_iso)
 
     # Compute dataset metrics
     if "dm" in functions_to_run:
-        compute_dataset_metrics(sparql_engine, session, dataset)
+        metrics_service.update_static_core_triples(dataset, repo_name)
+        metrics_service.update_version_oblivious_triples(dataset, repo_name)
 
 logger.info("Task completed successfully.")
 
