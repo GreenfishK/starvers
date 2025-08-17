@@ -86,5 +86,5 @@ Add a new table ClassHierarchy to the database
 
 Feasability analysis: A SPARQL query that takes two 
 versions and retrieves the class, parent class, number of total instances, 
-number of new instances, is_new_class -> utils/graphdb/query_snapshot_metrics.sparql
+number of new instances, is_new_class -> utils/graphdb/query_snapshot_classes.sparql
 

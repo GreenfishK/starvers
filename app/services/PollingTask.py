@@ -9,9 +9,9 @@ from app.Database import Session, engine
 from app.models.DatasetModel import Dataset, Snapshot
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
-from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_metrics_template, get_dataset_static_core_template, get_dataset_version_oblivious_template, create_engine
+from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_classes_template, get_snapshot_properties_template, get_dataset_static_core_template, get_dataset_version_oblivious_template, create_engine
 from app.LoggingConfig import get_logger
-
+from app.services.MetricsService import MetricsService
 
 LOG = get_logger(__name__)
 
@@ -79,72 +79,18 @@ class PollingTask():
                     # Update dataset table: next run time
                     dataset.next_run = datetime.fromtimestamp(self.next_run)
 
+                    metrics_service = MetricsService(sparql_engine, session)
                     # Update dataset table: static core triples 
-                    query = get_dataset_static_core_template()
-                    sparql_engine.setQuery(query)
-                    response = sparql_engine.query().convert() 
-                    csv_text = response.decode('utf-8')
-                    df_static_core = pd.read_csv(StringIO(csv_text))
-                    value_int64 = df_static_core.at[0, "cnt_triples_static_core"]
-                    dataset.cnt_triples_static_core = int(value_int64) if pd.notna(value_int64) else None
+                    metrics_service.update_static_core_triples(dataset, self.repository_name)
                     
                     # Update dataset table: version oblivious triples 
-                    query = get_dataset_version_oblivious_template()
-                    sparql_engine.setQuery(query)
-                    response = sparql_engine.query().convert() 
-                    csv_text = response.decode('utf-8')
-                    df_vers_obl = pd.read_csv(StringIO(csv_text))
-                    value_int64 = df_vers_obl.at[0, "cnt_triples_version_oblivious"]
-                    dataset.cnt_triples_version_oblivious = int(value_int64) if pd.notna(value_int64) else None
+                    metrics_service.update_version_oblivious_triples(dataset, self.repository_name)
 
-                    LOG.info(
-                        f"Repository name: {self.repository_name}: "
-                        f"Updating next runtime to {dataset.next_run}"
-                        f"Updating static core triples to {dataset.cnt_triples_static_core} "
-                        f"and version oblivious triples to {dataset.cnt_triples_version_oblivious} in 'dataset' table."
-                    )
-
-                    session.commit()
-                    session.refresh(dataset)
+                    # Update snapshot table: class metrics
+                    metrics.service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
                     
-                    # Update snapshot table
-                    LOG.info(f"Repository name: {self.repository_name}: Updating 'snapshot' table")
-
-                    # Retrieve class metrics from GraphDB via SPARQL query in the csv format
-                    LOG.info(f"Repository name: {self.repository_name}: Querying snapshot metrics from GraphDB")
-                    if self.latest_timestamp:
-                        query = get_snapshot_metrics_template(ts_current=version_timestamp, ts_prev=self.latest_timestamp)
-                    else:
-                        query = get_snapshot_metrics_template(ts_current=version_timestamp, ts_prev=version_timestamp)
-                    sparql_engine.setQuery(query)
-                    response = sparql_engine.query().convert() 
-                    csv_text = response.decode('utf-8')
-                    df_class_metrics = pd.read_csv(StringIO(csv_text))
-
-                    # Update snapshot table
-                    snapshots = []
-                    for _, row in df_class_metrics.iterrows():
-                        snapshot = Snapshot(
-                            dataset_id=self.dataset_id,
-                            snapshot_ts=version_timestamp,
-                            snapshot_ts_prev=self.latest_timestamp if self.latest_timestamp else version_timestamp,
-                            onto_class=row["onto_class"],
-                            parent_onto_class=row["parent_onto_class"] if pd.notna(row["parent_onto_class"]) else None,
-                            cnt_class_instances_current=row["cnt_class_instances_current"],
-                            cnt_class_instances_prev=row["cnt_class_instances_prev"],
-                            cnt_classes_added=row["cnt_classes_added"],
-                            cnt_classes_deleted=row["cnt_classes_deleted"]
-                        )
-                        snapshots.append(snapshot)
-
-                    if snapshots:
-                        LOG.info(f"Repository name: {self.repository_name}: Inserting {len(df_metrics)} computed metrics into 'snapshot' table.")
-                        session.add_all(snapshots)
-                        session.commit()
-                        for snap in snapshots:
-                            session.refresh(snap) 
-                    else:
-                        LOG.warning(f"Repository name: {self.repository_name}: Query returned no metrics. Nothing will be inserted.")
+                    # Update snapshot table: property metrics
+                    metrics_service.update_property_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
                 else:
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()
