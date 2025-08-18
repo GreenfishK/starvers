@@ -3,6 +3,20 @@ html, body {
   margin: 0;
 }
 
+#layout-wrapper {
+  display: flex;
+  flex-direction: column;   
+  height: 100%;
+              
+  gap: 20px;                  
+  /* remove this later */
+  border: 2px solid black;
+
+}
+
+/****************************************
+** Header
+*****************************************/
 .header {
   padding: 1rem;
   background: linear-gradient(180deg, #5485AB 0%, #006699 100%);
@@ -56,9 +70,6 @@ html, body {
   display: block;
 }
 
-/* When logo wraps to next line, center it */
-
-
 .header-subtitle {
   font-size: 1rem;
   font-weight: 400;
@@ -72,19 +83,17 @@ html, body {
   color: #ffffff;
 }
 
-#layout-wrapper {
-  height: 90vh;
-  display: flex;
-  gap: 0;
-  column-gap: 0;
-
-}
 
 #mobile-tabs {
   display: none;
 }
 
-
+.content {
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr; 
+    gap: 20px;
+    min-height: 0;
+}
 
 .section-header {
     display: flex;
@@ -92,65 +101,67 @@ html, body {
     justify-content: flex-start;
     align-items: flex-start;
     /*height: 5rem;*/
-    width: 100%;
-    
+    width: 100%;  
+}
+
+#left-section, 
+#main-section, 
+#right-section {
+    display: flex;          
+    flex-direction: row; 
+    flex-wrap: wrap;
+    align-content: flex-start;
+    padding: 10px;
+    min-height: 0;
+    overflow: auto;
 }
 
 #main-section {
-    display: flex;
-    align-items: start;
-    flex-wrap: wrap;
-    max-height: 100%;
-    overflow-y: auto;
-    flex: 1 1 0;
-    min-width: 0; 
-
-    -ms-overflow-style: none;  /* IE 10+ */
-    scrollbar-width: none; /* Firefox */ 
+  -ms-overflow-style: none;  /* IE 10+ */
+  scrollbar-width: none; /* Firefox */ 
+  
 }
 
-#left-section,
 #right-section {
-    display: flex;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 6rem;
-    margin-top: 1rem;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    box-sizing: border-box;
-    max-height: 100%;
+  height:100%;
+  overflow: hidden;
+}
 
-    flex: 0 1 22rem;
-    min-width: 12rem; /* prevent them from collapsing too small */
-
+#right-section-tabs {
+  margin-bottom: 1rem !important;
 }
 
 #right-section-tabs ul{
   border-bottom: none;
+  margin: 0 !important;
 }
 
 #right-section-tab-content{
     display: flex;
-    flex-grow: 1;
-    max-height: 100%;
-    max-width: 100%;
+    flex-wrap: wrap;
+    flex: 1;
+    height:100%;
+    width:100%;
+    padding-bottom:70px;
 }
 
 #right-section-tab-classes{
     display: flex;
-    flex-grow: 1;
-    max-height: 100%;
-    max-width: 100%;
+    flex-wrap: wrap;
+    flex: 1;
+    height:100%;
+    width:100%;
 }
 
 #snapshot-tree {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
     flex: 1;
     min-height: 0; 
-    max-height: 100%;
-    max-width: 100%;  
-    overflow: auto;
-    padding-bottom: 1rem;
+    height:100%;
+    overflow:auto;
     font-family: Arial, sans-serif;
     font-size: 14px;
     line-height: 1.4;
@@ -158,7 +169,6 @@ html, body {
 
 /* Scope all rules inside #snapshot-tree */
 #snapshot-tree .tree-node {
-  margin-left: 1.2em;
   position: relative;
   padding-left: 1.2em;
   border-left: 1px solid #ccc;
@@ -398,7 +408,7 @@ html, body {
 
 #data-section {
     flex-wrap: wrap;
-    flex-grow: 1 0 0;
+    flex-grow: 1 0 0; /* TODO: fix invalid property value*/
     width: 100%;
     align-content: flex-start;
 }
