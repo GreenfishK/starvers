@@ -33,7 +33,8 @@ def get_by_id(id: UUID, session: Session) -> Dataset:
 
 def get_dataset_metadata_by_repo_name(repo_name: str, session: Session) -> Optional[Tuple[str, str, int]]:
     statement = (
-        select(Dataset.repository_name, Dataset.rdf_dataset_url, Dataset.polling_interval, Dataset.next_run)
+        select(Dataset.repository_name, Dataset.rdf_dataset_url, Dataset.polling_interval,
+         Dataset.next_run, Dataset.cnt_triples_static_core, Dataset.cnt_triples_version_oblivious)
         .where(Dataset.repository_name == repo_name)
     )
     result = session.exec(statement).first()
