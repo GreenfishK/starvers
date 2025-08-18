@@ -359,6 +359,8 @@ function repoChange(dropdown, timestampedEditor) {
                 labels[0].lastChild.textContent = "";
                 labels[1].lastChild.textContent = "";
                 labels[2].lastChild.textContent = "";
+                labels[3].lastChild.textContent = "";
+                labels[4].lastChild.textContent = "";
             } else {
                 const evoPlotObj = JSON.parse(data.evo_plot);
                 //Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
@@ -366,6 +368,8 @@ function repoChange(dropdown, timestampedEditor) {
                 labels[0].lastChild.textContent = data.rdf_dataset_url;
                 labels[1].lastChild.textContent = `${data.polling_interval} seconds`;
                 labels[2].lastChild.textContent = data.next_run;
+                labels[3].lastChild.textContent = data.cnt_triples_static_core.toLocaleString();
+                labels[4].lastChild.textContent = data.cnt_triples_version_oblivious.toLocaleString();
                     
                 // clear data section
                 document.getElementById("data-section").classList.add("is-hidden")

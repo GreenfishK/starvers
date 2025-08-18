@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import pandas as pd
-import logging
 import plotly.graph_objects as go
 from collections import defaultdict
 import networkx as nx
@@ -12,7 +11,9 @@ from app.services.ManagementService import get_dataset_metadata_by_repo_name, ge
 from app.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
 from app.AppConfig import Settings
+from app.LoggingConfig import get_logger
 
+logger = get_logger(__name__)
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
@@ -20,13 +21,22 @@ class GuiContr:
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repo_name)
         self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', repo_name)
         self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint, skip_connection_test=True)
-        logging.info(f"GET endpoint: {self.__graph_db_get_endpoint}\nPOST endpoint: {self.__graph_db_post_endpoint}")
+        try:
+            session = next(get_session())
+            self.dataset_infos = get_dataset_metadata_by_repo_name(repo_name, session)
+        except (Exception, RuntimeError) as e:
+            logger.error(f"Values could not be retrieved from the Postgres database. Original message: {str(e)}")
+            raise RuntimeError(f"Failed to fetch dataset metadata: {e}")
+        
+        session.close()
+        logger.info(f"GET endpoint: {self.__graph_db_get_endpoint}\nPOST endpoint: {self.__graph_db_post_endpoint}")
+
 
     def query(self, query: str, timestamp: datetime = None, query_as_timestamped: bool = True) -> pd.DataFrame:
         if timestamp is not None and query_as_timestamped:
-            logging.info(f"Execute timestamped query with timestamp={timestamp}")
+            logger.info(f"Execute timestamped query with timestamp={timestamp}")
         else:
-            logging.info("Execute query without timestamp")
+            logger.info("Execute query without timestamp")
         
         result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
         timestamped_query = self.__starvers_engine.timestamped_query
@@ -34,7 +44,7 @@ class GuiContr:
         return result_set_df, timestamped_query
 
 
-    def get_repo_stats(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1):
+    def build_timeseries(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1):
         repo_name = self.repo_name
         path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
@@ -47,7 +57,7 @@ class GuiContr:
 
         # Aggregate by given time interval
         df = df.set_index("timestamp")
-        logging.info(f"Aggregating data by {time_aggr.value} intervals")
+        logger.info(f"Aggregating data by {time_aggr.value} intervals")
         if time_aggr.name == "WEEK":
             agg = df.resample(time_aggr.value, label='right', closed='right').agg({
                 "insertions": "sum",
@@ -184,27 +194,15 @@ class GuiContr:
         return ts_start, ts_end, fig.data, fig.layout
 
 
-    def get_repo_tracking_infos(self):
-        repo_name = self.repo_name
+    def get_dataset_infos(self):
+        logger.info(f"Returning dataset infos for repo: {self.repo_name}")
 
-        session = next(get_session())
-        rdf_dataset_url = ""
-        formatted_polling_interval = ""
-        next_run = ""
-        try:
-            tracking_infos = get_dataset_metadata_by_repo_name(repo_name, session)
-            rdf_dataset_url = tracking_infos[1]
-            formatted_polling_interval = _format_polling_interval(tracking_infos[2])
-            next_run = tracking_infos[3]
-            session.close()
-        except TypeError as e:
-            logging.error(f"Values could not be retrieved from the Postgres database. Original message: {str(e)}")
-
-        logging.info(f"Tracking infos for {repo_name}: {rdf_dataset_url}; {formatted_polling_interval}; {next_run}")
-        return rdf_dataset_url, formatted_polling_interval, next_run
+        return self.dataset_infos
     
 
-    def get_snapshot_stats(self, snapshot_ts):
+    def get_onto_hierarchy(self, snapshot_ts):
+        logger.info(f"Retrieving snapshot statistics for timestamp: {snapshot_ts}")
+        
         repo_name = self.repo_name
         session = next(get_session())
         snapshot_ts = datetime.fromisoformat(snapshot_ts)
@@ -216,8 +214,29 @@ class GuiContr:
 
         snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
         raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
-        # DEBUG
-        raw_df.to_csv("/code/logs/class_tree.csv", header=True)
+
+        # Ensure that every parent class is present in the dataframe
+        # This is necessary is we discovered that some ontologies use the subClassOf property
+        # without the object node being a class itself.
+        all_onto_classes = set(raw_df["onto_class"].tolist())
+        all_parents = set(raw_df["parent_onto_class"].dropna().tolist())
+
+        missing_parents = all_parents - all_onto_classes
+        if missing_parents:
+            logger.info(f"Adding {len(missing_parents)} missing parent classes to dataframe.")
+            for mp in missing_parents:
+                raw_df = pd.concat([
+                    raw_df,
+                    pd.DataFrame([{
+                        "onto_class": mp,
+                        "parent_onto_class": None,
+                        "cnt_class_instances_current": 0,
+                        "cnt_class_instances_prev": 0,
+                        "cnt_classes_added": 0,
+                        "cnt_classes_deleted": 0,
+                        "snapshot_ts": snapshot_ts_actual
+                    }])
+                ], ignore_index=True)
         
         G = nx.DiGraph()
         class_data = {}
@@ -261,8 +280,6 @@ class GuiContr:
         # Build the tree from a node recursively
         def build_tree(node):
             stats = aggregate_stats(node)
-            if node == "http://orkg.org/orkg/class/Contribution":
-                logging.info(stats)
             return {
                 "id": node,
                 "cnt_class_instances": stats["cnt_class_instances_current"],

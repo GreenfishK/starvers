@@ -7,6 +7,7 @@ services:
     volumes:
       - ../app/gui:/code/app/gui
       - ../app/AppConfig.py:/code/app/AppConfig.py
+      - ../app/LoggingConfig.py:/code/app/LoggingConfig.py
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
     depends_on:
