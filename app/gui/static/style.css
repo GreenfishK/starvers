@@ -73,12 +73,10 @@ html, body {
 }
 
 #layout-wrapper {
-  height: 90%;
+  height: 90vh;
   display: flex;
   gap: 0;
-  box-sizing: border-box;
   column-gap: 0;
-  padding-bottom:3rem;
 
 }
 
@@ -116,11 +114,12 @@ html, body {
     display: flex;
     padding-left: 2rem;
     padding-right: 2rem;
+    padding-bottom: 6rem;
     margin-top: 1rem;
     flex-wrap: wrap;
     align-content: flex-start;
     box-sizing: border-box;
-    height: 100%;
+    max-height: 100%;
 
     flex: 0 1 22rem;
     min-width: 12rem; /* prevent them from collapsing too small */
@@ -132,14 +131,98 @@ html, body {
 }
 
 #right-section-tab-content{
-    height: 95%;
-    overflow:auto;
+    display: flex;
     flex-grow: 1;
+    max-height: 100%;
+    max-width: 100%;
 }
 
 #right-section-tab-classes{
-  
+    display: flex;
+    flex-grow: 1;
+    max-height: 100%;
+    max-width: 100%;
 }
+
+#snapshot-tree {
+    flex: 1;
+    min-height: 0; 
+    max-height: 100%;
+    max-width: 100%;  
+    overflow: auto;
+    padding-bottom: 1rem;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* Scope all rules inside #snapshot-tree */
+#snapshot-tree .tree-node {
+  margin-left: 1.2em;
+  position: relative;
+  padding-left: 1.2em;
+  border-left: 1px solid #ccc;
+  margin-bottom: 0.3em;
+}
+
+#snapshot-tree .tree-node > .class-label {
+  font-weight: 600;
+  margin-right: 0.6em;
+}
+
+#snapshot-tree .tree-node > .info {
+  background: #f0f0f0;
+  border-radius: 3px;
+  padding: 0 0.4em;
+  margin-right: 0.4em;
+  font-size: 0.85em;
+  color: #333;
+  display: inline-block;
+}
+
+#snapshot-tree .children {
+  display: none;
+  margin-top: 0.2em;
+  margin-left: 1.5em;
+}
+
+#snapshot-tree .info-row {
+  margin-top: 0.2em;
+  display: flex;
+  gap: 0.5em; 
+}
+
+#snapshot-tree .tree-node.expanded > .children {
+  display: block;
+}
+
+#snapshot-tree .tree-node > .expand-btn {
+  cursor: pointer;
+  user-select: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1em;
+  display: inline-block;
+  color: #007BFF;
+  font-weight: bold;
+  pointer-events: auto;
+}
+
+#snapshot-tree .tree-node > .expand-btn::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  color: #006699;
+}
+
+#snapshot-tree .tree-node.expanded > .expand-btn::before {
+  content: "−"; 
+  color: #006699;
+
+}
+
 
 
 #main-section::-webkit-scrollbar {
@@ -308,83 +391,6 @@ html, body {
 
 
 
-#snapshot-tree {
-    flex: 1;
-    min-height: 0; 
-    overflow: auto;
-    padding-bottom: 1rem;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-/* Scope all rules inside #snapshot-tree */
-#snapshot-tree .tree-node {
-  margin-left: 1.2em;
-  position: relative;
-  padding-left: 1.2em;
-  border-left: 1px solid #ccc;
-  margin-bottom: 0.3em;
-}
-
-#snapshot-tree .tree-node > .class-label {
-  font-weight: 600;
-  margin-right: 0.6em;
-}
-
-#snapshot-tree .tree-node > .info {
-  background: #f0f0f0;
-  border-radius: 3px;
-  padding: 0 0.4em;
-  margin-right: 0.4em;
-  font-size: 0.85em;
-  color: #333;
-  display: inline-block;
-}
-
-#snapshot-tree .children {
-  display: none;
-  margin-top: 0.2em;
-  margin-left: 1.5em;
-}
-
-#snapshot-tree .info-row {
-  margin-top: 0.2em;
-  display: flex;
-  gap: 0.5em; 
-}
-
-#snapshot-tree .tree-node.expanded > .children {
-  display: block;
-}
-
-#snapshot-tree .tree-node > .expand-btn {
-  cursor: pointer;
-  user-select: none;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1em;
-  display: inline-block;
-  color: #007BFF;
-  font-weight: bold;
-  pointer-events: auto;
-}
-
-#snapshot-tree .tree-node > .expand-btn::before {
-  content: "+";
-  display: inline-block;
-  width: 1em;
-  text-align: center;
-  color: #006699;
-}
-
-#snapshot-tree .tree-node.expanded > .expand-btn::before {
-  content: "−"; 
-  color: #006699;
-
-}
-
 #executeQuery {
   background-color: #006699;
 }
@@ -475,6 +481,7 @@ html, body {
 @media (max-width: 900px) {
   #layout-wrapper {
     flex-wrap: wrap;
+    align-content: start;
   }
 
   #mobile-tabs {
