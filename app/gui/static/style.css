@@ -290,16 +290,7 @@ html, body {
   width:100%;
 }
 
-.CodeMirror{
-  flex-grow: 1;
-  max-width: 100%;
 
-}
-
-#sparql-editor + .CodeMirror{
-    border: 1px solid #444;   /* Dark gray border */
-    border-radius: 4px;       /* Optional rounded corners */
-}
 
 /*********************************
 * Tab buttons 
@@ -338,11 +329,9 @@ html, body {
     
 }
 
-/**********************************/
-
-#timestamped-query-label {
-  width:100%; 
-}
+/*********************************
+CodeMirror styles 
+**********************************/
 
 #sparql-container-right .CodeMirror{
   background-color: #D0D0D0 !important;
@@ -352,12 +341,28 @@ html, body {
   background-color: #EDEDED !important;
 }
 
+.CodeMirror{
+  flex-grow: 1;
+  max-width: 100%;
+
+}
+
+#sparql-editor + .CodeMirror{
+    border: 1px solid #646363;  
+    border-radius: 4px;      
+}
+
+
+
+
+#timestamped-query-label {
+  width:100%; 
+}
+
 #tracking-infos label {
   overflow-wrap: anywhere; 
   word-break: break-all;  
 }
-
-
 
 #plot-box-legend {
     gap: 1rem;
