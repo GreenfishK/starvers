@@ -87,7 +87,7 @@ class PollingTask():
                     metrics_service.update_version_oblivious_triples(dataset, self.repository_name)
 
                     # Update snapshot table: class metrics
-                    metrics.service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
+                    metrics_service.service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
                     
                     # Update snapshot table: property metrics
                     metrics_service.update_property_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
