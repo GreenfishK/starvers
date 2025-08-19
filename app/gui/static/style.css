@@ -7,8 +7,7 @@ html, body {
   display: flex;
   flex-direction: column;   
   height: 100%;
-              
-  gap: 20px;                  
+                             
   /* remove this later */
   border: 2px solid black;
 
@@ -173,6 +172,7 @@ html, body {
   padding-left: 1.2em;
   border-left: 1px solid #ccc;
   margin-bottom: 0.3em;
+  width:100%
 }
 
 #snapshot-tree .tree-node > .class-label {
@@ -489,14 +489,21 @@ html, body {
 
 
 @media (max-width: 900px) {
-  #layout-wrapper {
+  /*#layout-wrapper {
     flex-wrap: wrap;
     align-content: start;
+  }*/
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   #mobile-tabs {
     display: flex;
     width: 100%;
+    flex-shrink:0;
   }
 
   #TU_signet {
