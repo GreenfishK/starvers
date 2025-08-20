@@ -43,7 +43,7 @@ and dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
 select dataset_id, snapshot_ts, cnt_class_instances_current, cnt_class_instances_prev from snapshot where dataset_id = '32a0d2ce-b65b-4a5c-9d5d-39815e035969' 
 and abs(cnt_class_instances_current - cnt_class_instances_prev) > 0;
 
-select distinct b.snapshot_ts, a.repository_name, a.next_run, count(b.*) from dataset a join snapshot b on a.id = b.dataset_id where a.repository_name = 'schema_org_ontology_iterative' group by b.snapshot_ts, a.repository_name, a.next_run  order by snapshot_ts desc;
+select distinct b.snapshot_ts, a.repository_name, a.next_run, count(b.onto_class), count(b.onto_property) from dataset a join snapshot b on a.id = b.dataset_id where a.repository_name = 'schema_org_ontology_iterative' group by b.snapshot_ts, a.repository_name, a.next_run  order by snapshot_ts desc;
 
 
 # Create tables and insert data

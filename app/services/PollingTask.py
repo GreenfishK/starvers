@@ -53,6 +53,7 @@ class PollingTask():
     def __repr__(self) -> str:
         return f"Repository name: {self.repository_name}: Polling Task: Periodic: {self.period} seconds (s), Next run: {time.ctime(self.next_run)})"
 
+    # TODO: Improve boolean logic beacuse self.__run can return True, False or None instead of just True or False
     def run(self):
         LOG.info(f"Repository name: {self.repository_name}: Running polling task for dataset with period={self.period} seconds (s)")
         start_time = time.time_ns()
@@ -79,18 +80,20 @@ class PollingTask():
                     # Update dataset table: next run time
                     dataset.next_run = datetime.fromtimestamp(self.next_run)
 
-                    metrics_service = MetricsService(sparql_engine, session)
-                    # Update dataset table: static core triples 
-                    metrics_service.update_static_core_triples(dataset, self.repository_name)
-                    
-                    # Update dataset table: version oblivious triples 
-                    metrics_service.update_version_oblivious_triples(dataset, self.repository_name)
+                    # Update metrics in case of changes
+                    if self.__stopped == False:
+                        metrics_service = MetricsService(sparql_engine, session)
+                        # Update dataset table: static core triples 
+                        metrics_service.update_static_core_triples(dataset, self.repository_name)
+                        
+                        # Update dataset table: version oblivious triples 
+                        metrics_service.update_version_oblivious_triples(dataset, self.repository_name)
 
-                    # Update snapshot table: class metrics
-                    metrics_service.service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
-                    
-                    # Update snapshot table: property metrics
-                    metrics_service.update_property_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
+                        # Update snapshot table: class metrics
+                        metrics_service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
+                        
+                        # Update snapshot table: property metrics
+                        metrics_service.update_property_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
                 else:
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()

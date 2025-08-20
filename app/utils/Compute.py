@@ -184,7 +184,6 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
         versioning_service.run_initial_versioning(version_timestamp=init_version_timestmap_iso)
 
         # Iterate over all files, starting from the second oldest
-        latest_timestamp = init_version_timestmap_iso
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
             # version snapshot
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
@@ -205,6 +204,21 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
 
 
 def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp_pairs, start_idx, versioning_mode, start_timestamp_iso): 
+    # Load {repo_name}_timings.csv
+    timings_file = os.path.join(evaluation_dir, f"{repo_name}_timings.csv")
+    if not os.path.exists(timings_file):
+        raise FileNotFoundError(f"Timings file not found: {timings_file}")
+    
+    timings_df = pd.read_csv(timings_file)
+    if timings_df.empty:
+        raise ValueError(f"Timings file is empty: {timings_file}")
+    
+    # Strip leading whitespace from column names
+    timings_df.columns = timings_df.columns.str.strip()
+    
+    # Convert 'timestamp' column to datetime
+    timings_df["timestamp"] = pd.to_datetime(timings_df["timestamp"], format="%Y%m%d-%H%M%S_%f", errors="coerce")
+    
     if versioning_mode == "from_version":
         # Delete all snapshot metrics starting from start_timestamp_iso
         logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
@@ -215,7 +229,16 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
         latest_timestamp = convert_timestamp_str_to_iso(latest_timestamp)
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-            metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
+            
+            # if there are 0 been insertions and deletions for the row
+            # where the version_timestamp matchjes the timestamp column in timings_df
+            if not timings_df[(timings_df["timestamp"] == version_timestamp) &
+                              (timings_df["insertions"] == 0) &
+                              (timings_df["deletions"] == 0)].empty:
+                logger.info(f"Skipping metrics computation for {version_timestamp} as there are no changes.")
+            else:
+                metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
+                metrics_service.update_property_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
             latest_timestamp = version_timestamp
     
     else: # from_scratch
@@ -227,12 +250,22 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
         init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
         init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
         metrics_service.update_class_statistics(dataset_id, repo_name, init_version_timestmap_iso, init_version_timestmap_iso)
+        metrics_service.update_property_statistics(dataset_id, repo_name, init_version_timestmap_iso, init_version_timestmap_iso)
 
         logger.info(f"Computing metrics for all other snapshot.")
         latest_timestamp = init_version_timestmap_iso
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
-            metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
+            
+            # if there are 0 been insertions and deletions for the row
+            # where the version_timestamp matchjes the timestamp column in timings_df
+            if not timings_df[(timings_df["timestamp"] == version_timestamp) &
+                              (timings_df["insertions"] == 0) &
+                              (timings_df["deletions"] == 0)].empty:
+                logger.info(f"Skipping metrics computation for {version_timestamp} as there are no changes.")
+            else:
+                metrics_service.update_class_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
+                metrics_service.update_property_statistics(dataset_id, repo_name, version_timestamp, latest_timestamp)
             latest_timestamp = version_timestamp
 
 
