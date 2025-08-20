@@ -86,8 +86,6 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
-    ports: 
-      - 81:80
     volumes:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
