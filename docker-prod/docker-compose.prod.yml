@@ -102,6 +102,60 @@ services:
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     entrypoint: ["python", "app/utils/Compute.py", "orkg", "SPARQL"]
 
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - ./nginx/html:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - starvers_prod_net
+    depends_on:
+      - rdfstore
+      - db
+      - gui
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - ./nginx/html:/var/www/certbot
+      - /${data_storage}/logs/letsencrypt:/var/log/letsencrypt
+    networks:
+      - starvers_prod_net
+    entrypoint: >
+      sh -c "certbot certonly --non-interactive --webroot
+      --webroot-path=/var/www/certbot
+      --email filip.kovacevic@tuwien.ac.at
+      --agree-tos
+      --no-eff-email
+      -d starvers.ec.tuwien.ac.at"
+
+  certbot-renew:
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - ./nginx/html:/var/www/certbot
+    networks:
+      - starvers_prod_net
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do
+      certbot renew --webroot --webroot-path=/var/www/certbot &&
+      nginx -s reload;
+      sleep 12h & wait $${!};
+      done"
+
+
+volumes:
+  certbot-etc:
+  certbot-var:
+
 networks:
   starvers_prod_net:
     driver: bridge
