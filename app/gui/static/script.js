@@ -101,6 +101,7 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     console.log("Form submitted.");
     e.preventDefault(); 
     
+    const executeButton = document.getElementById("executeQuery"); 
     const downloadButton = document.getElementById("download-btn");
     const formData = new FormData(sparqlForm);
     const overlay = document.getElementById("loading-overlay");
@@ -110,6 +111,10 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
 
     let seconds = 0;
     timerEl.textContent = "0";
+
+    // Disable the execute button
+    executeButton.disabled = true;
+    executeButton.classList.add("is-loading"); 
 
     // Remove old download button if it exists
     if (downloadButton) downloadButton.parentElement.removeChild(downloadButton);
@@ -142,6 +147,10 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
         clearInterval(timerInterval);
         overlay.style.display = "none";
 
+        // Re-enable the button
+        executeButton.disabled = false;
+        executeButton.classList.remove("is-loading");
+
         const resultTable = document.getElementById("result-table");
         if (data.error) {
             resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
@@ -167,6 +176,10 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     .catch(err => {
         clearInterval(timerInterval);
         overlay.style.display = "none";
+
+        // Re-enable the button even if there is an error
+        executeButton.disabled = false;
+        executeButton.classList.remove("is-loading");
 
         console.error("Query execution failed:", err);
         document.getElementById("result-table").innerHTML =
