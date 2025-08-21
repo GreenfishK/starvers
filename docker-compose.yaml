@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -21,6 +22,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -35,6 +37,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
@@ -55,6 +58,11 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
+    hostname: Starvers
+    ports:
+      - 7200:7200
+      - 3030:3030
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
@@ -78,6 +86,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -98,6 +107,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
@@ -112,6 +122,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - /mnt/data/starvers_eval_investigate/output/logs:/starvers_eval/output/logs
       - /mnt/data/starvers_eval_investigate/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
@@ -138,6 +149,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
@@ -165,6 +177,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
@@ -182,6 +195,7 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
+    container_name: starvers_eval
     volumes:   
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
