@@ -519,4 +519,8 @@ CodeMirror styles
   #left-section, #main-section, #right-section {
     flex-grow: 1;
   }
+
+  #first_header_row {
+    align-items: flex-start;
+  }
 }

@@ -328,9 +328,11 @@ if versioning_mode == "from_version":
         )
     
     if not (df_creation_timestamps["valid_from"] == start_timestamp_iso).any() \
-        and ('sm' in functions_to_run or 'dm' in functions_to_run):
+        and ('sm' in functions_to_run or 'dm' in functions_to_run) \
+        and not 'v' in functions_to_run:
         raise ValueError(
-            f"In the 'from_version' mode and the 'dm' or 'sm' functions, the start timestamp "
+            f"In the 'from_version' mode, when running the metrics functions "
+            f"'dm' or 'sm' without the versioning function 'v', the start timestamp "
             f"needs to be inside the snapshot timestamps that are present in the repository {repo_name}. "
             f"I.e., snapshot and dataset metrics can only be computed for existing snapshots."
         )
