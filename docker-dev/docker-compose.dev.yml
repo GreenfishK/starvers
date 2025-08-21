@@ -93,7 +93,7 @@ services:
     entrypoint: ["python", "app/utils/Compute.py", "air_quality_ontology_iterative", "ITERATIVE", "dm"]
   
   # Creates plots from the timing files
-  evaluate:
+  create_plots:
     image: starversserver_dev
     env_file: "./dev.env"
     volumes:
