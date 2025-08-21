@@ -69,15 +69,19 @@ class StarVersService(VersioningService):
         self.__delta_query_service.set_paths(version_timestamp)
         
         # Download data
+        # Equal for both delta types
         self.__delta_query_service.download_data(self.local_file)
 
         # Preprocess
+        # Equal for both delta types
         self.__delta_query_service.preprocess()
         
         # Ingest data
+        # Equal for both delta types during initial versioning
         self.__delta_query_service.load_rdf_data(self.tracking_task.name_temp())
         
         # Version data
+        # Equal for both delta types during initial versioning
         self.LOG.info(f"Repository name: {self.repository_name}: Initialize triples with [{version_timestamp}] and artificial end timestamp.")
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
@@ -126,14 +130,23 @@ class StarVersService(VersioningService):
             timing_overall = time.time_ns()
 
             timing_prepare = time.time_ns()
+            # TODO: Execute prepare function for all delta types
+            # TODO: Create variables timing_prepare_iterative and timing_prepare_sparql
+            # Equal for both delta types, except that SparqlDeltaQueryService calls load_rdf_data function
             self.__delta_query_service.prepare(version_timestamp, self.local_file)
             timing_prepare = time.time_ns() - timing_prepare
 
             timing_delta = time.time_ns()
+            # TODO: Execute calculate_delta function for all delta types
+            # TODO: Create variables timing_delta_iterative and timing_delta_sparql
+            # TODO: Create variables insertions_n3_iterative and deletions_n3_iterative, 
+            # and analog for SPARQL
             insertions_n3, deletions_n3 = self.__delta_query_service.calculate_delta()  
             timing_delta = time.time_ns() - timing_delta
             self.LOG.info(f"Repository name: {self.repository_name}: Found {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
             
+            # Equal for both delta types
+            # TODO: Execute versioning once, independent of delta type
             timing_versioning = time.time_ns()
             self.__starvers_engine.insert(insertions_n3, timestamp=version_timestamp)
             self.__starvers_engine.outdate(deletions_n3, timestamp=version_timestamp)
@@ -143,6 +156,7 @@ class StarVersService(VersioningService):
             timing_overall = time.time_ns() - timing_overall
             
             # Persist Timings
+            # TODO: Persist timings for both delta types separately
             path = f"./evaluation/{self.tracking_task.name}/"
             cnt_triples = self._cnt_triples(version_timestamp)
             with open(f"{path}{self.tracking_task.name}_timings.csv", "a+") as timing_file:
@@ -150,6 +164,7 @@ class StarVersService(VersioningService):
                 timing_file.write('\n')
             
             # Persist deltas, if there are any
+            # TODO: Persist deltas for both delta types separately
             if len(insertions_n3) > 0 or len(deletions_n3) > 0:
                 # Persist Inserts, Deletions
                 with open(f"{path}{get_timestamp(version_timestamp)}/{self.tracking_task.name}_{get_timestamp(version_timestamp)}.delta", "a+") as dump_file:
