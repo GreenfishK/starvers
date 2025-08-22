@@ -2,20 +2,20 @@ import os
 from datetime import datetime
 import pandas as pd
 import io
+from typing import Optional
 from SPARQLWrapper import Wrapper
 import logging
-from rdflib.plugins.sparql.parserutils import CompValue
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['_template_path', '_versioning_timestamp_format', '_to_df', '_pprintAlgebra']
+__all__ = ['__template_path', '__versioning_timestamp_format', '__to_df']
 
 
-def _template_path(template_rel_path: str):
+def __template_path(template_rel_path: str):
     return os.path.join(os.path.dirname(__file__), template_rel_path)
 
 
-def _versioning_timestamp_format(version_timestamp: datetime) -> str:
+def __versioning_timestamp_format(version_timestamp: datetime) -> str:
     """
     This format is taken from the result set of GraphDB's queries.
     :param version_timestamp:
@@ -27,7 +27,7 @@ def _versioning_timestamp_format(version_timestamp: datetime) -> str:
         return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
-def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
+def __to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     """
     :param result:
     :return: Dataframe
@@ -35,7 +35,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_colwidth', None)
     
-    def format_value(res_value):
+    def format_value(res_value: dict[str, str]) -> str:
         """
         Formats a SPARQL result value while handling proper escaping and selecting suitable quotes.
         
@@ -43,7 +43,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
         :return: A properly formatted and escaped query result.
         """
     
-        def escape_string(value):
+        def escape_string(value: str):
             """
             Escapes special characters and selects the appropriate quotes.
             TODO handle escaping
@@ -77,15 +77,15 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     response_format = result._get_responseFormat()
 
     logger.info(f"Parsing {result._get_responseFormat()} into DataFrame")
-    if response_format == "json":
-        column_names = []
+    if response_format == "json" and isinstance(results, dict):
+        column_names: list[str] = []
         for var in results["head"]["vars"]:
             column_names.append(var)
         df = pd.DataFrame(columns=column_names)
     
-        values = []
+        values: list[list[Optional[str]]] = []
         for r in results["results"]["bindings"]:
-            row = []
+            row: list[Optional[str]] = []
             for col in results["head"]["vars"]:
                 if col in r:
                     result_value = format_value(r[col])
@@ -93,7 +93,7 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
                     result_value = None
                 row.append(result_value)
             values.append(row)
-        df = df.append(pd.DataFrame(values, columns=df.columns))
+        df = pd.concat([df, pd.DataFrame(values, columns=df.columns)], ignore_index=True)
     elif response_format == "csv":
         # Convert bytes to str if needed
         if isinstance(results, bytes):
@@ -104,7 +104,9 @@ def _to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
 
     return df
 
-def _pprintAlgebra(q):
+# For debugging purposes
+"""
+def __pprintAlgebra(q):
     def pp(p, ind="    "):
         if not isinstance(p, CompValue):
             logger.info(p)
@@ -123,3 +125,4 @@ def _pprintAlgebra(q):
         # it's update, just a list
         for x in q:
             pp(x)
+"""

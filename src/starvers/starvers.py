@@ -1,5 +1,5 @@
-from ._helper import _template_path, _versioning_timestamp_format, _to_df
-from ._prefixes import add_versioning_prefixes, split_prefixes_query
+from ._helper import __template_path, __versioning_timestamp_format, __to_df
+from ._prefixes import __add_versioning_prefixes, __split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
     
@@ -9,6 +9,7 @@ import pandas as pd
 from datetime import datetime
 import logging
 import tzlocal
+from typing import Optional
 from datetime import datetime, timedelta, timezone
 from typing import Union
 import rdflib
@@ -16,12 +17,11 @@ from rdflib.term import Variable, Identifier, URIRef
 from rdflib.plugins.sparql.parserutils import CompValue
 import rdflib.plugins.sparql.parser as parser
 import rdflib.plugins.sparql.algebra as algebra
-from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPath, MulPath, ZeroOrOne, \
-    ZeroOrMore, OneOrMore
+from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPath, MulPath #, ZeroOrOne, ZeroOrMore, OneOrMore
 
 logger = logging.getLogger(__name__)
 
-def timestamp_query(query: str, version_timestamp: datetime = None) -> Union[str, str]:
+def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) -> Union[str, str]:
     """
     Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
     the query with a code snippet that ensures that a snapshot of the data as of q_handler
@@ -33,118 +33,115 @@ def timestamp_query(query: str, version_timestamp: datetime = None) -> Union[str
     :return: A query string extended with the given timestamp
     """
     logger.info("Creating timestamped query ...")
-    prefixes, query = split_prefixes_query(query)
+    prefixes, query = __split_prefixes_query(query)
     query_vers = prefixes + "\n" + query
 
     if version_timestamp is None:
         current_datetime = datetime.now()
         timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
         execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
-        timestamp = _versioning_timestamp_format(execution_datetime)
+        timestamp = __versioning_timestamp_format(execution_datetime)
     else:
-        timestamp = _versioning_timestamp_format(version_timestamp)  # -> str
+        timestamp = __versioning_timestamp_format(version_timestamp)  # -> str
 
     query_tree = parser.parseQuery(query_vers)
     query_algebra = algebra.translateQuery(query_tree)
 
-    bgp_triples = {}
-    # TODO: set type of node to CompValue in function head
-    def inject_versioning_extensions(node):
-        if isinstance(node, CompValue):
-            if node.name == "BGP":
-                bgp_id = "BGP_" + str(len(bgp_triples))
-                bgp_triples[bgp_id] = node.triples.copy()
+    bgp_triples = {} 
+    def inject_versioning_extensions(node: CompValue):
+        if node.name == "BGP":
+            bgp_id = "BGP_" + str(len(bgp_triples))
+            bgp_triples[bgp_id] = node.triples.copy()
 
-                dummy_block = [rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
-                rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
-                rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]
-                node.triples = []
-                node.triples.append(dummy_block)
-                
-            elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
-                algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
+            dummy_block = [rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_id)),
+            rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_id)),
+            rdflib.term.Literal('__{0}dummy_object__'.format(bgp_id))]
+            node.triples = []
+            node.triples.append(dummy_block)
+            
+        elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+            algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
 
     def resolve_paths(node: CompValue):
-        if isinstance(node, CompValue):
-            if node.name == "BGP":
-                resolved_triples = []
+        if node.name == "BGP":
+            resolved_triples = []
 
-                def resolve(path: Path, subj, obj):
-                    if isinstance(path, SequencePath):
-                        for i, ref in enumerate(path.args, start=1):
-                            if i == 1:
-                                s = subj
-                                p = ref
-                                o = Variable("?dummy{0}".format(str(i)))
-                            elif i == len(path.args):
-                                s = Variable("?dummy{0}".format(len(path.args) - 1))
-                                p = ref
-                                o = obj
-                            else:
-                                s = Variable("?dummy{0}".format(str(i - 1)))
-                                p = ref
-                                o = Variable("?dummy{0}".format(str(i)))
-                            if isinstance(ref, URIRef):
-                                t = (s, p, o)
-                                resolved_triples.append(t)
-                                continue
-                            if isinstance(ref, Path):
-                                resolve(p, s, o)
-                            else:
-                                raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
-                                                                    "{0}. This case has not been covered yet. "
-                                                                    "Path will not be resolved.".format(type(ref)))
-
-                    if isinstance(path, NegatedPath):
-                        raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
-                    if isinstance(path, AlternativePath):
-                        # TODO resolve path
-                        raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
-                                                            "Path will not be resolved. Instead of alternative paths "
-                                                            "try using the following expression: "
-                                                            "{ <triple statements> } "
-                                                            "UNION "
-                                                            "{ <triple statements> }")
-                    if isinstance(path, InvPath):
-                        if isinstance(path.arg, URIRef):
-                            t = (obj, path.arg, subj)
+            def resolve(path: Path, subj, obj):
+                if isinstance(path, SequencePath):
+                    for i, ref in enumerate(path.args, start=1):
+                        if i == 1:
+                            s = subj
+                            p = ref
+                            o = Variable("?dummy{0}".format(str(i)))
+                        elif i == len(path.args):
+                            s = Variable("?dummy{0}".format(len(path.args) - 1))
+                            p = ref
+                            o = obj
+                        else:
+                            s = Variable("?dummy{0}".format(str(i - 1)))
+                            p = ref
+                            o = Variable("?dummy{0}".format(str(i)))
+                        if isinstance(ref, URIRef):
+                            t = (s, p, o)
                             resolved_triples.append(t)
-                            return
+                            continue
+                        if isinstance(ref, Path):
+                            resolve(p, s, o)
                         else:
-                            raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
-                                                                "was given. This case is not implemented yet.")  
-                    
-                    if isinstance(path, MulPath):
-                        if path.mod == "?":
-                            raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
-                                                                "Path will not be resolved")
-                        if path.mod == "*": 
-                            raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
-                                                                "Path will not be resolved")
-                        if path.mod == "+":
-                            raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
-                                                                "Path will not be resolved")
+                            raise ExpressionNotCoveredException("Node inside Path is neither Path nor URIRef but: "
+                                                                "{0}. This case has not been covered yet. "
+                                                                "Path will not be resolved.".format(type(ref)))
 
-                for k, triple in enumerate(node.triples):
-                    if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
-                        if isinstance(triple[1], Path):
-                            resolve(triple[1], triple[0], triple[2])
-                        else:
-                            if isinstance(triple[1], Identifier):
-                                resolved_triples.append(triple)
-                            else:
-                                raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
-                                                                    "This case has not been covered yet.".format(triple[1]))
+                if isinstance(path, NegatedPath):
+                    raise ExpressionNotCoveredException("NegatedPath has not be covered yet. Path will not be resolved")
+                if isinstance(path, AlternativePath):
+                    # TODO resolve path
+                    raise ExpressionNotCoveredException("AlternativePath has not be covered yet. "
+                                                        "Path will not be resolved. Instead of alternative paths "
+                                                        "try using the following expression: "
+                                                        "{ <triple statements> } "
+                                                        "UNION "
+                                                        "{ <triple statements> }")
+                if isinstance(path, InvPath):
+                    if isinstance(path.arg, URIRef):
+                        t = (obj, path.arg, subj)
+                        resolved_triples.append(t)
+                        return
                     else:
-                        raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
-                                                            " This is not implemented yet.".format(triple[0], triple[2]))
+                        raise ExpressionNotCoveredException("An argument for inverted paths other than URIRef "
+                                                            "was given. This case is not implemented yet.")  
+                
+                if isinstance(path, MulPath):
+                    if path.mod == "?":
+                        raise ExpressionNotCoveredException("ZeroOrOne path has not be covered yet. "
+                                                            "Path will not be resolved")
+                    if path.mod == "*": 
+                        raise ExpressionNotCoveredException("ZeroOrMore path has not be covered yet. "
+                                                            "Path will not be resolved")
+                    if path.mod == "+":
+                        raise ExpressionNotCoveredException("OneOrMore path has not be covered yet. "
+                                                            "Path will not be resolved")
 
-                node.triples.clear()
-                node.triples.extend(resolved_triples)
-                node.triples = algebra.reorderTriples(node.triples)
+            for k, triple in enumerate(node.triples):
+                if isinstance(triple[0], Identifier) and isinstance(triple[2], Identifier):
+                    if isinstance(triple[1], Path):
+                        resolve(triple[1], triple[0], triple[2])
+                    else:
+                        if isinstance(triple[1], Identifier):
+                            resolved_triples.append(triple)
+                        else:
+                            raise ExpressionNotCoveredException("Predicate is neither Path nor Identifier but: {0}. "
+                                                                "This case has not been covered yet.".format(triple[1]))
+                else:
+                    raise ExpressionNotCoveredException("Subject and/or object are not identifiers but: {0} and {1}."
+                                                        " This is not implemented yet.".format(triple[0], triple[2]))
 
-            elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
-                algebra.traverse(node.graph, visitPre=resolve_paths)
+            node.triples.clear()
+            node.triples.extend(resolved_triples)
+            node.triples = algebra.reorderTriples(node.triples)
+
+        elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
+            algebra.traverse(node.graph, visitPre=resolve_paths)
             
     try:
         logger.info("Resolving SPARQL paths to normal triple statements ...")
@@ -163,7 +160,7 @@ def timestamp_query(query: str, version_timestamp: datetime = None) -> Union[str
     triple_stmts_cnt = 0
     for bgp_identifier, triples in bgp_triples.items():
         ver_block_template = \
-            open(_template_path("templates/versioning_query_extensions.txt"), "r").read()
+            open(__template_path("templates/versioning_query_extensions.txt"), "r").read()
 
         ver_block = ""
         for i, triple in enumerate(triples):
@@ -183,7 +180,7 @@ def timestamp_query(query: str, version_timestamp: datetime = None) -> Union[str
         ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
         query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
-    query_vers_out = add_versioning_prefixes("") + "\n" + query_vers_out
+    query_vers_out = __add_versioning_prefixes("") + "\n" + query_vers_out
     
     return query_vers_out, timestamp
 
@@ -218,7 +215,7 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = _template_path("templates")
+        self._template_location = __template_path("templates")
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -261,7 +258,7 @@ class TripleStoreEngine:
                                              "Check whether your RDF-star store is running.")
 
             try:
-                test_prefixes = add_versioning_prefixes("")
+                test_prefixes = __add_versioning_prefixes("")
                 template = open(self._template_location +
                                 "/test_connection/test_connection_nested_select.txt", "r").read()
                 select_statement = template.format(test_prefixes)
@@ -304,9 +301,9 @@ class TripleStoreEngine:
         statement = open(self._template_location + "/_delete_triples.txt", "r").read()
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = __add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = __add_versioning_prefixes("")
 
         # Handling input format
         trpls = []
@@ -341,7 +338,7 @@ class TripleStoreEngine:
         """
 
         template = open(self._template_location + "/_reset_all_versions.txt", "r").read()
-        delete_statement = template.format(add_versioning_prefixes(""))
+        delete_statement = template.format(__add_versioning_prefixes(""))
         self.sparql_post.setQuery(delete_statement)
         self.sparql_post.query()
 
@@ -358,14 +355,14 @@ class TripleStoreEngine:
         :return:
         """
 
-        final_prefixes = add_versioning_prefixes("")
+        final_prefixes = __add_versioning_prefixes("")
 
         if initial_timestamp is not None:
-            version_timestamp = _versioning_timestamp_format(initial_timestamp)
+            version_timestamp = __versioning_timestamp_format(initial_timestamp)
         else:
             LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
             system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
-            version_timestamp = _versioning_timestamp_format(system_timestamp)
+            version_timestamp = __versioning_timestamp_format(system_timestamp)
 
         temp = open(self._template_location + "/version_all_triples.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
@@ -405,12 +402,12 @@ class TripleStoreEngine:
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
         logger.info(f"The result has the return type {result._get_responseFormat()}. Converting results ... ")
-        df = _to_df(result)
+        df = __to_df(result)
 
         return df
 
 
-    def insert(self, triples: Union[list, str], prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
+    def insert(self, triples: Union[list[str], str], prefixes: Optional[dict[str, str]] = None, timestamp: Optional[datetime] = None, chunk_size: int = 1000):
         """
         Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from (NOW()) and 
         "artificial" valid_until timestamp using the RDF-star paradigm. Each inserted triple has the following form 
@@ -440,9 +437,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = __add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = __add_versioning_prefixes("")
 
         logger.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
@@ -453,17 +450,15 @@ class TripleStoreEngine:
                 triples[i] = line[:-2]
             insert_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
             insert_block = list(map(' '.join, insert_list))
-        elif isinstance(triples, str):
+        else:
             logger.info("Creating insert statement: Build insert block.")
             insert_block = triples.splitlines()
-        else:
-            raise Exception("Type of triples must be either list or string. See doc of this function.")
 
         logger.info("Inserting triples as chunks of {0} triples.".format(chunk_size))
         for i in range(0, len(insert_block), chunk_size):
             insert_chunk = "\n".join(insert_block[i:min(i+chunk_size, len(insert_block))])
             if timestamp:
-                version_timestamp = _versioning_timestamp_format(timestamp)
+                version_timestamp = __versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_chunk, '"' + version_timestamp + '"')
             else:
                 insert_statement = statement.format(sparql_prefixes, insert_chunk, "NOW()")
@@ -472,7 +467,7 @@ class TripleStoreEngine:
         logger.info("Triples inserted.")
 
 
-    def update(self, old_triples: list, new_triples: list, prefixes: dict = None, chunk_size: int = 1000):
+    def update(self, old_triples: list[list[str]], new_triples: list[list[str]], prefixes: Optional[dict[str,str]] = None, chunk_size: int = 1000):
         """
         Updates a list of triples by another list of triples. Both lists need to have the same dimensions. The first list 
         should contain triples in n3 syntax that are also present in the triple store and currently valid. Each triple in the 
@@ -501,18 +496,17 @@ class TripleStoreEngine:
             raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = __add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = __add_versioning_prefixes("")
 
         logger.info("Create update statement")
         template = open(self._template_location + "/update_triples.txt", "r").read()
 
-        update_block = []
+        update_block: list[str] = []
         for old_triple, new_triple in zip(old_triples, new_triples):
-            if not (isinstance(old_triple, list) and isinstance(new_triple, list) 
-                    and len(old_triple) == 3 and len(new_triple) == 3):
-                raise WrongInputFormatException("The triple is either not a list or its length is not 3.")
+            if not (len(old_triple) == 3 and len(new_triple) == 3):
+                raise WrongInputFormatException("The old or new triple's length is not 3.")
             newS, newP, newO = ["UNDEF" if v is None else v for v in new_triple]
             update_block.append(f"({old_triple[0]} {old_triple[1]} {old_triple[2]} {newS} {newP} {newO})")
         
@@ -525,7 +519,7 @@ class TripleStoreEngine:
         logger.info("Triples updated.")
         
 
-    def outdate(self, triples: Union[list, str], prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
+    def outdate(self, triples: Union[list[str], str], prefixes: Optional[dict[str,str]] = None, timestamp: Optional[datetime] = None, chunk_size: int = 1000):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function) or the given :timestamp.
@@ -554,9 +548,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = __add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = __add_versioning_prefixes("")
 
         logger.info("Creating outdate statement.")
         statement = open(self._template_location + "/outdate_triples.txt", "r").read()
@@ -567,17 +561,16 @@ class TripleStoreEngine:
                 triples[i] = line[:-2]
             outdate_list = list(map(list, zip(['('] * len(triples), triples, [')'] * len(triples))))
             outdate_block = list(map(' '.join, outdate_list))
-        elif isinstance(triples, str):
+        else:
             logger.info("Creating outdate statement: Build outdate block.")
             outdate_block = triples.splitlines()
-        else:
-            raise Exception("Type of triples must be either list or string. See doc of this function.")
+
         
         logger.info("Outdating triples as chunks of {0} triples.".format(chunk_size))
         for i in range(0, len(outdate_block), chunk_size):
             outdate_chunk = "\n".join(outdate_block[i:min(i+chunk_size, len(outdate_block))])
             if timestamp:
-                version_timestamp = _versioning_timestamp_format(timestamp)
+                version_timestamp = __versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, '"' + version_timestamp + '"')
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, "NOW()")
