@@ -373,7 +373,7 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def query(self, select_statement: str, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
+    def query(self, select_statement: str, timestamp: Optional[datetime] = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
         will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data will be returned.
