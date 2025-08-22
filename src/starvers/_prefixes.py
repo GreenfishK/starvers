@@ -1,15 +1,16 @@
 from ._exceptions import ReservedPrefixError
 import re
+from typing import Union
+
+__all__ = ['__prefixes_to_sparql', '__add_versioning_prefixes', '__split_prefixes_query']
 
 
-def _prefixes_to_sparql(prefixes: dict) -> str:
+def __prefixes_to_sparql(prefixes: dict[str, str]) -> str:
     """
     Converts a dict of prefixes to a string with SPARQL syntax for prefixes.
     :param prefixes:
     :return: SPARQL prologue (prefixes at the beginning of the query) as string.
     """
-    if prefixes is None:
-        return ""
 
     sparql_prefixes = ""
     for key, value in prefixes.items():
@@ -17,7 +18,7 @@ def _prefixes_to_sparql(prefixes: dict) -> str:
     return sparql_prefixes
 
 
-def add_versioning_prefixes(prefixes: dict or str) -> str:
+def __add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
     """
     Extends the given prefixes by 
         vers: <https://github.com/GreenfishK/DataCitation/versioning/
@@ -37,7 +38,7 @@ def add_versioning_prefixes(prefixes: dict or str) -> str:
     prefix_xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>'
 
     if isinstance(prefixes, dict):
-        sparql_prefixes = _prefixes_to_sparql(prefixes)
+        sparql_prefixes = __prefixes_to_sparql(prefixes)
         if "vers" in prefixes:
             raise ReservedPrefixError(error_message)
         if "xsd" in prefixes:
@@ -46,7 +47,7 @@ def add_versioning_prefixes(prefixes: dict or str) -> str:
             vers_prfx = prefix_vers + "\n" + prefix_xsd + "\n"
         return sparql_prefixes + "\n" + vers_prfx
 
-    if isinstance(prefixes, str):
+    else:
         sparql_prefixes = prefixes
         if prefixes.find("vers:") > -1:
             raise ReservedPrefixError(error_message)
@@ -57,13 +58,13 @@ def add_versioning_prefixes(prefixes: dict or str) -> str:
         return sparql_prefixes + "\n" + vers_prfx
 
 
-def split_prefixes_query(query: str) -> list:
+def __split_prefixes_query(query: str) -> tuple[str, str]:
     """
     Separates the prologue (prefixes at the beginning of the query) from the actual query. 
     If there is no prolog, the prefixes variable will be an empty string.
 
     :param query: A query string with or without prologue.
-    :return: A list with the prefixes as the first element and the actual query string as the second element.
+    :return: A tuple with the prefixes as the first element and the actual query string as the second element.
     """
     pattern = "PREFIX\\s*[a-zA-Z0-9_-]*:\\s*<.*>\\s*"
 
@@ -71,4 +72,4 @@ def split_prefixes_query(query: str) -> list:
     prefixes = ''.join(prefixes_list)
     query_without_prefixes = re.sub(pattern, "", query)
 
-    return [prefixes, query_without_prefixes]
+    return prefixes, query_without_prefixes
