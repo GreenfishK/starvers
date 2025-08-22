@@ -11,6 +11,7 @@ import logging
 import tzlocal
 from datetime import datetime, timedelta, timezone
 from typing import Union
+import rdflib
 from rdflib.term import Variable, Identifier, URIRef
 from rdflib.plugins.sparql.parserutils import CompValue
 import rdflib.plugins.sparql.parser as parser
@@ -20,7 +21,7 @@ from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPa
 
 logger = logging.getLogger(__name__)
 
-def timestamp_query(query, version_timestamp: datetime = None) -> Union[str, str]:
+def timestamp_query(query: str, version_timestamp: datetime = None) -> Union[str, str]:
     """
     Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
     the query with a code snippet that ensures that a snapshot of the data as of q_handler
@@ -375,7 +376,7 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def query(self, select_statement: datetime, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
+    def query(self, select_statement: str, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
         will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data will be returned.
