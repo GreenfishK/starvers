@@ -3,9 +3,7 @@ from ._prefixes import add_versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
     
-import re
 from urllib.error import URLError
-from enum import Enum
 from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 import pandas as pd
 from datetime import datetime
@@ -17,7 +15,6 @@ from rdflib.term import Variable, Identifier, URIRef
 from rdflib.plugins.sparql.parserutils import CompValue
 import rdflib.plugins.sparql.parser as parser
 import rdflib.plugins.sparql.algebra as algebra
-import rdflib.plugins.sparql.parser
 from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPath, MulPath, ZeroOrOne, \
     ZeroOrMore, OneOrMore
 
@@ -378,7 +375,7 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def query(self, select_statement, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
+    def query(self, select_statement: datetime, timestamp: datetime = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
         will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data will be returned.
@@ -412,7 +409,7 @@ class TripleStoreEngine:
         return df
 
 
-    def insert(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
+    def insert(self, triples: Union[list, str], prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
         """
         Inserts a list of nested triples into the RDF-star store by wrapping the provided triples with a valid_from (NOW()) and 
         "artificial" valid_until timestamp using the RDF-star paradigm. Each inserted triple has the following form 
@@ -527,7 +524,7 @@ class TripleStoreEngine:
         logger.info("Triples updated.")
         
 
-    def outdate(self, triples: list or str, prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
+    def outdate(self, triples: Union[list, str], prefixes: dict = None, timestamp: datetime = None, chunk_size: int = 1000):
         """
         Outdates a list of triples. The provided triples are matched against the latest snapshot of the RDF-star dataset 
         and their valid_until timestamps get replaced by the query execution timestamp (SPARQL NOW() function) or the given :timestamp.
