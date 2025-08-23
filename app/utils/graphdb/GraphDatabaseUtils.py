@@ -16,7 +16,7 @@ from app.utils.exceptions.ServerFileImportFailedException import ServerFileImpor
 DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'
 BASE_GRAPH_URI = 'http://example.org/'
 
-def create_engine(repository_name, auth = DIGEST, method = POST, return_format = CSV, query_type = 'SELECT'):
+def create_engine(repository_name: str, auth = DIGEST, method = POST, return_format = CSV, query_type = 'SELECT'):
     graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repository_name)
     sparql_engine = SPARQLWrapper(graph_db_get_endpoint)
     sparql_engine.setHTTPAuth(auth)
@@ -72,7 +72,7 @@ def recreate_repository(repository_name: str):
         logger.error(f"Repository creation for {repository_name} failed. Error code and message: {response.status_code} - {response.text}")
 
         
-def import_serverfile(file_name: str, repository_name: str, graph_name: str = None):
+def import_serverfile(file_name: str, repository_name: str, graph_name: str = ""):
     get_logger(__name__,f"tracking_{repository_name}.log").info(f"Repository name: {repository_name}: Load serverfile {file_name} into graphdb repository.")
     payload = {
         "fileNames": [file_name],
@@ -137,26 +137,26 @@ def __load_repo_config_file() -> str:
     with open('app/utils/graphdb/repo-config.ttl', 'r') as f:
         return f.read()
     
-def get_query_all_template(graph_name: str = None) -> str:
+def get_query_all_template(graph_name: str = "") -> str:
     with open('app/utils/graphdb/query_all_from_graph.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
         return template
 
-def get_construct_all_versioned_template(timestamp, graph_name: str = None) -> str:
+def get_construct_all_versioned_template(timestamp: datetime.datetime, graph_name: str = "") -> str:
     with open('app/utils/graphdb/construct_all_from_versioned_graph.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
         template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
         return template       
 
-def get_construct_all_template(graph_name: str = None) -> str:
+def get_construct_all_template(graph_name: str = "") -> str:
     with open('app/utils/graphdb/construct_all_from_graph.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:graph}', (BASE_GRAPH_URI + graph_name) if graph_name else DEFAULT_GRAPH_NAME )
         return template
     
-def get_count_triples_template(timestamp, graph_name: str = None) -> str:
+def get_count_triples_template(timestamp: datetime.datetime, graph_name: str = "") -> str:
     with open('app/utils/graphdb/count_triples.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
@@ -170,14 +170,14 @@ def get_drop_graph_template(graph_name: str) -> str:
         template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
-def get_delta_query_deletions_template(timestamp, graph_name: str) -> str:
+def get_delta_query_deletions_template(timestamp: datetime.datetime, graph_name: str) -> str:
     with open('app/utils/graphdb/delta_query_deletions.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
         template = template.replace('{:graph}', BASE_GRAPH_URI + graph_name)
         return template
     
-def get_delta_query_insertions_template(timestamp, graph_name: str) -> str:
+def get_delta_query_insertions_template(timestamp: datetime.datetime, graph_name: str) -> str:
     with open('app/utils/graphdb/delta_query_insertions.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:timestamp}', _versioning_timestamp_format(timestamp))
@@ -190,7 +190,7 @@ def get_all_creation_timestamps() -> str:
         return template
 
 # Metric
-def get_snapshot_classes_template(ts_current: datetime, ts_prev: datetime) -> str:
+def get_snapshot_classes_template(ts_current: datetime.datetime, ts_prev: datetime.datetime) -> str:
     with open('app/utils/graphdb/query_snapshot_classes.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
@@ -198,7 +198,7 @@ def get_snapshot_classes_template(ts_current: datetime, ts_prev: datetime) -> st
         return template
         
 # Metric
-def get_snapshot_properties_template(ts_current: datetime, ts_prev: datetime) -> str:
+def get_snapshot_properties_template(ts_current: datetime.datetime, ts_prev: datetime.datetime) -> str:
     with open('app/utils/graphdb/query_snapshot_properties.sparql', 'r') as f:
         template = f.read()
         template = template.replace('{:ts_current}', _versioning_timestamp_format(ts_current))
@@ -218,7 +218,7 @@ def get_dataset_version_oblivious_template() -> str:
         return template
 
     
-def _versioning_timestamp_format(timestamp: datetime) -> str:
+def _versioning_timestamp_format(timestamp: datetime.datetime) -> str:
     # TODO use same method as starvers library does
     if timestamp.strftime("%z") != '':
         return timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]  + timestamp.strftime("%z")[0:3] + ":" + timestamp.strftime("%z")[3:5]

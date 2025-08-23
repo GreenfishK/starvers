@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from pytest import Session
+from sqlmodel import Session
 
 from app.Database import get_session
 from app.models.TrackingTaskModel import TrackingTaskDto
@@ -25,18 +25,18 @@ tag_metadata = {
 
 @router.get("/{id}")
 async def query_knowlegde_graph_by_id(
-    id: UUID,
+    id: UUID, 
     query: Annotated[str, Body()],
-    timestamp: Annotated[datetime | None, Query()] = None,
-    query_as_timestamped: Annotated[bool | None, Query()] = True,
+    timestamp: Annotated[datetime | None, Query()] = None, 
+    query_as_timestamped: Annotated[bool, Query()] = True,
     session: Session = Depends(get_session)):
 
-    dataset =  get_by_id(id, session)
+    dataset = get_by_id(id, session) 
+
     tracking_task = TrackingTaskDto(
         id=dataset.id,
         name=dataset.repository_name,
-        rdf_dataset_url=dataset.rdf_dataset_url,
-        delta_type=dataset.delta_type)
-    starvers = StarVersService(tracking_task)
+        rdf_dataset_url=dataset.rdf_dataset_url)
+    starvers = StarVersService(tracking_task, dataset.repository_name)
 
     return starvers.query(query, timestamp, query_as_timestamped)

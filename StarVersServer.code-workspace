@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../starvers"
+		},
+		{
+			"path": "../../../mnt/data/starversserver_dev"
+		},
+		{
+			"path": "../../../mnt/data/starversserver"
+		}
+	]
+}

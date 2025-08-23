@@ -87,15 +87,15 @@ services:
       - starvers_prod_net
 
   # Runs versioning and metrics computation tasks for data in ${data_storage}/evaluation. Possible executions are
-  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", "<delta_type>"]
+  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>"]
   #   Runs versioning and metrics computation for the specified repository
-  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", "<delta_type>", from_scratch, "yyyyMMdd-HHmmss_sss"]
+  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", from_scratch, "yyyyMMdd-HHmmss_sss"]
   #   Runs versioning and metrics computation for the specified repository from a specific timestamp with initial versioning
-  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", "<delta_type>", from_version, "yyyyMMdd-HHmmss_sss"]
+  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", from_version, "yyyyMMdd-HHmmss_sss"]
   #   Continues versioning and metrics computation for the specified repository from a specific timestamp without initial versioning
-  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", "<delta_type>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "v"]
+  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>",  (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "v"]
   #   Runs only versioning without metrics computation for the specified repository from a specific timestamp
-  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", "<delta_type>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "dm, sm"]
+  # * entrypoint: ["python", "app/utils/Compute.py", "<repo_name>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "dm, sm"]
   #   Runs only thout metrics computation without versioning for the specified repository, with the possibility of running from scratch or from a specific timestamp
   compute:
     image: starversserver
@@ -111,7 +111,7 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/Compute.py", "orkg_iterative", "ITERATIVE"] 
+    entrypoint: ["python", "app/utils/Compute.py", "orkg", "SPARQL"] 
 
     # Creates plots from the timing files
   create_plots:

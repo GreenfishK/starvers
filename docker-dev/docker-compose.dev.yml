@@ -90,7 +90,7 @@ services:
       - ${data_storage}/evaluation:/code/evaluation
       - ${data_storage}/logs:/code/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/Compute.py", "air_quality_ontology_iterative", "ITERATIVE", "dm"]
+    entrypoint: ["python", "app/utils/Compute.py", "orkg", "ITERATIVE", "from_scratch", "20250815-163550_583"]
   
   # Creates plots from the timing files
   create_plots:

@@ -1,11 +1,9 @@
-from typing import List, Tuple
+from typing import List
 from datetime import datetime
 import requests
 import re
 
 import pandas as pd
-from SPARQLWrapper import Wrapper
-from rdflib import Graph
 
 from app.utils.exceptions import DatasetNotFoundException
 
@@ -25,14 +23,6 @@ def to_list(nt_text: str) -> List[str]:
     return clean_lines
     
 
-def convert_df_to_triples(df: pd.DataFrame) -> List[Tuple]:
-    # TODO: Consider removing this method since we are now directly parsing n3 files into lists of triples
-    result = []
-    for index in df.index:
-        result.append((df['s'][index], df['p'][index], df['o'][index]))
-    return result
-
-
 def convert_df_to_n3(df: pd.DataFrame) -> List[str]:
     return [
         f"{row['s']} {row['p']} {row['o']} ." 
@@ -40,11 +30,11 @@ def convert_df_to_n3(df: pd.DataFrame) -> List[str]:
     ]
 
 
-def get_timestamp(timestamp: datetime = datetime.now()): 
+def get_timestamp(timestamp: datetime = datetime.now()) -> str: 
     return timestamp.strftime("%Y%m%d-%H%M%S") + f"_{timestamp.microsecond // 1000:03d}"
 
 
-def download_file(url, output_path, chunk_size=65536):
+def download_file(url: str, output_path: str, chunk_size: int=65536):
     with requests.get(url, stream=True) as response:
         response.raise_for_status()  # Raise error for bad status codes
 
@@ -60,7 +50,7 @@ def download_file(url, output_path, chunk_size=65536):
             raise DatasetNotFoundException("Downloaded file is empty")
 
     
-def normalize_and_skolemize(input_path, output_path):
+def normalize_and_skolemize(input_path: str, output_path: str):
     # Escape sequences
     # Chapter 6.4 in https://www.w3.org/TR/turtle/
     # Escape sequences: first representation: \u hex hex hex hex, e.g. \u0008
