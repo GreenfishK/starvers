@@ -233,7 +233,7 @@ class TripleStoreEngine:
 
         self.timestamped_query = None
 
-        if self.credentials:
+        if credentials:
             self.sparql_post.setCredentials(credentials.user_name, credentials.pw)
             self.sparql_get.setCredentials(credentials.user_name, credentials.pw)
 
@@ -287,7 +287,7 @@ class TripleStoreEngine:
             logger.info("Connection test has been skipped")
 
 
-    def _delete_triples(self, triples: list, prefixes: dict = None):
+    def _delete_triples(self, triples: Union[list[str], list[list[str]]], prefixes: Optional[dict[str, str]] = None):
         """
         Deletes the triples and its version annotations from the history. Should be used with care
         as it is most of times not intended to delete triples but to outdate them. This way they will
@@ -305,13 +305,16 @@ class TripleStoreEngine:
         else:
             sparql_prefixes = add_versioning_prefixes("")
 
-        # Handling input format
-        trpls = []
-        if not isinstance(triples[0], list) and len(triples) == 3:
-            triple = triples
-            trpls.append(triple)
-        else:
+        # single triple [s, p, o] 
+        if len(triples) == 3 and all(isinstance(x, str) for x in triples):
+            trpls = [triples]
+        # list of triples [[s, p, o], ...]
+        elif all(isinstance(t, list) for t in triples):
             trpls = triples
+        else:
+            raise WrongInputFormatException(
+                "Provide either a single triple [s,p,o] or a list of triples [[s,p,o], ...]."
+            )
 
         for triple in trpls:
             if isinstance(triple, list) and len(triple) == 3:
@@ -357,7 +360,7 @@ class TripleStoreEngine:
 
         final_prefixes = add_versioning_prefixes("")
 
-        if initial_timestamp is not None:
+        if initial_timestamp:
             version_timestamp = versioning_timestamp_format(initial_timestamp)
         else:
             LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
