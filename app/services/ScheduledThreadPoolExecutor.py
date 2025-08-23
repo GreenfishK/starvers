@@ -2,6 +2,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from delayedqueue import DelayedQueue
 
@@ -17,11 +18,10 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers=max_workers, thread_name_prefix=name)
         self._max_workers = max_workers
         self.queue = DelayedQueue()
-
         self.shutdown = False
 
 
-    def schedule_polling_at_fixed_rate(self, dataset_id: UUID, repository_name, latest_timestamp, period: int, delta_type: DeltaType, *args, initial_run=True, **kwargs) -> bool:
+    def schedule_polling_at_fixed_rate(self, dataset_id: UUID, repository_name: str, latest_timestamp: datetime, period: int, initial_run: bool=True, *args, **kwargs) -> bool:
         if self.shutdown:
             raise RuntimeError(f"Repository name: {repository_name}: Cannot schedule new task after shutdown!")
         

@@ -1,22 +1,24 @@
+from __future__ import annotations
+
 import time
 from datetime import datetime
 from uuid import UUID
 import requests
-from io import StringIO
-import pandas as pd
+from typing import Callable
+
 
 from app.Database import Session, engine
-from app.models.DatasetModel import Dataset, Snapshot
+from app.models.DatasetModel import Dataset
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
-from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_classes_template, get_snapshot_properties_template, get_dataset_static_core_template, get_dataset_version_oblivious_template, create_engine
+from app.utils.graphdb.GraphDatabaseUtils import create_engine
 from app.LoggingConfig import get_logger
 from app.services.MetricsService import MetricsService
 
 LOG = get_logger(__name__)
 
 class PollingTask():
-    def __init__(self, dataset_id: UUID, repository_name, latest_timestamp, period: int, *args, time_func=time.time, is_initial=True, **kwargs):
+    def __init__(self, dataset_id: UUID, repository_name: str, latest_timestamp: datetime, period: int, *args, time_func: Callable[[], float] = time.time, is_initial: bool=True, **kwargs):
         super().__init__()
         self.dataset_id = dataset_id
         self.repository_name = repository_name
@@ -43,11 +45,11 @@ class PollingTask():
     def time_func(self):
         return self.__time_func
 
-    def set_next_run(self, time_taken: int = 0) -> None:
+    def set_next_run(self, time_taken: float = 0) -> None:
         self.__is_initial = False
         self.next_run = self.__time_func() + self.period - time_taken
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: PollingTask) -> bool:
         return self.next_run < other.next_run
 
     def __repr__(self) -> str:
@@ -61,6 +63,9 @@ class PollingTask():
         try:
             with Session(engine) as session:
                 dataset = session.get(Dataset, self.dataset_id)
+                if not dataset:
+                    raise ValueError(f"Dataset with repo name '{self.repository_name}' not found in the database.")
+
                 if dataset.next_run is None or dataset.next_run <= datetime.fromtimestamp(self.__time_func()):
                     # Versioning
                     version_timestamp = datetime.now()
@@ -90,10 +95,10 @@ class PollingTask():
                         metrics_service.update_version_oblivious_triples(dataset, self.repository_name)
 
                         # Update snapshot table: class metrics
-                        metrics_service.update_class_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
+                        metrics_service.update_class_statistics(self.dataset_id, self.repository_name, version_timestamp, self.latest_timestamp)
                         
                         # Update snapshot table: property metrics
-                        metrics_service.update_property_statistics(self.dataset_id, self.repository_name, versioning_timestamp, self.latest_timestamp)
+                        metrics_service.update_property_statistics(self.dataset_id, self.repository_name, version_timestamp, self.latest_timestamp)
                 else:
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()
@@ -127,8 +132,7 @@ class PollingTask():
             tracking_task = TrackingTaskDto(
                 id=dataset.id,
                 name=dataset.repository_name,
-                rdf_dataset_url=dataset.rdf_dataset_url,
-                delta_type=dataset.delta_type)
+                rdf_dataset_url=dataset.rdf_dataset_url)
                         
             self.__versioning_wrapper = StarVersService(tracking_task, self.repository_name)
 
@@ -143,7 +147,7 @@ class PollingTask():
             # get diff to previous version using StarVers
             delta_event = self.__versioning_wrapper.run_versioning(version_timestamp)
 
-            if delta_event is not None:
+            if delta_event.totalInsertions > 0 or delta_event.totalDeletions > 0:
                 LOG.info(f"Repository name: {self.repository_name}: Changes for dataset detected")
 
                 if dataset.notification_webhook is not None:

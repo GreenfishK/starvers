@@ -8,27 +8,25 @@ import shutil
 import glob
 import sys
 import re
-from uuid import uuid4
+from uuid import uuid4, UUID
 from io import StringIO
 import pandas as pd
 import zipfile
 import time
 import requests
 import fnmatch
+from typing import Optional
 
 
 from app.services.VersioningService import StarVersService
+from app.services.ManagementService import get_id_by_repo_name
+from app.services.MetricsService import MetricsService
 from app.models.TrackingTaskModel import TrackingTaskDto
-from app.utils.graphdb.GraphDatabaseUtils import recreate_repository, \
- get_snapshot_classes_template, get_dataset_static_core_template, get_all_creation_timestamps, \
- get_dataset_version_oblivious_template, create_engine
-from app.enums.DeltaTypeEnum import DeltaType
+from app.utils.graphdb.GraphDatabaseUtils import recreate_repository, get_all_creation_timestamps, create_engine
 from app.LoggingConfig import get_logger, setup_logging
 from app.Database import Session, engine
-from app.models.DatasetModel import Dataset, Snapshot
-from app.services.ManagementService import get_id_by_repo_name
+from app.models.DatasetModel import Dataset
 from app.AppConfig import Settings
-from app.services.MetricsService import MetricsService
 
 #######################################
 # Logging
@@ -40,7 +38,6 @@ setup_logging()
 # Input parameters
 #######################################
 repo_name = sys.argv[1]
-delta_calc_method = sys.argv[2].upper()
 
 # Defaults
 versioning_mode = "from_scratch"
@@ -62,14 +59,14 @@ for arg in sys.argv[3:]:
             raise ValueError(f"Invalid function(s): {invalid}. Allowed: {valid_funcs}")
         functions_to_run = set(funcs)
 
-logger.info(f"Parsed arguments: repo={repo_name}, delta_type={delta_calc_method}, "
+logger.info(f"Parsed arguments: repo={repo_name}, "
             f"mode={versioning_mode}, timestamp={start_timestamp}, "
             f"functions={functions_to_run}")
 
 #######################################
 # Functions
 #######################################
-def convert_timestamp_str_to_iso(timestamp_str) -> datetime:
+def convert_timestamp_str_to_iso(timestamp_str: str) -> datetime:
     """
     Convert a timestamp string 'yyyyMMdd-hhmmss_SSS' to a datetime object.
     """
@@ -113,7 +110,8 @@ def wait_for_graphdb(url: str, timeout: int = 60, interval: int = 3):
     sys.exit(1)
 
 
-def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp_pairs, start_idx, versioning_mode, tracking_task):
+def run_versioning(repo_name: str, file_timestamp_pairs: list[tuple[str, str]], start_idx: int,
+                    versioning_mode: str, tracking_task: TrackingTaskDto, start_timestamp_iso: Optional[datetime]):
     logger.info(f"Run preparations for versioning")
 
     # Delete all directory starting with a timestamp
@@ -127,7 +125,7 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
     logger.info(f"Unzipping archives (only *raw.nt) in {evaluation_dir}")
     for _, zip_file in file_timestamp_pairs[start_idx:]:
         # Extract timestamp from filename (without path/extension)
-        if start_timestamp:
+        if start_timestamp_iso:
             filename = os.path.basename(zip_file).replace(".zip", "")
             try:
                 file_dt_iso = convert_timestamp_str_to_iso(filename)
@@ -151,7 +149,7 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
     logger.info(f"Removing archives in {evaluation_dir}")
     for zip_file in zip_files[start_idx:]:
         # Extract timestamp from filename (without path/extension)
-        if start_timestamp:
+        if start_timestamp_iso:
             filename = os.path.basename(zip_file).replace(".zip", "")
             try:
                 file_dt_iso = convert_timestamp_str_to_iso(filename)
@@ -203,7 +201,8 @@ def run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp
         os.remove(raw_file)
 
 
-def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp_pairs, start_idx, versioning_mode, start_timestamp_iso): 
+def run_snapshot_metrics_computation(metrics_service: MetricsService, dataset_id: UUID, file_timestamp_pairs: list[tuple[str,str]], 
+                                     start_idx: int, versioning_mode: str, start_timestamp_iso: Optional[datetime]): 
     # Load {repo_name}_timings.csv
     timings_file = os.path.join(evaluation_dir, f"{repo_name}_timings.csv")
     if not os.path.exists(timings_file):
@@ -219,7 +218,7 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
     # Convert 'timestamp' column to datetime
     timings_df["timestamp"] = pd.to_datetime(timings_df["timestamp"], format="%Y%m%d-%H%M%S_%f", errors="coerce")
     
-    if versioning_mode == "from_version":
+    if versioning_mode == "from_version" and start_timestamp_iso:
         # Delete all snapshot metrics starting from start_timestamp_iso
         logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
         metrics_service.delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso)
@@ -227,7 +226,7 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
         logger.info(f"Computing metrics for all snapshots starting from version {start_timestamp_iso}.")
         latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
         latest_timestamp = convert_timestamp_str_to_iso(latest_timestamp)
-        for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
+        for timestamp_str, _ in file_timestamp_pairs[start_idx:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
             
             # if there are 0 been insertions and deletions for the row
@@ -247,14 +246,14 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
     
         # Compute metrics for initial snapshot
         logger.info(f"Computing metrics for initial snapshot,")
-        init_version_timestmap, first_file = file_timestamp_pairs[start_idx]
+        init_version_timestmap, _ = file_timestamp_pairs[start_idx]
         init_version_timestmap_iso = convert_timestamp_str_to_iso(init_version_timestmap)
         metrics_service.update_class_statistics(dataset_id, repo_name, init_version_timestmap_iso, init_version_timestmap_iso)
         metrics_service.update_property_statistics(dataset_id, repo_name, init_version_timestmap_iso, init_version_timestmap_iso)
 
         logger.info(f"Computing metrics for all other snapshot.")
         latest_timestamp = init_version_timestmap_iso
-        for timestamp_str, zip_file in file_timestamp_pairs[start_idx+1:]:
+        for timestamp_str, _ in file_timestamp_pairs[start_idx+1:]:
             version_timestamp = convert_timestamp_str_to_iso(timestamp_str)
             
             # if there are 0 been insertions and deletions for the row
@@ -269,7 +268,7 @@ def run_snapshot_metrics_computation(metrics_service, dataset_id, file_timestamp
             latest_timestamp = version_timestamp
 
 
-def extract_timestamp(file_path): 
+def extract_timestamp(file_path: str) -> str: 
     filename = os.path.basename(file_path) 
     timestamp_pattern = re.compile(r'(\d{8}-\d{6}_\d{3})') 
     match = timestamp_pattern.search(filename) 
@@ -304,8 +303,11 @@ if versioning_mode == "from_version":
     query = get_all_creation_timestamps()
     sparql_engine.setQuery(query)
     response = sparql_engine.query().convert() 
-    csv_text = response.decode('utf-8')
-    df_creation_timestamps = pd.read_csv(StringIO(csv_text))
+    if isinstance(response, bytes):
+        csv_text = response.decode('utf-8')
+        df_creation_timestamps = pd.read_csv(StringIO(csv_text))
+    else:
+        raise ValueError("Unexpected response format from SPARQL query. Should be CSV bytes.")
 
 
     # Convert df_creation_timestamps['valid_from'] to datetime
@@ -337,20 +339,11 @@ if versioning_mode == "from_version":
             f"I.e., snapshot and dataset metrics can only be computed for existing snapshots."
         )
 
-# Validate delta type 
-try:
-    delta_type = DeltaType[delta_calc_method]
-except KeyError:
-    logger.info("Invalid delta type. Use 'SPARQL' or 'ITERATIVE'.")
-    sys.exit(1)
-
-
 # Define tracking task with input parameters
 tracking_task = TrackingTaskDto(
     id=uuid4(),
     name=repo_name,
-    rdf_dataset_url="",
-    delta_type=delta_type
+    rdf_dataset_url=""
 )
 
 # RDF datasets directory
@@ -361,9 +354,12 @@ logger.info(f"Evaluation directory: {evaluation_dir}")
 logger.info(f"Extracting timestamps from file names in {evaluation_dir}")
 zip_files = glob.glob(os.path.join(evaluation_dir, "*.zip"))
 
+if not zip_files:
+    raise FileNotFoundError(f"No zip files found in {evaluation_dir}")
+
 # Build mapping: {timestamp_str: raw.nt-file_path}
 logger.info(f"Creating timestamps-file mapping")
-file_timestamp_pairs = []
+file_timestamp_pairs: list[tuple[str,str]] = []
 for file_path in zip_files:
     timestamp_str = extract_timestamp(file_path)
     if timestamp_str:
@@ -406,12 +402,13 @@ wait_for_graphdb(f"{Settings().graph_db_url}/rest/repositories")
 with Session(engine) as session:
     # Get id by repo name
     dataset_id = get_id_by_repo_name(repo_name, session)
-    dataset = session.get(Dataset, dataset_id)
+    dataset = session.get(Dataset, dataset_id) 
+    if not dataset:
+        raise ValueError(f"Dataset with repo name '{repo_name}' not found in the database.")
 
     # run versioning
     if "v" in functions_to_run:
-        run_versioning(sparql_engine, session, dataset_id, repo_name, file_timestamp_pairs, 
-            start_idx, versioning_mode, tracking_task)
+        run_versioning(repo_name, file_timestamp_pairs, start_idx, versioning_mode, tracking_task, start_timestamp_iso)
 
     metrics_service = MetricsService(sparql_engine, session)
     # Compute metrics for all snapshots

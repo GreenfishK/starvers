@@ -1,5 +1,4 @@
 from sqlmodel import Session, select
-from sqlmodel import delete as sqlmodel_delete
 
 from sqlalchemy import desc
 from uuid import UUID
@@ -79,7 +78,7 @@ def get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name: str, snapshot_ts:
 
     return df
 
-def get_id_by_repo_name(repo_name: str, session: Session) -> str:
+def get_id_by_repo_name(repo_name: str, session: Session) -> UUID:
     statement = (
         select(Dataset.id)
         .where(Dataset.repository_name == repo_name)
@@ -89,9 +88,9 @@ def get_id_by_repo_name(repo_name: str, session: Session) -> str:
     if result is None:
         raise DatasetNotFoundException(name=repo_name)
 
-    return str(result)
+    return result
 
-def get_latest_snapshot_timestamp(session: Session, dataset_id: str):
+def get_latest_snapshot_timestamp(session: Session, dataset_id: UUID):
     statement = (
         select(Snapshot.snapshot_ts)
         .where(Snapshot.dataset_id == dataset_id)
@@ -147,7 +146,7 @@ def restart(session: Session):
         __start(session, graph, False)
         pass
 
-def __start(session: Session, dataset: Dataset, initial_run=True):
+def __start(session: Session, dataset: Dataset, initial_run:bool=True):
     # Create triple store repository if it does not exist
     create_repository(dataset.repository_name)
 
@@ -156,4 +155,4 @@ def __start(session: Session, dataset: Dataset, initial_run=True):
     latest_timestamp = get_latest_snapshot_timestamp(session, dataset.id)
     
     LOG.info(f"Repository name: {dataset.repository_name}: Latest timestamp: {latest_timestamp}")
-    polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.repository_name, latest_timestamp, dataset.polling_interval, dataset.delta_type, initial_run=initial_run)
+    polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.repository_name, latest_timestamp, dataset.polling_interval, initial_run=initial_run)

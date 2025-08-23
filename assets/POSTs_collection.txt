@@ -4,8 +4,7 @@ POST: localhost:80/management
   "name": "Air Quality Data for a City Ontology",
   "repository_name": "air_quality_ontology_v2",
   "rdf_dataset_url": "https://vocab.linkeddata.es/datosabiertos/def/medio-ambiente/calidad-aire/ontology.nt",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert
 
 
@@ -13,16 +12,14 @@ POST: localhost:80/management
   "name": "Weather Ontology",
   "repository_name": "weather_ontology",
   "rdf_dataset_url": "https://bimerr.iot.linkeddata.es/def/weather/ontology.nt",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert nicht
 
 {
   "name": "Water quality Ontology",
   "repository_name": "water_quality_ontology",
   "rdf_dataset_url": "https://github.com/nemo-ufes/doce/blob/master/doce.ttl",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert nicht
 
 
@@ -30,8 +27,7 @@ POST: localhost:80/management
   "name": "Uniprot protein sequence Ontology",
   "repository_name": "uniprot_ontology",
   "rdf_dataset_url": "https://ftp.uniprot.org/pub/databases/uniprot/current_release/rdf/",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert nicht
 
 
@@ -39,8 +35,7 @@ POST: localhost:80/management
   "name": "schema.org Ontology",
   "repository_name": "schema_org_ontology_v2",
   "rdf_dataset_url": "https://schema.org/version/latest/schemaorg-current-https.nt",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert; 16.776 triples as of 2025-02-04T15:43:28.108"^^xsd:dateTime
 
 
@@ -48,8 +43,7 @@ POST: localhost:80/management
   "name": "The Open Research Knowledge Graph",
   "repository_name": "orkg",
   "rdf_dataset_url": "https://orkg.org/api/rdf/dump",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert
 
 
@@ -57,7 +51,6 @@ POST: localhost:80/management
   "name": "The Open Research Knowledge Graph",
   "repository_name": "orkg_v2",
   "rdf_dataset_url": "https://orkg.org/files/rdf-dumps/rdf-export-orkg.nt",
-  "polling_interval": 7200,
-  "delta_type": "SPARQL"
+  "polling_interval": 7200
 } -> funktioniert
 
