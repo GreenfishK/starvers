@@ -1,5 +1,5 @@
-from ._helper import __template_path, __versioning_timestamp_format, __to_df
-from ._prefixes import __add_versioning_prefixes, __split_prefixes_query
+from ._helper import template_path, versioning_timestamp_format, to_df
+from ._prefixes import add_versioning_prefixes, split_prefixes_query
 from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
     WrongInputFormatException, ExpressionNotCoveredException
     
@@ -33,16 +33,16 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     :return: A query string extended with the given timestamp
     """
     logger.info("Creating timestamped query ...")
-    prefixes, query = __split_prefixes_query(query)
+    prefixes, query = split_prefixes_query(query)
     query_vers = prefixes + "\n" + query
 
     if version_timestamp is None:
         current_datetime = datetime.now()
         timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
         execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
-        timestamp = __versioning_timestamp_format(execution_datetime)
+        timestamp = versioning_timestamp_format(execution_datetime)
     else:
-        timestamp = __versioning_timestamp_format(version_timestamp)  # -> str
+        timestamp = versioning_timestamp_format(version_timestamp)  # -> str
 
     query_tree = parser.parseQuery(query_vers)
     query_algebra = algebra.translateQuery(query_tree)
@@ -160,7 +160,7 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     triple_stmts_cnt = 0
     for bgp_identifier, triples in bgp_triples.items():
         ver_block_template = \
-            open(__template_path("templates/versioning_query_extensions.txt"), "r").read()
+            open(template_path("templates/versioning_query_extensions.txt"), "r").read()
 
         ver_block = ""
         for i, triple in enumerate(triples):
@@ -180,7 +180,7 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
         ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
         query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
-    query_vers_out = __add_versioning_prefixes("") + "\n" + query_vers_out
+    query_vers_out = add_versioning_prefixes("") + "\n" + query_vers_out
     
     return query_vers_out, timestamp
 
@@ -196,8 +196,8 @@ class TripleStoreEngine:
             self.user_name = user_name
             self.pw = pw
 
-    def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Credentials = None,
-                 skip_connection_test=False):
+    def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Optional[Credentials] = None,
+                 skip_connection_test: bool=False):
         """
         During initialization a few queries are executed against the RDF-star store to test connection but also whether
         the RDF-star store in fact supports the 'star' extension. During the execution a side effect may occur and
@@ -215,7 +215,7 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = __template_path("templates")
+        self._template_location = template_path("templates")
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -233,7 +233,7 @@ class TripleStoreEngine:
 
         self.timestamped_query = None
 
-        if self.credentials is not None:
+        if self.credentials:
             self.sparql_post.setCredentials(credentials.user_name, credentials.pw)
             self.sparql_get.setCredentials(credentials.user_name, credentials.pw)
 
@@ -258,7 +258,7 @@ class TripleStoreEngine:
                                              "Check whether your RDF-star store is running.")
 
             try:
-                test_prefixes = __add_versioning_prefixes("")
+                test_prefixes = add_versioning_prefixes("")
                 template = open(self._template_location +
                                 "/test_connection/test_connection_nested_select.txt", "r").read()
                 select_statement = template.format(test_prefixes)
@@ -301,9 +301,9 @@ class TripleStoreEngine:
         statement = open(self._template_location + "/_delete_triples.txt", "r").read()
 
         if prefixes:
-            sparql_prefixes = __add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = __add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         # Handling input format
         trpls = []
@@ -338,7 +338,7 @@ class TripleStoreEngine:
         """
 
         template = open(self._template_location + "/_reset_all_versions.txt", "r").read()
-        delete_statement = template.format(__add_versioning_prefixes(""))
+        delete_statement = template.format(add_versioning_prefixes(""))
         self.sparql_post.setQuery(delete_statement)
         self.sparql_post.query()
 
@@ -355,14 +355,14 @@ class TripleStoreEngine:
         :return:
         """
 
-        final_prefixes = __add_versioning_prefixes("")
+        final_prefixes = add_versioning_prefixes("")
 
         if initial_timestamp is not None:
-            version_timestamp = __versioning_timestamp_format(initial_timestamp)
+            version_timestamp = versioning_timestamp_format(initial_timestamp)
         else:
             LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
             system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
-            version_timestamp = __versioning_timestamp_format(system_timestamp)
+            version_timestamp = versioning_timestamp_format(system_timestamp)
 
         temp = open(self._template_location + "/version_all_triples.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
@@ -402,7 +402,7 @@ class TripleStoreEngine:
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
         logger.info(f"The result has the return type {result._get_responseFormat()}. Converting results ... ")
-        df = __to_df(result)
+        df = to_df(result)
 
         return df
 
@@ -437,9 +437,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = __add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = __add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         logger.info("Creating insert statement.")
         statement = open(self._template_location + "/insert_triples.txt", "r").read()
@@ -458,7 +458,7 @@ class TripleStoreEngine:
         for i in range(0, len(insert_block), chunk_size):
             insert_chunk = "\n".join(insert_block[i:min(i+chunk_size, len(insert_block))])
             if timestamp:
-                version_timestamp = __versioning_timestamp_format(timestamp)
+                version_timestamp = versioning_timestamp_format(timestamp)
                 insert_statement = statement.format(sparql_prefixes, insert_chunk, '"' + version_timestamp + '"')
             else:
                 insert_statement = statement.format(sparql_prefixes, insert_chunk, "NOW()")
@@ -496,9 +496,9 @@ class TripleStoreEngine:
             raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
 
         if prefixes:
-            sparql_prefixes = __add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = __add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         logger.info("Create update statement")
         template = open(self._template_location + "/update_triples.txt", "r").read()
@@ -548,9 +548,9 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = __add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes)
         else:
-            sparql_prefixes = __add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("")
 
         logger.info("Creating outdate statement.")
         statement = open(self._template_location + "/outdate_triples.txt", "r").read()
@@ -570,7 +570,7 @@ class TripleStoreEngine:
         for i in range(0, len(outdate_block), chunk_size):
             outdate_chunk = "\n".join(outdate_block[i:min(i+chunk_size, len(outdate_block))])
             if timestamp:
-                version_timestamp = __versioning_timestamp_format(timestamp)
+                version_timestamp = versioning_timestamp_format(timestamp)
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, '"' + version_timestamp + '"')
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, "NOW()")

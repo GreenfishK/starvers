@@ -2,10 +2,8 @@ from ._exceptions import ReservedPrefixError
 import re
 from typing import Union
 
-__all__ = ['__prefixes_to_sparql', '__add_versioning_prefixes', '__split_prefixes_query']
 
-
-def __prefixes_to_sparql(prefixes: dict[str, str]) -> str:
+def _prefixes_to_sparql(prefixes: dict[str, str]) -> str:
     """
     Converts a dict of prefixes to a string with SPARQL syntax for prefixes.
     :param prefixes:
@@ -18,7 +16,7 @@ def __prefixes_to_sparql(prefixes: dict[str, str]) -> str:
     return sparql_prefixes
 
 
-def __add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
+def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
     """
     Extends the given prefixes by 
         vers: <https://github.com/GreenfishK/DataCitation/versioning/
@@ -38,7 +36,7 @@ def __add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
     prefix_xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>'
 
     if isinstance(prefixes, dict):
-        sparql_prefixes = __prefixes_to_sparql(prefixes)
+        sparql_prefixes = _prefixes_to_sparql(prefixes)
         if "vers" in prefixes:
             raise ReservedPrefixError(error_message)
         if "xsd" in prefixes:
@@ -58,7 +56,7 @@ def __add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
         return sparql_prefixes + "\n" + vers_prfx
 
 
-def __split_prefixes_query(query: str) -> tuple[str, str]:
+def split_prefixes_query(query: str) -> tuple[str, str]:
     """
     Separates the prologue (prefixes at the beginning of the query) from the actual query. 
     If there is no prolog, the prefixes variable will be an empty string.
