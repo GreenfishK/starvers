@@ -6,4 +6,4 @@ SPARQLWrapper==2.0.0
 guppy3==3.1.2
 requests
 #Jinja2==3.0.1
-starvers @ git+https://github.com/GreenfishK/starvers.git
+# starvers @ git+https://github.com/GreenfishK/starvers.git # TODO: remove the complicated workflow in the dockerfile and use this instead
