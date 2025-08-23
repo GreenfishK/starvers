@@ -6,57 +6,49 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 eval_directory = "/data/evaluation"
-methods_suffix_mapping = {'sparql': '', 'iterative': '_iterative'}
-
-df_dict = {}
+df_dict: dict[str, tuple[str, str, str]] = {}
 
 for dir in os.listdir(eval_directory):
-    timings_file = f"{eval_directory}/{dir}/{dir}_timings.csv"
-    if not os.path.isfile(timings_file):
-        continue
+    timings_file_iterative = f"{eval_directory}/{dir}/{dir}_timings.csv"
+    timings_file_sparql = f"{eval_directory}/{dir}/{dir}_timings_sparql.csv"
+
+    if not os.path.isfile(timings_file_iterative) and not os.path.isfile(timings_file_sparql):
+        raise FileNotFoundError(f"No timings file found in {eval_directory}/{dir}")
 
     # Extract base name by removing known suffixes
-    base_name = dir
-    method = "SPARQL"
-    for suffix in methods_suffix_mapping.values():
-        if base_name.endswith(suffix) and suffix != "":
-            base_name = base_name[: -len(suffix)]
-            method = suffix[1:]
-            break
-    
-    if base_name not in df_dict:
-        df_dict[base_name] = []
-    df_dict[base_name].append((method, f"{dir}", timings_file))
+    base_name: str = dir
+    df_dict[base_name] = ((f"{dir}", timings_file_sparql, timings_file_iterative))
 
 
 for key, value in df_dict.items():
     onto_or_kg = key
 
     # Prepare dataframes and labels
-    dfs = []
-    methods = []
+    dfs: list[pd.DataFrame] = []
     linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
-    for idx, (method, name, csv_path) in enumerate(value):
-        df = pd.read_csv(csv_path)
-        df.columns = df.columns.str.strip()
-        
-        # Remove lines where insertions and deletions are 0
-        if 'insertions' in df.columns and 'deletions' in df.columns:
-            df = df[~((df['insertions'] == 0) & (df['deletions'] == 0))]
-        
-        # Convert timestamp to mm-dd
-        df['mm-dd'] = df['timestamp'].str[:8].apply(lambda x: f"{x[4:6]}-{x[6:8]}")
-        
-        # Convert ns to ms
-        for col in ['time_prepare_ns', 'time_delta_ns', 'time_versioning_ns']:
-            if col in df.columns:
-                df[col.replace('_ns', '_s')] = df[col] / 1_000_000_000
+    for idx, (name, csv_path_sparql, csv_path_iterative) in enumerate(value):
+        def add_df_to_list(method: str, csv_path: str, dfs: list[pd.DataFrame]):
+            df = pd.read_csv(csv_path)
+            df.columns = df.columns.str.strip()
+            
+            # Remove lines where insertions and deletions are 0
+            if 'insertions' in df.columns and 'deletions' in df.columns:
+                df = df[~((df['insertions'] == 0) & (df['deletions'] == 0))]
+            
+            # Convert timestamp to mm-dd
+            df['mm-dd'] = df['timestamp'].str[:8].apply(lambda x: f"{x[4:6]}-{x[6:8]}")
+            
+            # Convert ns to ms
+            for col in ['time_prepare_ns', 'time_delta_ns', 'time_versioning_ns']:
+                if col in df.columns:
+                    df[col.replace('_ns', '_s')] = df[col] / 1_000_000_000
 
-        # Add a column 'method' to the dataframe
-        df['method'] = method
+            # Add a column 'method' to the dataframe
+            df['method'] = method
 
-        dfs.append(df)
-        methods.append(method)
+            dfs.append(df)
+        add_df_to_list("SPARQL", csv_path_sparql, dfs)
+        add_df_to_list("ITERATIVE", csv_path_iterative, dfs)
 
     # Stack the dataframes vertically
     if not dfs:
