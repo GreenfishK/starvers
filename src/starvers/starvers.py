@@ -1,16 +1,17 @@
 from ._helper import template_path, versioning_timestamp_format, to_df
 from ._prefixes import add_versioning_prefixes, split_prefixes_query
-from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, NoVersioningMode, \
-    WrongInputFormatException, ExpressionNotCoveredException
+from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, \
+WrongInputFormatException, ExpressionNotCoveredException
     
 from urllib.error import URLError
 from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
 import pandas as pd
 from datetime import datetime
 import logging
-import tzlocal
+import time
+from zoneinfo import ZoneInfo
 from typing import Optional
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Union
 import rdflib
 from rdflib.term import Variable, Identifier, URIRef
@@ -37,12 +38,12 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     query_vers = prefixes + "\n" + query
 
     if version_timestamp is None:
-        current_datetime = datetime.now()
-        timezone_delta = tzlocal.get_localzone().dst(current_datetime).seconds
-        execution_datetime = datetime.now(timezone(timedelta(seconds=timezone_delta)))
+        tz_name = time.tzname[time.localtime().tm_isdst]  # standard or DST name
+        local_tz = ZoneInfo(tz_name)
+        execution_datetime = datetime.now(local_tz)
         timestamp = versioning_timestamp_format(execution_datetime)
     else:
-        timestamp = versioning_timestamp_format(version_timestamp)  # -> str
+        timestamp = versioning_timestamp_format(version_timestamp)  
 
     query_tree = parser.parseQuery(query_vers)
     query_algebra = algebra.translateQuery(query_tree)
@@ -348,7 +349,7 @@ class TripleStoreEngine:
         logger.info("All annotations have been removed.")
 
 
-    def version_all_triples(self, initial_timestamp: datetime = None):
+    def version_all_triples(self, initial_timestamp: Optional[datetime] = None):
         """
         Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
         and an end date that lies far in the future as valid_until date. 
@@ -363,9 +364,7 @@ class TripleStoreEngine:
         if initial_timestamp:
             version_timestamp = versioning_timestamp_format(initial_timestamp)
         else:
-            LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
-            system_timestamp = datetime.now(tz=LOCAL_TIMEZONE)
-            version_timestamp = versioning_timestamp_format(system_timestamp)
+            version_timestamp = versioning_timestamp_format(datetime.now().astimezone())
 
         temp = open(self._template_location + "/version_all_triples.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
