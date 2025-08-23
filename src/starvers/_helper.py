@@ -8,14 +8,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-__all__ = ['__template_path', '__versioning_timestamp_format', '__to_df']
 
 
-def __template_path(template_rel_path: str):
+def template_path(template_rel_path: str):
     return os.path.join(os.path.dirname(__file__), template_rel_path)
 
 
-def __versioning_timestamp_format(version_timestamp: datetime) -> str:
+def versioning_timestamp_format(version_timestamp: datetime) -> str:
     """
     This format is taken from the result set of GraphDB's queries.
     :param version_timestamp:
@@ -27,7 +26,7 @@ def __versioning_timestamp_format(version_timestamp: datetime) -> str:
         return version_timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
-def __to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
+def to_df(result: Wrapper.QueryResult) -> pd.DataFrame:
     """
     :param result:
     :return: Dataframe
