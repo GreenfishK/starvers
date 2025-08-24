@@ -7,8 +7,8 @@ services:
       - 81:80
     env_file: "./dev.env"
     volumes:
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     depends_on:
       db:
@@ -24,8 +24,8 @@ services:
       - 5000:5000
     volumes:
       - ../app/gui:/code/app/gui
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
     depends_on:
       db:
         condition: service_started
@@ -87,8 +87,8 @@ services:
       rdfstore:
         condition: service_started
     volumes:
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     entrypoint: ["python", "app/utils/Compute.py", "orkg", "from_scratch", "20250815-163550_583"]
   
@@ -97,10 +97,10 @@ services:
     image: starversserver_dev
     env_file: "./dev.env"
     volumes:
-      - ../evaluation:/code/evaluation
+      - ../evaluation:/data/evaluation
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
-    entrypoint: ["python", "/code/evaluation/evaluation.py"]
+    entrypoint: ["python", "/data/evaluation/evaluation.py"]
 
   validate:
     image: starversserver_dev

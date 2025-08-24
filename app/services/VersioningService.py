@@ -50,11 +50,11 @@ class StarVersService(VersioningService):
             raise ValueError("version_timestamp must not be None")
         version_timestamp_str = get_timestamp(self._version_timestamp)
 
-        self.base_path = f"./evaluation/{self.tracking_task.name}/{version_timestamp_str}"
+        self.base_path = f"/data/evaluation/{self.tracking_task.name}/{version_timestamp_str}"
         self.snapshot_path = f"{self.base_path}/{self.tracking_task.name}_{version_timestamp_str}.raw.nt"
         self.processed_path = f"{self.base_path}/{self.tracking_task.name}_{version_timestamp_str}.nt"
         self.import_path = f"/graphdb-import/{self.tracking_task.name}.nt"
-        self.dumps_path = f"./evaluation/{self.tracking_task.name}"
+        self.dumps_path = f"/data/evaluation/{self.tracking_task.name}"
 
 
     def _cnt_triples(self, version_timestamp: datetime) -> int:
@@ -136,7 +136,7 @@ class StarVersService(VersioningService):
         self.__starvers_engine.version_all_triples(initial_timestamp=version_timestamp)
 
         # Persist Timings and ingest statistics
-        tmp_work_dir = f"./evaluation/{self.tracking_task.name}"
+        tmp_work_dir = f"/data/evaluation/{self.tracking_task.name}"
         os.makedirs(os.path.dirname(tmp_work_dir), exist_ok=True)
         header="timestamp, insertions, deletions, time_prepare_ns, time_delta_ns, time_versioning_ns, time_overall_ns, cnt_triples\n"
         with open(f"{tmp_work_dir}/{self.tracking_task.name}_timings.csv", "w") as timing_file:
@@ -232,7 +232,7 @@ class StarVersService(VersioningService):
             
             # Persist Timings
             self.LOG.info(f"Repository name: {self.repository_name}: Persisting timings and statistics")
-            tmp_work_dir = f"./evaluation/{self.tracking_task.name}/"
+            tmp_work_dir = f"/data/evaluation/{self.tracking_task.name}/"
             cnt_triples = self._cnt_triples(version_timestamp)
             
             version_timestamp_str = get_timestamp(version_timestamp)

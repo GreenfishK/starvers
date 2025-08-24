@@ -20,7 +20,7 @@ update dataset set active = True where repository_name = 'schema_org_ontology' o
 update dataset set next_run = null;
 update dataset set next_run = '2025-08-04 16:35:11.064284';
 
-delete from snapshot where dataset_id = '55c4c558-9643-46b4-8f19-24a74b670708';
+delete from dataset where repository_name = 'schema_org_ontology_iterative' and repository_name = 'air_quality_ontology_iterative' and repository_name = 'orkg_iterative';
 
 select * from snapshot where dataset_id = '1ede0112-ee5e-4b56-88bb-e76904e9e929' and snapshot_ts = '2025-05-08 08:06:13.736';
 

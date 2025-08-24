@@ -8,8 +8,8 @@ services:
       - ../app/gui:/code/app/gui
       - ../app/AppConfig.py:/code/app/AppConfig.py
       - ../app/LoggingConfig.py:/code/app/LoggingConfig.py
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
     depends_on:
       db:
         condition: service_started
@@ -30,8 +30,8 @@ services:
       - 80:80
     env_file: "./prod.env"
     volumes:
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     depends_on:
       db:
@@ -108,20 +108,20 @@ services:
     networks:
       - starvers_prod_net
     volumes:
-      - ${data_storage}/evaluation:/code/evaluation
-      - ${data_storage}/logs:/code/logs
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "app/utils/Compute.py", "orkg"] 
+    entrypoint: ["python", "evaluation/Compute.py", "air_quality_ontology"] 
 
     # Creates plots from the timing files
   create_plots:
     image: starversserver_dev
     env_file: "./dev.env"
     volumes:
-      - ../evaluation:/code/evaluation
+      - ../evaluation:/data/evaluation
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
-    entrypoint: ["python", "/code/evaluation/evaluation.py"]
+    entrypoint: ["python", "/data/evaluation/evaluation.py"]
 
   nginx:
     image: nginx:latest

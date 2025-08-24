@@ -45,7 +45,7 @@ functions_to_run = {"v", "sm", "dm"}  # run all by default
 start_timestamp = None
 
 # Parse remaining arguments (order-invariant)
-for arg in sys.argv[3:]:
+for arg in sys.argv[2:]:
     if arg in ["from_scratch", "from_version"]:
         versioning_mode = arg
     elif re.fullmatch(r"\d{8}-\d{6}_\d{3}", arg):  # timestamp
@@ -347,7 +347,7 @@ tracking_task = TrackingTaskDto(
 )
 
 # RDF datasets directory
-evaluation_dir = f"./evaluation/{tracking_task.name}"
+evaluation_dir = f"/data/evaluation/{tracking_task.name}"
 logger.info(f"Evaluation directory: {evaluation_dir}")
 
 # Extract all timestamps from the zip file names

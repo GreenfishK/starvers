@@ -2,7 +2,7 @@ import logging
 import os
 from logging.config import dictConfig
 
-LOG_DIR = "./logs"
+LOG_DIR = "/data/logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 def setup_logging():
@@ -51,7 +51,7 @@ def get_logger(name: str, log_file_name: str = None) -> logging.Logger:
 
     logger = logging.getLogger(name)
     if not logger.handlers:
-        fh = logging.FileHandler(f"./logs/{log_file_name}")
+        fh = logging.FileHandler(f"/data/logs/{log_file_name}")
         formatter = logging.Formatter(f"[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s")
         fh.setFormatter(formatter)
         fh.setLevel(logging.INFO)
