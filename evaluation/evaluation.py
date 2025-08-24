@@ -1,9 +1,9 @@
 import pandas as pd
 import os
 from matplotlib.lines import Line2D
-from itertools import chain
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+
 
 eval_directory = "/data/evaluation"
 df_dict: dict[str, tuple[str, str, str]] = {}

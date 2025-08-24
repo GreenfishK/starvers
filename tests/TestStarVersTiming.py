@@ -3,7 +3,7 @@ import os
 
 
 def test_write_timing_info():
-    path = "./evaluation/test/"
+    path = "/data/evaluation/test/"
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     # Persist Timings
@@ -13,7 +13,7 @@ def test_write_timing_info():
         timing_file.write('\n')
 
 def test_wirte_delta_dump():
-    path = "./evaluation/test/"
+    path = "/data/evaluation/test/"
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     # Persist Inserts, Deletions

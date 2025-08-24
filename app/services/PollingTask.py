@@ -18,7 +18,7 @@ from app.services.MetricsService import MetricsService
 LOG = get_logger(__name__)
 
 class PollingTask():
-    def __init__(self, dataset_id: UUID, repository_name: str, latest_timestamp: datetime, period: int, *args, time_func: Callable[[], float] = time.time, is_initial: bool=True, **kwargs):
+    def __init__(self, dataset_id: UUID, repository_name: str, latest_timestamp: datetime, period: int, time_func: Callable[[], float] = time.time, is_initial: bool=True, *args, **kwargs):
         super().__init__()
         self.dataset_id = dataset_id
         self.repository_name = repository_name
@@ -84,6 +84,8 @@ class PollingTask():
 
                     # Update dataset table: next run time
                     dataset.next_run = datetime.fromtimestamp(self.next_run)
+                    session.commit()
+                    session.refresh(dataset)
 
                     # Update metrics in case of changes
                     if self.__stopped == False:

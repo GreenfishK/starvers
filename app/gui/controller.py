@@ -38,15 +38,21 @@ class GuiContr:
         else:
             logger.info("Execute query without timestamp")
         
-        result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
-        timestamped_query = self.__starvers_engine.timestamped_query
-        timestamped_query = timestamped_query.lstrip()
+        result_set_df = pd.DataFrame()
+        timestamped_query = ""
+        try:
+            result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+            timestamped_query = self.__starvers_engine.timestamped_query
+            timestamped_query = timestamped_query.lstrip()
+        except Exception as e:
+            logger.error(f"Error executing query: {e}")
+
         return result_set_df, timestamped_query
 
 
     def build_timeseries(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1):
         repo_name = self.repo_name
-        path = f"/code/evaluation/{repo_name}/{repo_name}_timings.csv"
+        path = f"/data/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
         df.columns = df.columns.str.strip()
 
