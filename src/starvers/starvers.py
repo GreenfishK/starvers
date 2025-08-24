@@ -49,7 +49,10 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     query_algebra = algebra.translateQuery(query_tree)
 
     bgp_triples = {} 
-    def inject_versioning_extensions(node: CompValue):
+    def inject_versioning_extensions(node: object):
+        if not isinstance(node, CompValue):
+            return  
+
         if node.name == "BGP":
             bgp_id = "BGP_" + str(len(bgp_triples))
             bgp_triples[bgp_id] = node.triples.copy()
@@ -63,7 +66,10 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
         elif node.name=="Builtin_NOTEXISTS" or node.name=="Builtin_EXISTS":
             algebra.traverse(node.graph, visitPre=inject_versioning_extensions)
 
-    def resolve_paths(node: CompValue):
+    def resolve_paths(node: object):
+        if not isinstance(node, CompValue):
+            return  
+        
         if node.name == "BGP":
             resolved_triples = []
 
