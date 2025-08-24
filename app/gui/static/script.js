@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (plotDiv) {
+        // Attach event listeners
         plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown));
         plotDiv.on("plotly_relayout", (eventData) => plotly_relayout(eventData, plotDiv));
     }
@@ -80,7 +81,6 @@ document.querySelectorAll(".agg-button").forEach(button => {
         changeTimelinePeriod(level, this);
     });
 });
-
 
 
 
@@ -188,7 +188,7 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
 }
 
 function plotly_relayout(eventData, plotDiv) {
-    console.log("Plotly relayout event triggered:", eventData);
+    console.log("Plotly relayout event triggered:");
     let relayoutTimeout = null;
     let lastYRange = null;
 
@@ -198,8 +198,8 @@ function plotly_relayout(eventData, plotDiv) {
     }
 
     const xVals = plotDiv.data[0].x;
-    const xStart = eventData['xaxis.range[0]'];
-    const xEnd = eventData['xaxis.range[1]'];
+    const xStart = plotDiv.layout.xaxis.range ? plotDiv.layout.xaxis.range[0] : 0;
+    const xEnd = plotDiv.layout.xaxis.range ? plotDiv.layout.xaxis.range[1] : plotDiv.data[0].x.length - 1;
 
     const startIndex = Math.max(0, Math.floor(xStart));
     const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
@@ -237,11 +237,7 @@ function plotly_relayout(eventData, plotDiv) {
     const yMax = Math.max(...visibleTotals);
     const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
     const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
-
-    // to show the first bar
-    if (xStart < 0.20) {
-            yRange[0] = Math.min(0, yRange[0]);
-        }
+    console.log(`y-max: ${yMax}: y-min: ${yMin}: padding y-axis range: ${padding}`);
 
     if (
         lastYRange &&
@@ -375,7 +371,7 @@ function repoChange(dropdown, timestampedEditor) {
                 labels[3].lastChild.textContent = "";
                 labels[4].lastChild.textContent = "";
             } else {
-                const evoPlotObj = JSON.parse(data.evo_plot);
+                //const evoPlotObj = JSON.parse(data.evo_plot);
                 //Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
                 
                 labels[0].lastChild.textContent = data.rdf_dataset_url;
@@ -434,7 +430,17 @@ function changeTimelinePeriod(level, clickedButton) {
         }
         console.log("Updated plot for aggregation level:", level);
         const evoPlotObj = JSON.parse(data.evo_plot);
-        Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout);
+
+        Plotly.react("evo-plot", evoPlotObj.data, evoPlotObj.layout).then(() => {
+            const plotDiv = document.getElementById("evo-plot");
+            const fullEventData = {
+                "xaxis.range[0]": 0,
+                "xaxis.range[1]": evoPlotObj.data[0].x.length - 1
+            };
+            plotly_relayout(fullEventData, plotDiv);
+            plotContainer.style.visibility = "visible";
+
+        });
       })
       .catch(err => {
         console.error("Failed to fetch new aggregation plot:", err);
