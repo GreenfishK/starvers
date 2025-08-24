@@ -22,11 +22,6 @@ last_result_df = pd.DataFrame()
 def index(): 
     # Init
     result_html = None
-    start_ts = None
-    end_ts = None
-    stats_plot = None
-    rdf_dataset_url = None
-    polling_interval = None
 
     logger.info("Load repository mappings from /code/app/gui/app/configs/RDF2Repo_mappings.ini")
     config = configparser.ConfigParser()

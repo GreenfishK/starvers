@@ -389,6 +389,13 @@ CodeMirror styles
     width: auto;
 }
 
+#timestamp-help{
+  margin-left: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+  align-self: center;
+}
+
 #onto-infos .select {
   width: fit-content; 
   max-width: 100%;        
