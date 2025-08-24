@@ -51,6 +51,8 @@ TODO: Consider adding a trace (curve) for change ratios between snapshots. Note:
 
 TODO: Add an "summarize" button that summarizes the changes between two versions using AI.
 
+TODO: GUI: Fix bug with tooltip
+
 # Done
 fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
 

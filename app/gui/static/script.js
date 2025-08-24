@@ -107,7 +107,9 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     const overlay = document.getElementById("loading-overlay");
     const timerEl = document.getElementById("timer");
     const mainSection = document.getElementById("main-section");
-
+    const resultTable = document.getElementById("result-table");
+    
+    resultTable.style.display = "none";
 
     let seconds = 0;
     timerEl.textContent = "0";
@@ -151,11 +153,9 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
         executeButton.disabled = false;
         executeButton.classList.remove("is-loading");
 
-        const resultTable = document.getElementById("result-table");
         if (data.error) {
-            resultTable.innerHTML = `<div class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
+            resultTable.innerHTML = `<div id="queryExecutionError" class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
         } else {
-
             resultTable.innerHTML = data.result_set;
             console.log("Result successfully retrieved.");
 
@@ -167,11 +167,14 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
                 downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
                 resultTable.parentElement.appendChild(downloadLink);
 
-                // Scroll main-section to bottom so new data-section is visible
-                 mainSection.scrollTo({ top: mainSection.scrollHeight, behavior: 'smooth' });
             }
         
         }
+        resultTable.style.display = "block";
+
+        // Scroll main-section to bottom so new data-section is visible
+        mainSection.scrollTo({ top: mainSection.scrollHeight, behavior: 'smooth' });
+
     })
     .catch(err => {
         clearInterval(timerInterval);
