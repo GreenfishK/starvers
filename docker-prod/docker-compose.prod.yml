@@ -99,6 +99,7 @@ services:
   #   Runs only thout metrics computation without versioning for the specified repository, with the possibility of running from scratch or from a specific timestamp
   compute:
     image: starversserver
+    container_name: starvers-compute_prod
     env_file: "./prod.env"
     depends_on:
       db:
@@ -116,6 +117,7 @@ services:
     # Creates plots from the timing files
   create_plots:
     image: starversserver_dev
+    container_name: starvers-create-plots_prod
     env_file: "./dev.env"
     volumes:
       - ../evaluation:/data/evaluation

@@ -6,6 +6,7 @@ from sqlmodel import delete as sqlmodel_delete
 from typing import Optional
 from SPARQLWrapper import SPARQLWrapper
 from uuid import UUID
+import yaml
 
 from app.models.DatasetModel import Dataset, Snapshot
 from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_classes_template, \
@@ -103,12 +104,27 @@ class MetricsService():
         LOG.info(f"Repository name: {repo_name}: Updating 'snapshot' table with property metrics")
         LOG.info(f"Repository name: {repo_name}: Querying property metrics from GraphDB with ts_current={snapshot_ts} and ts_rev={snapshot_ts_prev}")
         
-        # Retrieve metrics from GraphDB via SPARQL query in the csv format
-        if snapshot_ts_prev:
-            query = get_snapshot_properties_template(ts_current=snapshot_ts, ts_prev=snapshot_ts_prev)
-        else:
-            query = get_snapshot_properties_template(ts_current=snapshot_ts, ts_prev=snapshot_ts)
+        # Load property identifiers from app/utils/graphdb/ontology_config.yml
+        def load_property_identifiers(repo_name: str, config_path: str = "app/utils/graphdb/ontology_config.yml") -> str:
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
 
+            identifiers = (
+                config.get(repo_name, {}).get("propertyIdentifiers")
+                or config["default"]["propertyIdentifiers"]
+            )
+
+            # return as comma-separated string
+            return ", ".join(identifiers)
+
+        property_identifiers = load_property_identifiers(repo_name)
+
+        if snapshot_ts_prev:
+            query = get_snapshot_properties_template(ts_current=snapshot_ts, ts_prev=snapshot_ts_prev, property_identifiers=property_identifiers)
+        else:
+            query = get_snapshot_properties_template(ts_current=snapshot_ts, ts_prev=snapshot_ts, property_identifiers=property_identifiers)
+
+        # Retrieve metrics from GraphDB via SPARQL query in the csv format
         self.sparql_engine.setQuery(query)
         response = self.sparql_engine.query().convert() 
 
