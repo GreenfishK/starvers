@@ -6,7 +6,7 @@ PREFIX owl: <http://www.w3.org/2002/07/owl#>
 
 SELECT 
 ?onto_property 
-?property_label
+?onto_property_label
 ?parent_property
 (COALESCE(?cnt_current, 0) AS ?cnt_property_instances_current)
 (COALESCE(?cnt_prev, 0) AS ?cnt_property_instances_prev)
@@ -16,24 +16,26 @@ WHERE {
     {
         # UNION of all involved properties
         {
-            SELECT DISTINCT ?onto_property ?parent_property WHERE {
+            SELECT DISTINCT ?onto_property ?parent_property ?onto_property_label WHERE {
                 {
                     BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
                     << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1 .
                     FILTER(?valid_from_1 <= ?ts_current && ?ts_current < ?valid_until_1)
                     FILTER(?ptype IN ({:property_identifiers}))
                     
+                     # Add labels
                     OPTIONAL {
-                        << <<?onto_property rdfs:label ?property_label>> vers:valid_from ?valid_from_2 >> vers:valid_until ?valid_until_2 .
+                        << <<?onto_property rdfs:label ?onto_property_label>> vers:valid_from ?valid_from_2 >> vers:valid_until ?valid_until_2 .
                         FILTER(?valid_from_2 <= ?ts_current && ?ts_current < ?valid_until_2) 
                     }
     
                     # also show properties that may have no usage
-                    OPTIONAL {
-                        << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_3 >> vers:valid_until ?valid_until_3 .
-                        FILTER(?valid_from_3 <= ?ts_current && ?ts_current < ?valid_until_3)
-                    }
-                    # property hierarchy (subPropertyOf)
+                    #OPTIONAL {
+                    #    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_3 >> vers:valid_until ?valid_until_3 .
+                    #    FILTER(?valid_from_3 <= ?ts_current && ?ts_current < ?valid_until_3)
+                    #}
+                    
+                    # Add parents
                     OPTIONAL {
                         << <<?onto_property rdfs:subPropertyOf ?parent_property>> vers:valid_from ?valid_from_4 >> vers:valid_until ?valid_until_4 .
                         FILTER(?valid_from_4 <= ?ts_current && ?ts_current < ?valid_until_4)
@@ -43,10 +45,18 @@ WHERE {
                     << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_5 >> vers:valid_until ?valid_until_5 .
                     FILTER(?valid_from_5 <= ?ts_prev && ?ts_prev < ?valid_until_5)
                     FILTER(?ptype IN ({:property_identifiers}))
+
+                    # Add labels
                     OPTIONAL {
-                        << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_6 >> vers:valid_until ?valid_until_6 .
-                        FILTER(?valid_from_6 <= ?ts_prev && ?ts_prev < ?valid_until_6)
+                        << <<?onto_property rdfs:label ?onto_property_label>> vers:valid_from ?valid_from_2a >> vers:valid_until ?valid_until_2a .
+                        FILTER(?valid_from_2a <= ?ts_prev && ?ts_prev < ?valid_until_2a) 
                     }
+
+                    #OPTIONAL {
+                    #    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_6 >> vers:valid_until ?valid_until_6 .
+                    #    FILTER(?valid_from_6 <= ?ts_prev && ?ts_prev < ?valid_until_6)
+                    #}
+                    # Add parents
                     OPTIONAL {
                         << <<?onto_property rdfs:subPropertyOf ?parent_property>> vers:valid_from ?valid_from_7 >> vers:valid_until ?valid_until_7 .
                         FILTER(?valid_from_7 <= ?ts_prev && ?ts_prev < ?valid_until_7)

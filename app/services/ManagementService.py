@@ -58,12 +58,20 @@ def get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name: str, snapshot_ts:
     stmt = (
         select(
             Snapshot.onto_class,
+            Snapshot.onto_class_label,
             Snapshot.parent_onto_class,
             Snapshot.snapshot_ts,
             Snapshot.cnt_class_instances_current,
             Snapshot.cnt_class_instances_prev,
             Snapshot.cnt_classes_added,
             Snapshot.cnt_classes_deleted,
+            Snapshot.onto_property,
+            Snapshot.onto_property_label,
+            Snapshot.parent_property,
+            Snapshot.cnt_property_instances_current,
+            Snapshot.cnt_property_instances_prev,
+            Snapshot.cnt_properties_added,
+            Snapshot.cnt_properties_deleted
         )
         .join(Dataset, Snapshot.dataset_id == Dataset.id)
         .where(Dataset.repository_name == repo_name)
@@ -71,9 +79,11 @@ def get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name: str, snapshot_ts:
     )
     results = session.exec(stmt).all()
     df = pd.DataFrame(results, columns=[
-        "onto_class", "parent_onto_class", "snapshot_ts",
+        "onto_class", "onto_class_label", "parent_onto_class", "snapshot_ts",
         "cnt_class_instances_current", "cnt_class_instances_prev",
-        "cnt_classes_added", "cnt_classes_deleted"
+        "cnt_classes_added", "cnt_classes_deleted", "onto_property", "onto_property_label",
+        "parent_property", "cnt_property_instances_current", "cnt_property_instances_prev",
+        "cnt_properties_added", "cnt_properties_deleted"
     ])
 
     return df

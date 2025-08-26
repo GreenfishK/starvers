@@ -47,7 +47,7 @@
             </div>
             <div id="meta-info" class="field">
                 <div id="onto-infos" class="is-flex is-flex-direction-column is-flex-wrap-wrap"> 
-                    <div id="repo-select-container" class="control select mb-2">
+                    <div id="repo-select-container" class="control select">
                         <select name="repo" id="repo-select" form="sparql-form">
                             {% for label, value in repo_options.items() %}
                                 <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
@@ -177,6 +177,7 @@
         </section>
 
         <section id="right-section" class="content-section"> 
+
             <!-- New tab buttons -->
             <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
                 <ul class="is-align-items-start">
@@ -185,13 +186,19 @@
                 </ul>
             </div>
 
+            <!-- TODO: add a checkbox below the tab buttons that is aligned to flex-start "show only changes"-->
+            <div id="show-changes-div" class="field mb-2">
+                <input id="show-changes-only" type="checkbox" name="show-changes-only">
+                <label for="show-changes-only" class="ml-2">Show only changes</label>
+            </div>
+
             <!-- New tab content containers -->
             <div id="right-section-tab-content">
                 <div id="right-section-tab-classes" >
-                    <!-- Snapshot tree content goes here -->
+                    <!-- Snapshot class tree content goes here -->
                 </div>
                 <div id="right-section-tab-properties">
-                    Properties content will go here.
+                   <!-- Snapshot property tree content goes here -->
                 </div>
             </div>
         

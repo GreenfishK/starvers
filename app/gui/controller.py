@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from collections import defaultdict
 import networkx as nx
-from datetime import datetime
+from typing import List, Dict, Any, Optional, Tuple
 
 # starvers and starversServer imports
 from starvers.starvers import TripleStoreEngine
@@ -206,98 +206,144 @@ class GuiContr:
         return self.dataset_infos
     
 
-    def get_onto_hierarchy(self, snapshot_ts):
+    def get_snapshot_stats(self, snapshot_ts: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Optional[datetime]]:
         logger.info(f"Retrieving snapshot statistics for timestamp: {snapshot_ts}")
         
-        repo_name = self.repo_name
+        repo_name: str = self.repo_name
         session = next(get_session())
-        snapshot_ts = datetime.fromisoformat(snapshot_ts)
-        raw_df = get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name, snapshot_ts, session)
+        snapshot_ts_dt: datetime = datetime.fromisoformat(snapshot_ts)
+        raw_df: pd.DataFrame = get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name, snapshot_ts_dt, session)
         session.close()
 
         if raw_df.empty:
-            return [], None  # empty tree and no timestamp
-
+            return [], [], None  
+                
         snapshot_ts_actual = raw_df["snapshot_ts"].iloc[0]
-        raw_df = raw_df.sort_values(by="cnt_class_instances_current", ascending=False)
 
-        # Ensure that every parent class is present in the dataframe
-        # This is necessary is we discovered that some ontologies use the subClassOf property
-        # without the object node being a class itself.
-        all_onto_classes = set(raw_df["onto_class"].tolist())
-        all_parents = set(raw_df["parent_onto_class"].dropna().tolist())
+        unified_columns = [
+            "id", "label", "parent", 
+            "cnt_instances_current", "cnt_instances_prev", "cnt_added", "cnt_deleted",
+        ]
 
-        missing_parents = all_parents - all_onto_classes
-        if missing_parents:
-            logger.info(f"Adding {len(missing_parents)} missing parent classes to dataframe.")
-            for mp in missing_parents:
-                raw_df = pd.concat([
-                    raw_df,
-                    pd.DataFrame([{
-                        "onto_class": mp,
-                        "parent_onto_class": None,
-                        "cnt_class_instances_current": 0,
-                        "cnt_class_instances_prev": 0,
-                        "cnt_classes_added": 0,
-                        "cnt_classes_deleted": 0,
-                        "snapshot_ts": snapshot_ts_actual
-                    }])
-                ], ignore_index=True)
-        
-        G = nx.DiGraph()
-        class_data = {}
+        raw_df_class = raw_df[[
+            "onto_class", "onto_class_label", "parent_onto_class",
+            "cnt_class_instances_current", "cnt_class_instances_prev",
+            "cnt_classes_added", "cnt_classes_deleted",
+        ]].dropna(how="all")
+        raw_df_class.columns = unified_columns
+        raw_df_class = raw_df_class.sort_values(by="cnt_instances_current", ascending=False)
 
-        # Add a synthetic root node
-        ROOT = "Thing"
-        G.add_node(ROOT, synthetic=True)
 
-        for _, row in raw_df.iterrows():
-            parent = row["parent_onto_class"] or ROOT
-            child = row["onto_class"]
+        raw_df_property = raw_df[[
+            "onto_property", "onto_property_label", "parent_property",
+            "cnt_property_instances_current", "cnt_property_instances_prev",
+            "cnt_properties_added", "cnt_properties_deleted",
+        ]].dropna(how="all")
+        raw_df_property.columns = unified_columns
+        raw_df_property = raw_df_property.sort_values(by="cnt_instances_current", ascending=False)
 
-            # Add nodes with metadata
-            class_data[child] = {
-                "cnt_class_instances_current": row["cnt_class_instances_current"],
-                "cnt_class_instances_prev": row["cnt_class_instances_prev"],
-                "cnt_classes_added": row["cnt_classes_added"],
-                "cnt_classes_deleted": row["cnt_classes_deleted"],
-            }
 
-            G.add_node(child)
-            G.add_edge(parent, child)
+        def build_hierarchy(raw_df: pd.DataFrame, id_col: str, label_col: str, parent_col: str, count_cols: List[str]) -> List[Dict[str, Any]]:
+            """
+            Build a hierarchy (tree) for classes or properties.
+            """
 
-        def aggregate_stats(node):
-            # Start with this node's own counts (0 if not in class_data)
-            own_stats = {
-                "cnt_class_instances_current": class_data.get(node, {}).get("cnt_class_instances_current", 0),
-                "cnt_class_instances_prev": class_data.get(node, {}).get("cnt_class_instances_prev", 0),
-                "cnt_classes_added": class_data.get(node, {}).get("cnt_classes_added", 0),
-                "cnt_classes_deleted": class_data.get(node, {}).get("cnt_classes_deleted", 0),
-            }
+            # Ensure missing parents are inserted
+            all_nodes: set[str] = set(raw_df[id_col].dropna().tolist())
+            all_parents: set[str] = set(raw_df[parent_col].dropna().tolist())
+            missing_parents: set[str] = all_parents - all_nodes
 
-            # Add stats from all children
-            for child in G.successors(node):
-                child_stats = aggregate_stats(child)
-                for k in own_stats:
-                    own_stats[k] += child_stats[k]
+            if missing_parents:
+                logger.info(f"Adding {len(missing_parents)} missing parent nodes to dataframe for {id_col}.")
+                for mp in missing_parents:
+                    raw_df = pd.concat([
+                        raw_df,
+                        pd.DataFrame([{
+                            id_col: mp,
+                            label_col: mp, 
+                            parent_col: None,
+                            count_cols[0]: 0,
+                            count_cols[1]: 0,
+                            count_cols[2]: 0,
+                            count_cols[3]: 0,
+                            "snapshot_ts": snapshot_ts_actual  
+                        }])
+                    ], ignore_index=True)
 
-            return own_stats
-        
-        # Build the tree from a node recursively
-        def build_tree(node):
-            stats = aggregate_stats(node)
-            return {
-                "id": node,
-                "cnt_class_instances": stats["cnt_class_instances_current"],
-                "cnt_class_instances_prev": stats["cnt_class_instances_prev"],
-                "cnt_classes_added": stats["cnt_classes_added"],
-                "cnt_classes_deleted": stats["cnt_classes_deleted"],
-                "children": [build_tree(child) for child in G.successors(node)]
-            }
+            # Build graph
+            G: nx.DiGraph = nx.DiGraph()
+            node_data: Dict[str, Dict[str, Any]] = {}
 
-        hierarchy = [build_tree(child) for child in G.successors(ROOT)]
+            ROOT: str = f"ROOT_{id_col}"
+            G.add_node(ROOT, synthetic=True)
 
-        return hierarchy, snapshot_ts_actual
+            for _, row in raw_df.iterrows():
+                parent: str = row[parent_col] or ROOT
+                child: str = row[id_col]
+
+                # Save stats & label
+                node_data[child] = {
+                    "label": row.get(label_col, child),
+                    count_cols[0]: int(row[count_cols[0]]),
+                    count_cols[1]: int(row[count_cols[1]]),
+                    count_cols[2]: int(row[count_cols[2]]),
+                    count_cols[3]: int(row[count_cols[3]]),
+                }
+
+                G.add_node(child)
+                G.add_edge(parent, child)
+
+            def aggregate_stats(node: str) -> Dict[str, int]:
+                own_stats: Dict[str, int] = {k: node_data.get(node, {}).get(k, 0) for k in count_cols}
+                for child in G.successors(node):
+                    child_stats: Dict[str, int] = aggregate_stats(child)
+                    for k in count_cols:
+                        own_stats[k] += child_stats[k]
+                return own_stats
+
+            def build_tree(node: str) -> Dict[str, Any]:
+                stats: Dict[str, int] = aggregate_stats(node)
+                return {
+                    "id": node,
+                    "label": node_data.get(node, {}).get("label", node) or node,
+                    count_cols[0]: stats[count_cols[0]],
+                    count_cols[1]: stats[count_cols[1]],
+                    count_cols[2]: stats[count_cols[2]],
+                    count_cols[3]: stats[count_cols[3]],
+                    "children": [build_tree(child) for child in G.successors(node)]
+                }
+
+            return [build_tree(child) for child in G.successors(ROOT)]
+
+        # Build class hierarchy
+        class_hierarchy = build_hierarchy(
+            raw_df_class,
+            id_col="id",
+            label_col="label",
+            parent_col="parent",
+            count_cols=[
+                "cnt_instances_current",
+                "cnt_instances_prev",
+                "cnt_added",
+                "cnt_deleted"
+            ]
+        )
+
+        # Build property hierarchy
+        property_hierarchy = build_hierarchy(
+            raw_df_property,
+            id_col="id",
+            label_col="label",
+            parent_col="parent",
+            count_cols=[
+                "cnt_instances_current",
+                "cnt_instances_prev",
+                "cnt_added",
+                "cnt_deleted"
+            ]
+        )
+
+        return class_hierarchy, property_hierarchy, snapshot_ts_actual
 
 
 def _format_polling_interval(seconds: int) -> str:

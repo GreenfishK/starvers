@@ -62,17 +62,19 @@ CREATE TABLE snapshot (
     snapshot_ts TIMESTAMP WITHOUT TIME ZONE,
     snapshot_ts_prev TIMESTAMP WITHOUT TIME ZONE,
     onto_class TEXT,
+    onto_class_label TEXT,
     parent_onto_class TEXT,
     cnt_class_instances_current INTEGER,
     cnt_class_instances_prev INTEGER,
     cnt_classes_added INTEGER,
     cnt_classes_deleted INTEGER,
     onto_property TEXT,
+    onto_property_label TEXT,
     parent_property TEXT,
     cnt_property_instances_current INTEGER,
     cnt_property_instances_prev INTEGER,
     cnt_properties_added INTEGER,
-    cnt_properties_deleted INTEGER
+    cnt_properties_deleted INTEGER,
     ratio_data_growth DOUBLE PRECISION,
     ratio_change DOUBLE PRECISION
 );
@@ -153,3 +155,6 @@ alter table snapshot add column cnt_property_instances_current INTEGER;
 alter table snapshot add column cnt_property_instances_prev INTEGER;
 alter table snapshot add column cnt_properties_added INTEGER;
 alter table snapshot add column cnt_properties_deleted INTEGER;
+
+alter table snapshot add column onto_property_label TEXT;
+alter table snapshot add column onto_class_label TEXT;

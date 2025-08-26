@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (plotDiv) {
         // Attach event listeners
-        plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown));
+        plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown));
         plotDiv.on("plotly_relayout", (eventData) => plotly_relayout(eventData, plotDiv));
     }
 
@@ -240,7 +240,6 @@ function plotly_relayout(eventData, plotDiv) {
     const yMax = Math.max(...visibleTotals);
     const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
     const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
-    console.log(`y-max: ${yMax}: y-min: ${yMin}: padding y-axis range: ${padding}`);
 
     if (
         lastYRange &&
@@ -263,7 +262,7 @@ function plotly_relayout(eventData, plotDiv) {
     }, 100); // debounce 100ms
 }
 
-function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
+function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
     if (!eventData || !eventData.points || eventData.points.length === 0) return;
 
     const point = eventData.points[0];
@@ -293,15 +292,29 @@ function plotly_fetchSnapshotClassHierarchy(eventData, plotDiv, dropdown) {
     })
     .then(data => {
         const classHierarchy = document.getElementById("right-section-tab-classes");
-        if (classHierarchy && data.snapshot_stats) {
-            if (data.snapshot_stats.length === 0 && data.snapshot_ts == null) {
+        if (classHierarchy && data.class_hierarchy) {
+            if (data.class_hierarchy.length === 0 && data.snapshot_ts == null) {
                 classHierarchy.innerHTML = `
                     <div class="notification is-warning mt-2">
-                        <strong>Notice:</strong> No snapshot statistics available for this repository.
+                        <strong>Notice:</strong> No class statistics available for this repository.
                     </div>
                 `;                    
             } else {
-                classHierarchy.innerHTML = renderSnapshotStats(data.snapshot_stats);
+                classHierarchy.innerHTML = renderSnapshotStats(data.class_hierarchy);
+                attachTreeToggleHandlers();
+            }
+        }
+
+        const propertyHierarchy = document.getElementById("right-section-tab-properties");
+        if (propertyHierarchy && data.property_hierarchy) {
+            if (data.property_hierarchy.length === 0 && data.snapshot_ts == null) {
+                propertyHierarchy.innerHTML = `
+                    <div class="notification is-warning mt-2">
+                        <strong>Notice:</strong> No property statistics available for this repository.
+                    </div>
+                `;                    
+            } else {
+                propertyHierarchy.innerHTML = renderSnapshotStats(data.property_hierarchy);
                 attachTreeToggleHandlers();
             }
         }
@@ -483,30 +496,38 @@ function showTooltip(inputField) {
 function renderSnapshotStats(stats) {
 
     function renderNode(node) {
-        const { id, cnt_class_instances, cnt_classes_added, cnt_classes_deleted, children } = node;
-
+        const { label, cnt_instances_current, cnt_added, cnt_deleted, children } = node;
         const hasChildren = children && children.length > 0;
 
         let html = `<section class="tree-node${hasChildren ? ' has-children' : ''}">`;
+        if (hasChildren) html += `<span class="expand-btn"></span>`;
 
-        if (hasChildren) {
-            html += `<span class="expand-btn"></span>`;
+        const cnt_added_int = Number(cnt_added) || 0;
+        const cnt_deleted_int = Number(cnt_deleted) || 0;
+
+        // Class label
+        if (cnt_added_int > 0 || cnt_deleted_int > 0) {
+            html += `<span class="class-label-changed">${label}</span>`;
+        } else {
+            html += `<span class="class-label">${label}</span>`;
+
         }
 
-        html += `<span class="class-label">${id}</span>`;
-
-        // Wrap info spans in a div for layout control
+        // Info row
         html += `<div class="info-row">`;
-        html += `<span class="info">Instances: ${cnt_class_instances}</span>`;
-        html += `<span class="info">Added: ${cnt_classes_added}</span>`;
-        html += `<span class="info">Deleted: ${cnt_classes_deleted}</span>`;
+        html += `<span class="info">Instances: ${cnt_instances_current}</span>`;
+
+        if (cnt_added_int > 0) {
+            html += `<span class="info info-added">Added: ${cnt_added}</span>`;
+        } 
+        if (cnt_deleted_int > 0) {
+            html += `<span class="info info-deleted">Deleted: ${cnt_deleted}</span>`;
+        }
         html += `</div>`;
 
         if (hasChildren) {
             html += `<section class="children">`;
-            children.forEach(child => {
-                html += renderNode(child);
-            });
+            children.forEach(child => html += renderNode(child));
             html += `</section>`;
         }
 
@@ -515,7 +536,7 @@ function renderSnapshotStats(stats) {
     }
 
 
-    let fullHtml = `<section id="snapshot-tree">`;
+    let fullHtml = `<section class="snapshot-tree">`;
     stats.forEach(node => {
         fullHtml += renderNode(node);
     });
