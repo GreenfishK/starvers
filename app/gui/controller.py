@@ -45,7 +45,7 @@ class GuiContr:
             timestamped_query = self.__starvers_engine.timestamped_query
             timestamped_query = timestamped_query.lstrip()
         except Exception as e:
-            logger.error(f"Error executing query: {e}")
+            raise Exception(f"Error executing query: {e}")
 
         return result_set_df, timestamped_query
 

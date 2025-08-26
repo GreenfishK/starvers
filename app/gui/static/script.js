@@ -508,14 +508,17 @@ function renderSnapshotStats(stats) {
         // Class label
         if (cnt_added_int > 0 || cnt_deleted_int > 0) {
             html += `<span class="class-label-changed">${label}</span>`;
+            // Info row
+            html += `<div class="info-row">`;
+            html += `<span class="info info-changed">Instances: ${cnt_instances_current}</span>`;
         } else {
             html += `<span class="class-label">${label}</span>`;
-
+            // Info row
+            html += `<div class="info-row">`;
+            html += `<span class="info">Instances: ${cnt_instances_current}</span>`;
         }
 
-        // Info row
-        html += `<div class="info-row">`;
-        html += `<span class="info">Instances: ${cnt_instances_current}</span>`;
+
 
         if (cnt_added_int > 0) {
             html += `<span class="info info-added">Added: ${cnt_added}</span>`;

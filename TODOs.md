@@ -57,6 +57,7 @@ TODO: Backend: When user leaves session, send a query abort to the Triple Store.
 
 TODO: GUI: Add a sorting option for the class and property hierarchy that sorts them either according to the instance count or change count (added + deleted triples)
 
+
 # Done
 fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
 
