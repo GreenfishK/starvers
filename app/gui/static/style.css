@@ -1,16 +1,18 @@
 html, body {
   height: 100vh;
   margin: 0;
+  line-height: 1.2 !important;
+  -ms-overflow-style: none;  /* IE 10+ */
+  scrollbar-width: none; /* Firefox */ 
 }
+
+
 
 #layout-wrapper {
   display: flex;
   flex-direction: column;   
   height: 100%;
                              
-  /* remove this later */
-  border: 2px solid black;
-
 }
 
 /****************************************
@@ -113,6 +115,7 @@ html, body {
     padding: 10px;
     min-height: 0;
     overflow: auto;
+    gap:1rem;
 }
 
 #main-section {
@@ -122,27 +125,39 @@ html, body {
   
 }
 
+#left-section {
+  padding-left: 1rem;
+}
+
 #right-section {
-  height:100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* stack tabs, checkbox, content vertically */
+  overflow: hidden;       /* don’t grow outside parent */
+  height: 100%;
+  padding-right:1rem;
 }
 
 #right-section-tabs {
-  margin-bottom: 1rem !important;
+    margin-bottom: 0!important;
 }
+
 
 #right-section-tabs ul{
   border-bottom: none;
   margin: 0 !important;
 }
 
+#show-changes-div {
+    display: inline-block;
+    width: 100%;
+}
+
 #right-section-tab-content{
-    display: flex;
-    flex-wrap: wrap;
-    flex: 1;
-    height:100%;
-    width:100%;
-    padding-bottom:70px;
+  flex: 1;          /* take remaining space */
+  min-height: 0;    /* allow shrinking */
+  overflow: auto;   /* scroll only inside content */
+  display: flex;
+  flex-direction: column;
 }
 
 #right-section-tab-classes{
@@ -153,7 +168,16 @@ html, body {
     width:100%;
 }
 
-#snapshot-tree {
+
+#right-section-tab-properties{
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1;
+    height:100%;
+    width:100%;
+}
+
+.snapshot-tree {
     display: flex;
     flex-wrap: wrap;
     align-content: flex-start;
@@ -167,8 +191,8 @@ html, body {
     line-height: 1.4;
 }
 
-/* Scope all rules inside #snapshot-tree */
-#snapshot-tree .tree-node {
+/* Scope all rules inside .snapshot-tree */
+.snapshot-tree .tree-node {
   position: relative;
   padding-left: 1.2em;
   border-left: 1px solid #ccc;
@@ -176,38 +200,62 @@ html, body {
   width:100%
 }
 
-#snapshot-tree .tree-node > .class-label {
+.snapshot-tree .tree-node > .label {
   font-weight: 600;
   margin-right: 0.6em;
 }
 
-#snapshot-tree .tree-node > .info {
+.snapshot-tree .tree-node > .info {
   background: #f0f0f0;
   border-radius: 3px;
   padding: 0 0.4em;
   margin-right: 0.4em;
   font-size: 0.85em;
-  color: #333;
   display: inline-block;
 }
 
-#snapshot-tree .children {
+.snapshot-tree .tree-node .class-label {
+  color: #646363 !important;
+}
+
+.snapshot-tree .tree-node .info-row .info {
+  color: #9D9D9C !important;
+}
+
+.snapshot-tree .tree-node .class-label-changed {
+  font-weight: 700;
+}
+
+
+.snapshot-tree .tree-node .info-row .info-added {
+    color: #007E71 !important;
+    font-weight: bold;
+}
+
+.snapshot-tree .tree-node .info-row .info-deleted {
+    color: #BA4682 !important;
+    font-weight: bold;
+}
+
+
+.snapshot-tree .children {
   display: none;
   margin-top: 0.2em;
   margin-left: 1.5em;
 }
 
-#snapshot-tree .info-row {
+.snapshot-tree .info-row {
   margin-top: 0.2em;
+  margin-left: 0.5em;
   display: flex;
   gap: 0.5em; 
 }
 
-#snapshot-tree .tree-node.expanded > .children {
+.snapshot-tree .tree-node.expanded > .children {
   display: block;
 }
 
-#snapshot-tree .tree-node > .expand-btn {
+.snapshot-tree .tree-node > .expand-btn {
   cursor: pointer;
   user-select: none;
   position: absolute;
@@ -220,7 +268,7 @@ html, body {
   pointer-events: auto;
 }
 
-#snapshot-tree .tree-node > .expand-btn::before {
+.snapshot-tree .tree-node > .expand-btn::before {
   content: "+";
   display: inline-block;
   width: 1em;
@@ -228,7 +276,7 @@ html, body {
   color: #006699;
 }
 
-#snapshot-tree .tree-node.expanded > .expand-btn::before {
+.snapshot-tree .tree-node.expanded > .expand-btn::before {
   content: "−"; 
   color: #006699;
 
@@ -354,6 +402,10 @@ CodeMirror styles
   width:100%; 
 }
 
+#tracking-infos{
+  gap: 1rem;
+}
+
 #tracking-infos label {
   overflow-wrap: anywhere; 
   word-break: break-all;  
@@ -394,6 +446,10 @@ CodeMirror styles
   color: #666;
   font-size: 0.9rem;
   align-self: center;
+}
+
+#onto-infos {
+  gap: 1rem;
 }
 
 #onto-infos .select {

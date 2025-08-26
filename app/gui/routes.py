@@ -29,7 +29,7 @@ def index():
     repo_map = dict(config["repositories"])
 
     selected_label = "orkg"  # default selection
-    repo_name = repo_map.get(selected_label)
+    repo_name: str = repo_map.get(selected_label)
     try:
         controller = GuiContr(repo_name=repo_name)
     except Exception as e:
@@ -154,10 +154,11 @@ def get_onto_hierarchy():
 
     try:
         controller = GuiContr(repo_name=repo_name)
-        snapshot_stats, snapshot_ts_actual = controller.get_onto_hierarchy(snapshot_ts)
+        class_hierarchy, property_hierarchy, snapshot_ts_actual = controller.get_snapshot_stats(snapshot_ts)
         
         return jsonify({
-            "snapshot_stats": snapshot_stats,
+            "class_hierarchy": class_hierarchy,
+            "property_hierarchy": property_hierarchy,
             "snapshot_ts": snapshot_ts_actual.isoformat() if snapshot_ts_actual else None
         })
 
