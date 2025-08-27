@@ -49,7 +49,7 @@ TODO: GUI, controller: In addition to hour, day, and week, add a view for actual
 
 TODO: Consider adding a trace (curve) for change ratios between snapshots. Note: Change ratios can be computed between individual snapshots but one has to be careful when aggregating ratios, e.g. for a day or week, as they can overstate the change. For example, if a triple was added between v1 and v2 and then deleted in v3 again within one day, the net result is no change but the change ratio for v1_v2 and v2_v3 would be be > 0.
 
-TODO: Add an "summarize" button that summarizes the changes between two versions using AI.
+TODO: Add an "summarize" feature that generates a summary of the changes between two versions.
 
 TODO: GUI: Fix bug with tooltip
 
@@ -57,6 +57,7 @@ TODO: Backend: When user leaves session, send a query abort to the Triple Store.
 
 TODO: GUI: Add a sorting option for the class and property hierarchy that sorts them either according to the instance count or change count (added + deleted triples)
 
+TODO: Add a feature that lets the user select two data points in the plot and the changes between these two versions are shown.
 
 # Done
 fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"

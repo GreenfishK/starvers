@@ -5,6 +5,7 @@
 // Global variables
 let activeAggLevel = 'DAY'; 
 let currentHaloTraceIndex = null; 
+let selectedTimestamps = [];
 const mediaQuery = window.matchMedia("(max-width: 900px)");
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -14,22 +15,21 @@ document.addEventListener("DOMContentLoaded", function () {
     const sparqlForm = document.getElementById("sparql-form");
     const plotDiv = document.getElementById("evo-plot");
     const defaultBtn = document.getElementById("day_button")
-    
+    const showChangesCheckbox = document.getElementById("show-changes-only");
+
+    document.getElementById("loading-overlay-query").style.display="None";
+    document.getElementById("loading-overlay-change-views").style.display="None";
+
     handleScreenChange(mediaQuery);
+
     activateTabRight("classes"); 
 
     if (defaultBtn) {
         changeTimelinePeriod('DAY', defaultBtn);
     }
 
-    if (plotDiv) {
-        // Attach event listeners
-        plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown));
-        plotDiv.on("plotly_relayout", (eventData) => plotly_relayout(eventData, plotDiv));
-    }
-
     console.log("Initializing SPARQL editor.");
-    const editor = CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
+    CodeMirror.fromTextArea(document.getElementById('sparql-editor'), {
         mode: 'sparql',
         lineNumbers: true
     });
@@ -42,44 +42,48 @@ document.addEventListener("DOMContentLoaded", function () {
         theme: "default",
         readOnly: "nocursor" 
     });
-
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
+
+
+    /******************************************************************
+    * Listeners
+    ******************************************************************/
+    if (plotDiv) {
+        plotDiv.on("plotly_click", (eventData) => plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown));
+        plotDiv.on("plotly_relayout", (eventData) => plotly_relayout(eventData, plotDiv));
+    }
 
     console.log("Initializing listener for the repository dropdown menu.")
     dropdown.addEventListener("change",  () => repoChange(dropdown, timestampedEditor));
 
     console.log("Initializing listener for the SPARQL form submission.")
     sparqlForm.addEventListener("submit", (e) => executeQuery(e, sparqlForm, timestampedEditor));
-});
 
+    showChangesCheckbox.addEventListener("change", toggleShowOnlyChanges);
+    
+    mediaQuery.addEventListener("change", handleScreenChange);
 
-
-/******************************************************************
- * Listeners
- ******************************************************************/
-mediaQuery.addEventListener("change", handleScreenChange);
-
-document.querySelectorAll('#mobile-tabs li').forEach(li => {
-    li.addEventListener('click', () => {
-        const tabId = li.getAttribute('data-tab');
-        activateTabMain(tabId);
+    document.querySelectorAll('#mobile-tabs li').forEach(li => {
+        li.addEventListener('click', () => {
+            const tabId = li.getAttribute('data-tab');
+            activateTabMain(tabId);
+        });
     });
-});
 
-
-document.querySelectorAll('#right-section-tabs li').forEach(li => {
-    li.addEventListener('click', () => {
-        const tabId = li.getAttribute('data-tab');
-        activateTabRight(tabId);
+    document.querySelectorAll('#right-section-tabs li').forEach(li => {
+        li.addEventListener('click', () => {
+            const tabId = li.getAttribute('data-tab');
+            activateTabRight(tabId);
+        });
     });
-});
 
-
-document.querySelectorAll(".agg-button").forEach(button => {
-    button.addEventListener("click", function() {
-        const level = this.getAttribute("data-agg");
-        changeTimelinePeriod(level, this);
+    document.querySelectorAll(".agg-button").forEach(button => {
+        button.addEventListener("click", function() {
+            const level = this.getAttribute("data-agg");
+            changeTimelinePeriod(level, this);
+        });
     });
+
 });
 
 
@@ -87,6 +91,13 @@ document.querySelectorAll(".agg-button").forEach(button => {
 /******************************************************************
  * Functions
  ******************************************************************/
+function toggleShowOnlyChanges() {
+    const showOnly = document.getElementById("show-changes-only").checked;
+    document.querySelectorAll(".tree-node.unchanged").forEach(node => {
+        node.style.display = showOnly ? "none" : "block";
+    });
+}
+
 function handleScreenChange(e) {
     if (e.matches) { 
         // Now <= 900px
@@ -104,8 +115,8 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     const executeButton = document.getElementById("executeQuery"); 
     const downloadButton = document.getElementById("download-btn");
     const formData = new FormData(sparqlForm);
-    const overlay = document.getElementById("loading-overlay");
-    const timerEl = document.getElementById("timer");
+    const overlay = document.getElementById("loading-overlay-query");
+    const timerEl = document.getElementById("timer-query");
     const mainSection = document.getElementById("main-section");
     const resultTable = document.getElementById("result-table");
     
@@ -267,9 +278,22 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
 
     const point = eventData.points[0];
     const rawTimestamp = point.x;
+    const overlay = document.getElementById("loading-overlay-change-views");
+    const timerEl = document.getElementById("timer-change-views");
 
     const [day, month, year] = rawTimestamp.split(".");
     if (!day || !month || !year) return;
+
+    let seconds = 0;
+    timerEl.textContent = "0";
+
+    // Show loading overlay and start timer
+    overlay.style.display = "flex";
+    let timerInterval;
+    timerInterval = setInterval(() => {
+        seconds += 1;
+        timerEl.textContent = seconds;
+    }, 1000);
 
     const formattedTimestamp =
         activeAggLevel === "HOUR"
@@ -291,6 +315,8 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
         return response.json(); 
     })
     .then(data => {
+        overlay.style.display = "none";
+
         const classHierarchy = document.getElementById("right-section-tab-classes");
         if (classHierarchy && data.class_hierarchy) {
             if (data.class_hierarchy.length === 0 && data.snapshot_ts == null) {
@@ -318,8 +344,10 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
                 attachTreeToggleHandlers();
             }
         }
+        toggleShowOnlyChanges()
     })
     .catch(error => {
+        overlay.style.display = "none";
         console.error("Error fetching snapshot statistics:", error);
     });
 
@@ -348,6 +376,149 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
     };
 
     // Add it as the last trace
+    Plotly.addTraces(plotDiv, highlightTrace).then(() => {
+        currentHaloTraceIndex = plotDiv.data.length - 1;
+    });
+}
+
+
+function plotly_fetchSnapshotHierarchy_two(eventData, plotDiv, dropdown) {
+    if (!eventData || !eventData.points || eventData.points.length === 0) return;
+
+    const point = eventData.points[0];
+    const rawTimestamp = point.x;
+
+    const [day, month, year] = rawTimestamp.split(".");
+    if (!day || !month || !year) return;
+
+    const formattedTimestamp =
+        activeAggLevel === "HOUR"
+            ? point.x
+            : `${year}-${month}-${day}T23:59:59`;
+
+    // always update the visible timestamp input (last clicked)
+    document.getElementById("timestamp_input").value = formattedTimestamp;
+
+    // store selected timestamp
+    selectedTimestamps.push(formattedTimestamp);
+
+    // if two timestamps are selected → trigger DIFF mode
+    if (selectedTimestamps.length === 2) {
+        const [ts1, ts2] = selectedTimestamps;
+
+        fetch(`/statistics?repo=${dropdown.value}&ts1=${encodeURIComponent(ts1)}&ts2=${encodeURIComponent(ts2)}`, {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json(); 
+        })
+        .then(data => {
+            const classHierarchy = document.getElementById("right-section-tab-classes");
+            if (classHierarchy && data.class_hierarchy) {
+                if (data.class_hierarchy.length === 0) {
+                    classHierarchy.innerHTML = `
+                        <div class="notification is-warning mt-2">
+                            <strong>Notice:</strong> No class statistics available for this repository.
+                        </div>
+                    `;                    
+                } else {
+                    classHierarchy.innerHTML = renderSnapshotStats(data.class_hierarchy);
+                    attachTreeToggleHandlers();
+                }
+            }
+
+            const propertyHierarchy = document.getElementById("right-section-tab-properties");
+            if (propertyHierarchy && data.property_hierarchy) {
+                if (data.property_hierarchy.length === 0) {
+                    propertyHierarchy.innerHTML = `
+                        <div class="notification is-warning mt-2">
+                            <strong>Notice:</strong> No property statistics available for this repository.
+                        </div>
+                    `;                    
+                } else {
+                    propertyHierarchy.innerHTML = renderSnapshotStats(data.property_hierarchy);
+                    attachTreeToggleHandlers();
+                }
+            }
+            toggleShowOnlyChanges();
+        })
+        .catch(error => {
+            console.error("Error fetching snapshot statistics:", error);
+        });
+
+        // reset for the next diff selection
+        selectedTimestamps = [];
+    } else {
+        // if only one timestamp selected → keep old behavior (DEFAULT mode)
+        fetch(`/statistics?repo=${dropdown.value}&timestamp=${encodeURIComponent(formattedTimestamp)}`, {
+            method: "GET",
+            headers: { "Accept": "application/json" } 
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok");
+            return response.json(); 
+        })
+        .then(data => {
+            const classHierarchy = document.getElementById("right-section-tab-classes");
+            if (classHierarchy && data.class_hierarchy) {
+                if (data.class_hierarchy.length === 0 && data.snapshot_ts == null) {
+                    classHierarchy.innerHTML = `
+                        <div class="notification is-warning mt-2">
+                            <strong>Notice:</strong> No class statistics available for this repository.
+                        </div>
+                    `;                    
+                } else {
+                    classHierarchy.innerHTML = renderSnapshotStats(data.class_hierarchy);
+                    attachTreeToggleHandlers();
+                }
+            }
+
+            const propertyHierarchy = document.getElementById("right-section-tab-properties");
+            if (propertyHierarchy && data.property_hierarchy) {
+                if (data.property_hierarchy.length === 0 && data.snapshot_ts == null) {
+                    propertyHierarchy.innerHTML = `
+                        <div class="notification is-warning mt-2">
+                            <strong>Notice:</strong> No property statistics available for this repository.
+                        </div>
+                    `;                    
+                } else {
+                    propertyHierarchy.innerHTML = renderSnapshotStats(data.property_hierarchy);
+                    attachTreeToggleHandlers();
+                }
+            }
+            toggleShowOnlyChanges();
+        })
+        .catch(error => {
+            console.error("Error fetching snapshot statistics:", error);
+        });
+    }
+
+    // remove previous halo markers
+    if (currentHaloTraceIndex !== null) {
+        Plotly.deleteTraces(plotDiv, currentHaloTraceIndex);
+        currentHaloTraceIndex = null;
+    }
+    // Add halo marker
+    highlightTrace = {
+        x: [point.x],
+        y: [point.y],
+        mode: "markers",
+        marker: {
+            size: 20,
+            color: "rgba(0, 102, 153, 0.4)",  // translucent blue halo
+            line: {
+                width: 2,
+                color: "rgba(0, 102, 153, 1.0)"
+            },
+            symbol: "circle"
+        },
+        name: "Selection Halo",
+        hoverinfo: "skip",
+        showlegend: false
+    };
+
     Plotly.addTraces(plotDiv, highlightTrace).then(() => {
         currentHaloTraceIndex = plotDiv.data.length - 1;
     });
@@ -498,33 +669,31 @@ function renderSnapshotStats(stats) {
     function renderNode(node) {
         const { label, cnt_instances_current, cnt_added, cnt_deleted, children } = node;
         const hasChildren = children && children.length > 0;
-
-        let html = `<section class="tree-node${hasChildren ? ' has-children' : ''}">`;
-        if (hasChildren) html += `<span class="expand-btn"></span>`;
-
         const cnt_added_int = Number(cnt_added) || 0;
         const cnt_deleted_int = Number(cnt_deleted) || 0;
+        const isChanged = cnt_added_int > 0 || cnt_deleted_int > 0;
+
+        let html = `<section class="tree-node${hasChildren ? ' has-children' : ''} ${isChanged ? 'changed' : 'unchanged'}">`;
+        if (hasChildren) html += `<span class="expand-btn"></span>`;
+
 
         // Class label
         if (cnt_added_int > 0 || cnt_deleted_int > 0) {
             html += `<span class="class-label-changed">${label}</span>`;
-            // Info row
             html += `<div class="info-row">`;
-            html += `<span class="info info-changed">Instances: ${cnt_instances_current}</span>`;
+            html += `<span class="info info-changed">Instances: ${cnt_instances_current.toLocaleString()}</span>`;
         } else {
             html += `<span class="class-label">${label}</span>`;
-            // Info row
             html += `<div class="info-row">`;
-            html += `<span class="info">Instances: ${cnt_instances_current}</span>`;
+            html += `<span class="info">Instances: ${cnt_instances_current.toLocaleString()}</span>`;
         }
 
 
-
         if (cnt_added_int > 0) {
-            html += `<span class="info info-added">Added: ${cnt_added}</span>`;
+            html += `<span class="info info-added">Added: ${cnt_added.toLocaleString()}</span>`;
         } 
         if (cnt_deleted_int > 0) {
-            html += `<span class="info info-deleted">Deleted: ${cnt_deleted}</span>`;
+            html += `<span class="info info-deleted">Deleted: ${cnt_deleted.toLocaleString()}</span>`;
         }
         html += `</div>`;
 
