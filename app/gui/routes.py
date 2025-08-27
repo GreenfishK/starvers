@@ -7,7 +7,6 @@ import logging
 from io import BytesIO
 import plotly.graph_objects as go
 from plotly.io import to_html, to_json
-import os
 
 from app.gui.controller import GuiContr
 from app.enums.TimeAggregationEnum import TimeAggregation
@@ -116,7 +115,7 @@ def get_repo_infos(repo_label):
 
     try:
         controller = GuiContr(repo_name=repo_name)
-        start, end, fig_data, fig_layout = controller.build_timeseries(time_aggr, active_time_aggr)
+        _, _, fig_data, fig_layout = controller.build_timeseries(time_aggr, active_time_aggr)
         dataset_infos = controller.get_dataset_infos()
         logger.info(f"Received dataset infos for {repo_name}: {dataset_infos}")
         evo_plot = go.Figure(data=fig_data, layout=fig_layout)
@@ -163,7 +162,7 @@ def get_onto_hierarchy():
         })
 
     except Exception as e:
-        logger.exception("Failed to retrieve snapshot statistics from database.")
+        logger.exception(f"Failed to retrieve snapshot statistics from database: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 

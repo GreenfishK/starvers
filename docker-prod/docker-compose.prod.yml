@@ -112,7 +112,7 @@ services:
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "evaluation/Compute.py", "orkg", "sm"] 
+    entrypoint: ["python", "evaluation/Compute.py", "orkg", "sm", "from_version", "20250718-175230_258"] 
 
     # Creates plots from the timing files
   create_plots:

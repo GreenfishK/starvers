@@ -155,9 +155,9 @@
                 <div id="result-container">
                     <h3 class="title is-5">Query Result</h3>
 
-                    <div id="loading-overlay">
+                    <div id="loading-overlay-query" class="loading-overlay">
                         <div class="is-flex is-justify-content-flex-end">
-                            <label>Executing timestamped query ... <label id="timer">0</label> sec</label>
+                            <label>Executing timestamped query ... <label id="timer-query" class="timer">0</label> sec</label>
                         </div>
                     </div>
             
@@ -199,6 +199,11 @@
                 </div>
                 <div id="right-section-tab-properties">
                    <!-- Snapshot property tree content goes here -->
+                </div>
+                <div id="loading-overlay-change-views" class="loading-overlay">
+                    <div class="is-flex is-justify-content-flex-end">
+                        <label>Loading change views ... <label id="timer-change-views" class="timer">0</label> sec</label>
+                    </div>
                 </div>
             </div>
         
