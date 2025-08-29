@@ -3,7 +3,6 @@ import pandas as pd
 import configparser
 from datetime import datetime
 import html
-import logging
 from io import BytesIO
 import plotly.graph_objects as go
 from plotly.io import to_html, to_json

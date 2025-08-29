@@ -315,6 +315,7 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
         return response.json(); 
     })
     .then(data => {
+        clearInterval(timerInterval);
         overlay.style.display = "none";
 
         const classHierarchy = document.getElementById("right-section-tab-classes");
@@ -347,6 +348,7 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
         toggleShowOnlyChanges()
     })
     .catch(error => {
+        clearInterval(timerInterval);
         overlay.style.display = "none";
         console.error("Error fetching snapshot statistics:", error);
     });
