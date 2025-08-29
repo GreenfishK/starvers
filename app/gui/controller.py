@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 import plotly.graph_objects as go
-from collections import defaultdict
 import networkx as nx
 from typing import List, Dict, Any, Optional, Tuple
 
@@ -50,7 +49,7 @@ class GuiContr:
         return result_set_df, timestamped_query
 
 
-    def build_timeseries(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1):
+    def build_timeseries(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1) -> tuple[str, str, Any, go.Layout]:
         repo_name = self.repo_name
         path = f"/data/evaluation/{repo_name}/{repo_name}_timings.csv"
         df = pd.read_csv(path)
@@ -58,8 +57,8 @@ class GuiContr:
 
         # Parse timestamp
         df["timestamp"] = df["timestamp"].apply(lambda ts: datetime.strptime(ts[:19], "%Y%m%d-%H%M%S_%f"))
-        ts_start = df["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
-        ts_end = df["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
+        ts_start:str = df["timestamp"].min().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
+        ts_end:str = df["timestamp"].max().strftime("%d.%m.%Y %H:%M:%S.%f")[:-3]
 
         # Aggregate by given time interval
         df = df.set_index("timestamp")

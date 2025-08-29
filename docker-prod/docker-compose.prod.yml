@@ -27,7 +27,7 @@ services:
     container_name: starvers-server_prod
     restart: always
     ports:
-      - 80:80
+      - 81:80
     env_file: "./prod.env"
     volumes:
       - ${data_storage}/evaluation:/data/evaluation
