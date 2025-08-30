@@ -10,7 +10,7 @@ import pandas as pd
 from app.models.DatasetModel import Dataset, DatasetCreate, Snapshot
 from app.services import ScheduledThreadPoolExecutor
 from app.persistance.graphdb.GraphDatabaseUtils import create_repository
-from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
+from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 from app.LoggingConfig import get_logger
 
 LOG = get_logger(__name__)
