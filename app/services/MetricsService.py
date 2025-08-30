@@ -13,7 +13,7 @@ from app.persistance.graphdb.GraphDatabaseUtils import get_snapshot_classes_temp
   get_snapshot_properties_template, get_dataset_static_core_template, \
   get_dataset_version_oblivious_template
 from app.LoggingConfig import get_logger
-from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
+from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 
 
 LOG = get_logger(__name__)

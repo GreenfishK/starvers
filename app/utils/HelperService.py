@@ -5,7 +5,7 @@ import re
 
 import pandas as pd
 
-from app.utils.exceptions import DatasetNotFoundException
+from app.exceptions import DatasetNotFoundException
 
 
 def to_list(nt_text: str) -> List[str]:

@@ -9,8 +9,8 @@ from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, CSV
 
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
-from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
-from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
+from app.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
+from app.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
 
 DEFAULT_GRAPH_NAME = 'http://rdf4j.org/schema/rdf4j#nil'

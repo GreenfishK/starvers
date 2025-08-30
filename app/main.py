@@ -12,11 +12,11 @@ from app.LoggingConfig import get_logger, setup_logging
 from app.api import ManagementRestService, MockRestService, QueryRestService
 from app.models.DeltaEventModel import DeltaEvent
 from app.services.ManagementService import restart
-from app.utils.exceptions.DatasetNotFoundException import DatasetNotFoundException
+from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 import uvicorn
 
-from app.utils.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
-from app.utils.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
+from app.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
+from app.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
 LOG = get_logger(__name__)
 
