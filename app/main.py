@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.Database import Session, engine, create_db_and_tables
+from app.persistance.Database import Session, engine, create_db_and_tables
 
 from app.LoggingConfig import get_logger, setup_logging
 from app.api import ManagementRestService, MockRestService, QueryRestService

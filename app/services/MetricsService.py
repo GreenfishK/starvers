@@ -9,7 +9,7 @@ from uuid import UUID
 import yaml
 
 from app.models.DatasetModel import Dataset, Snapshot
-from app.utils.graphdb.GraphDatabaseUtils import get_snapshot_classes_template, \
+from app.persistance.graphdb.GraphDatabaseUtils import get_snapshot_classes_template, \
   get_snapshot_properties_template, get_dataset_static_core_template, \
   get_dataset_version_oblivious_template
 from app.LoggingConfig import get_logger

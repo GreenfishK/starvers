@@ -13,7 +13,7 @@ from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
 from app.utils.HelperService import get_timestamp, download_file, normalize_and_skolemize
-from app.utils.graphdb.GraphDatabaseUtils import get_count_triples_template, import_serverfile, poll_import_status
+from app.persistance.graphdb.GraphDatabaseUtils import get_count_triples_template, import_serverfile, poll_import_status
 
 class VersioningService(ABC):
     @abstractmethod

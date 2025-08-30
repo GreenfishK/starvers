@@ -6,7 +6,7 @@ import datetime
 from app.LoggingConfig import get_logger
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.utils.HelperService import to_list
-from app.utils.graphdb.GraphDatabaseUtils import get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template
+from app.persistance.graphdb.GraphDatabaseUtils import get_construct_all_versioned_template, get_delta_query_deletions_template, get_delta_query_insertions_template, get_drop_graph_template
 
 class DeltaCalculationService(ABC):
     def __init__(self, starvers_engine: TripleStoreEngine, tracking_task: TrackingTaskDto, repository_name: str):
