@@ -6,7 +6,7 @@ from uuid import UUID
 
 from sqlmodel import Session
 
-from app.Database import get_session
+from app.persistance.Database import get_session
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
 from app.services.ManagementService import get_by_id

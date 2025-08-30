@@ -5,7 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from app.main import app
-from app.Database import get_session
+from app.persistance.Database import get_session
 from app.models.DatasetModel import Dataset
 
 

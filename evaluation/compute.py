@@ -22,9 +22,9 @@ from app.services.VersioningService import StarVersService
 from app.services.ManagementService import get_id_by_repo_name
 from app.services.MetricsService import MetricsService
 from app.models.TrackingTaskModel import TrackingTaskDto
-from app.utils.graphdb.GraphDatabaseUtils import recreate_repository, get_all_creation_timestamps, create_engine
+from app.persistance.graphdb.GraphDatabaseUtils import recreate_repository, get_all_creation_timestamps, create_engine
 from app.LoggingConfig import get_logger, setup_logging
-from app.Database import Session, engine
+from app.persistance.Database import Session, engine
 from app.models.DatasetModel import Dataset
 from app.AppConfig import Settings
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from uuid import UUID
 
 from sqlmodel import Session
-from app.Database import get_session
+from app.persistance.Database import get_session
 
 from app.models.DatasetModel import DatasetRead, DatasetCreate
 from app.services.ManagementService import delete_all, get_all, get_by_id, add, delete

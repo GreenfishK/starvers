@@ -47,7 +47,7 @@ Starvers
 |-- evaluation
     |-- delta_eval
         |-- evaluation.py -> plots.py
-        |-- Compute.py
+        |-- compute.py
     |-- starvers_eval
         |-- output/
         |-- raw_queries/
@@ -72,7 +72,7 @@ Starvers
     |-- test_outdate.py
     |-- test_query.py
     |-- test_update.py
-    |-- TestCompute.py
+    |-- Testcompute.py
     |-- TestManagementRestService.py
     |-- TestStarVersService.py
     |-- TestStarVersTiming.py
