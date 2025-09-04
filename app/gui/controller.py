@@ -41,6 +41,7 @@ class GuiContr:
         timestamped_query = ""
         try:
             result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+            logger.info(f"Result set contains {len(result_set_df)} records.")
             timestamped_query = self.__starvers_engine.timestamped_query
             timestamped_query = timestamped_query.lstrip()
         except Exception as e:
