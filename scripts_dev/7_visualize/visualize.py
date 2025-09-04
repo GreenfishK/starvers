@@ -13,6 +13,7 @@ import logging
 import itertools
 import re
 import numpy as np
+import glob
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
@@ -28,11 +29,30 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 ############################################# Parameters #############################################
 work_dir = "/starvers_eval/"
 measurements_in = work_dir + "output/measurements/"
+ostrich_measurements = work_dir + "ostrich_results/"
 figures_out = work_dir + "output/figures/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
 ############################################# Visualize #############################################
+
+def _to_mib_from_text(s: str) -> float:
+    s = s.strip().upper()
+    m = re.match(r'^\s*([0-9]*\.?[0-9]+)\s*([KMGT]?)B?\s*$', s)
+    if not m:
+        return float(s)
+    val = float(m.group(1))
+    unit = m.group(2)
+    if unit == 'K':
+        return val / 1024.0
+    elif unit == 'M' or unit == '':
+        return val
+    elif unit == 'G':
+        return val * 1024.0
+    elif unit == 'T':
+        return val * 1024.0 * 1024.0
+    else:
+        return val
 
 def create_plots(triplestore: str, dataset: str):
     """
@@ -51,7 +71,7 @@ def create_plots(triplestore: str, dataset: str):
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
     # Parameters
-    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
+    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs', 'ostrich']
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
@@ -65,15 +85,18 @@ def create_plots(triplestore: str, dataset: str):
         means = means.reset_index()
         
         for policy in policies:
-            policy_df = means[means['policy'] == policy]
-            if dataset == 'bearc':
-                markevery = math.ceil(len(policy_df['snapshot'])/120)
+            if policy == 'ostrich':
+                pass
             else:
-                markevery = math.ceil(len(policy_df['snapshot'])/60)
-            ax.set_yscale('log')
-            ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], linestyle='none',
-                marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
-                label=policy, color='black', markevery=markevery)
+                policy_df = means[means['policy'] == policy]
+                if dataset == 'bearc':
+                    markevery = math.ceil(len(policy_df['snapshot'])/120)
+                else:
+                    markevery = math.ceil(len(policy_df['snapshot'])/60)
+                ax.set_yscale('log')
+                ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], linestyle='none',
+                    marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
+                    label=policy, color='black', markevery=markevery)
 
         
         ax.set_title(f"Query set: {query_set}")
@@ -84,15 +107,18 @@ def create_plots(triplestore: str, dataset: str):
                       labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
 
     query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].unique()
-    if len(query_sets) == 1:
-        ax = fig.add_subplot(gs[0, :])
-        plot_performance(query_set=query_sets[0], ax=ax)
-    else:
-        assert len(query_sets) == 2
-        ax1 = fig.add_subplot(gs[0, 0])
-        plot_performance(query_set=query_sets[0], ax=ax1)
-        ax2 = fig.add_subplot(gs[0, 1])
-        plot_performance(query_set=query_sets[1], ax=ax2)
+
+    print(query_sets)
+
+    #if len(query_sets) == 1:
+    #    ax = fig.add_subplot(gs[0, :])
+    #    plot_performance(query_set=query_sets[0], ax=ax)
+    #else:
+    #    assert len(query_sets) == 2
+    #    ax1 = fig.add_subplot(gs[0, 0])
+    #    plot_performance(query_set=query_sets[0], ax=ax1)
+    #    ax2 = fig.add_subplot(gs[0, 1])
+    #    plot_performance(query_set=query_sets[1], ax=ax2)
 
     def plot_ingestion(ax, ax2):
         bar_width = 0.2
@@ -101,21 +127,62 @@ def create_plots(triplestore: str, dataset: str):
         index = range(len(policies))
 
         for i, policy in enumerate(policies):
-            policy_data = ingestion_data[(ingestion_data['triplestore'] == triplestore) & (ingestion_data["policy"] == policy) & (ingestion_data['dataset'] == dataset)]
-            raw_size = policy_data["raw_file_size_MiB"].mean()
-            db_size = policy_data["db_files_disk_usage_MiB"].mean()
-            
-            ax.boxplot(policy_data["ingestion_time"], positions=[i], widths=0.8, medianprops=dict(color='black', linestyle='--'))
-            
-            # Raw File Size Bar (dashed filling)
-            ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black', label="Raw File Size")
+            if policy == "ostrich":
+                # Spezielle Behandlung für Ostrich
+                ostrich_file = Path(ostrich_measurements) / dataset / "lookup_queries_p_insertion.csv"
+                file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
 
-            # DB File Size Bar (solid black)
-            ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black', label="DB File Size")
+                ingestion_time, raw_size, db_size = float("nan"), float("nan"), float("nan")
 
-            ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
-            ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
-    
+                if ostrich_file.exists():
+                    df = pd.read_csv(ostrich_file, sep=";", engine="python")
+
+                    if "durationms" in df.columns:
+                        ingestion_time = pd.to_numeric(df["durationms"], errors="coerce").fillna(0).sum() / 1000.0
+
+                    if "accsize" in df.columns and len(df["accsize"]) > 0:
+                        last_bytes = pd.to_numeric(df["accsize"].iloc[-1], errors="coerce")
+                        if pd.notna(last_bytes):
+                            db_size = float(last_bytes) / (1024.0 * 1024.0)
+                
+                if file_size_txt.exists():
+                    try:
+                        raw_txt = file_size_txt.read_text(encoding="utf-8").strip()
+                        raw_size = _to_mib_from_text(raw_txt)  # -> MB
+                    except Exception:
+                        pass
+
+                print(f"File Size: {raw_size} MiB")
+                print(f"DB Size: {db_size} MiB")
+
+                # Plot (Boxplot mit einem Wert)
+                ax.boxplot([ingestion_time], positions=[i], widths=0.8,
+                       medianprops=dict(color='black', linestyle='--'))
+
+                ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black')
+                ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black')
+
+                if pd.notna(raw_size):
+                    ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
+                if pd.notna(db_size):
+                    ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
+
+            else:
+                policy_data = ingestion_data[(ingestion_data['triplestore'] == triplestore) & (ingestion_data["policy"] == policy) & (ingestion_data['dataset'] == dataset)]
+                raw_size = policy_data["raw_file_size_MiB"].mean()
+                db_size = policy_data["db_files_disk_usage_MiB"].mean()
+                
+                ax.boxplot(policy_data["ingestion_time"], positions=[i], widths=0.8, medianprops=dict(color='black', linestyle='--'))
+                
+                # Raw File Size Bar (dashed filling)
+                ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black', label="Raw File Size")
+
+                # DB File Size Bar (solid black)
+                ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black', label="DB File Size")
+
+                ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
+                ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
+        
         ax.set_xticks(index)
         ax.set_xticklabels(policies)
         ax.set_xlabel("Policies")
@@ -380,7 +447,7 @@ args = itertools.product(['graphdb', 'jenatdb2'], datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-create_plots_update("GRAPHDB", 'bearc')
+#create_plots_update("GRAPHDB", 'bearc')
 
 # Latex table for query performance, ingestion, and db file size
-create_latex_tables()
+#create_latex_tables()

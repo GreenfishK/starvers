@@ -11,6 +11,7 @@ datasets=("${datasets}")
 triple_stores=("${triple_stores}")
 graphdb_port=$((7200))
 jenatdb2_port=$((3030))
+ostrich=("${ostrich}")
 
 # Prepare directories and files
 rm -rf /starvers_eval/output/logs/evaluate/

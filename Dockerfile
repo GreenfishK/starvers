@@ -69,7 +69,7 @@ RUN apt-get install -y procps && rm -rf /var/lib/apt/lists/*
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
--Xmx90g -Xms90g \
+-Xmx24g -Xms24g \
 -Dgraphdb.dist=/opt/graphdb/dist \
 -Dgraphdb.home.work=/tmp/graphdb/work \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
@@ -82,7 +82,7 @@ ENV GDB_JAVA_OPTS='\
 
 # Set jenatdb2 environment variables
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JVM_ARGS='-Xms90g -Xmx90g'
+ENV JVM_ARGS='-Xms24g -Xmx24g'
 ENV ADMIN_PASSWORD=starvers
 
 # Docker knowledge

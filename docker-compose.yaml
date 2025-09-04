@@ -7,7 +7,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -22,7 +21,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -37,7 +35,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
@@ -58,7 +55,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     hostname: Starvers
     ports:
       - 7200:7200
@@ -86,7 +82,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -107,7 +102,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
@@ -122,7 +116,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - /mnt/data/starvers_eval_investigate/output/logs:/starvers_eval/output/logs
       - /mnt/data/starvers_eval_investigate/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
@@ -149,7 +142,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
@@ -177,7 +169,6 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
@@ -195,11 +186,11 @@ services:
       dockerfile: Dockerfile
       target: final_stage
     image: starvers_eval
-    container_name: starvers_eval
     volumes:   
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
+      - ${base_host_dir}/ostrich_results:/starvers_eval/ostrich_results
       - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
     environment:
       - policies=${policies}  
@@ -247,5 +238,25 @@ services:
 #    volumes:   
 #      - ./scripts_dev/ostrich.py:/starvers_eval/scripts/ostrich.py # move to image after development has finished
 #    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/ostrich.py"]
+
+  ostrich_evaluate:
+    image: ostrich:v1
+    mem_limit: 12g
+    build: 
+      context: ./ostrich
+      dockerfile: Dockerfile
+    container_name: starvers_eval-ostrich-runner
+    volumes:
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata:ro
+      - ${base_host_dir}/ostrich_temp:/starvers_eval/ostrich_temp
+      - ${base_host_dir}/ostrich_results:/starvers_eval/ostrich_results
+      - ./raw_queries/bearb/lookup_ostrich:/starvers_eval/ostrich/queries_bearb:ro
+      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate:ro
+    working_dir: /starvers_eval
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms12g -Xmx12g
+      - datasets=${datasets}
+    entrypoint: ["python3", "/starvers_eval/scripts/6_evaluate/ostrich_evaluate.py"]
+    command: ["$datasets"]
 
 
