@@ -76,8 +76,9 @@ def create_plots(triplestore: str, dataset: str):
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
     gs = fig.add_gridspec(2, 2)   
-    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*']))
-    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black']))
+    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*', 'p']))
+    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black', 'red']))
+
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
@@ -86,7 +87,19 @@ def create_plots(triplestore: str, dataset: str):
         
         for policy in policies:
             if policy == 'ostrich':
-                pass
+                if query_set == 'lookup':
+                    ostrich_performance = pd.read_csv(ostrich_measurements + dataset + "/lookup_queries_p_vm.csv", sep=";", engine="python" )
+                    means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
+                    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+                    markevery = math.ceil(len(means['patch'])/60)
+
+                    ax.set_yscale('log')
+                    ax.plot(means['patch'], means['execution_time_total'], linestyle='none',
+                        marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
+                        label=policy, color='black', markevery=markevery)
+                else:
+                    # no data for join queries
+                    pass
             else:
                 policy_df = means[means['policy'] == policy]
                 if dataset == 'bearc':
@@ -108,17 +121,15 @@ def create_plots(triplestore: str, dataset: str):
 
     query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].unique()
 
-    print(query_sets)
-
-    #if len(query_sets) == 1:
-    #    ax = fig.add_subplot(gs[0, :])
-    #    plot_performance(query_set=query_sets[0], ax=ax)
-    #else:
-    #    assert len(query_sets) == 2
-    #    ax1 = fig.add_subplot(gs[0, 0])
-    #    plot_performance(query_set=query_sets[0], ax=ax1)
-    #    ax2 = fig.add_subplot(gs[0, 1])
-    #    plot_performance(query_set=query_sets[1], ax=ax2)
+    if len(query_sets) == 1:
+        ax = fig.add_subplot(gs[0, :])
+        plot_performance(query_set=query_sets[0], ax=ax)
+    else:
+        assert len(query_sets) == 2
+        ax1 = fig.add_subplot(gs[0, 0])
+        plot_performance(query_set=query_sets[0], ax=ax1)
+        ax2 = fig.add_subplot(gs[0, 1])
+        plot_performance(query_set=query_sets[1], ax=ax2)
 
     def plot_ingestion(ax, ax2):
         bar_width = 0.2
@@ -128,7 +139,6 @@ def create_plots(triplestore: str, dataset: str):
 
         for i, policy in enumerate(policies):
             if policy == "ostrich":
-                # Spezielle Behandlung für Ostrich
                 ostrich_file = Path(ostrich_measurements) / dataset / "lookup_queries_p_insertion.csv"
                 file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
 
@@ -152,10 +162,6 @@ def create_plots(triplestore: str, dataset: str):
                     except Exception:
                         pass
 
-                print(f"File Size: {raw_size} MiB")
-                print(f"DB Size: {db_size} MiB")
-
-                # Plot (Boxplot mit einem Wert)
                 ax.boxplot([ingestion_time], positions=[i], widths=0.8,
                        medianprops=dict(color='black', linestyle='--'))
 
@@ -206,11 +212,12 @@ def create_plots(triplestore: str, dataset: str):
     cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
     tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
+    ostrich = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='red', markerfacecolor='red',label='ostrich')
 
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
     db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
 
-    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line]
+    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line, ostrich]
     handles2 = [raw_file_size_patch, db_file_size_path]
     fixed_labels = ['raw_file_size_patch', 'db_file_size_path']
 
@@ -447,7 +454,7 @@ args = itertools.product(['graphdb', 'jenatdb2'], datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-#create_plots_update("GRAPHDB", 'bearc')
+create_plots_update("GRAPHDB", 'bearc')
 
 # Latex table for query performance, ingestion, and db file size
-#create_latex_tables()
+create_latex_tables()
