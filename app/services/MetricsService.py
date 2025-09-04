@@ -105,8 +105,8 @@ class MetricsService():
         LOG.info(f"Repository name: {repo_name}: Updating 'snapshot' table with property metrics")
         LOG.info(f"Repository name: {repo_name}: Querying property metrics from GraphDB with ts_current={snapshot_ts} and ts_rev={snapshot_ts_prev}")
         
-        # Load property identifiers from app/utils/graphdb/ontology_config.yml
-        def load_property_identifiers(repo_name: str, config_path: str = "app/utils/graphdb/ontology_config.yml") -> str:
+        # Load property identifiers from app/persistance/graphdb/ontology_config.yml
+        def load_property_identifiers(repo_name: str, config_path: str = "app/persistance/graphdb/ontology_config.yml") -> str:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 

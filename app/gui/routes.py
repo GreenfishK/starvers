@@ -194,7 +194,7 @@ def run_query():
         
         df = df.applymap(iri_to_link)
         result_set = df.to_html(classes="table table-striped", index=False, escape=False)
-        
+
         return jsonify({"result_set": result_set, "timestamped_query": timesamped_query})
     
     except Exception as e:
