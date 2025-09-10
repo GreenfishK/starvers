@@ -1,4 +1,5 @@
 # TODOs
+## Features
 TODO: Implement support for multiple RDF serializations including file archives and directories with multiple RDF files.
 
 TODO: Investigate why import fails for for https://bimerr.iot.linkeddata.es/def/weather/ontology.nt
@@ -51,13 +52,22 @@ TODO: Consider adding a trace (curve) for change ratios between snapshots. Note:
 
 TODO: Add an "summarize" feature that generates a summary of the changes between two versions.
 
-TODO: GUI: Fix bug with tooltip
-
 TODO: Backend: When user leaves session, send a query abort to the Triple Store.
 
 TODO: GUI: Add a sorting option for the class and property hierarchy that sorts them either according to the instance count or change count (added + deleted triples)
 
 TODO: Add a feature that lets the user select two data points in the plot and the changes between these two versions are shown.
+
+## Bug fixes
+TODO: GUI: Fix bug with tooltip
+
+TODO: Metrics calculation: Fix bug with calculation for added and deleted triples. The bug is visible for schema.org when the property changes 
+for the 08.09.2025 and the 09.09.2025 are compared. the isPartOf property
+has a wrong number of total instances: on the 09.09.2025. What probably went 
+wrong is that the calculation for the 09.09.2025 for some reason used a 
+wrong reference date, i.e. the same as the calculation on the 08.9.2025.
+
+
 
 # Done
 fix bug with week aggregation. the shown number of total triples in one week datapoint does not correspond to the same date in the "day view"
