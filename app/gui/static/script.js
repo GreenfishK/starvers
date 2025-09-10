@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
         mode: "sparql",
         lineNumbers: true,
         theme: "default",
-        readOnly: "nocursor" 
+        readOnly: true
     });
     timestampedEditor.getWrapperElement().style.backgroundColor = "#f5f5f5";
 
