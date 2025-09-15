@@ -31,6 +31,7 @@ class PollingTask():
         self.next_run = self.__time_func()
         self.__versioning_wrapper = None
         self.latest_timestamp = latest_timestamp
+        LOG.info(f"Repository name: {self.repository_name}: Polling task created with next_run={self.next_run} latest_timestamp={self.latest_timestamp}.")
 
 
     @property
@@ -101,6 +102,8 @@ class PollingTask():
                         
                         # Update snapshot table: property metrics
                         metrics_service.update_property_statistics(self.dataset_id, self.repository_name, version_timestamp, self.latest_timestamp)
+
+                        self.latest_timestamp = version_timestamp
                 else:
                     self.__is_initial = False
                     self.next_run = dataset.next_run.timestamp()

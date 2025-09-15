@@ -221,6 +221,11 @@ def get_dataset_version_oblivious_template() -> str:
         template = f.read()
         return template
 
+def get_latest_update_ts_template() -> str:
+    with open(f'{QUERY_DIR}/query_latest_update_ts.sparql', 'r') as f:
+        template = f.read()
+        return template
+
     
 def _versioning_timestamp_format(timestamp: datetime.datetime) -> str:
     # TODO use same method as starvers library does

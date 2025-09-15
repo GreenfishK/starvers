@@ -36,7 +36,7 @@ class MetricsService():
         delete_stmt = (
             sqlmodel_delete(Snapshot)
                 .where(Snapshot.dataset_id == dataset_id)
-                .where(Snapshot.snapshot_ts > start_timestamp)
+                .where(Snapshot.snapshot_ts >= start_timestamp)
             )
         self.session.exec(delete_stmt)
         self.session.commit()
