@@ -220,6 +220,18 @@ strong {
 .snapshot-tree .tree-node > .expand-btn::before { content: "+"; text-align: center; color: #006699; }
 .snapshot-tree .tree-node.expanded > .expand-btn::before { content: "−"; color: #006699; }
 
+
+/****************************************
+** main section main view
+*****************************************/
+#main-section-main-view {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-height:100%;
+  gap: 0px;
+}
+
 /****************************************
 ** Plot
 *****************************************/
@@ -236,23 +248,57 @@ strong {
 /****************************************
 ** SPARQL form
 *****************************************/
-#sparql-form { flex-wrap: wrap; flex-grow: 1; max-width: 100%; }
-#sparql-container-total { width: 100%; flex-direction: column; flex-wrap: wrap; }
-#sparql-container-total .title { width: 100%; }
+#sparql-form { 
+  /*display: flex; */
+  flex: 1 1 auto; 
+  flex-direction: column;
+  /*flex-wrap: wrap; */
+  /*height: 100%; */
+  /*width: 100%; */
+  max-width: 100%; 
+  /*max-height: 100%; */
+
+}
+
+#sparql-container-total { 
+  display: flex; 
+  flex: 1 1 auto; 
+  flex-direction: column;
+  /*flex-wrap: wrap; */
+  height: 100%; 
+  /*width: 100%; */
+  /*max-width: 100%; */
+  /*max-height: 100%; */
+}
+#sparql-container-total .title { 
+  width: 100%; 
+}
 
 #sparql-container {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  /*display: flex; */
+  flex: 1 1 auto; 
+  /*flex-direction: column;*/
+  /*flex-wrap: wrap; */
+  /*height: 100%; */
+  /*width: 100%; */
+  /*max-width: 100%; */
+  /*max-height: 100%; */
   gap: 1rem;
-  width: 100%;
   margin-bottom: 1rem;
+
 }
 
 #sparql-container-left,
 #sparql-container-right {
-  flex: 1 1 49%;  
+  /*display: flex; */
+  flex: 1 0 49%;  
+  flex-direction: column;
+  /*height: 100%; */
+  /*width: 100%; */
   min-width: 300px; 
+  /*max-width: 100%; */
+  /*max-height: 100%; */
+
   overflow: auto; 
   box-sizing: border-box; 
 }
@@ -272,9 +318,20 @@ strong {
   border: 1px solid #646363;  
   border-radius: 4px;      
 }
-.CodeMirror { flex-grow: 1; max-width: 100%; }
-.CodeMirror .CodeMirror-scroll .CodeMirror-gutters { background-color: #EDEDED !important; }
-#sparql-container-right .CodeMirror { background-color: #D0D0D0 !important; }
+
+.CodeMirror { 
+  flex-grow: 1; 
+  max-width: 100%; 
+  /*height: auto !important;*/
+}
+
+.CodeMirror .CodeMirror-scroll .CodeMirror-gutters { 
+  background-color: #EDEDED !important; 
+}
+
+#sparql-container-right .CodeMirror { 
+  background-color: #D0D0D0 !important; 
+}
 
 #timestamped-query-label { width: 100%; }
 
