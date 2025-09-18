@@ -77,74 +77,75 @@
         </section>
 
         <section id="main-section" class="content-section">
-            <!-- Plotly chart -->   
-            <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
-                {% if evo_plot %}
-                <div id="plot-box" class="is-flex-grow-1">
-                    <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
-                        <!-- Time aggregation buttons -->
-                        <div id="plot-box-buttons" class="is-flex is-align-items-center">
-                            <button id="hour_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="HOUR">Hour</button>
-                            <button id="day_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="DAY">Day</button>
-                            <button id="week_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="WEEK">Week</button>
-                        </div>
-
-                        <!-- Custom Legend -->
-                        <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
-                            <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
-                            <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
-                            <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
-                        </div>
-                    </div>
-                    {{ evo_plot | safe }}
-                </div>
-                {% endif %}
-            </div>
-
-            <form id="sparql-form" class="is-flex">
-                <div id="sparql-container-total" class="is-flex">
-                    <h3 class="title is-5">SPARQL Query Editor</h3>
-
-                    <div id ="sparql-container" class="is-flex is-flex-wrap-wrap">
-                        <!-- Left side: Label + Input + Help + Query Editor -->
-                        <div id="sparql-container-left" class="is-flex is-flex-wrap-wrap">
-                            <div id="timestamp-input-container" class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
-                                <label id="timestamp_input-label" class="label mr-2" for="timestamp_input">Timestamp</label>
-                                <input id="timestamp_input"
-                                        class="input"
-                                        onclick="showTooltip(this)"
-                                        type="text"
-                                        name="timestamp"
-                                        placeholder="{{ ts_end_iso8601 }}"
-                                        value="{{ selected_timestamp or ts_end_iso8601 }}">
-
-                                <!-- gets updated via showTooltip() javascript function -->
-                                <p id="timestamp-help"
-                                    title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
-                                    style="display: none;">
-                                </p>
+            <div id="main-section-main-view">
+                <!-- Plotly chart -->   
+                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                    {% if evo_plot %}
+                    <div id="plot-box" class="is-flex-grow-1">
+                        <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
+                            <!-- Time aggregation buttons -->
+                            <div id="plot-box-buttons" class="is-flex is-align-items-center">
+                                <button id="hour_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="HOUR">Hour</button>
+                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="DAY">Day</button>
+                                <button id="week_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="WEEK">Week</button>
                             </div>
 
-                            <!-- SPARQL editor -->
-                            <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
-                            <!-- CodeMirror is injected here -->
+                            <!-- Custom Legend -->
+                            <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
+                                <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
+                                <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
+                                <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
+                            </div>
                         </div>
-
-                        <!-- right side: Label + Timestamped query -->
-                        <div id="sparql-container-right" class="is-flex is-flex-wrap-wrap">
-                            <label id="timestamped-query-label" class="label mb-2 mt-4">Timestamped Query</label>
-                            <textarea id="timestamped-query" class="textarea" name="sparql" rows="10"></textarea>
-                        </div>
+                        {{ evo_plot | safe }}
                     </div>
-
-                    <div class="field">
-                        <div class="control">
-                            <button id="executeQuery" type="submit" class="button is-link">Execute Query</button>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
-            </form>
 
+                <form id="sparql-form" class="is-flex">
+                    <div id="sparql-container-total" class="is-flex">
+                        <h3 class="title is-5">SPARQL Query Editor</h3>
+
+                        <div id ="sparql-container" class="is-flex is-flex-wrap-wrap">
+                            <!-- Left side: Label + Input + Help + Query Editor -->
+                            <div id="sparql-container-left" class="is-flex is-flex-wrap-wrap">
+                                <div id="timestamp-input-container" class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
+                                    <label id="timestamp_input-label" class="label mr-2" for="timestamp_input">Timestamp</label>
+                                    <input id="timestamp_input"
+                                            class="input"
+                                            onclick="showTooltip(this)"
+                                            type="text"
+                                            name="timestamp"
+                                            placeholder="{{ ts_end_iso8601 }}"
+                                            value="{{ selected_timestamp or ts_end_iso8601 }}">
+
+                                    <!-- gets updated via showTooltip() javascript function -->
+                                    <p id="timestamp-help"
+                                        title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
+                                        style="display: none;">
+                                    </p>
+                                </div>
+
+                                <!-- SPARQL editor -->
+                                <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
+                                <!-- CodeMirror is injected here -->
+                            </div>
+
+                            <!-- right side: Label + Timestamped query -->
+                            <div id="sparql-container-right" class="is-flex is-flex-wrap-wrap">
+                                <label id="timestamped-query-label" class="label mb-2 mt-4">Timestamped Query</label>
+                                <textarea id="timestamped-query" class="textarea" name="sparql" rows="10"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button id="executeQuery" type="submit" class="button is-link">Execute Query</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
             <div id="data-section" class="is-flex is-hidden">
                 {% if error %}
                 <div id="result-retrieval-error" class="notification is-danger mt-4">
