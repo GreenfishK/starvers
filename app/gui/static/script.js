@@ -245,16 +245,29 @@ function plotly_relayout(eventData, plotDiv) {
         return;
     }
 
-    // Extract y data as plain array, handling typed arrays
-    let yData = traceTotal.y;
-    if (!Array.isArray(yData)) {
-        if (yData && '_inputArray' in yData) {
-            yData = Array.from(yData._inputArray);
-        } else {
-            console.warn("Total Triples y data unavailable or invalid, skipping relayout.");
-            return;
-        }
+    // Find the "Insertions" and "Deletions" trace
+    const insertions = plotDiv.data.find(t => t.name === "Insertions");
+    const deletions = plotDiv.data.find(t => t.name === "Deletions");
+
+    // Helper to extract y as plain array
+    function extractY(trace) {
+        if (Array.isArray(trace.y)) return trace.y;
+        if (trace.y && "_inputArray" in trace.y) return Array.from(trace.y._inputArray);
+        return [];
     }
+    
+    // Extract y data as plain array, handling typed arrays
+    // Start with Total Triples y-values
+    let yTotal = extractY(traceTotal);
+    const yIns = extractY(insertions);
+    const yDel = extractY(deletions);
+
+    // Compute combined y-values per point
+    let yData = yTotal.map((val, i) => {
+        const insVal = yIns[i];
+        const delVal = yDel[i];
+        return val - insVal + Math.abs(delVal);
+    });
 
     const visibleTotals = yData.slice(startIndex, endIndex + 1);
     if (visibleTotals.length === 0) {
@@ -264,6 +277,7 @@ function plotly_relayout(eventData, plotDiv) {
 
     const yMin = Math.min(...visibleTotals);
     const yMax = Math.max(...visibleTotals);
+    console.log(`Visible y-range: [${yMin}, ${yMax}]`);
     const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
     const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
 
