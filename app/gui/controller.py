@@ -84,8 +84,6 @@ class GuiContr:
 
         agg = agg.reset_index()
 
-        timeformat = "%d.%m.%Y\n%H:%M:%S" if time_aggr.name == "HOUR" else "%d.%m.%Y"
-        timestamps = agg["timestamp"].dt.strftime(timeformat) 
         total = agg["cnt_triples"].astype(int)
         insertions = agg["insertions"].astype(int)
         deletions = agg["deletions"].astype(int)
@@ -100,6 +98,20 @@ class GuiContr:
         hovertemplates_ins = []
         hovertemplates_del = []
 
+        # compute time differences in milliseconds
+        diffs_ms = agg["timestamp"].diff().dt.total_seconds().fillna(0) * 1000
+        valid_diffs = diffs_ms[1:]  # skip the first NaN
+        if len(valid_diffs) > 0 and valid_diffs.median() > 0:
+            median_delta_ms = int(valid_diffs.median())
+        else:
+            # fallback to 1 day if single point or weird data
+            median_delta_ms = 24 * 3600 * 1000
+
+        # choose bar width as a fraction of the median spacing (0.6 is a good start)
+        bar_width_ms = max(1, int(median_delta_ms * 0.6))
+        widths_ins = [bar_width_ms] * len(agg)
+        widths_del = [bar_width_ms] * len(agg)
+
         for i in range(len(agg)):
             base_y = total.iloc[i - 1] if i > 0 else 0
             ins = insertions.iloc[i]
@@ -109,8 +121,6 @@ class GuiContr:
             if net > 0:
                 ins_y.append(net)
                 ins_base.append(base_y)
-                widths_ins.append(0.4)
-                widths_del.append(0.1)
                 hovertemplates_ins.append(f"{net:,} insertions (net)")
 
                 if dels > 0:
@@ -124,13 +134,11 @@ class GuiContr:
             else:
                 del_y.append(net)
                 del_base.append(base_y)
-                widths_ins.append(0.1)
-                widths_del.append(0.4)
                 hovertemplates_del.append(f"{-net:,} deletions (net)")
 
                 if ins > 0:
                     ins_y.append(ins)
-                    ins_base.append(base_y + net)
+                    ins_base.append(base_y - dels)
                     hovertemplates_ins.append(f"{ins:,} insertions")
                 else:
                     ins_y.append(0)
@@ -138,6 +146,9 @@ class GuiContr:
                     hovertemplates_ins.append("No insertions")
 
         fig = go.Figure()
+
+        # compute timestamps and a sensible bar width in ms 
+        timestamps = [dt.isoformat() for dt in agg["timestamp"].dt.to_pydatetime()]
 
         fig.add_trace(go.Bar(
             x=timestamps,
@@ -167,7 +178,18 @@ class GuiContr:
             line=dict(color="#5485AB", width=1)
         ))
 
-        # Multi-line hierarchical tick labels
+        # compute x_range using datetime, not string
+        margin_width = pd.Timedelta(milliseconds=bar_width_ms / 1.5)
+
+        if len(agg) > 14:
+            x_start_dt = agg["timestamp"].iloc[-14] - margin_width
+            x_end_dt = agg["timestamp"].iloc[-1] + margin_width
+        else:
+            x_start_dt = agg["timestamp"].iloc[0] - margin_width
+            x_end_dt = agg["timestamp"].iloc[-1] + margin_width
+
+        # convert to ISO strings for Plotly
+        x_range = [x_start_dt.isoformat(), x_end_dt.isoformat()]
 
         fig.update_layout(
             xaxis_title="Time",
@@ -185,14 +207,14 @@ class GuiContr:
                 gridwidth=1,
                 rangeslider=dict(visible=False),
                 fixedrange=False,
-
+                range=x_range
             ),
             yaxis=dict(
                 showgrid=True,
                 gridcolor='lightgray',
                 gridwidth=1,
                 autorange=True,
-                fixedrange=True,  # prevent manual manual y panning, but allow zoom
+                fixedrange=True,  
                 tickformat=","
             )
         )

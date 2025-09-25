@@ -322,7 +322,6 @@ strong {
 .CodeMirror { 
   flex-grow: 1; 
   max-width: 100%; 
-  /*height: auto !important;*/
 }
 
 .CodeMirror .CodeMirror-scroll .CodeMirror-gutters { 

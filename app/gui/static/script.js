@@ -203,6 +203,8 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
 
 function plotly_relayout(eventData, plotDiv) {
     console.log("Plotly relayout event triggered:");
+    console.log("Current x-axis range:", plotDiv.layout.xaxis.range);
+
     let relayoutTimeout = null;
     let lastYRange = null;
 
@@ -212,11 +214,24 @@ function plotly_relayout(eventData, plotDiv) {
     }
 
     const xVals = plotDiv.data[0].x;
-    const xStart = plotDiv.layout.xaxis.range ? plotDiv.layout.xaxis.range[0] : 0;
-    const xEnd = plotDiv.layout.xaxis.range ? plotDiv.layout.xaxis.range[1] : plotDiv.data[0].x.length - 1;
+    const xStart = new Date(plotDiv.layout.xaxis.range[0]);
+    const xEnd = new Date(plotDiv.layout.xaxis.range[1]);
 
-    const startIndex = Math.max(0, Math.floor(xStart));
-    const endIndex = Math.min(xVals.length - 1, Math.ceil(xEnd));
+    // Find indices corresponding to visible range
+    let startIndex = 0;
+    let endIndex = xVals.length - 1;
+    for (let i = 0; i < xVals.length; i++) {
+        const d = new Date(xVals[i]);
+        if (d >= xStart) { 
+            startIndex = i; break; 
+        }
+    }
+    for (let i = xVals.length - 1; i >= 0; i--) {
+        const d = new Date(xVals[i]);
+        if (d <= xEnd) { 
+            endIndex = i; break; 
+        }
+    }
 
     if (startIndex > endIndex) {
         console.log("No visible data in range.");
@@ -281,8 +296,9 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
     const overlay = document.getElementById("loading-overlay-change-views");
     const timerEl = document.getElementById("timer-change-views");
 
-    const [day, month, year] = rawTimestamp.split(".");
-    if (!day || !month || !year) return;
+    const dt = new Date(rawTimestamp); // JS Date object
+
+    if (isNaN(dt.getTime())) return; // invalid date, skip
 
     let seconds = 0;
     timerEl.textContent = "0";
@@ -297,8 +313,8 @@ function plotly_fetchSnapshotHierarchy(eventData, plotDiv, dropdown) {
 
     const formattedTimestamp =
         activeAggLevel === "HOUR"
-            ? point.x
-            : `${year}-${month}-${day}T23:59:59`;
+            ? rawTimestamp
+            : `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}T23:59:59`;
 
     document.getElementById("timestamp_input").value = formattedTimestamp;
 
