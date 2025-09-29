@@ -190,7 +190,7 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
-      - ${base_host_dir}/ostrich_results:/starvers_eval/ostrich_results
+      - ${base_host_dir}/ostrich/output/measurements:/starvers_eval/ostrich/output/measurements
       - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
     environment:
       - policies=${policies}  
@@ -207,56 +207,106 @@ services:
       - ${base_host_dir}/databases/ostrich2:/opt/ostrich
     entrypoint: ["/bin/bash"]
 
-#  start_ostrich_endpoint:
-#    build:
-#      context: archiving-demo/endpoint
-#      dockerfile: Dockerfile
-#    image: ostrich-endpoint
-#    ports:
-#      - 42564:42564
-#    volumes:
-#      - ${base_host_dir}/databases/ostrich:/var/ostrich
-      
-#  start_ostrich_webapp:
-#    build: ./archiving-demo/webapp/
-#    ports:
-#      - "3000:3000"
-#    image: ostrich-webapp
-#    volumes:
-#      - ./archiving-demo/webapp/http:/var/https
-#    extra_hosts:
-#      - host.docker.internal:host-gateway
+#--------------------------------------------------------------------------------------------------------
+#
+# OSTRICH EVALUATION
+#
+#--------------------------------------------------------------------------------------------------------
 
-#  query_ostrich:
-#    build: 
-#      context: .
-#      dockerfile: Dockerfile
-#      target: final_stage
-#    image: starvers_eval
-#    extra_hosts:
-#      - host.docker.internal:host-gateway
-#    volumes:   
-#      - ./scripts_dev/ostrich.py:/starvers_eval/scripts/ostrich.py # move to image after development has finished
-#    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/ostrich.py"]
+# 1) Download data used from starvers_eval
 
-  ostrich_evaluate:
-    image: ostrich:v1
-    mem_limit: 12g
+# 2) Cleaning of datasets used from starvers_eval
+
+# 3) Construct Datasets
+  ostrich_construct_datasets:
     build: 
-      context: ./ostrich
-      dockerfile: Dockerfile
-    container_name: starvers_eval-ostrich-runner
+      context: .
+      dockerfile: Dockerfile.ostrich
+    image: ostrich:v1
     volumes:
-      - ${base_host_dir}/rawdata:/starvers_eval/rawdata:ro
-      - ${base_host_dir}/ostrich_temp:/starvers_eval/ostrich_temp
-      - ${base_host_dir}/ostrich_results:/starvers_eval/ostrich_results
-      - ./raw_queries/bearb/lookup_ostrich:/starvers_eval/ostrich/queries_bearb:ro
-      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate:ro
-    working_dir: /starvers_eval
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/rawdata:/ostrich_eval/rawdata
+      - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets
+      - ./scripts_dev/3_construct_datasets:/ostrich_eval/scripts/3_construct_datasets
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms12g -Xmx12g
       - datasets=${datasets}
-    entrypoint: ["python3", "/starvers_eval/scripts/6_evaluate/ostrich_evaluate.py"]
+    entrypoint: ["python3", "/ostrich_eval/scripts/3_construct_datasets/ostrich_construct_datasets.py"]
+    command: ["$datasets"]
+
+# 4) Ingest
+  ostrich_ingest:
+    build: 
+      context: .
+      dockerfile: Dockerfile.ostrich
+    image: ostrich:v1
+    volumes:
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
+      - ${base_host_dir}/ostrich/stores:/ostrich_eval/stores
+      - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets
+      - ./scripts_dev/4_ingest:/ostrich_eval/scripts/4_ingest
+    environment:
+      - datasets=${datasets}
+    entrypoint: ["python3", "/ostrich_eval/scripts/4_ingest/ostrich_ingest.py"]
+    command: ["$datasets"]
+
+# 5) Construct Queries
+  ostrich_construct_queries:
+    build: 
+      context: .
+      dockerfile: Dockerfile.ostrich
+    image: ostrich:v1
+    volumes:
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
+      - ./scripts_dev/5_construct_queries:/ostrich_eval/scripts/5_construct_queries
+    entrypoint: ["python3", "/ostrich_eval/scripts/5_construct_queries/ostrich_construct_queries.py"]
+
+# 6) Evaluate
+  ostrich_evaluate:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ostrich:v1
+    volumes:
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries:ro
+      - ${base_host_dir}/ostrich/stores:/ostrich_eval/stores
+      - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets:ro
+      - ./scripts_dev/6_evaluate:/ostrich_eval/scripts/6_evaluate:ro
+    environment:
+      - datasets=${datasets}
+    entrypoint: ["python3", "/ostrich_eval/scripts/6_evaluate/ostrich_evaluate.py"]
+    command: ["$datasets"]
+
+# 7) Visualize the results
+  ostrich_visualize:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ostrich:v1
+    volumes:
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
+      - ${base_host_dir}/ostrich/output/figures:/ostrich_eval/output/figures
+      - ./scripts_dev/7_visualize:/ostrich_eval/scripts/7_visualize:ro
+    environment:
+      - datasets=${datasets}
+    entrypoint: ["python3", "/ostrich_eval/scripts/7_visualize/ostrich_visualize.py"]
     command: ["$datasets"]
 
 
+# ----------------- Normales ostrich container environment zum testen --------------------------
+  ostrich:
+    build:
+      context: .
+      dockerfile: Dockerfile.ostrich
+    image: ostrich:v1
+    tty: true
+    stdin_open: true 
+    volumes:
+      #- ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets
+      - C:\Users\schre\Desktop\starvers\ostrich_temp\bearb_day\computed_patches:/ostrich_eval/datasets
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
+    entrypoint: ["bash"]

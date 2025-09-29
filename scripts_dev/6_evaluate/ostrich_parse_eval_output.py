@@ -5,8 +5,6 @@ import csv
 from typing import List
 
 # Markers used by ostrich-evaluate
-M_INSERT_START = re.compile(r"^---INSERTION START---")
-M_INSERT_END   = re.compile(r"^---INSERTION END---")
 M_QUERIES_START= re.compile(r"^---QUERIES START: (.+)---")
 M_QUERIES_END  = re.compile(r"^---QUERIES END---")
 M_PATTERN_START= re.compile(r"^---PATTERN START: (.+)$")
@@ -42,7 +40,6 @@ def _write_csv(path: Path, rows):
     import csv
     import re
 
-    # falls im Input „kommaartige“ Zeichen vorkommen, auf echtes Komma normalisieren
     def normalize_commas(s: str) -> str:
         return s.translate(str.maketrans({
             "，": ",", "‚": ",", "﹐": ",", "､": ",",
@@ -52,10 +49,8 @@ def _write_csv(path: Path, rows):
     for raw in rows:
         line = normalize_commas(raw)
 
-        # 1) bevorzugt Komma-Parsing
         rec = next(csv.reader([line], delimiter=",", quotechar='"'))
 
-        # 2) Fallbacks, falls nur 1 Spalte rauskommt
         if len(rec) == 1:
             alt = next(csv.reader([line], delimiter=";", quotechar='"'))
             if len(alt) > 1:
@@ -71,13 +66,11 @@ def _write_csv(path: Path, rows):
 
         parsed_rows.append([c.strip() for c in rec])
 
-    # einziges Output: Semikolon-getrennte CSV unter dem Originalpfad
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter=";", lineterminator="\n", quoting=csv.QUOTE_MINIMAL)
         writer.writerows(parsed_rows)
 
-def parse_eval_stdout_to_csv(log_path: Path, insertion_csv: Path,
-                             vm_csv: Path, dm_csv: Path, vq_csv: Path):
+def parse_eval_stdout_to_csv(log_path: Path, vm_csv: Path, dm_csv: Path, vq_csv: Path):
     txt = Path(log_path).read_text(encoding="utf-8", errors="ignore")
     lines = txt.splitlines()
 
@@ -91,16 +84,7 @@ def parse_eval_stdout_to_csv(log_path: Path, insertion_csv: Path,
     while i < len(lines):
         line = lines[i]
 
-        if M_INSERT_START.match(line):
-            # next line should be header
-            i += 1
-            block, i = _collect_table(lines, i)
-            insert_rows.extend(block)
-            continue
-
         if M_QUERIES_START.match(line):
-            # inside queries block, we may see multiple patterns,
-            # each with VM/DM/VQ tables; we just append all
             i += 1
             while i < len(lines) and not M_QUERIES_END.match(lines[i]):
                 if M_PATTERN_START.match(lines[i]):
@@ -139,8 +123,6 @@ def parse_eval_stdout_to_csv(log_path: Path, insertion_csv: Path,
         i += 1
 
     # write CSVs
-    if insert_rows:
-        _write_csv(Path(insertion_csv), insert_rows)
     if vm_rows:
         _write_csv(Path(vm_csv), vm_rows)
     if dm_rows:

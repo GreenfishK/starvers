@@ -1,18 +1,11 @@
-import sys, subprocess, shutil, re, shutil
-from pathlib import Path
+from datetime import datetime
+from datetime import timezone
 import os
+import sys, subprocess
+import logging
+import tomli
 
-# Parser import (liegt bei dir unter scripts/parse_eval_output.py)
-sys.path.append("/starvers_eval/scripts")
-from ostrich_parse_eval_output import parse_eval_stdout_to_csv  # <-- Name angepasst
-
-PAT_ADDED   = re.compile(r"data-added_(\d+)-(\d+)\.nt$")
-PAT_DELETED = re.compile(r"data-deleted_(\d+)-(\d+)\.nt$")
-
-IMAGE = "ostrich:v1"
-
-DEFAULT_REPS = 3
-DATASETS = sys.argv[1].split(" ")
+from ostrich_parse_eval_output import parse_eval_stdout_to_csv
 
 def sh(cmd, capture=False, **kwargs):
     print("+", " ".join(map(str, cmd)), flush=True)
@@ -29,140 +22,89 @@ def sh(cmd, capture=False, **kwargs):
     else:
         subprocess.run(cmd, check=True, **kwargs)
         return None
-    
-def ensure(p: Path):
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
 
-def evaluation(dataset):
-    # Host-Pfade (im evaluate-Container als Bind-Mounts vorhanden)
-    rawdata_root      = Path("/starvers_eval/rawdata").resolve()
-    queries_dir_host  = Path("/starvers_eval/ostrich/queries_bearb").resolve()
-    temp_root         = Path("/starvers_eval/ostrich_temp").resolve()
-    results_root_host = Path("/starvers_eval/ostrich_results").resolve()
+def ostrich_evaluation(end_idx: int, log_path: str, store_dir, dataset_dir, query_type):
+    query_file = f"/ostrich_eval/computed_queries/basic/lookup_queries_{query_type}.txt"
+    log_dir = f"{log_path}/basic"
+    if not os.path.exists(log_dir):
+        logging.info("Create directory: " + log_dir)
+        os.makedirs(log_dir)
 
-    # Eingaben
-    dataset_root = rawdata_root / dataset
-    dataset_dir  = dataset_root / "alldata.CB_computed.nt"  # enthält Patch-Verzeichnisse
+    log_file = f"{log_dir}/log.txt"
 
-    if not dataset_dir.exists():
-        sys.exit(f"Dataset dir not found: {dataset_dir}")
-
-    # Temp-Ziel vorbereiten: /starvers_eval/ostrich_temp/<dataset>
-    temp_dataset_dir = temp_root / dataset
-    if temp_dataset_dir.exists():
-        shutil.rmtree(temp_dataset_dir)
-    shutil.copytree(dataset_dir, temp_dataset_dir)
-
-    # Snapshot-Datei in snapshot.nt kopieren
-    ic_dir = dataset_root / "alldata.IC.nt"
-    # robust: 000001.nt ODER 00001.nt
-    candidates = [ic_dir / "000001.nt", ic_dir / "00001.nt", ic_dir / "1.nt"]
-    src_snapshot = next((p for p in candidates if p.exists()), None)
-    if src_snapshot is None:
-        sys.exit(f"No snapshot file found in {ic_dir} (tried {', '.join(map(str, candidates))})")
-
-    dst_snapshot = temp_dataset_dir / "snapshot.nt"
-    shutil.copy(src_snapshot, dst_snapshot)
-
-    dst = temp_dataset_dir / "computed_patches"
-    if dst.exists():
-        shutil.rmtree(dst)
-    dst.mkdir(parents=True)
-
-
-    # Snapshot -> patch 0
-    snap = temp_dataset_dir / "snapshot.nt"
-    if not snap.exists():
-        sys.exit("ERROR: snapshot.nt not found")
-    dst_file = ensure(dst/"0"/"main.nt.additions.txt")
-    with open(snap, "r", encoding="utf-8") as fin, open(dst_file, "w", encoding="utf-8") as fout:
-        for line in fin:
-            if line.lstrip().startswith("#"):
-                continue  # Kommentar überspringen
-            if not line.strip():
-                continue  # leere Zeilen überspringen
-            fout.write(line)
-
-    (dst/"0"/"main.nt.deletions.txt").write_text("", encoding="utf-8")
-    
-    (ensure(dst/"1"/"main.nt.additions.txt")).write_text("", encoding="utf-8")
-    (dst/"1"/"main.nt.deletions.txt").write_text("", encoding="utf-8")
-
-    # Collect patches
-    added, deleted = {}, {}
-    for f in temp_dataset_dir.iterdir():
-        mA = PAT_ADDED.match(f.name)
-        mD = PAT_DELETED.match(f.name)
-        if mA:
-            _, y = mA.groups()
-            added[int(y)] = f
-        elif mD:
-            _, y = mD.groups()
-            deleted[int(y)] = f
-
-    for pid in sorted(set(added)|set(deleted)):
-        d = dst/str(pid)
-        if pid in added:
-            shutil.copyfile(added[pid], ensure(d/"main.nt.additions.txt"))
-        else:
-            ensure(d/"main.nt.additions.txt").write_text("")
-        if pid in deleted:
-            shutil.copyfile(deleted[pid], ensure(d/"main.nt.deletions.txt"))
-        else:
-            ensure(d/"main.nt.deletions.txt").write_text("")
-
-    print(f"Patches prepared under {dst}")
-
-
-
-    # Patch-Range bestimmen
-    patch_dirs = [int(p.name) for p in dst.iterdir() if p.is_dir() and p.name.isdigit()]
-    if not patch_dirs:
-        sys.exit(f"No patch folders found in {dst}")
-    start_idx, end_idx = 0, max(patch_dirs)
-
-    # Container-Mounts (so wie wir run -v setzen)
-    #  -v /starvers_eval/ostrich_temp:/data
-    #  -v /starvers_eval/ostrich/queries_bearb:/queries
-    #  -v /starvers_eval/ostrich_results:/results
-    data_mount_host   = dst           # Host-Seite
-    data_mount_in     = "/data"             # Container-Seite
-    dataset_in_cont   = f"{data_mount_in}/{dataset}"  # /data/<dataset>
-    queries_in_cont   = "/starvers_eval/ostrich/queries_bearb"
-    results_in_cont   = "/starvers_eval/ostrich_results"
-
-    results_dir = results_root_host / dataset
-    results_dir.mkdir(parents=True, exist_ok=True)
-
-    out = sh(["du", "-sh", dst], capture=True)
-    size_only = out.split()[0]
-    with open(f"/starvers_eval/ostrich_results/{dataset}/file_size.txt", "w") as f:
-        f.write(size_only + "\n")
-
-    store = Path("/store").resolve()
-    store.mkdir(parents=True, exist_ok=True)
-
-    # Alle Query-Dateien nacheinander evaluieren
-    for qfile in sorted(queries_dir_host.glob("*.txt")):
-        log_path = results_dir / f"{qfile.stem}.log"
-
-        cmd = [
+    cmd = [
             "bash", "-lc",
-            f"cd {store} && /opt/ostrich/build/ostrich-evaluate {dst} {start_idx} {end_idx} {queries_in_cont}/{qfile.name} {DEFAULT_REPS} | tee {log_path}"
-            f""
-        ]
-        sh(cmd, capture=False)
+            (
+                f"ulimit -n 1048576 && cd {store_dir} && "
+                f"/ostrich_eval/ostrich/build/ostrich-evaluate {dataset_dir} 0 {end_idx} {query_file} 5 "
+                f"| tee -a {log_file}"
+            )
+    ]
+    sh(cmd)
 
-        # Logs -> CSVs
-        parse_eval_stdout_to_csv(
-            log_path,
-            results_dir / f"{qfile.stem}_insertion.csv",
-            results_dir / f"{qfile.stem}_vm.csv",
-            results_dir / f"{qfile.stem}_dm.csv",
-            results_dir / f"{qfile.stem}_vq.csv",
-        )
+    vm_queries_path = f"{log_dir}/lookup_queries_{query_type}_vm.csv"
+    dm_queries_path = f"{log_dir}/lookup_queries_{query_type}_dm.csv"
+    vq_queries_path = f"{log_dir}/lookup_queries_{query_type}_vq.csv"
 
-if __name__ == "__main__":
-    for dataset in DATASETS:
-        evaluation(dataset)
+    parse_eval_stdout_to_csv(log_file, vm_queries_path, dm_queries_path, vq_queries_path)
+
+
+def evaluate_basic(dataset: str, total_versions: int):
+    if dataset == "bearb_hour" or dataset == "bearb_day":
+        logging.info(f"Starting evaluation...")
+
+        store_dir = f"/ostrich_eval/stores/{dataset}"
+        dataset_dir = f"/ostrich_eval/datasets/{dataset}"
+        measurements_dir = f"/ostrich_eval/output/measurements/{dataset}"
+
+        if not os.path.exists(store_dir):
+            logging.info(f"No store found for {dataset}")
+            return
+        
+
+        size_cmd = sh(["du", "-sh", store_dir], capture=True)
+        size_only = size_cmd.split()[0]
+        with open(f"{measurements_dir}/file_size.txt", "w") as f:
+            f.write(size_only + "\n")
+
+        ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "p")
+        ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "po")
+
+    else:
+        logging.info("Basic evaluation only possible for bearb_hour and bearb_day!")
+
+
+
+############################################# Logging #############################################
+if not os.path.exists('/ostrich_eval/output/logs/evaluate'):
+    os.makedirs('/ostrich_eval/output/logs/evaluate')
+with open('/ostrich_eval/output/logs/evaluate/evaluate.txt', "w") as log_file:
+    log_file.write("")
+logging.basicConfig(handlers=[logging.FileHandler(filename="/ostrich_eval/output/logs/evaluate/evaluate.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+
+############################################# Parameters #############################################
+datasets = sys.argv[1].split(" ")
+
+in_frm = "nt"
+LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+with open("/ostrich_eval/configs", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
+dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in eval_setup['datasets'].items()}
+allowed_datasets = list(dataset_versions.keys())
+
+############################################# Start procedure #############################################
+for dataset in datasets:
+    if dataset not in allowed_datasets:
+        print("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
+        break
+
+    total_versions = dataset_versions[dataset]
+    print("Evaluating dataset with basic queries for {0}".format(dataset))
+    evaluate_basic(dataset, total_versions)
+
+
+ 

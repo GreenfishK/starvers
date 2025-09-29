@@ -14,6 +14,7 @@ import itertools
 import re
 import numpy as np
 import glob
+import argparse
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
@@ -29,12 +30,24 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 ############################################# Parameters #############################################
 work_dir = "/starvers_eval/"
 measurements_in = work_dir + "output/measurements/"
-ostrich_measurements = work_dir + "ostrich_results/"
+ostrich_measurements = work_dir + "ostrich/output/measurements"
 figures_out = work_dir + "output/figures/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
+INCL_OSTRICH = os.getenv("OSTRICH") == "1"
+
 ############################################# Visualize #############################################
+def _safe_read_csv(path: Path, **kwargs):
+    if not os.path.exists(path):
+        return None
+    try:
+        df = pd.read_csv(path, **kwargs)
+        if df is None or df.empty:
+            return None
+        return df
+    except Exception as e:
+        return None
 
 def _to_mib_from_text(s: str) -> float:
     s = s.strip().upper()
@@ -71,13 +84,21 @@ def create_plots(triplestore: str, dataset: str):
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
     # Parameters
-    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs', 'ostrich']
+    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
+    if INCL_OSTRICH:
+        policies.append('ostrich')
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
     gs = fig.add_gridspec(2, 2)   
-    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*', 'p']))
-    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black', 'red']))
+    symbols = ['s', 'o', 'v', '*']
+    if INCL_OSTRICH:
+        symbols.append('p')
+    symbol_map = dict(zip(policies, symbols))
+    facecolors = ['none', 'none', 'none', 'black']
+    if INCL_OSTRICH:
+        facecolors.append('red')
+    markerfacecolors = dict(zip(policies, facecolors))
 
 
     def plot_performance(query_set: str, ax):
@@ -88,15 +109,16 @@ def create_plots(triplestore: str, dataset: str):
         for policy in policies:
             if policy == 'ostrich':
                 if query_set == 'lookup':
-                    ostrich_performance = pd.read_csv(ostrich_measurements + dataset + "/lookup_queries_p_vm.csv", sep=";", engine="python" )
-                    means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
-                    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
-                    markevery = math.ceil(len(means['patch'])/60)
+                    ostrich_performance = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_p_vm.csv", sep=";", engine="python" )
+                    if not ostrich_performance.empty:
+                        means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
+                        means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+                        markevery = math.ceil(len(means['patch'])/60)
 
-                    ax.set_yscale('log')
-                    ax.plot(means['patch'], means['execution_time_total'], linestyle='none',
-                        marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
-                        label=policy, color='black', markevery=markevery)
+                        ax.set_yscale('log')
+                        ax.plot(means['patch'], means['execution_time_total'], linestyle='none',
+                            marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
+                            label=policy, color='black', markevery=markevery)
                 else:
                     # no data for join queries
                     pass
@@ -119,6 +141,8 @@ def create_plots(triplestore: str, dataset: str):
         ax.set_xticks(ticks=range(0, len(policy_df['snapshot']), tick_steps),
                       labels=[*range(0, len(policy_df['snapshot']), tick_steps)])
 
+
+
     query_sets = performance_data[performance_data['dataset'] == dataset]['query_set'].unique()
 
     if len(query_sets) == 1:
@@ -139,14 +163,13 @@ def create_plots(triplestore: str, dataset: str):
 
         for i, policy in enumerate(policies):
             if policy == "ostrich":
-                ostrich_file = Path(ostrich_measurements) / dataset / "lookup_queries_p_insertion.csv"
+                
+                ostrich_file = Path(ostrich_measurements) / dataset / "ingestion.csv"
                 file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
 
                 ingestion_time, raw_size, db_size = float("nan"), float("nan"), float("nan")
-
-                if ostrich_file.exists():
-                    df = pd.read_csv(ostrich_file, sep=";", engine="python")
-
+                df = _safe_read_csv(ostrich_file, sep=";", engine="python")
+                if df is not None:
                     if "durationms" in df.columns:
                         ingestion_time = pd.to_numeric(df["durationms"], errors="coerce").fillna(0).sum() / 1000.0
 
@@ -451,10 +474,11 @@ def create_latex_tables():
 
 # Plots for query performance and ingestion
 args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+print(datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
-create_plots_update("GRAPHDB", 'bearc')
+#create_plots_update("GRAPHDB", 'bearc')
 
 # Latex table for query performance, ingestion, and db file size
-create_latex_tables()
+#create_latex_tables()
