@@ -1,0 +1,7 @@
+{0}
+SELECT * WHERE {{ 
+    GRAPH <version:{1}> {{
+        {2}
+    }}
+}}
+{3}

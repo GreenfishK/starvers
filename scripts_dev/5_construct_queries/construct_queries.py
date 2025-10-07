@@ -50,9 +50,12 @@ def main():
     starvers_log.setLevel(logging.ERROR)
 
     ################################################## Generate queries ################################################# 
+    print(eval_setup['datasets'].items())
     for dataset, dataset_infos in eval_setup['datasets'].items():
         query_sets = dataset_infos['query_sets'].items()
+        print(query_sets)
         query_set_context = dataset_infos['superset']
+        print(query_set_context)
         
         for query_set_name, query_set in query_sets:
             policy_infos = query_set['policies'].items()

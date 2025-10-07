@@ -1,0 +1,35 @@
+FROM node:14-bullseye
+
+RUN apt-get update && apt-get install -y \
+    build-essential python3 cmake ninja-build \
+    clang libc++-dev libc++abi-dev \
+    libboost-iostreams-dev \
+    git ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# cmake-js Cache (gegen EACCES)
+RUN mkdir -p /root/.cmake-js && chmod 700 /root/.cmake-js
+
+# Clang als Compiler (ostrich-node wird mit -stdlib=libc++ gebaut)
+ENV CC=clang
+ENV CXX=clang++
+
+# Repos
+RUN cd /opt && git clone https://github.com/dkw-aau/comunica-feature-versioning.git
+RUN cd /opt && git clone --branch dev --recurse-submodules https://github.com/dkw-aau/ostrich-node.git
+
+# Abhängigkeiten für ostrich-node (Kyoto Cabinet etc.)
+RUN cd /opt/ostrich-node && ./install-kc-ci.sh
+
+# ostrich-node bauen & linken
+RUN cd /opt/ostrich-node && yarn install --ignore-engines && yarn link
+
+# Comunica installieren und mit ostrich-node verlinken
+RUN cd /opt/comunica-feature-versioning && yarn link ostrich-bindings && yarn install --ignore-engines
+
+
+# Endpoint
+EXPOSE 42564
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0 
+ENTRYPOINT ["node","/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js","-p","42564","-t","480","-l","debug","ostrichFile@/var/ostrich"]

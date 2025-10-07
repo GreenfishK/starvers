@@ -263,10 +263,56 @@ services:
     entrypoint: ["python3", "/ostrich_eval/scripts/5_construct_queries/ostrich_construct_queries.py"]
 
 # 6) Evaluate
+  comunica-endpoint:
+    image: comunica-endpoint:latest
+    container_name: ostrich-endpoint
+    environment:
+      - HOST=0.0.0.0
+    networks: [ostrich_net]
+    volumes:
+      - ${base_host_dir}/ostrich/stores/bearc:/var/ostrich:ro
+    healthcheck:
+      test: [
+        "CMD", "curl", "-fsS", "-G",
+        "--data-urlencode",
+        "query=SELECT * WHERE { GRAPH <version:0> { ?s ?p ?o . } } LIMIT 10",
+        "http://localhost:42564/sparql"
+      ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
   ostrich_evaluate:
     build: 
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ostrich
+    image: ostrich:v1
+    networks:
+      - ostrich_net
+    depends_on:
+      comunica-endpoint:
+        condition: service_healthy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
+      - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries:ro
+      - ${base_host_dir}/ostrich/stores:/ostrich_eval/stores
+      - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets:ro
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/queries
+      - ${base_host_dir}/ostrich/output/result_sets:/ostrich_eval/output/result_sets
+      - ./scripts_dev/6_evaluate:/ostrich_eval/scripts/6_evaluate:ro
+    environment:
+      - datasets=${datasets}
+      - ENDPOINT_URL=http://ostrich-endpoint:42564/sparql
+    entrypoint: ["python3", "/ostrich_eval/scripts/6_evaluate/ostrich_query.py"]
+    command: ["$datasets"]
+
+  ostrich_evaluate_basic:
+    build: 
+      context: .
+      dockerfile: Dockerfile.ostrich
     image: ostrich:v1
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
@@ -274,6 +320,8 @@ services:
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries:ro
       - ${base_host_dir}/ostrich/stores:/ostrich_eval/stores
       - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets:ro
+      - ${base_host_dir}/ostrich/queries:/ostrich_eval/queries
+      - ${base_host_dir}/ostrich/output/result_sets:/ostrich_eval/output/result_sets
       - ./scripts_dev/6_evaluate:/ostrich_eval/scripts/6_evaluate:ro
     environment:
       - datasets=${datasets}
@@ -284,7 +332,7 @@ services:
   ostrich_visualize:
     build: 
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ostrich
     image: ostrich:v1
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
@@ -306,7 +354,23 @@ services:
     tty: true
     stdin_open: true 
     volumes:
-      #- ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets
-      - C:\Users\schre\Desktop\starvers\ostrich_temp\bearb_day\computed_patches:/ostrich_eval/datasets
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
+      - ${base_host_dir}/ostrich/stores/bearb_day:/ostrich_eval/stores/bearb_day
     entrypoint: ["bash"]
+
+  comunica:
+    build:
+      context: .
+      dockerfile: Dockerfile.comunica
+    image: comuncia-endpoint
+    tty: true
+    stdin_open: true 
+    networks:
+      - ostrich_net
+    volumes:
+      - ${base_host_dir}/ostrich/stores/bearb_day:/var/ostrich/:ro
+
+networks:
+  ostrich_net:
+    name: ostrich_net
+    driver: bridge
