@@ -1,13 +1,13 @@
 # scripts/visualize_ostrich.py
 import os, sys, logging
 from pathlib import Path
-import itertools
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from datetime import timezone
 import tomli
+import math
+import numpy as np
 
 # ---------------------------------------
 # Params (CLI)
@@ -53,48 +53,104 @@ def detect_last_version_from_insertion(insertion_df: pd.DataFrame) -> int:
 # ---------------------------------------
 # Plotters
 # ---------------------------------------
-def plot_ingestion(insertion_df: pd.DataFrame, out_dir: Path, dataset:str):
-    if insertion_df is None or insertion_df.empty:
+def plot_ingestion(ingestion_df: pd.DataFrame, out_dir: Path, dataset:str):
+    if ingestion_df is None or ingestion_df.empty:
         return
     # Time per version
+    ingestion_df["ingestion_time_s"] = pd.to_numeric(ingestion_df['durationms'], errors="coerce") / 1_000.0
+    markevery = math.ceil(len(ingestion_df['version'])/120)
+
     plt.figure()
-    plt.plot(insertion_df["version"], insertion_df["durationms"] / 1000.0, marker="o")
+    plt.plot(ingestion_df["version"], ingestion_df["ingestion_time_s"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
+             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+    
+    ingestiontime_max = float(np.nanmax(ingestion_df["ingestion_time_s"].to_numpy(dtype=float)))
+    exp = math.floor(math.log10(ingestiontime_max))
+    for m in (1, 2, 5, 10):
+        candidate = m * (10 ** exp)
+        if candidate >= ingestiontime_max:
+            upper = candidate
+            break
+    upper = min(upper, 1000)
+
+    ax = plt.gca()
+    ax.set_yscale("linear")
+    ax.set_ylim(0, upper)
+
     plt.xlabel("Version")
-    plt.ylabel("Insertion time (s)")
+    plt.ylabel("Ingestion time (s)")
     plt.title(f"Ingestion duration per version – {dataset}")
     safe_save(out_dir / f"{dataset}_ingestion_time.png")
 
     # Cumulative size
-    if "accsize" in insertion_df.columns:
+    if "accsize" in ingestion_df.columns:
+        ingestion_df["size_mb"] = pd.to_numeric(ingestion_df['accsize'], errors="coerce") / (1024 ** 2)
         plt.figure()
-        plt.plot(insertion_df["version"], insertion_df["accsize"] / (1024 ** 2), marker="o")
+        plt.plot(ingestion_df["version"], ingestion_df["size_mb"], linestyle='dashed', marker="o", markersize=7, markerfacecolor='none',
+             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+        
+        upper = 0
+        size_max = float(np.nanmax(ingestion_df["size_mb"].to_numpy(dtype=float)))
+        exp = math.floor(math.log10(size_max))
+        for m in (1, 2, 5, 10):
+            candidate = m * (10 ** exp)
+            if candidate >= size_max:
+                upper = candidate
+                break
+        upper = min(upper, 1000)
+
+        ax = plt.gca()
+        ax.set_yscale("linear")
+        ax.set_ylim(0, upper)
+
         plt.xlabel("Version")
         plt.ylabel("Cumulative size (MB)")
         plt.title(f"Cumulative store size – {dataset}")
         safe_save(out_dir / f"{dataset}_cumulative_size.png")
 
-def plot_vm(vm_df: pd.DataFrame, out_dir: Path, tag: str):
-    if vm_df is None or vm_df.empty:
+def plot_vm(vm_df_p: pd.DataFrame, vm_df_po: pd.DataFrame, out_dir: Path, tag: str):
+    if (vm_df_p is None and vm_df_po is None) or (vm_df_p.empty and vm_df_po.empty):
         return
     # Expect columns: patch, offset, limit, count-ms, lookup-mus, results
-    g = vm_df.groupby("patch")["lookup-mus"].median().reset_index()
+    vm_df = pd.concat([vm_df_p, vm_df_po], ignore_index=True)
+    means = vm_df.groupby('patch', as_index=False)['lookup-mus'].mean()
+    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+    markevery = math.ceil(len(means['patch'])/60)
     plt.figure()
-    plt.plot(g["patch"], g["lookup-mus"]/1000.0, marker="o")
+    plt.plot(means["patch"], means["execution_time_total"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
+             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+    
+    ax = plt.gca()
+    ax.set_yscale("log")
+    ax.set_ylim(1e-4, 1e-2)
+
+
     plt.xlabel("Version")
-    plt.ylabel("Median lookup (ms)")
+    plt.ylabel("Median lookup (s, log scale)")
     plt.title(f"VM – median lookup over versions – {tag}")
+    plt.tight_layout()
     safe_save(out_dir / f"{tag}_vm_median_lookup.png")
 
-def plot_dm(dm_df: pd.DataFrame, out_dir: Path, tag: str):
-    if dm_df is None or dm_df.empty:
+def plot_dm(dm_df_p: pd.DataFrame, dm_df_po: pd.DataFrame,  out_dir: Path, tag: str):
+    if (dm_df_p is None and dm_df_po is None) or (dm_df_p.empty and dm_df_po.empty):
         return
+    
+    dm_df = pd.concat([dm_df_p, dm_df_po], ignore_index=True)
     # Expect columns: patch_start, patch_end, offset, limit, count-ms, lookup-mus, results
     if "patch_end" not in dm_df.columns:
         logging.warning("DM CSV has no 'patch_end' column; skipping DM plot.")
         return
-    g = dm_df.groupby("patch_end")["lookup-mus"].median().reset_index()
+    means = dm_df.groupby('patch_end', as_index=False)['lookup-mus'].mean()
+    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+    markevery = math.ceil(len(means['patch_end'])/60)
     plt.figure()
-    plt.plot(g["patch_end"], g["lookup-mus"]/1000.0, marker="o")
+    plt.plot(means["patch_end"], means["execution_time_total"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
+             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+    
+    ax = plt.gca()
+    ax.set_yscale("log")
+    ax.set_ylim(1e-4, 1e-2)
+
     plt.xlabel("Version (end)")
     plt.ylabel("Median lookup (ms)")
     plt.title(f"DM (0→v) – median lookup over versions – {tag}")
@@ -119,30 +175,35 @@ def plot_vq(vq_df: pd.DataFrame, insertion_df: pd.DataFrame, out_dir: Path, tag:
 # ---------------------------------------
 # Driver
 # ---------------------------------------
-def visualize(dataset: str, csv_path: str, prefix=None):
+def visualize(dataset: str, csv_path: str):
     """
     results_dir contains: <prefix>_insertion.csv, <prefix>_vm.csv, <prefix>_dm.csv, <prefix>_vq.csv
     """
-    logging.info(f"Processing {dataset} for prefix {prefix}")
+    logging.info(f"Processing {dataset}")
 
     ingestion_csv = Path(f"{csv_path}/ingestion.csv")
-    vm_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vm.csv")
-    dm_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_dm.csv")
-    vq_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vq.csv")
+    vm_csv_p      = Path(f"{csv_path}/basic/lookup_queries_p_vm.csv")
+    vm_csv_po     = Path(f"{csv_path}/basic/lookup_queries_po_vm.csv")
+    dm_csv_p      = Path(f"{csv_path}/basic/lookup_queries_p_dm.csv")
+    dm_csv_po     = Path(f"{csv_path}/basic/lookup_queries_po_dm.csv")
+    #vq_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vq.csv")
+    #vq_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vq.csv")
 
     ingestion_df = read_csv(ingestion_csv)
-    vm_df        = read_csv(vm_csv)
-    dm_df        = read_csv(dm_csv)
-    vq_df        = read_csv(vq_csv)
+    vm_df_p      = read_csv(vm_csv_p)
+    vm_df_po     = read_csv(vm_csv_po)
+    dm_df_p      = read_csv(dm_csv_p)
+    dm_df_po     = read_csv(dm_csv_po)
+    #vq_df        = read_csv(vq_csv)
 
-    tag = f"{dataset}_{prefix}"
+    tag = f"{dataset}"
     out_dir = Path("/ostrich_eval/output/figures").resolve()
 
     # Plots
     plot_ingestion(ingestion_df, out_dir, dataset)
-    plot_vm(vm_df, out_dir, tag)
-    plot_dm(dm_df, out_dir, tag)
-    plot_vq(vq_df, ingestion_df, out_dir, tag)
+    plot_vm(vm_df_p, vm_df_po, out_dir, tag)
+    plot_dm(dm_df_p, dm_df_po, out_dir, tag)
+    #plot_vq(vq_df, ingestion_df, out_dir, tag)
 
 ############################################# Logging #############################################
 if not os.path.exists('/ostrich_eval/output/logs/visualize'):
@@ -177,7 +238,4 @@ for dataset in datasets:
     csv_path = f"/ostrich_eval/output/measurements/{dataset}"
 
     if dataset in ["bearb_day", "bearb_hour"]:
-        visualize(dataset, csv_path, "p")
-        visualize(dataset, csv_path, "po")
-    else:
-        visualize(dataset)
+        visualize(dataset, csv_path)

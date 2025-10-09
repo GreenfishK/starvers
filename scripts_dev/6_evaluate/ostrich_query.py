@@ -1,23 +1,15 @@
 from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, JSON
-from rdflib import Graph
-from rdflib.term import URIRef, Literal, BNode
-from rdflib.query import Result
 import pandas as pd
-from typing import Tuple
 import tomli
-import contextlib
-from ostrich_sparql_server import OstrichServer
 
 from pathlib import Path
 import os
 import sys
 import time
-import multiprocessing
-import shutil
 import csv
 import logging as logger
 from datetime import datetime
-from datetime import timedelta, timezone
+from datetime import timezone
 
 ############################################# Logging ###################################################################
 logger.basicConfig(handlers=[logger.FileHandler(filename="/ostrich_eval/output/logs/evaluate/query.txt", 
@@ -104,7 +96,7 @@ datasets = sys.argv[1].split(" ")
 
 for dataset in datasets:
     if dataset in ["bearb_day", "bearb_hour"]:
-        query_sets = ["lookup", "join"]
+        query_sets = ["join", "lookup"]
         query_set_versions = 89 if dataset == "bearb_day" else 1299
     else:
         query_sets = ["complex"]
@@ -128,12 +120,13 @@ for dataset in datasets:
         failed = False
         for query_version in range(query_set_versions):
             if failed:
-                continue
+                break
             query_set_version = final_queries + "/" + dataset + "/" + query_set  +  "/" + str(query_version)
             current_query_version = query_version
 
             logger.info(f"Query set version: {query_set_version}")
             for query_file_name in os.listdir(query_set_version):
+                print(f"Querying query:{query_file_name} for query_set:{query_set} in dataset:{dataset}")
                 execution_time = 0
                 result_set_creation_time = 0
 

@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
 import numpy as np
-from datetime import datetime
-from datetime import timezone
 import os
 from pathlib import Path
 import sys
@@ -13,8 +11,6 @@ import logging
 import itertools
 import re
 import numpy as np
-import glob
-import argparse
 
 ############################################# Logging #############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
@@ -86,7 +82,9 @@ def create_plots(triplestore: str, dataset: str):
     # Parameters
     policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
     if INCL_OSTRICH:
-        policies.append('ostrich')
+        policies.append('ostrich_sparql')
+        if dataset != 'bearc':
+            policies.append('ostrich')
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
@@ -94,10 +92,14 @@ def create_plots(triplestore: str, dataset: str):
     symbols = ['s', 'o', 'v', '*']
     if INCL_OSTRICH:
         symbols.append('p')
+        if dataset != 'bearc':
+            symbols.append('p')
     symbol_map = dict(zip(policies, symbols))
     facecolors = ['none', 'none', 'none', 'black']
     if INCL_OSTRICH:
-        facecolors.append('red')
+        facecolors.append('green')
+        if dataset != 'bearc':
+            facecolors.append('red')
     markerfacecolors = dict(zip(policies, facecolors))
 
 
@@ -107,21 +109,40 @@ def create_plots(triplestore: str, dataset: str):
         means = means.reset_index()
         
         for policy in policies:
-            if policy == 'ostrich':
-                if query_set == 'lookup':
-                    ostrich_performance = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_p_vm.csv", sep=";", engine="python" )
-                    if not ostrich_performance.empty:
-                        means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
-                        means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
-                        markevery = math.ceil(len(means['patch'])/60)
-
+            if policy.startswith('ostrich'):
+                if policy == 'ostrich_sparql':
+                    ostrich_performance_sparql = _safe_read_csv(f"{ostrich_measurements}/time.csv", sep=";", engine="python" )
+                    if not ostrich_performance_sparql.empty:
+                        df = ostrich_performance_sparql[(ostrich_performance_sparql['dataset'] == dataset) & (ostrich_performance_sparql['query_set'] == query_set)]
+                        means = df.groupby(['snapshot']).mean()
+                        means = means.reset_index()
+                        if dataset == 'bearc':
+                            markevery = math.ceil(len(means['snapshot'])/120)
+                        else:
+                            markevery = math.ceil(len(means['snapshot'])/60)
                         ax.set_yscale('log')
-                        ax.plot(means['patch'], means['execution_time_total'], linestyle='none',
+                        ax.plot(means['snapshot'], means['execution_time'], linestyle='none',
                             marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
                             label=policy, color='black', markevery=markevery)
+
+
                 else:
-                    # no data for join queries
-                    pass
+                    if query_set == 'lookup' and dataset != 'bearc':
+                        ostrich_performance_p = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_p_vm.csv", sep=";", engine="python" )
+                        ostrich_performance_po = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_po_vm.csv", sep=";", engine="python" )
+                        ostrich_performance = pd.concat([ostrich_performance_p, ostrich_performance_po], ignore_index=True)
+                        if not ostrich_performance.empty:
+                            means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
+                            means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+                            markevery = math.ceil(len(means['patch'])/60)
+
+                            ax.set_yscale('log')
+                            ax.plot(means['patch'], means['execution_time_total'], linestyle='none',
+                                marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
+                                label=policy, color='black', markevery=markevery)
+                    else:
+                        # no data for join queries
+                        pass
             else:
                 policy_df = means[means['policy'] == policy]
                 if dataset == 'bearc':
@@ -156,45 +177,54 @@ def create_plots(triplestore: str, dataset: str):
         plot_performance(query_set=query_sets[1], ax=ax2)
 
     def plot_ingestion(ax, ax2):
+        _policies = policies
+        if INCL_OSTRICH:
+            _policies.remove('ostrich_sparql')
+            if dataset == 'bearc':
+                _policies.append('ostrich')
+
         bar_width = 0.2
         spacing = 0.1
         opacity = 1
-        index = range(len(policies))
+        index = range(len(_policies))
 
-        for i, policy in enumerate(policies):
-            if policy == "ostrich":
-                
-                ostrich_file = Path(ostrich_measurements) / dataset / "ingestion.csv"
-                file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
+        for i, policy in enumerate(_policies):
+            if policy.startswith("ostrich"):
+                if policy == 'ostrich_sparql':
+                    # Show ostrich ingestion and db size only once
+                    pass
+                else:
+                    ostrich_file = Path(ostrich_measurements) / dataset / "ingestion.csv"
+                    file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
 
-                ingestion_time, raw_size, db_size = float("nan"), float("nan"), float("nan")
-                df = _safe_read_csv(ostrich_file, sep=";", engine="python")
-                if df is not None:
-                    if "durationms" in df.columns:
-                        ingestion_time = pd.to_numeric(df["durationms"], errors="coerce").fillna(0).sum() / 1000.0
+                    ingestion_time, raw_size, db_size = float("nan"), float("nan"), float("nan")
+                    df = _safe_read_csv(ostrich_file, sep=";", engine="python")
+                    if df is not None:
+                        if "durationms" in df.columns:
+                            ingestion_time = pd.to_numeric(df["durationms"], errors="coerce").fillna(0).sum() / 1000.0
 
-                    if "accsize" in df.columns and len(df["accsize"]) > 0:
-                        last_bytes = pd.to_numeric(df["accsize"].iloc[-1], errors="coerce")
-                        if pd.notna(last_bytes):
-                            db_size = float(last_bytes) / (1024.0 * 1024.0)
-                
-                if file_size_txt.exists():
-                    try:
-                        raw_txt = file_size_txt.read_text(encoding="utf-8").strip()
-                        raw_size = _to_mib_from_text(raw_txt)  # -> MB
-                    except Exception:
-                        pass
+                        if "accsize" in df.columns and len(df["accsize"]) > 0:
+                            last_bytes = pd.to_numeric(df["accsize"].iloc[-1], errors="coerce")
+                            if pd.notna(last_bytes):
+                                db_size = float(last_bytes) / (1024.0 * 1024.0)
+                    
+                    if file_size_txt.exists():
+                        try:
+                            raw_txt = file_size_txt.read_text(encoding="utf-8").strip()
+                            raw_size = _to_mib_from_text(raw_txt)  # -> MB
+                        except Exception:
+                            pass
 
-                ax.boxplot([ingestion_time], positions=[i], widths=0.8,
-                       medianprops=dict(color='black', linestyle='--'))
+                    ax.boxplot([ingestion_time], positions=[i], widths=0.8,
+                        medianprops=dict(color='black', linestyle='--'))
 
-                ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black')
-                ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black')
+                    ax2.bar(i, raw_size, bar_width, alpha=opacity, hatch='/', color='white', edgecolor='black')
+                    ax2.bar(i + bar_width + spacing, db_size, bar_width, alpha=opacity, color='black')
 
-                if pd.notna(raw_size):
-                    ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
-                if pd.notna(db_size):
-                    ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
+                    if pd.notna(raw_size):
+                        ax2.text(i, raw_size, "{:.2f}".format(raw_size), ha='center', va='bottom')
+                    if pd.notna(db_size):
+                        ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
 
             else:
                 policy_data = ingestion_data[(ingestion_data['triplestore'] == triplestore) & (ingestion_data["policy"] == policy) & (ingestion_data['dataset'] == dataset)]
@@ -213,12 +243,12 @@ def create_plots(triplestore: str, dataset: str):
                 ax2.text(i + bar_width + spacing, db_size, "{:.2f}".format(db_size), ha='center', va='bottom')
         
         ax.set_xticks(index)
-        ax.set_xticklabels(policies)
+        ax.set_xticklabels(_policies)
         ax.set_xlabel("Policies")
         ax.set_ylabel("Ingestion Time (s)")
 
-        ax2.set_xticks([bar_width/2 + spacing/2 + x for x in range(len(policies))])
-        ax2.set_xticklabels(policies)
+        ax2.set_xticks([bar_width/2 + spacing/2 + x for x in range(len(_policies))])
+        ax2.set_xticklabels(_policies)
         ax2.set_xlabel("Policies")
         ax2.set_ylabel("Storage Consumption (MiB)")
 
@@ -236,15 +266,26 @@ def create_plots(triplestore: str, dataset: str):
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
     tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
     ostrich = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='red', markerfacecolor='red',label='ostrich')
+    ostrich_sparql = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='green', markerfacecolor='green',label='ostrich_sparql')
 
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
     db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
 
-    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line, ostrich]
+    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line]
+    if INCL_OSTRICH:
+        handles1.append(ostrich_sparql)
+        if dataset != 'bearc':
+            handles1.append(ostrich)
+
     handles2 = [raw_file_size_patch, db_file_size_path]
     fixed_labels = ['raw_file_size_patch', 'db_file_size_path']
-
-    fig.legend(loc="upper right", ncol=4, handles=sorted(handles1, key=lambda x: x.get_label()))
+    ncol = 4
+    if INCL_OSTRICH:
+        if dataset == 'bearc':
+            ncol = 5
+        else:
+            ncol = 6
+    fig.legend(loc="upper right", ncol=ncol, handles=sorted(handles1, key=lambda x: x.get_label()))
     fig.legend(loc="lower right", ncol=3, handles=sorted(handles2, key=lambda x: fixed_labels.index(x.get_label()) if x.get_label() in fixed_labels else len(fixed_labels)))
 
     fig.set_figheight(9)

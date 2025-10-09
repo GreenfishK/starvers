@@ -195,6 +195,7 @@ services:
     environment:
       - policies=${policies}  
       - datasets=${datasets}
+      - OSTRICH=1
     entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
 
@@ -261,6 +262,8 @@ services:
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
       - ./scripts_dev/5_construct_queries:/ostrich_eval/scripts/5_construct_queries
     entrypoint: ["python3", "/ostrich_eval/scripts/5_construct_queries/ostrich_construct_queries.py"]
+    command: ["$datasets"]
+
 
 # 6) Evaluate
   comunica-endpoint:
@@ -270,7 +273,7 @@ services:
       - HOST=0.0.0.0
     networks: [ostrich_net]
     volumes:
-      - ${base_host_dir}/ostrich/stores/bearc:/var/ostrich:ro
+      - ${base_host_dir}/ostrich/stores/bearb_hour:/var/ostrich:ro
     healthcheck:
       test: [
         "CMD", "curl", "-fsS", "-G",
@@ -356,6 +359,8 @@ services:
     volumes:
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
       - ${base_host_dir}/ostrich/stores/bearb_day:/ostrich_eval/stores/bearb_day
+      - ${base_host_dir}/ostrich/stores/bearb_hour:/ostrich_eval/stores/bearb_hour
+      - ${base_host_dir}/ostrich/stores/bearc:/ostrich_eval/stores/bearc
     entrypoint: ["bash"]
 
   comunica:

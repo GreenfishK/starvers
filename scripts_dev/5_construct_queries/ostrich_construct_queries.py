@@ -107,11 +107,12 @@ def main():
                         level=logging.INFO)
 
     ################################################## Generate queries ################################################# 
+    datasets = sys.argv[1].split(" ")
+    
+    construct_basic_ostrich_queries(raw_queries_base, output_queries_base, "po")
+    construct_basic_ostrich_queries(raw_queries_base, output_queries_base, "p")
 
-    #construct_basic_ostrich_queries(raw_queries_base, output_queries_base, "po")
-    #construct_basic_ostrich_queries(raw_queries_base, output_queries_base, "p")
-
-    for dataset in ["bearc"]:#, "bearb_hour", "bearc"]:
+    for dataset in datasets:
         if dataset in ["bearb_day", "bearb_hour"]:
             context = "bearb"
             query_sets = ["join", "lookup"]
