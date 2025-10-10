@@ -70,6 +70,21 @@ def evaluate_basic(dataset: str, total_versions: int):
         ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "p")
         ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "po")
 
+    elif dataset == 'bearc':
+        logging.info(f"Starting evaluation...")
+
+        store_dir = f"/ostrich_eval/stores/{dataset}"
+        measurements_dir = f"/ostrich_eval/output/measurements/{dataset}"
+
+        if not os.path.exists(store_dir):
+            logging.info(f"No store found for {dataset}")
+            return
+        
+
+        size_cmd = sh(["du", "-sh", store_dir], capture=True)
+        size_only = size_cmd.split()[0]
+        with open(f"{measurements_dir}/file_size.txt", "w") as f:
+            f.write(size_only + "\n")
     else:
         logging.info("Basic evaluation only possible for bearb_hour and bearb_day!")
 
