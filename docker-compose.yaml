@@ -223,7 +223,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
       - ${base_host_dir}/rawdata:/ostrich_eval/rawdata
@@ -239,7 +239,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
       - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
@@ -256,7 +256,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
@@ -273,7 +273,7 @@ services:
       - HOST=0.0.0.0
     networks: [ostrich_net]
     volumes:
-      - ${base_host_dir}/ostrich/stores/bearb_hour:/var/ostrich:ro
+      - ${base_host_dir}/ostrich/stores/bearc:/var/ostrich:ro
     healthcheck:
       test: [
         "CMD", "curl", "-fsS", "-G",
@@ -290,7 +290,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     networks:
       - ostrich_net
     depends_on:
@@ -316,7 +316,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
       - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
@@ -336,7 +336,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     volumes:
       - ${base_host_dir}/ostrich/output/logs:/ostrich_eval/output/logs
       - ${base_host_dir}/ostrich/output/measurements:/ostrich_eval/output/measurements
@@ -353,11 +353,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.ostrich
-    image: ostrich:v1
+    image: ostrich:latest
     tty: true
     stdin_open: true 
     volumes:
       - ${base_host_dir}/ostrich/queries:/ostrich_eval/computed_queries
+      - ${base_host_dir}/ostrich/datasets:/ostrich_eval/datasets
       - ${base_host_dir}/ostrich/stores/bearb_day:/ostrich_eval/stores/bearb_day
       - ${base_host_dir}/ostrich/stores/bearb_hour:/ostrich_eval/stores/bearb_hour
       - ${base_host_dir}/ostrich/stores/bearc:/ostrich_eval/stores/bearc

@@ -40,9 +40,7 @@ def ostrich_ingestion(end_idx: int, log_path: str, store_dir, dataset_dir, empty
             "bash", "-lc",
             (
                 f"ulimit -n 1048576 && cd {store_dir} && "
-                f'echo "---RUN: 0..{end_idx} (INSERTION ONLY)---" | tee -a {log_path} && '
-                f"/ostrich_eval/ostrich/build/ostrich-evaluate {dataset_dir} 0 {end_idx} {empty_query_path} 1 "
-                r"""| awk '/^---INSERTION START---/{flag=1} flag; /^---INSERTION END---/{print; flag=0}' """
+                f"/ostrich_eval/ostrich/build/ostrich-evaluate ingest never 0 {dataset_dir} 1 {end_idx} "
                 f"| tee -a {log_path}"
             )
     ]
@@ -74,10 +72,6 @@ def ingest(dataset: str, total_versions: int):
     log_path = f"{ingestion_measurements_dir}/ingestions_log.txt"
     with open(log_path, "w") as log_file:
         log_file.write("")
-
-    # Pre ingest for bearb_hour due to very large dataset
-    if dataset == "bearb_hour":
-        ostrich_ingestion(999, log_path, store_dir, dataset_dir, empty_query_path)
 
     ostrich_ingestion(total_versions, log_path, store_dir, dataset_dir, empty_query_path)
 

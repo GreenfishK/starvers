@@ -8,10 +8,11 @@ import tomli
 def construct_snapshot(dst_dir: str, snapshots_dir: str, basename_length: int):
     logging.info("Constructing snapshot ...")
 
-    v0_dir = f"{dst_dir}/0"
+    v0_dir = f"{dst_dir}/alldata.IC.nt"
     if not os.path.exists(v0_dir):
         logging.info(f"Create directory: {v0_dir}")
-        os.makedirs(v0_dir)
+        os.makedirs(v0_dir) 
+    
 
     snapshot_ds_path = "{0}/{1}.nt".format(snapshots_dir, str(1).zfill(basename_length))
     with open(snapshot_ds_path, "r") as snapshot_file:
@@ -20,15 +21,12 @@ def construct_snapshot(dst_dir: str, snapshots_dir: str, basename_length: int):
     lines_in_snapshot = set([line for line in snapshot_content if not (line.startswith("#") or len(line) == 0)])
     snapshot_str = "\n".join(triple for triple in lines_in_snapshot)
 
-    logging.info("Create 0/main.nt.additions.txt with {0} triples.".format(len(lines_in_snapshot)))
-    logging.info("Create 0/main.nt.deletions.txt with 0 triples.")
+    logging.info("Create alldata.IC.nt/000001.nt with {0} triples.".format(len(lines_in_snapshot)))
 
-    file_path_added =  f"{dst_dir}/0/main.nt.additions.txt"
-    file_path_deleted = f"{dst_dir}/0/main.nt.deletions.txt"
+    file_path_snapshot =  f"{dst_dir}/alldata.IC.nt/000001.nt"
 
-    with open(file_path_added, "w") as file_added, open(file_path_deleted, "w") as file_deleted:
-        file_added.write(snapshot_str)
-        file_deleted.write("")
+    with open(file_path_snapshot, "w") as file_snapshot:
+        file_snapshot.write(snapshot_str)
   
 def construct_empty_version(dst_dir: str):
     logging.info("Constructing change set for v1 ...")

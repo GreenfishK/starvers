@@ -1,3 +1,4 @@
+import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -34,15 +35,37 @@ datasets = sys.argv[2].split(" ")
 INCL_OSTRICH = os.getenv("OSTRICH") == "1"
 
 ############################################# Visualize #############################################
-def _safe_read_csv(path: Path, **kwargs):
-    if not os.path.exists(path):
+def _safe_read_csv(path_str: str):
+    path = Path(path_str)
+    if not path.exists():
+        logging.warning(f"Missing file: {path}")
         return None
+
+    attempts = [
+        dict(sep=";", engine="c", encoding="utf-8", dtype_backend=None),
+        dict(sep=";", engine="python", encoding="utf-8"),
+        dict(sep=";", engine="python", encoding="utf-8", on_bad_lines="skip"),
+    ]
+
+    for i, kwargs in enumerate(attempts, start=1):
+        try:
+            df = pd.read_csv(path, **kwargs)
+            if df.shape[1] == 1:
+                df = pd.read_csv(path, sep=r";\s*", engine=kwargs.get("engine","python"),
+                                 encoding=kwargs.get("encoding","utf-8"),
+                                 on_bad_lines=kwargs.get("on_bad_lines",None))
+            return df
+        except Exception as e:
+            logging.error(f"Attempt {i} failed for {path}: {e}")
+
     try:
-        df = pd.read_csv(path, **kwargs)
-        if df is None or df.empty:
-            return None
-        return df
+        with open(path, "r", encoding="utf-8", errors="replace", newline="") as fh:
+            text = fh.read().replace("\x00", "")
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+        return pd.read_csv(io.StringIO(text), sep=";", engine="python", on_bad_lines="skip")
     except Exception as e:
+        print("failed to read")
+        logging.error(f"Failed to read {path} after all attempts: {e}")
         return None
 
 def _to_mib_from_text(s: str) -> float:
@@ -84,7 +107,7 @@ def create_plots(triplestore: str, dataset: str):
     if INCL_OSTRICH:
         policies.append('ostrich_sparql')
         if dataset != 'bearc':
-            policies.append('ostrich')
+            policies.append('ostrich_tp')
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
@@ -111,7 +134,7 @@ def create_plots(triplestore: str, dataset: str):
         for policy in policies:
             if policy.startswith('ostrich'):
                 if policy == 'ostrich_sparql':
-                    ostrich_performance_sparql = _safe_read_csv(f"{ostrich_measurements}/time.csv", sep=";", engine="python" )
+                    ostrich_performance_sparql = _safe_read_csv(f"{ostrich_measurements}/time.csv")
                     if not ostrich_performance_sparql.empty:
                         df = ostrich_performance_sparql[(ostrich_performance_sparql['dataset'] == dataset) & (ostrich_performance_sparql['query_set'] == query_set)]
                         means = df.groupby(['snapshot']).mean()
@@ -128,8 +151,8 @@ def create_plots(triplestore: str, dataset: str):
 
                 else:
                     if query_set == 'lookup' and dataset != 'bearc':
-                        ostrich_performance_p = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_p_vm.csv", sep=";", engine="python" )
-                        ostrich_performance_po = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_po_vm.csv", sep=";", engine="python" )
+                        ostrich_performance_p = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_p_vm.csv")
+                        ostrich_performance_po = _safe_read_csv(f"{ostrich_measurements}/{dataset}/basic/lookup_queries_po_vm.csv")
                         ostrich_performance = pd.concat([ostrich_performance_p, ostrich_performance_po], ignore_index=True)
                         if not ostrich_performance.empty:
                             means = ostrich_performance.groupby('patch', as_index=False)['lookup-mus'].mean()
@@ -180,8 +203,9 @@ def create_plots(triplestore: str, dataset: str):
         _policies = policies
         if INCL_OSTRICH:
             _policies.remove('ostrich_sparql')
-            if dataset == 'bearc':
-                _policies.append('ostrich')
+            if dataset != 'bearc':
+                _policies.remove('ostrich_tp')
+            _policies.append('ostrich')
 
         bar_width = 0.2
         spacing = 0.1
@@ -194,24 +218,26 @@ def create_plots(triplestore: str, dataset: str):
                     # Show ostrich ingestion and db size only once
                     pass
                 else:
-                    ostrich_file = Path(ostrich_measurements) / dataset / "ingestion.csv"
-                    file_size_txt = Path(ostrich_measurements) / dataset / "file_size.txt"
+                    ingestion_csv = Path(ostrich_measurements) / dataset / "ingestion.csv"
+                    raw_file_size_txt = Path(ostrich_measurements) / dataset / "raw_file_size.txt"
+                    db_file_size_txt = Path(ostrich_measurements) / dataset / "db_file_size.txt"
 
                     ingestion_time, raw_size, db_size = float("nan"), float("nan"), float("nan")
-                    df = _safe_read_csv(ostrich_file, sep=";", engine="python")
+                    df = _safe_read_csv(ingestion_csv)
                     if df is not None:
                         if "durationms" in df.columns:
                             ingestion_time = pd.to_numeric(df["durationms"], errors="coerce").fillna(0).sum() / 1000.0
-
-                        if "accsize" in df.columns and len(df["accsize"]) > 0:
-                            last_bytes = pd.to_numeric(df["accsize"].iloc[-1], errors="coerce")
-                            if pd.notna(last_bytes):
-                                db_size = float(last_bytes) / (1024.0 * 1024.0)
                     
-                    if file_size_txt.exists():
+                    if raw_file_size_txt.exists():
                         try:
-                            raw_txt = file_size_txt.read_text(encoding="utf-8").strip()
-                            raw_size = _to_mib_from_text(raw_txt)  # -> MB
+                            raw_txt = raw_file_size_txt.read_text(encoding="utf-8").strip()
+                            raw_size = _to_mib_from_text(raw_txt)
+                        except Exception:
+                            pass
+                    if db_file_size_txt.exists():
+                        try:
+                            db_txt = db_file_size_txt.read_text(encoding="utf-8").strip()
+                            db_size = _to_mib_from_text(db_txt)
                         except Exception:
                             pass
 
@@ -265,7 +291,7 @@ def create_plots(triplestore: str, dataset: str):
     cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
     tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
-    ostrich = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='red', markerfacecolor='red',label='ostrich')
+    ostrich = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='red', markerfacecolor='red',label='ostrich_tp')
     ostrich_sparql = mlines.Line2D([], [], color='black', marker='p', linestyle='None', markersize=7, markeredgecolor='green', markerfacecolor='green',label='ostrich_sparql')
 
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')

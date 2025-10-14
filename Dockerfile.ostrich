@@ -1,26 +1,48 @@
-# OSTRICH + HDT auf Ubuntu 20.04
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y \
+
+# 1) Basic installations
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential git curl ca-certificates \
-    cmake ninja-build \
+    cmake ninja-build wget \
     autoconf automake libtool pkg-config \
     zlib1g-dev liblzma-dev liblzo2-dev \
     libraptor2-dev \
     libserd-dev \
-    libkyotocabinet-dev \
     libboost-iostreams-dev \
     python3 python3-pip python3-dev python3-venv \
     docker.io \
     && rm -rf /var/lib/apt/lists/*
     
+# 2) Build & install Kyoto Cabinet 1.2.79 with LZO/LZMA
+WORKDIR /tmp
+RUN wget https://dbmx.net/kyotocabinet/pkg/kyotocabinet-1.2.79.tar.gz \
+  && tar -xzf kyotocabinet-1.2.79.tar.gz \
+  && mv kyotocabinet-1.2.79 kyotocabinet \
+  && cd kyotocabinet \
+  && ./configure --enable-lzo --enable-lzma \
+  && make -j"$(nproc)" \
+  && make install \
+  && ldconfig \
+  && cd / \
+  && rm -rf /tmp/kyotocabinet /tmp/kyotocabinet-1.2.79.tar.gz
+
+# 3) Eval source
 WORKDIR /ostrich_eval
-COPY scripts_dev/requirements.txt /ostrich_eval
-RUN python3 -m pip install -r requirements.txt
+RUN git clone https://github.com/rdfostrich/ostrich
 
+WORKDIR /ostrich_eval/ostrich
+# If the build context contains a .git folder, pull submodules; otherwise this is a no-op
+RUN if [ -d .git ]; then git submodule update --init --recursive; fi
 
-# --- HDT (hdt-cpp) mit Autotools bauen ---
+# 4) Configure & build
+RUN mkdir -p build \
+  && cd build \
+  && cmake -DCMAKE_BUILD_TYPE=Debug .. -Wno-deprecated \
+  && make -j"$(nproc)"
+
+WORKDIR /ostrich_eval
 RUN git clone --recursive https://github.com/rdfhdt/hdt-cpp.git && \
     cd hdt-cpp && \
     ./autogen.sh && \
@@ -29,33 +51,47 @@ RUN git clone --recursive https://github.com/rdfhdt/hdt-cpp.git && \
     make install && \
     ldconfig
 
+WORKDIR /ostrich_eval
+COPY scripts_dev/requirements.txt /ostrich_eval
+RUN python3 -m pip install -r requirements.txt
+
+
+# --- HDT (hdt-cpp) mit Autotools bauen ---
+#RUN git clone --recursive https://github.com/rdfhdt/hdt-cpp.git && \
+#    cd hdt-cpp && \
+#    ./autogen.sh && \
+#    ./configure && \
+#    make -j"$(nproc)" && \
+#    make install && \
+#    ldconfig
+
 # --- OSTRICH klonen (und auf 1.0.0 pinnen) ---
-RUN git clone --recursive https://github.com/rdfostrich/ostrich.git && \
-    cd /ostrich_eval/ostrich && \
-    git checkout 1.0.0 && \
-    git submodule update --init --recursive
+#RUN git clone --recursive https://github.com/rdfostrich/ostrich.git && \
+#    cd /ostrich_eval/ostrich && \
+#    git checkout 1.0.0 && \
+#    git submodule update --init --recursive
 
 # Hunter nur für Boost deaktivieren -> System-Boost verwenden
-RUN sed -i 's/^[[:space:]]*hunter_add_package(Boost[^)]*)/# DISABLED: hunter_add_package(Boost)\nfind_package(Boost REQUIRED COMPONENTS iostreams)/' /ostrich_eval/ostrich/CMakeLists.txt
+#RUN sed -i 's/^[[:space:]]*hunter_add_package(Boost[^)]*)/# DISABLED: hunter_add_package(Boost)\nfind_package(Boost REQUIRED COMPONENTS iostreams)/' /ostrich_eval/ostrich/CMakeLists.txt#
 
 
 # Patch: rvalue std::string -> lvalue Variable für std::regex_match
-WORKDIR /ostrich_eval/ostrich
-RUN sed -i 's/if(std::regex_match(std::string(ent->d_name), base_match, r)) {/const std::string _name(ent->d_name);\n            if(std::regex_match(_name, base_match, r)) {/' src/main/cpp/snapshot/snapshot_manager.cc && \
-    sed -i 's/if(std::regex_match(std::string(ent->d_name), base_match, r)) {/const std::string _name(ent->d_name);\n            if(std::regex_match(_name, base_match, r)) {/' src/main/cpp/patch/patch_tree_manager.cc
+#WORKDIR /ostrich_eval/ostrich
+#RUN sed -i 's/if(std::regex_match(std::string(ent->d_name), base_match, r)) {/const std::string _name(ent->d_name);\n            if(std::regex_match(_name, base_match, r)) {/' src/main/cpp/snapshot/snapshot_manager.cc && \
+#    sed -i 's/if(std::regex_match(std::string(ent->d_name), base_match, r)) {/const std::string _name(ent->d_name);\n            if(std::regex_match(_name, base_match, r)) {/' src/main/cpp/patch/patch_tree_manager.cc
 
 
 # --- OSTRICH bauen (system libs nutzen) ---
-RUN mkdir -p build && cd build && \
-    cmake -G Ninja .. \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DHUNTER_ROOT=/root/.hunter \
-      -DCMAKE_PREFIX_PATH="/usr/local;/usr" && \
-    ninja ostrich-insert ostrich-evaluate && \
-    ninja ostrich-query-version || true && \
-    ninja ostrich-query-delta-materialized || true && \
-    ninja ostrich-query-version-materialized || true && \
-    ninja ostrich-statistics || true
+#RUN mkdir -p build && cd build && \
+#    cmake -G Ninja .. \
+#      -DCMAKE_BUILD_TYPE=Release \
+#      -DHUNTER_ROOT=/root/.hunter \
+#      -DCMAKE_PREFIX_PATH="/usr/local;/usr" && \
+#    ninja ostrich-insert ostrich-evaluate && \
+#    ninja ostrich-query-version || true && \
+#    ninja ostrich-query-delta-materialized || true && \
+#    ninja ostrich-query-version-materialized || true && \
+#    ninja ostrich-statistics || true
 
 WORKDIR /ostrich_eval
 

@@ -127,5 +127,5 @@ def parse_eval_stdout_to_csv(log_path: Path, vm_csv: Path, dm_csv: Path, vq_csv:
         _write_csv(Path(vm_csv), vm_rows)
     if dm_rows:
         _write_csv(Path(dm_csv), dm_rows)
-    if vq_rows:
-        _write_csv(Path(vq_csv), vq_rows)
+    #if vq_rows:
+    #    _write_csv(Path(vq_csv), vq_rows)

@@ -163,5 +163,5 @@ for dataset in datasets:
     
                         
 logger.info("Writing performance measurements to disk ...")            
-df.to_csv("/ostrich_eval/output/measurements/time.csv", sep=";", index=False, mode='a', header=True)
+df.to_csv("/ostrich_eval/output/measurements/time.csv", sep=";", index=False, mode='a', header=False)
 

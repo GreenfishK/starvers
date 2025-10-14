@@ -36,7 +36,7 @@ def ostrich_evaluation(end_idx: int, log_path: str, store_dir, dataset_dir, quer
             "bash", "-lc",
             (
                 f"ulimit -n 1048576 && cd {store_dir} && "
-                f"/ostrich_eval/ostrich/build/ostrich-evaluate {dataset_dir} 0 {end_idx} {query_file} 5 "
+                f"/ostrich_eval/ostrich/build/ostrich-evaluate query {query_file} 5 "
                 f"| tee -a {log_file}"
             )
     ]
@@ -50,41 +50,30 @@ def ostrich_evaluation(end_idx: int, log_path: str, store_dir, dataset_dir, quer
 
 
 def evaluate_basic(dataset: str, total_versions: int):
-    if dataset == "bearb_hour" or dataset == "bearb_day":
-        logging.info(f"Starting evaluation...")
+    logging.info(f"Starting evaluation...")
 
-        store_dir = f"/ostrich_eval/stores/{dataset}"
-        dataset_dir = f"/ostrich_eval/datasets/{dataset}"
-        measurements_dir = f"/ostrich_eval/output/measurements/{dataset}"
-
-        if not os.path.exists(store_dir):
+    store_dir = f"/ostrich_eval/stores/{dataset}"
+    dataset_dir = f"/ostrich_eval/datasets/{dataset}"
+    measurements_dir = f"/ostrich_eval/output/measurements/{dataset}"
+         
+    if not os.path.exists(store_dir):
             logging.info(f"No store found for {dataset}")
             return
-        
 
-        size_cmd = sh(["du", "-sh", store_dir], capture=True)
-        size_only = size_cmd.split()[0]
-        with open(f"{measurements_dir}/file_size.txt", "w") as f:
-            f.write(size_only + "\n")
+    db_size_cmd = sh(["du", "-sh", store_dir], capture=True)
+    db_size_only = db_size_cmd.split()[0]
+    with open(f"{measurements_dir}/db_file_size.txt", "w") as f:
+        f.write(db_size_only + "\n")
 
+    raw_size_cmd = sh(["du", "-sh", dataset_dir], capture=True)
+    raw_size_only = raw_size_cmd.split()[0]
+    with open(f"{measurements_dir}/raw_file_size.txt", "w") as f:
+        f.write(raw_size_only + "\n")
+
+    if dataset == "bearb_hour" or dataset == "bearb_day":
+        pass
         ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "p")
         ostrich_evaluation(total_versions, measurements_dir, store_dir, dataset_dir, "po")
-
-    elif dataset == 'bearc':
-        logging.info(f"Starting evaluation...")
-
-        store_dir = f"/ostrich_eval/stores/{dataset}"
-        measurements_dir = f"/ostrich_eval/output/measurements/{dataset}"
-
-        if not os.path.exists(store_dir):
-            logging.info(f"No store found for {dataset}")
-            return
-        
-
-        size_cmd = sh(["du", "-sh", store_dir], capture=True)
-        size_only = size_cmd.split()[0]
-        with open(f"{measurements_dir}/file_size.txt", "w") as f:
-            f.write(size_only + "\n")
     else:
         logging.info("Basic evaluation only possible for bearb_hour and bearb_day!")
 
