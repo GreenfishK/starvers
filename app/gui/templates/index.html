@@ -127,7 +127,20 @@
                                 </div>
 
                                 <!-- SPARQL editor -->
-                                <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'select ?s ?p ?o ?p2 ?o2 {\n ?s ?p ?o .\n ?o ?p2 ?o2 .\n} \nlimit 10' }} </textarea>
+                                <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+    
+SELECT ?paper ?paper_title ?authors ?research_field
+WHERE {
+    
+    ?paper rdf:type orkgc:Paper.
+    ?paper rdfs:label ?paper_title .
+    ?paper orkgp:hasAuthors ?authors .
+    ?paper orkgp:P30 ?research_field .
+    
+    FILTER(?paper = orkgr:R141003)
+}' }} </textarea>
                                 <!-- CodeMirror is injected here -->
                             </div>
 

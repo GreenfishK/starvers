@@ -11,9 +11,9 @@ from app.persistance.Database import Session, engine
 from app.models.DatasetModel import Dataset
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.VersioningService import StarVersService
+from app.services.MetricsService import MetricsService
 from app.persistance.graphdb.GraphDatabaseUtils import create_engine
 from app.LoggingConfig import get_logger
-from app.services.MetricsService import MetricsService
 
 LOG = get_logger(__name__)
 
