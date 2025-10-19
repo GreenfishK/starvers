@@ -278,7 +278,7 @@ function plotly_relayout(eventData, plotDiv) {
     const yMin = Math.min(...visibleTotals);
     const yMax = Math.max(...visibleTotals);
     console.log(`Visible y-range: [${yMin}, ${yMax}]`);
-    const padding = yMax !== yMin ? (yMax - yMin) * 0.1 : yMax * 0.1 || 1;
+    const padding = yMax !== yMin ? (yMax - yMin) * 0.2 : yMax * 0.2 || 1;
     const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];
 
     if (
