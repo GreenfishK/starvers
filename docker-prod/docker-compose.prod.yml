@@ -86,6 +86,34 @@ services:
     networks:
       - starvers_prod_net
 
+  rdfstore_bi:
+    image: ontotext/graphdb:10.5.0
+    container_name: starvers-rdfstore_bi
+    restart: always
+    env_file: "./prod.env"
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx32g -Xms32g
+        -Dgraphdb.home=/opt/graphdb/home
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dreuse.vars.in.subselects=true
+        -Dgraphdb.health.minimal.free.storage.enabled=false
+        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
+        -Dgraphdb.connector.port=7200
+    ports: 
+      - 7500:7200
+    volumes:
+      - /mnt/data/starversserver_bi/graphdb-data:/opt/graphdb/home
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_bi_net
+
   # Runs versioning and metrics computation tasks for data in ${data_storage}/evaluation. Possible executions are
   # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>"]
   #   Runs versioning and metrics computation for the specified repository
@@ -137,8 +165,10 @@ services:
       - "443:443"
     networks:
       - starvers_prod_net
+      - starvers_bi_net
     depends_on:
       - rdfstore
+      - rdfstore_bi
       - db
       - gui
 
@@ -151,6 +181,7 @@ services:
       - /${data_storage}/logs/letsencrypt:/var/log/letsencrypt
     networks:
       - starvers_prod_net
+      - starvers_bi_net
     entrypoint: >
       sh -c "certbot certonly --non-interactive --webroot
       --webroot-path=/var/www/certbot
@@ -167,6 +198,7 @@ services:
       - ./nginx/html:/var/www/certbot
     networks:
       - starvers_prod_net
+      - starvers_bi_net
     entrypoint: >
       sh -c "trap exit TERM; while :; do
       certbot renew --webroot --webroot-path=/var/www/certbot &&
@@ -181,4 +213,6 @@ volumes:
 
 networks:
   starvers_prod_net:
+    driver: bridge
+  starvers_bi_net:
     driver: bridge
