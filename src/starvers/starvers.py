@@ -4,7 +4,7 @@ from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, \
 WrongInputFormatException, ExpressionNotCoveredException
     
 from urllib.error import URLError
-from SPARQLWrapper import SPARQLWrapper, POST, DIGEST, GET, JSON
+from SPARQLWrapper import Wrapper, SPARQLWrapper, POST, DIGEST, GET, JSON
 import pandas as pd
 from datetime import datetime
 import logging
@@ -381,7 +381,7 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def query(self, select_statement: str, timestamp: Optional[datetime] = None, yn_timestamp_query: bool = True) -> pd.DataFrame:
+    def query(self, select_statement: str, timestamp: Optional[datetime] = None, yn_timestamp_query: bool = True, as_df: bool = True) -> Union[pd.DataFrame, Wrapper.QueryResult]:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
         will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data will be returned.
@@ -391,8 +391,7 @@ class TripleStoreEngine:
         :param yn_timestamp_query: If true, the select statement will be transformed into a timestamped query. 
         Otherwise, the select statement is executed as it is against the RDF-star store. 
         Set this flag to 'False' and leave :timestamp blank if :select_statement is a timestamped query already.
-
-        :return: a pandas dataframe of the RDF result set.
+        :param as_df: If true, the result set will be converted into a pandas dataframe.
         """
 
         if yn_timestamp_query:
@@ -409,10 +408,16 @@ class TripleStoreEngine:
         #self.sparql_get_with_post.queryType = 'SELECT'
         logger.info("Retrieving results ...")
         result = self.sparql_get_with_post.query()
-        logger.info(f"The result has the return type {result._get_responseFormat()}. Converting results ... ")
-        df = to_df(result)
 
-        return df
+        logger.info(f"The result has the return type {result._get_responseFormat()}.")
+
+        if not as_df:
+            logger.info("Returning raw result ...")
+            return result
+        else:
+            logger.info("Converting results to pandas dataframe ...")
+            df = to_df(result)
+            return df
 
 
     def insert(self, triples: Union[list[str], str], prefixes: Optional[dict[str, str]] = None, timestamp: Optional[datetime] = None, chunk_size: int = 1000):
