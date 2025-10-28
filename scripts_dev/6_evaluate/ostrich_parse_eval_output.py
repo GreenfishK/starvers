@@ -13,10 +13,6 @@ M_DM           = re.compile(r"^--- ---DELTA MATERIALIZED")
 M_VQ           = re.compile(r"^--- ---VERSION$")
 
 def _collect_table(lines, start_idx):
-    """
-    Collect a simple CSV-like block starting at start_idx (header line),
-    until an empty line or a line starting with '---'.
-    """
     out = []
     i = start_idx
     # header
@@ -32,11 +28,6 @@ def _collect_table(lines, start_idx):
     return out, i
 
 def _write_csv(path: Path, rows):
-    """
-    Parsed die eingehenden Zeilen (primär Komma-getrennt, Fallbacks bei Bedarf)
-    und schreibt sie als korrekt getrennte CSV mit **Semikolon** als Delimiter
-    unter genau `path`.
-    """
     import csv
     import re
 
@@ -127,5 +118,5 @@ def parse_eval_stdout_to_csv(log_path: Path, vm_csv: Path, dm_csv: Path, vq_csv:
         _write_csv(Path(vm_csv), vm_rows)
     if dm_rows:
         _write_csv(Path(dm_csv), dm_rows)
-    #if vq_rows:
-    #    _write_csv(Path(vq_csv), vq_rows)
+    if vq_rows:
+        _write_csv(Path(vq_csv), vq_rows)

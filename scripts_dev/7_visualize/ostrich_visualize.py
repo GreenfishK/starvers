@@ -8,6 +8,11 @@ from datetime import timezone
 import tomli
 import math
 import numpy as np
+from matplotlib.ticker import LogLocator, LogFormatterSciNotation
+from pathlib import Path
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
 
 # ---------------------------------------
 # Params (CLI)
@@ -29,6 +34,32 @@ PREFIXES = ["bearb_p", "bearb_po"] #[p.strip() for p in sys.argv[2].split(",") i
 # ---------------------------------------
 # Helpers
 # ---------------------------------------
+
+mpl.rcParams.update({
+    "pdf.fonttype": 3,   # Type 3 fonts (text as shapes, not selectable)
+    "ps.fonttype": 3,    # same for PS if you ever use it
+})
+
+def safe_save(figpath: Path, dpi_png=600, also_png=False):
+    """
+    Save current figure as high-res PDF (vector with text as paths),
+    and optionally a high-DPI PNG.
+    """
+    figpath = Path(figpath)
+    figpath.parent.mkdir(parents=True, exist_ok=True)
+
+    plt.tight_layout()
+
+    # Always save a PDF (vector; text converted to paths by rcParams above)
+    pdf_path = figpath.with_suffix(".pdf")
+    plt.savefig(pdf_path, bbox_inches="tight", pad_inches=0.02)
+
+    if also_png:
+        png_path = figpath.with_suffix(".png")
+        plt.savefig(png_path, dpi=dpi_png, bbox_inches="tight", pad_inches=0.02)
+
+    plt.close()
+
 def read_csv(path: Path) -> pd.DataFrame | None:
     if not path.exists():
         logging.warning(f"Missing file: {path}")
@@ -68,7 +99,7 @@ def read_csv(path: Path) -> pd.DataFrame | None:
         logging.error(f"Failed to read {path} after all attempts: {e}")
         return None
 
-def safe_save(figpath: Path):
+def safe_save_old(figpath: Path):
     figpath.parent.mkdir(parents=True, exist_ok=True)
     plt.tight_layout()
     plt.savefig(figpath, dpi=160)
@@ -78,6 +109,29 @@ def detect_last_version_from_insertion(insertion_df: pd.DataFrame) -> int:
     if "version" not in insertion_df.columns or insertion_df.empty:
         return 0
     return int(insertion_df["version"].max())
+
+def make_arrows(ax):
+    for s in ax.spines.values():
+        s.set_visible(False)
+
+    ax.yaxis.set_ticks_position('left')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.tick_params(axis='both', which='both', direction='out')
+
+    # y arrow (end slightly above 1.0)
+    ax.add_artist(FancyArrowPatch(
+        (0.0, 0.0), (0.0, 1.03), transform=ax.transAxes,
+        arrowstyle='-|>', mutation_scale=12, lw=1, color='black',
+        clip_on=False, zorder=3))
+
+    # x arrow (end slightly beyond right edge)
+    ax.add_artist(FancyArrowPatch(
+        (0.0, 0.0), (1.03, 0.0), transform=ax.transAxes,
+        arrowstyle='-|>', mutation_scale=12, lw=1, color='black',
+        clip_on=False, zorder=3))
+
+    # optional: a touch of padding so labels don't butt into arrows
+    ax.tick_params(pad=3)
 
 # ---------------------------------------
 # Plotters
@@ -89,26 +143,19 @@ def plot_ingestion(ingestion_df: pd.DataFrame, out_dir: Path, dataset:str):
     ingestion_df["ingestion_time_s"] = pd.to_numeric(ingestion_df['durationms'], errors="coerce") / 1_000.0
     markevery = math.ceil(len(ingestion_df['version'])/150)
 
-    plt.figure()
-    plt.plot(ingestion_df["version"], ingestion_df["ingestion_time_s"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
-             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
-    
-    ingestiontime_max = float(np.nanmax(ingestion_df["ingestion_time_s"].to_numpy(dtype=float)))
-    exp = math.floor(math.log10(ingestiontime_max))
-    for m in (1, 2, 5, 10):
-        candidate = m * (10 ** exp)
-        if candidate >= ingestiontime_max:
-            upper = candidate
-            break
-    upper = min(upper, 1000)
+    plt.figure(figsize=(6, 3))
+    plt.plot(ingestion_df["version"], ingestion_df["ingestion_time_s"], linestyle='solid', marker="o", markersize=2, markerfacecolor='none',
+             markeredgewidth=1, linewidth=1, color='black', markevery=markevery, label="Ostrich")
+
 
     ax = plt.gca()
+    make_arrows(ax)
     ax.set_yscale("log")
     ax.set_ylim(1e-3, 1e-0)
 
     plt.xlabel("Version")
-    plt.ylabel("Ingestion time (s)")
-    plt.title(f"Ingestion duration per version – {dataset}")
+    plt.ylabel("Duration (s)")
+    plt.legend(loc='best')
     safe_save(out_dir / f"{dataset}_ingestion_time.png")
 
     # Cumulative size
@@ -116,7 +163,7 @@ def plot_ingestion(ingestion_df: pd.DataFrame, out_dir: Path, dataset:str):
         ingestion_df["size_mb"] = pd.to_numeric(ingestion_df['accsize'], errors="coerce") / (1024 ** 2)
         plt.figure()
         plt.plot(ingestion_df["version"], ingestion_df["size_mb"], linestyle='dashed', marker="o", markersize=7, markerfacecolor='none',
-             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+             markeredgewidth=1, linewidth=0.5, color='black', markevery=markevery)
         
         upper = 0
         size_max = float(np.nanmax(ingestion_df["size_mb"].to_numpy(dtype=float)))
@@ -139,19 +186,16 @@ def plot_ingestion(ingestion_df: pd.DataFrame, out_dir: Path, dataset:str):
 
 def plot_vm(vm_df_p: pd.DataFrame, vm_df_po: pd.DataFrame, sparql_df: pd.DataFrame, out_dir: Path, tag: str):
     if (vm_df_p is None and vm_df_po is None) or (vm_df_p.empty and vm_df_po.empty):
-        print(vm_df_p)
-        print(vm_df_po)
-        print("some df empty")
         return
     
     # Expect columns: patch, offset, limit, count-ms, lookup-mus, results
     vm_df = pd.concat([vm_df_p, vm_df_po], ignore_index=True)
     means = vm_df.groupby('patch', as_index=False)['lookup-mus'].mean()
-    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000.0
     markevery = math.ceil(len(means['patch'])/60)
-    plt.figure()
-    plt.plot(means["patch"], means["execution_time_total"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
-             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery, label='Triple pattern')
+    plt.figure(figsize=(6, 3))
+    plt.plot(means["patch"], means["execution_time_total"], linestyle='solid', marker="o", markersize=2, markerfacecolor='none',
+             markeredgewidth=1, linewidth=1, color='red', markevery=markevery, label='Ostrich')
     
     if sparql_df is not None and not sparql_df.empty:
         sparql_med = sparql_df.groupby('snapshot', as_index=False)['execution_time'].median().rename(
@@ -159,15 +203,14 @@ def plot_vm(vm_df_p: pd.DataFrame, vm_df_po: pd.DataFrame, sparql_df: pd.DataFra
         )
         plt.plot(sparql_med["patch"], sparql_med["sparql_seconds"], linestyle='none', marker="*", markersize=7, markerfacecolor='none',
             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery, label='SPARQL'
-        )
-
+        ) 
 
     ax = plt.gca()
+    make_arrows(ax)
+    ax.set_ylim(1e-3, 1e+3)
     ax.set_yscale("log")
-    ax.set_ylim(1e-4, 1e-2)
     plt.xlabel("Version")
-    plt.ylabel("Median lookup (s)")
-    plt.title(f"VM – median lookup over versions – {tag}")
+    plt.ylabel("Lookup (ms)")
     plt.legend(loc='best')
     plt.tight_layout()
     safe_save(out_dir / f"{tag}_vm_median_lookup.png")
@@ -182,33 +225,52 @@ def plot_dm(dm_df_p: pd.DataFrame, dm_df_po: pd.DataFrame,  out_dir: Path, tag: 
         logging.warning("DM CSV has no 'patch_end' column; skipping DM plot.")
         return
     means = dm_df.groupby('patch_end', as_index=False)['lookup-mus'].mean()
-    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000_000.0
+    means["execution_time_total"] = pd.to_numeric(means['lookup-mus'], errors="coerce") / 1_000.0
     markevery = math.ceil(len(means['patch_end'])/60)
-    plt.figure()
-    plt.plot(means["patch_end"], means["execution_time_total"], linestyle='none', marker="o", markersize=7, markerfacecolor='none',
-             markeredgewidth=1, drawstyle='steps', linewidth=0.5, color='black', markevery=markevery)
+    plt.figure(figsize=(6, 3))
+    plt.plot(means["patch_end"], means["execution_time_total"], linestyle='solid', marker="o", markersize=2, markerfacecolor='none',
+             markeredgewidth=1, linewidth=1, color='red', markevery=markevery, label="Ostrich")
     
     ax = plt.gca()
+    make_arrows(ax)
     ax.set_yscale("log")
-    ax.set_ylim(1e-4, 1e-2)
+    ax.set_ylim(1e-3, 1e+3)
 
-    plt.xlabel("Version (end)")
-    plt.ylabel("Median lookup (ms)")
-    plt.title(f"DM (0→v) – median lookup over versions – {tag}")
+    plt.xlabel("Version")
+    plt.ylabel("Lookup (ms)")
+    plt.legend(loc='best')
     safe_save(out_dir / f"{tag}_dm_median_lookup.png")
 
-def plot_vq(vq_df: pd.DataFrame, insertion_df: pd.DataFrame, out_dir: Path, tag: str):
-    # VQ is typically executed only at the final version; many builds don't print a 'patch' col.
+def plot_vq(vq_df_p: pd.DataFrame, vq_df_po: pd.DataFrame, insertion_df: pd.DataFrame, out_dir: Path, tag: str):
+    vq_df = pd.concat([vq_df_p, vq_df_po], ignore_index=True)
+
     if vq_df is None or vq_df.empty or insertion_df is None or insertion_df.empty:
         return
     last_v = detect_last_version_from_insertion(insertion_df)
-    med = float(vq_df["lookup-mus"].median()) / 1000.0
-    plt.figure()
-    plt.scatter([last_v], [med])
-    plt.axvline(x=last_v, linestyle="--", linewidth=1)
-    plt.xlabel("Version")
-    plt.ylabel("Median lookup (ms)")
-    plt.title(f"VQ – median lookup (final version) – {tag}")
+    fig, ax = plt.subplots(figsize=(6, 3))
+    make_arrows(ax)
+    med_s = float(vq_df["lookup-mus"].median()) / 1_000.0
+    x0, w = 0.0, 0.1
+
+    ax.bar([x0], [med_s], width=w, color='darkred', edgecolor='none')
+
+    ax.set_yscale("log")
+    ax.set_ylim(1e-5, 1e5)
+    ax.yaxis.set_major_locator(LogLocator(base=10))
+    ax.yaxis.set_minor_locator(LogLocator(base=10, subs=range(2,10)))
+    ax.grid(axis='y', which='major', linestyle='--', alpha=0.6)
+    ax.grid(axis='y', which='minor', linestyle=':', alpha=0.25)
+    ax.yaxis.set_major_formatter(LogFormatterSciNotation())
+    ax.set_xlim(x0 - 0.35, x0 + 0.35)
+
+    ax.set_xticks([])
+    ax.set_xlabel("OSTRICH")
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    ax.set_ylabel("Lookup (ms)")
+    plt.tight_layout()
     safe_save(out_dir / f"{tag}_vq_median_lookup.png")
 
 
@@ -230,8 +292,8 @@ def visualize(dataset: str, measurements_path: str):
     dm_csv_p      = Path(f"{csv_path}/basic/lookup_queries_p_dm.csv")
     dm_csv_po     = Path(f"{csv_path}/basic/lookup_queries_po_dm.csv")
     sparql_csv    = Path(f"{measurements_path}/time.csv")
-    #vq_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vq.csv")
-    #vq_csv        = Path(f"{csv_path}/basic/lookup_queries_{prefix}_vq.csv")
+    vq_csv_p      = Path(f"{csv_path}/basic/lookup_queries_p_vq.csv")
+    vq_csv_po     = Path(f"{csv_path}/basic/lookup_queries_po_vq.csv")
 
     ingestion_df = read_csv(ingestion_csv)
     vm_df_p      = read_csv(vm_csv_p)
@@ -239,7 +301,8 @@ def visualize(dataset: str, measurements_path: str):
     dm_df_p      = read_csv(dm_csv_p)
     dm_df_po     = read_csv(dm_csv_po)
     sparql_df    = read_csv(sparql_csv)
-    #vq_df        = read_csv(vq_csv)
+    vq_df_p      = read_csv(vq_csv_p)
+    vq_df_po     = read_csv(vq_csv_po)
 
     tag = f"{dataset}"
     out_dir = Path("/ostrich_eval/output/figures").resolve()
@@ -250,7 +313,7 @@ def visualize(dataset: str, measurements_path: str):
     plot_ingestion(ingestion_df, out_dir, dataset)
     plot_vm(vm_df_p, vm_df_po, sparql_lookup_df, out_dir, tag)
     plot_dm(dm_df_p, dm_df_po, out_dir, tag)
-    #plot_vq(vq_df, ingestion_df, out_dir, tag)
+    plot_vq(vq_df_p, vq_df_po, ingestion_df, out_dir, tag)
 
 ############################################# Logging #############################################
 if not os.path.exists('/ostrich_eval/output/logs/visualize'):
