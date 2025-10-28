@@ -159,30 +159,30 @@ def plot_ingestion(ingestion_df: pd.DataFrame, out_dir: Path, dataset:str):
     safe_save(out_dir / f"{dataset}_ingestion_time.png")
 
     # Cumulative size
-    if "accsize" in ingestion_df.columns:
-        ingestion_df["size_mb"] = pd.to_numeric(ingestion_df['accsize'], errors="coerce") / (1024 ** 2)
-        plt.figure()
-        plt.plot(ingestion_df["version"], ingestion_df["size_mb"], linestyle='dashed', marker="o", markersize=7, markerfacecolor='none',
-             markeredgewidth=1, linewidth=0.5, color='black', markevery=markevery)
-        
-        upper = 0
-        size_max = float(np.nanmax(ingestion_df["size_mb"].to_numpy(dtype=float)))
-        exp = math.floor(math.log10(size_max))
-        for m in (1, 2, 5, 10):
-           candidate = m * (10 ** exp)
-           if candidate >= size_max:
-               upper = candidate
-               break
-        upper = min(upper, 1000)
-    
-        ax = plt.gca()
-        ax.set_yscale("linear")
-        ax.set_ylim(0, upper)
-    
-        plt.xlabel("Version")
-        plt.ylabel("Cumulative size (MB)")
-        plt.title(f"Cumulative store size – {dataset}")
-        safe_save(out_dir / f"{dataset}_cumulative_size.png")
+    #if "accsize" in ingestion_df.columns:
+    #    ingestion_df["size_mb"] = pd.to_numeric(ingestion_df['accsize'], errors="coerce") / (1024 ** 2)
+    #    plt.figure()
+    #    plt.plot(ingestion_df["version"], ingestion_df["size_mb"], linestyle='dashed', marker="o", markersize=7, markerfacecolor='none',
+    #         markeredgewidth=1, linewidth=0.5, color='black', markevery=markevery)
+    #    
+    #    upper = 0
+    #    size_max = float(np.nanmax(ingestion_df["size_mb"].to_numpy(dtype=float)))
+    #    exp = math.floor(math.log10(size_max))
+    #    for m in (1, 2, 5, 10):
+    #       candidate = m * (10 ** exp)
+    #       if candidate >= size_max:
+    #           upper = candidate
+    #           break
+    #    upper = min(upper, 1000)
+    #
+    #    ax = plt.gca()
+    #    ax.set_yscale("linear")
+    #    ax.set_ylim(0, upper)
+    #  
+    #     plt.xlabel("Version")
+    #     plt.ylabel("Cumulative size (MB)")
+    #     plt.title(f"Cumulative store size – {dataset}")
+    #     safe_save(out_dir / f"{dataset}_cumulative_size.png")
 
 def plot_vm(vm_df_p: pd.DataFrame, vm_df_po: pd.DataFrame, sparql_df: pd.DataFrame, out_dir: Path, tag: str):
     if (vm_df_p is None and vm_df_po is None) or (vm_df_p.empty and vm_df_po.empty):
