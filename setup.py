@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='starvers',
-    version='0.8.2',    
+    version='0.8.5',    
     description='Starvers is a python module for timestamp-based versioning of RDF data.',
     url='https://github.com/GreenfishK/starvers',
     author='Filip Kovacevic',
