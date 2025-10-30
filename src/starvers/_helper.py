@@ -9,11 +9,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-
-def template_path(template_rel_path: str):
-    return os.path.join(os.path.dirname(__file__), template_rel_path)
-
-
 def versioning_timestamp_format(version_timestamp: datetime) -> str:
     """
     This format is taken from the result set of GraphDB's queries.

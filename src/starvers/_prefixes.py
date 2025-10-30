@@ -1,19 +1,6 @@
-from ._exceptions import ReservedPrefixError
+from .exceptions import ReservedPrefixError
 import re
 from typing import Union
-
-
-def _prefixes_to_sparql(prefixes: dict[str, str]) -> str:
-    """
-    Converts a dict of prefixes to a string with SPARQL syntax for prefixes.
-    :param prefixes:
-    :return: SPARQL prologue (prefixes at the beginning of the query) as string.
-    """
-
-    sparql_prefixes = ""
-    for key, value in prefixes.items():
-        sparql_prefixes += "PREFIX {0}: <{1}> \n".format(key, value)
-    return sparql_prefixes
 
 
 def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
@@ -36,7 +23,10 @@ def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
     prefix_xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>'
 
     if isinstance(prefixes, dict):
-        sparql_prefixes = _prefixes_to_sparql(prefixes)
+        sparql_prefixes = ""
+        for key, value in prefixes.items():
+            sparql_prefixes += "PREFIX {0}: <{1}> \n".format(key, value)
+
         if "vers" in prefixes:
             raise ReservedPrefixError(error_message)
         if "xsd" in prefixes:

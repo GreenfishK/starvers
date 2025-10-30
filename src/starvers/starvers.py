@@ -1,11 +1,12 @@
-from ._helper import template_path, versioning_timestamp_format, to_df
+from ._helper import versioning_timestamp_format, to_df
 from ._prefixes import add_versioning_prefixes, split_prefixes_query
-from ._exceptions import RDFStarNotSupported, NoConnectionToRDFStore, \
+from .exceptions import RDFStarNotSupported, NoConnectionToRDFStore, \
 WrongInputFormatException, ExpressionNotCoveredException
     
 from urllib.error import URLError
 from SPARQLWrapper import Wrapper, SPARQLWrapper, POST, DIGEST, GET, JSON
 import pandas as pd
+import os
 from datetime import datetime
 import logging
 import time
@@ -166,8 +167,10 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     # with their corresponding block of timestamped triple statements.
     triple_stmts_cnt = 0
     for bgp_identifier, triples in bgp_triples.items():
+        
+        template_path = os.path.join(os.path.dirname(__file__), "templates/versioning_query_extensions.txt")
         ver_block_template = \
-            open(template_path("templates/versioning_query_extensions.txt"), "r").read()
+            open(template_path, "r").read()
 
         ver_block = ""
         for i, triple in enumerate(triples):
@@ -222,7 +225,7 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = template_path("templates")
+        self._template_location = os.path.join(os.path.dirname(__file__), "templates")
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -418,6 +421,36 @@ class TripleStoreEngine:
             logger.info("Converting results to pandas dataframe ...")
             df = to_df(result)
             return df
+
+
+    def retrieve_snapshot(self, timestamp: Optional[datetime] = None) -> str:
+        """
+        Executes a predefined SPARQL construct query and returns a result set as string in n3 syntax. If :timestamp is provided 
+        the result set will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data 
+        will be returned.
+
+        :param timestamp: The version timestamp for which a snapshot of the data as of :timestamp should be retrieved.
+        """
+
+        snapshot_construct_query = open(self._template_location + "/timestamped_construct_query.txt", "r").read()
+        if timestamp:
+            snapshot_construct_query = snapshot_construct_query.format('"' + versioning_timestamp_format(timestamp) + '"')
+        else:
+            snapshot_construct_query = snapshot_construct_query.format("NOW()")
+
+        logger.info("Snapshot construct query being executed: \n {1}".format(snapshot_construct_query))
+        self.sparql_get_with_post.setReturnFormat('n3') 
+        self.sparql_get_with_post.addCustomHttpHeader('Accept', 'application/n-triples')
+        self.sparql_get_with_post.setQuery(snapshot_construct_query)
+
+        logger.info("Retrieving results ...")
+        result = self.sparql_get_with_post.query().convert().decode("utf-8")
+
+        # return to default behaviour
+        self.sparql_get_with_post.setReturnFormat('json') 
+        self.sparql_get_with_post.clearCustomHttpHeader('Accept')
+
+        return result
 
 
     def insert(self, triples: Union[list[str], str], prefixes: Optional[dict[str, str]] = None, timestamp: Optional[datetime] = None, chunk_size: int = 1000):

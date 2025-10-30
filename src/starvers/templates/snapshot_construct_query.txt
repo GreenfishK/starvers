@@ -1,0 +1,14 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+
+CONSTRUCT {{
+    ?s ?p ?o .
+}}
+WHERE {{
+    << << ?s ?p ?o >> vers:valid_from ?valid_from >> vers:valid_until ?valid_until .
+    BIND({0} as ?ts)
+    FILTER(?valid_from <= ?ts && ?ts < ?valid_until)
+    FILTER NOT EXISTS {{
+        << << ?s ?p ?o >> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1 .
+       FILTER(?valid_from < ?valid_from_1 && ?valid_from_1 <= ?ts)
+    }}
+}}
