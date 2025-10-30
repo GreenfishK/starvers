@@ -5,15 +5,12 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 
-HttpUrlString = Annotated[HttpUrl, AfterValidator(str)]
-
-
 class DatasetBase(SQLModel):
     name: str
     repository_name: str
-    rdf_dataset_url: HttpUrlString = Field(sa_type=AutoString)
+    rdf_dataset_url: str = Field(sa_type=AutoString)
     polling_interval: int = Field(default=None) # polling intervall in seconds
-    notification_webhook: Optional[HttpUrlString] = Field(sa_type=AutoString, default=None)
+    notification_webhook: Optional[str] = Field(sa_type=AutoString, default=None)
     created_at: Optional[datetime] = Field(default_factory=datetime.now)
     last_modified: Optional[datetime] = Field(default_factory=datetime.now)
     active: Optional[bool] = Field(default=True)
