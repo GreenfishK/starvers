@@ -229,7 +229,7 @@ function plotly_relayout(eventData, plotDiv) {
     for (let i = xVals.length - 1; i >= 0; i--) {
         const d = new Date(xVals[i]);
         if (d <= xEnd) { 
-            endIndex = i; break; 
+            endIndex = i + 1; break; 
         }
     }
 
@@ -263,11 +263,7 @@ function plotly_relayout(eventData, plotDiv) {
     const yDel = extractY(deletions);
 
     // Compute combined y-values per point
-    let yData = yTotal.map((val, i) => {
-        const insVal = yIns[i];
-        const delVal = yDel[i];
-        return val - insVal + Math.abs(delVal);
-    });
+    const yData = yTotal.map((val, i) => [val + Math.abs(yDel[i]), val - Math.abs(yIns[i])]);
 
     const visibleTotals = yData.slice(startIndex, endIndex + 1);
     if (visibleTotals.length === 0) {
@@ -275,8 +271,9 @@ function plotly_relayout(eventData, plotDiv) {
         return;
     }
 
-    const yMin = Math.min(...visibleTotals);
-    const yMax = Math.max(...visibleTotals);
+    const yMax = Math.max(...visibleTotals.map(([max]) => max));
+    const yMin = Math.min(...visibleTotals.map(([, min]) => min));
+    
     console.log(`Visible y-range: [${yMin}, ${yMax}]`);
     const padding = yMax !== yMin ? (yMax - yMin) * 0.2 : yMax * 0.2 || 1;
     const yRange = [Math.floor(yMin - padding), Math.ceil(yMax + padding)];

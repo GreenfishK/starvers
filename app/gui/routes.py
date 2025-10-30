@@ -111,7 +111,7 @@ def get_repo_infos(repo_label):
         active_time_aggr = time_aggr_map[time_aggr]
     except KeyError:
         return jsonify({"error": "Invalid aggregation level"}), 400
-
+    
     try:
         controller = GuiContr(repo_name=repo_name)
         _, _, fig_data, fig_layout = controller.build_timeseries(time_aggr, active_time_aggr)
