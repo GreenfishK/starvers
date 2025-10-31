@@ -6,7 +6,6 @@ WORKDIR /code
 COPY ./starversserver/requirements.txt /code/requirements.txt
 COPY ./starversserver/app /code/app
 COPY ./starvers /code/app/utils/starvers
-COPY ./starversserver/evaluation /code/evaluation
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 

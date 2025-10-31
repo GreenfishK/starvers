@@ -1,0 +1,88 @@
+services:
+
+
+  db:
+    image: postgres
+    container_name: starvers-db_prod
+    restart: always
+    env_file: "./prod.env"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: starvers_db
+    ports:
+      - 5433:5432
+    volumes:
+      - ${data_storage}/postgresql/data:/var/lib/postgresql/data
+    networks:
+      - starvers_prod_net
+
+  rdfstore:
+    image: ontotext/graphdb:10.5.0
+    container_name: starvers-rdfstore_prod
+    restart: always
+    env_file: "./prod.env"
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx32g -Xms32g
+        -Dgraphdb.home=/opt/graphdb/home
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dreuse.vars.in.subselects=true
+        -Dgraphdb.health.minimal.free.storage.enabled=false
+        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
+        -Dgraphdb.connector.port=7200
+    ports: 
+      - 7400:7200
+    volumes:
+      - ${data_storage}/graphdb-data:/opt/graphdb/home
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_prod_net
+
+  # Runs versioning and metrics computation tasks for data in ${data_storage}/evaluation. Possible executions are
+  # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>"]
+  #   Runs versioning and metrics computation for the specified repository
+  # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>", from_scratch, "yyyyMMdd-HHmmss_sss"]
+  #   Runs versioning and metrics computation for the specified repository from a specific timestamp with initial versioning
+  # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>", from_version, "yyyyMMdd-HHmmss_sss"]
+  #   Continues versioning and metrics computation for the specified repository from a specific timestamp without initial versioning
+  # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>",  (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "v"]
+  #   Runs only versioning without metrics computation for the specified repository from a specific timestamp
+  # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "dm, sm"]
+  #   Runs only thout metrics computation without versioning for the specified repository, with the possibility of running from scratch or from a specific timestamp
+  compute:
+    image: starversserver_eval
+    container_name: starvers-compute_prod
+    env_file: "./prod.env"
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    networks:
+      - starvers_prod_net
+    volumes:
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+    entrypoint: ["python", "/code/evaluation/compute.py", "orkg", "sm,dm", "from_version", "20250828-124726_863"] 
+
+    # Creates plots from the timing files
+  create_plots:
+    image: starversserver_eval
+    container_name: starvers-create-plots_prod
+    env_file: "./prod.env"
+    volumes:
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
+    entrypoint: ["python", "/code/evaluation/evaluation.py"]
+
+networks:
+  starvers_prod_net:
+    driver: bridge
