@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
-from starvers.starvers import TripleStoreEngine
+from app.utils.starvers.starvers import TripleStoreEngine
 import datetime
 
 from app.LoggingConfig import get_logger

@@ -4,10 +4,8 @@ load_dotenv
 sqlmodel
 sqlalchemy
 psycopg2-binary
-starvers @ git+https://github.com/GreenfishK/starvers.git
 requests
 pydantic-settings
-requests
 pytest
 httpx
 rdflib-endpoint[web]
@@ -20,3 +18,6 @@ matplotlib
 Flask>=2.0
 plotly==6.2.0
 SPARQLWrapper==2.0.0
+rdflib==6.2.0
+setuptools==65.4.0
+tzlocal==4.2
