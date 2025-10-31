@@ -1,0 +1,20 @@
+\begin{table}
+    \centering
+    \begin{tabular}{p{0.09\textwidth}c|c|c|c|c|c|c|c|c|c}
+                                                             &  & \multicolumn{3}{c|}{B\_day} & \multicolumn{3}{c|}{B\_hour} & \multicolumn{3}{c}{C} \\
+       \cline{3-11} 
+        & & Raw  & GraphDB  & Jena   & Raw  & GraphDB  & Jena  & Raw  & GraphDB  & Jena  \\                                                        
+        \hline
+    \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Storage\\consumption\\in GiB}}}} & cb\_ng & {{sotrage_consumption_cb_sr_ng}}   \\
+        \multicolumn{1}{c|}{}  & ic\_ng & {{sotrage_consumption_ic_sr_ng}}   \\
+        \multicolumn{1}{c|}{}  & tb\_ng  & {{sotrage_consumption_tb_sr_ng}}    \\
+        \multicolumn{1}{c|}{}  & tb\_rs  & {{sotrage_consumption_tb_sr_rs}}   \\
+       \hline
+       \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Ingestion\\time\\in seconds}}}} & cb\_ng & {{ingestion_time_cb_sr_ng}}   \\
+    \multicolumn{1}{c|}{}   & ic\_ng  & {{ingestion_time_ic_sr_ng}}   \\
+    \multicolumn{1}{c|}{}  & tb\_ng  & {{ingestion_time_tb_sr_ng}}  \\
+    \multicolumn{1}{c|}{}   & tb\_rs  & {{ingestion_time_tb_sr_rs}}   \\
+    \end{tabular}
+    \caption{Storage consumption (in GiB) of the raw file sizes, RDF store file sizes, and the average ingestion time across 10 runs (median, in seconds) of the three datasets BEARB\_day, BEARB\_hour, and BEARC for each versioning policy.}
+    \label{tab:eval_results_storage}
+\end{table}
