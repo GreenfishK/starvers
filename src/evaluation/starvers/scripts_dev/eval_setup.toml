@@ -1,0 +1,146 @@
+# TODO: Link all scripts to this golden source
+[general]
+    snapshot_dir = "alldata.IC.nt"
+    change_sets_dir = "alldata.CB_computed"
+
+[datasets]
+    [datasets.beara]
+        snapshot_versions = 58
+        ic_basename_length = 1
+        superset = "beara"
+        download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/datasets/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
+        download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/datasets/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
+        yn_nested_archives = "false"
+        [datasets.beara.repositories]
+            ic_mr_tr = 58
+            cb_mr_tr = 116
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+        [datasets.beara.query_sets]
+            [datasets.beara.query_sets.high]
+                [datasets.beara.query_sets.high.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                    cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 58, template = "icng/ts"}
+                    cb_sr_ng = {versions = 58, template = "ictr/ts"}
+                    tb_sr_ng = {versions = 58, template = "tbng/ts"}
+                    tb_sr_rs = {versions = 58, template = "ictr/ts"}
+            [datasets.beara.query_sets.low]
+                [datasets.beara.query_sets.low.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                    cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 58, template = "icng/ts"}
+                    cb_sr_ng = {versions = 58, template = "ictr/ts"}
+                    tb_sr_ng = {versions = 58, template = "tbng/ts"}
+                    tb_sr_rs = {versions = 58, template = "ictr/ts"}
+
+    [datasets.bearb_hour]
+        snapshot_versions = 1299
+        ic_basename_length = 6
+        superset = "bearb"
+        download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/hour/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
+        download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/hour/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
+        yn_nested_archives = "true"
+        [datasets.bearb_hour.repositories]
+            ic_mr_tr = 1299
+            cb_mr_tr = 2598
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+        [datasets.bearb_hour.query_sets]
+            [datasets.bearb_hour.query_sets.join]
+                [datasets.bearb_hour.query_sets.join.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/bgp"}
+                    cb_mr_tr = {versions = 1, template = "ictr/bgp"}
+                    ic_sr_ng = {versions = 1299, template = "icng/bgp"}
+                    cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
+                    tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
+                    tb_sr_rs = {versions = 1299, template = "ictr/bgp"}
+            [datasets.bearb_hour.query_sets.lookup]
+                [datasets.bearb_hour.query_sets.lookup.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                    cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 1299, template = "icng/ts"}
+                    cb_sr_ng = {versions = 1299, template = "ictr/ts"}
+                    tb_sr_ng = {versions = 1299, template = "tbng/ts"}
+                    tb_sr_rs = {versions = 1299, template = "ictr/ts"}
+
+    [datasets.bearb_day]
+        snapshot_versions = 89
+        ic_basename_length = 6
+        superset = "bearb"
+        download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/day/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
+        download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/datasets/day/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
+        yn_nested_archives = "true"
+        [datasets.bearb_day.repositories]
+            ic_mr_tr = 89
+            cb_mr_tr = 178
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+        [datasets.bearb_day.query_sets]
+            [datasets.bearb_day.query_sets.join]
+                [datasets.bearb_day.query_sets.join.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/bgp"}
+                    cb_mr_tr = {versions = 1, template = "ictr/bgp"}
+                    ic_sr_ng = {versions = 89, template = "icng/bgp"}
+                    cb_sr_ng = {versions = 89, template = "ictr/bgp"}
+                    tb_sr_ng = {versions = 89, template = "tbng/bgp"}
+                    tb_sr_rs = {versions = 89, template = "ictr/bgp"}
+            [datasets.bearb_day.query_sets.lookup]
+                [datasets.bearb_day.query_sets.lookup.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/ts"}
+                    cb_mr_tr = {versions = 1, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 89, template = "icng/ts"}
+                    cb_sr_ng = {versions = 89, template = "ictr/ts"}
+                    tb_sr_ng = {versions = 89, template = "tbng/ts"}
+                    tb_sr_rs = {versions = 89, template = "ictr/ts"}
+
+    [datasets.bearc]
+        snapshot_versions = 33
+        ic_basename_length = 1
+        superset = "bearc"
+        download_link_snapshots = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/datasets/IC/alldata.IC.nt.tar.gz"
+        archive_name_snapshots = "alldata.IC.nt.tar.gz"
+        download_link_ng_dataset = "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/datasets/TB/alldata.TB.nq.gz"
+        archive_name_ng_dataset =  "alldata.TB.nq.gz"
+        yn_nested_archives = "true"
+        [datasets.bearc.repositories]
+            ic_mr_tr = 33
+            cb_mr_tr = 66
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+        [datasets.bearc.query_sets]
+            [datasets.bearc.query_sets.complex]
+                [datasets.bearc.query_sets.complex.policies]
+                    ic_mr_tr = {versions = 1, template = "ictr/sparql"}
+                    cb_mr_tr = {versions = 1, template = "ictr/sparql"}
+                    ic_sr_ng = {versions = 33, template = "icng/sparql"}
+                    cb_sr_ng = {versions = 33, template = "ictr/sparql"}
+                    tb_sr_ng = {versions = 33, template = "tbng/sparql"}
+                    tb_sr_rs = {versions = 33, template = "ictr/sparql"}
+    [datasets.beart]
+        snapshot_versions = 4
+        ic_basename_length = 6
+        superset = "beart"
+        [datasets.beart.repositories]
+            ic_mr_tr = 4
+            cb_mr_tr = 8
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+
+        

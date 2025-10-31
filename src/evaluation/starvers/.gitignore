@@ -1,0 +1,12 @@
+.idea/
+.ipynb_checkpoints/
+.DS_Store
+**/*.log
+scripts_dev/.idea
+scripts_dev/.ipynb_checkpoints/
+scripts_dev/6_evaluate/graphdb/target
+scripts_dev/2_clean_raw_datasets/RDFValidator/target/classes/
+scripts_dev/2_clean_raw_datasets/RDFValidator/target/archive-tmp/
+scripts_dev/2_clean_raw_datasets/RDFValidator/target/generated-sources/
+scripts_dev/2_clean_raw_datasets/RDFValidator/target/maven-status/
+analysis/graphdb_jena_cb_analysis.xlsx
