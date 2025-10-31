@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Starvers: Time-traveling SPARQL Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='codemirror.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.3/mode/sparql/sparql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/3.1.0-rc.0/plotly.min.js" charset="utf-8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+</head>
+
+<body>
+
+<div id="layout-wrapper" class="is-flex">
+    <header class="header mb-0">
+        <div class="header-content">
+            <div class="header-logo">
+                <img id="TU_signet" src="{{ url_for('static', filename='images/TU_Signet_RGB.svg') }}" alt="Logo">
+            </div>
+            <div class="header-text">
+                <h1 class="header-title">Starvers</h1>
+                <p class="header-subtitle">
+                    View Knowledge Graphs and Ontologies as they existed at specific points in time
+                </p>
+            </div>
+            <div id="header-logo-right" class="header-logo">
+                <img id="DS_IFS_logo" src="{{ url_for('static', filename='images/DS_white_hiRes.png') }}" alt="Logo">
+                <img id="TU_logo" src="{{ url_for('static', filename='images/TU_Logo_weiss_RGB.svg') }}" alt="Logo">
+            </div>
+        </div>
+    </header>
+    <div id="mobile-tabs" class="tabs is-fullwidth mb-0">
+        <ul class="is-align-items-start">
+            <li data-tab="left"><a class="tab-selector">Metadata</a></li>
+            <li class="is-active" data-tab="main"><a class="tab-selector">Dashboard</a></li>
+            <li data-tab="right"><a class="tab-selector">Semantics</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <section id="left-section" class="content-section">
+            <div class="section-header mb-3">
+                <h3 class="title is-5">Knowledge Graph or Ontology</h3>
+            </div>
+            <div id="meta-info" class="field">
+                <div id="onto-infos" class="is-flex is-flex-direction-column is-flex-wrap-wrap"> 
+                    <div id="repo-select-container" class="control select">
+                        <select name="repo" id="repo-select" form="sparql-form">
+                            {% for label, value in repo_options.items() %}
+                                <option value="{{ label }}" {% if selected_repo == label %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if rdf_dataset_url and polling_interval and next_run and cnt_triples_static_core and cnt_triples_version_oblivious %}
+                    <div id="tracking-infos" class="is-flex is-flex-direction-column is-flex-wrap-wrap">
+                        <label class="mb-2"><strong>Tracked URL: </strong> {{ rdf_dataset_url }}</label>
+                        <label class="mb-2"><strong>Polling Interval: </strong> {{ polling_interval }} seconds</label>
+                        <label class="mb-2"><strong>Next run (UTC): </strong> {{ next_run }}</label>
+                        <label class="mb-2"><strong>Static core triples: </strong> {{ "{:,}".format(cnt_triples_static_core) }}</label>
+                        <label class="mb-2"><strong>Version oblivious triples: </strong> {{ "{:,}".format(cnt_triples_version_oblivious) }}</label>
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                <div class="notification is-{{ category }}">
+                                    {{ message }}
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section id="main-section" class="content-section">
+            <div id="main-section-main-view">
+                <!-- Plotly chart -->   
+                <div id="plot-container" class="is-flex is-flex-wrap-wrap plot-box">
+                    {% if evo_plot %}
+                    <div id="plot-box" class="is-flex-grow-1">
+                        <div id="plot-box-top-row" class="is-flex is-flex-wrap-wrap is-align-items-center is-justify-content-space-between">
+                            <!-- Time aggregation buttons -->
+                            <div id="plot-box-buttons" class="is-flex is-align-items-center">
+                                <button id="hour_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="HOUR">Hour</button>
+                                <button id="day_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="DAY">Day</button>
+                                <button id="week_button" type="button" class="button agg-button is-link is-light is-small tab-selector" data-agg="WEEK">Week</button>
+                            </div>
+
+                            <!-- Custom Legend -->
+                            <div id="plot-box-legend" class="is-flex is-align-items-center is-flex-wrap">
+                                <span><span id="legend-insertions" class="legend-dot"></span> Insertions</span>
+                                <span><span id="legend-deletions" class="legend-dot"></span> Deletions</span>
+                                <span><span id="legend-total" class="legend-dot"></span> Total Triples</span>
+                            </div>
+                        </div>
+                        {{ evo_plot | safe }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <form id="sparql-form" class="is-flex">
+                    <div id="sparql-container-total" class="is-flex">
+                        <h3 class="title is-5">SPARQL Query Editor</h3>
+
+                        <div id ="sparql-container" class="is-flex is-flex-wrap-wrap">
+                            <!-- Left side: Label + Input + Help + Query Editor -->
+                            <div id="sparql-container-left" class="is-flex is-flex-wrap-wrap">
+                                <div id="timestamp-input-container" class="is-flex is-align-items-center is-flex-wrap-wrap mb-2">
+                                    <label id="timestamp_input-label" class="label mr-2" for="timestamp_input">Timestamp</label>
+                                    <input id="timestamp_input"
+                                            class="input"
+                                            onclick="showTooltip(this)"
+                                            type="text"
+                                            name="timestamp"
+                                            placeholder="{{ ts_end_iso8601 }}"
+                                            value="{{ selected_timestamp or ts_end_iso8601 }}">
+
+                                    <!-- gets updated via showTooltip() javascript function -->
+                                    <p id="timestamp-help"
+                                        title="Click on one snapshot (blue dot) to choose a timestamp or manually enter one between {{ ts_start }} and {{ ts_end }}"
+                                        style="display: none;">
+                                    </p>
+                                </div>
+
+                                <!-- SPARQL editor -->
+                                <textarea id="sparql-editor" class="textarea" name="sparql" rows="10">{{ selected_query or 'PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+    
+SELECT ?paper ?paper_title ?authors ?research_field
+WHERE {
+    
+    ?paper rdf:type orkgc:Paper.
+    ?paper rdfs:label ?paper_title .
+    ?paper orkgp:hasAuthors ?authors .
+    ?paper orkgp:P30 ?research_field .
+    
+    FILTER(?paper = orkgr:R141003)
+}' }} </textarea>
+                                <!-- CodeMirror is injected here -->
+                            </div>
+
+                            <!-- right side: Label + Timestamped query -->
+                            <div id="sparql-container-right" class="is-flex is-flex-wrap-wrap">
+                                <label id="timestamped-query-label" class="label mb-2 mt-4">Timestamped Query</label>
+                                <textarea id="timestamped-query" class="textarea" name="sparql" rows="10"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button id="executeQuery" type="submit" class="button is-link">Execute Query</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="data-section" class="is-flex is-hidden">
+                {% if error %}
+                <div id="result-retrieval-error" class="notification is-danger mt-4">
+                    <strong>Error:</strong> {{ error }}
+                </div>
+                {% endif %}
+
+                <div id="result-container">
+                    <h3 class="title is-5">Query Result</h3>
+
+                    <div id="loading-overlay-query" class="loading-overlay">
+                        <div class="is-flex is-justify-content-flex-end">
+                            <label>Executing timestamped query ... <label id="timer-query" class="timer">0</label> sec</label>
+                        </div>
+                    </div>
+            
+                    <div id="result-table" class="table-container">
+                        {% if result %}
+                            {{ result|safe }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% if result %}
+                <a href="{{ url_for('routes.download') }}">
+                    <button id="download-btn" class="button is-success">Download CSV</button>
+                </a>
+                {% endif %}
+            </div>
+    
+        </section>
+
+        <section id="right-section" class="content-section"> 
+
+            <!-- New tab buttons -->
+            <div id="right-section-tabs" class="tabs is-centered is-fullwidth section-header" >
+                <ul class="is-align-items-start">
+                    <li data-tab="classes" class="is-active"><a class="tab-selector">Classes</a></li>
+                    <li data-tab="properties"><a class="tab-selector">Properties</a></li>
+                </ul>
+            </div>
+
+            <!-- TODO: add a checkbox below the tab buttons that is aligned to flex-start "show only changes"-->
+            <div id="show-changes-div" class="field mb-2">
+                <input id="show-changes-only" type="checkbox" name="show-changes-only">
+                <label for="show-changes-only" class="ml-2">Show only changes</label>
+            </div>
+
+            <!-- New tab content containers -->
+            <div id="right-section-tab-content">
+                <div id="right-section-tab-classes" >
+                    <!-- Snapshot class tree content goes here -->
+                </div>
+                <div id="right-section-tab-properties">
+                   <!-- Snapshot property tree content goes here -->
+                </div>
+                <div id="loading-overlay-change-views" class="loading-overlay">
+                    <div class="is-flex is-justify-content-flex-end">
+                        <label>Loading change views ... <label id="timer-change-views" class="timer">0</label> sec</label>
+                    </div>
+                </div>
+            </div>
+        
+        </section>    
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>

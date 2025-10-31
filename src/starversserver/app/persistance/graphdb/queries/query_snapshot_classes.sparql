@@ -1,0 +1,120 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT ?onto_class 
+?parent_onto_class
+?onto_class_label
+(COALESCE(?cnt_current, 0) AS ?cnt_class_instances_current)
+(COALESCE(?cnt_prev, 0) AS ?cnt_class_instances_prev)
+(COALESCE(?cnt_added, 0) AS ?cnt_classes_added)
+(COALESCE(?cnt_deleted, 0) AS ?cnt_classes_deleted)
+WHERE {
+    {
+        # UNION of all involved classes
+        {
+            SELECT DISTINCT ?onto_class ?parent_onto_class ?onto_class_label WHERE {
+                {
+                    BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                    << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1 .
+                    FILTER(?valid_from_1 <= ?ts_current && ?ts_current < ?valid_until_1)
+                    FILTER(?class IN (rdfs:Class, owl:Class))
+                    
+                    OPTIONAL {
+                        << <<?onto_class rdfs:label ?onto_class_label>> vers:valid_from ?valid_from_2 >> vers:valid_until ?valid_until_2 .
+                        FILTER(?valid_from_2 <= ?ts_current && ?ts_current < ?valid_until_2)
+                    }
+
+                    # also show classes that don't have instances
+                    #OPTIONAL{
+                    #    << <<?instance_current rdf:type ?onto_class>> vers:valid_from ?valid_from_3 >> vers:valid_until ?valid_until_3 .
+                    #    FILTER(?valid_from_3 <= ?ts_current && ?ts_current < ?valid_until_3)
+                    #}
+                    # query parent classes to be able to build a hierarchy
+                    OPTIONAL{
+                        << <<?onto_class rdfs:subClassOf ?parent_onto_class>> vers:valid_from ?valid_from_4 >> vers:valid_until ?valid_until_4 .
+                        FILTER(?valid_from_4 <= ?ts_current && ?ts_current < ?valid_until_4)
+                    }
+                } UNION {
+                    BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                    << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_5 >> vers:valid_until ?valid_until_5 .
+                    FILTER(?valid_from_5 <= ?ts_prev && ?ts_prev < ?valid_until_5)
+                    FILTER(?class IN (rdfs:Class, owl:Class))
+
+                    OPTIONAL {
+                        << <<?onto_class rdfs:label ?onto_class_label>> vers:valid_from ?valid_from_2a >> vers:valid_until ?valid_until_2a .
+                        FILTER(?valid_from_2a <= ?ts_prev && ?ts_prev < ?valid_until_2a)
+                    }
+                    # also show classes that don't have instances
+                    #OPTIONAL{
+                    #    << <<?instance_prev rdf:type ?onto_class>> vers:valid_from ?valid_from_6 >> vers:valid_until ?valid_until_6 .
+                    #    FILTER(?valid_from_6 <= ?ts_prev && ?ts_prev < ?valid_until_6)
+                    #}
+                    # query parent classes to be able to build a hierarchy
+                    OPTIONAL{
+                        << <<?onto_class rdfs:subClassOf ?parent_onto_class>> vers:valid_from ?valid_from_7 >> vers:valid_until ?valid_until_7 .
+                        FILTER(?valid_from_7 <= ?ts_prev && ?ts_prev < ?valid_until_7)
+                    }
+                }
+            }
+        }
+        # Current instance count
+        OPTIONAL {
+            SELECT ?onto_class (COUNT(?instance_current) AS ?cnt_current) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_8 >> vers:valid_until ?valid_until_8 .
+                FILTER(?valid_from_8 <= ?ts_current && ?ts_current < ?valid_until_8)
+
+                << <<?instance_current rdf:type ?onto_class>> vers:valid_from ?valid_from_9 >> vers:valid_until ?valid_until_9 .
+                FILTER(?valid_from_9 <= ?ts_current && ?ts_current < ?valid_until_9)
+                FILTER(?class IN (rdfs:Class, owl:Class))
+            } GROUP BY ?onto_class
+        }
+        # Previous instance count
+        OPTIONAL {
+            SELECT ?onto_class (COUNT(?instance_prev) AS ?cnt_prev) WHERE {
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_10 >> vers:valid_until ?valid_until_10 .
+                FILTER(?valid_from_10 <= ?ts_prev && ?ts_prev < ?valid_until_10)
+                << <<?instance_prev rdf:type ?onto_class>> vers:valid_from ?valid_from_11 >> vers:valid_until ?valid_until_11 .
+                FILTER(?valid_from_11 <= ?ts_prev && ?ts_prev < ?valid_until_11)
+                FILTER(?class IN (rdfs:Class, owl:Class))
+            } GROUP BY ?onto_class
+        }
+        # Additions
+        OPTIONAL {
+            SELECT ?onto_class (COUNT(?inst) AS ?cnt_added) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_12 >> vers:valid_until ?valid_until_12 .
+                FILTER(?valid_from_12 <= ?ts_current && ?ts_current < ?valid_until_12)
+                << <<?inst rdf:type ?onto_class>> vers:valid_from ?valid_from_13 >> vers:valid_until ?valid_until_13 .
+                FILTER(?valid_from_13 <= ?ts_current && ?ts_current < ?valid_until_13)
+                FILTER(?class IN (rdfs:Class, owl:Class))
+                FILTER NOT EXISTS {
+                    << <<?inst rdf:type ?onto_class>> vers:valid_from ?valid_from_14 >> vers:valid_until ?valid_until_14 .
+                    FILTER(?valid_from_14 <= ?ts_prev && ?ts_prev < ?valid_until_14)
+                }
+            } GROUP BY ?onto_class
+        }
+        # Deletions
+        OPTIONAL {
+            SELECT ?onto_class (COUNT(?inst) AS ?cnt_deleted) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_class rdf:type ?class>> vers:valid_from ?valid_from_15 >> vers:valid_until ?valid_until_15 .
+                FILTER(?valid_from_15 <= ?ts_prev && ?ts_prev < ?valid_until_15)
+                << <<?inst rdf:type ?onto_class>> vers:valid_from ?valid_from_16 >> vers:valid_until ?valid_until_16 .
+                FILTER(?valid_from_16 <= ?ts_prev && ?ts_prev < ?valid_until_16)
+                FILTER(?class IN (rdfs:Class, owl:Class))
+                FILTER NOT EXISTS {
+                    << <<?inst rdf:type ?onto_class>> vers:valid_from ?valid_from_17 >> vers:valid_until ?valid_until_17 .
+                    FILTER(?valid_from_17 <= ?ts_current && ?ts_current < ?valid_until_17)
+                }
+            } GROUP BY ?onto_class
+        }
+    }
+}
+ORDER BY DESC(?cnt_class_instances_current)

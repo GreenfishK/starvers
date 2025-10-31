@@ -1,0 +1,418 @@
+/* https://colab.tuwien.ac.at/spaces/CD/pages/32854120/1.2.+Farbkonzept */
+html, body {
+  height: 100vh;
+  margin: 0;
+  line-height: 1.2 !important;
+  color: #646363 !important;
+  -ms-overflow-style: none;  /* IE 10+ */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/****************************************
+** General overrides
+*****************************************/
+.content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
+  color: black !important;
+}
+
+strong {
+  color: #646363 !important;
+}
+
+.label, .select select, .option {
+  color: #646363 !important;
+}
+
+.notification.is-danger {
+  background-color: #CD81A8 !important;
+  color: white !important;
+}
+
+.button.is-link.is-focused:not(:active), .button.is-link:focus:not(:active) {
+  box-shadow: none !important;
+}
+
+/****************************************
+** Layout
+*****************************************/
+#layout-wrapper {
+  display: flex;
+  flex-direction: column;   
+  height: 100%;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr; 
+  gap: 20px;
+  height: 100%;
+  min-height: 0;
+}
+
+.content-section {
+  display: flex;
+  flex-wrap: nowrap;
+  align-content: flex-start;
+  padding: 10px;
+  min-height: 0;
+  overflow: auto;
+  gap: 1rem;
+}
+
+#main-section {
+  flex-direction: column;
+  gap: 3rem;
+  height: 100%;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+#main-section::-webkit-scrollbar { display: none; }
+
+#left-section { padding-left: 1rem; flex-wrap: wrap; }
+
+#right-section {
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  padding-right: 1rem;
+}
+
+/****************************************
+** Header
+*****************************************/
+.header {
+  padding: 1rem;
+  background: linear-gradient(180deg, #5485AB 0%, #006699 100%);
+}
+
+.header-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.header-logo {
+  display: flex;
+  gap: 0.5rem;
+  width: 20%;
+  flex-shrink: 0;
+}
+#header-logo-right { justify-content: flex-end; }
+.header-logo img { height: 60px; width: auto; }
+
+#TU_signet { display: none; }
+#TU_logo { display: block; }
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 60%;
+  white-space: normal;
+}
+
+.header-title { font-size: 2rem; font-weight: 700; color: #fff; }
+.header-subtitle { font-size: 1rem; font-weight: 400; color: #e0f7fa; margin-top: 0.25rem; }
+
+#repo-select-container.select::after { border-color: #006699; }
+
+/****************************************
+** Tabs
+*****************************************/
+#mobile-tabs { display: none; }
+#mobile-tabs ul li,
+.tabs li a { background-color: #DFF2FD; color: #006699; border: none; }
+
+#mobile-tabs li.is-active a,
+.tabs li.is-active a { background-color: #5485AB !important; color: #fff !important; border-color: #006699; }
+
+#right-section-tabs { margin-bottom: 0 !important; }
+#right-section-tabs ul { border-bottom: none; margin: 0 !important; }
+
+/****************************************
+** Sections
+*****************************************/
+.section-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+}
+
+#show-changes-div {
+  display: flex;
+  width: 100%;
+}
+
+#right-section-tab-content {
+  position: relative; /* as a reference point for overlay */
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+#right-section-tab-classes,
+#right-section-tab-properties {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+}
+
+/****************************************
+** Snapshot tree
+*****************************************/
+.snapshot-tree {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: flex-start;
+  flex: 1;
+  min-height: 0; 
+  height: 100%;
+  overflow: auto;
+  font: 14px/1.4 Arial, sans-serif;
+}
+
+.snapshot-tree .tree-node {
+  position: relative;
+  padding-left: 1.2em;
+  border-left: 1px solid #ccc;
+  margin-bottom: 0.3em;
+  width: 100%;
+}
+
+.snapshot-tree .tree-node > .label { font-weight: 600; margin-right: 0.6em; }
+.snapshot-tree .tree-node .class-label { color: #646363 !important; }
+.snapshot-tree .tree-node .class-label-changed { font-weight: 700; }
+
+.snapshot-tree .tree-node .info {
+  background: #f0f0f0;
+  border-radius: 3px;
+  padding: 0 0.4em;
+  margin-right: 0.4em;
+  font-size: 0.85em;
+  display: inline-block;
+}
+.snapshot-tree .tree-node .info-row { margin: 0.2em 0 0 0.5em; display: flex; gap: 0.5em; }
+.snapshot-tree .tree-node .info-row .info-changed { color: #5485AB !important; font-weight: bold; }
+.snapshot-tree .tree-node .info-row .info-added { color: #007E71 !important; font-weight: bold; }
+.snapshot-tree .tree-node .info-row .info-deleted { color: #BA4682 !important; font-weight: bold; }
+
+.snapshot-tree .children { display: none; margin: 0.2em 0 0 1.5em; }
+.snapshot-tree .tree-node.expanded > .children { display: block; }
+
+.snapshot-tree .tree-node > .expand-btn {
+  cursor: pointer;
+  position: absolute;
+  left: 0; top: 0;
+  width: 1em;
+  color: #007BFF;
+  font-weight: bold;
+}
+.snapshot-tree .tree-node > .expand-btn::before { content: "+"; text-align: center; color: #006699; }
+.snapshot-tree .tree-node.expanded > .expand-btn::before { content: "−"; color: #006699; }
+
+
+/****************************************
+** main section main view
+*****************************************/
+#main-section-main-view {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  min-height:100%;
+  gap: 0px;
+}
+
+/****************************************
+** Plot
+*****************************************/
+#plot-container { width: 100%; }
+#plot-box-buttons .button { background-color: #DFF2FD; color: #006699; }
+#plot-box-buttons .is-active { background-color: #5485AB; color: #fff; }
+
+#plot-box-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.3em; }
+#legend-insertions { background: #007E71; }
+#legend-deletions { background: #BA4682; }
+#legend-total { background: #5485AB; }
+
+/****************************************
+** SPARQL form
+*****************************************/
+#sparql-form { 
+  /*display: flex; */
+  flex: 1 1 auto; 
+  flex-direction: column;
+  /*flex-wrap: wrap; */
+  /*height: 100%; */
+  /*width: 100%; */
+  max-width: 100%; 
+  /*max-height: 100%; */
+
+}
+
+#sparql-container-total { 
+  display: flex; 
+  flex: 1 1 auto; 
+  flex-direction: column;
+  /*flex-wrap: wrap; */
+  height: 100%; 
+  /*width: 100%; */
+  /*max-width: 100%; */
+  /*max-height: 100%; */
+}
+#sparql-container-total .title { 
+  width: 100%; 
+}
+
+#sparql-container {
+  /*display: flex; */
+  flex: 1 1 auto; 
+  /*flex-direction: column;*/
+  /*flex-wrap: wrap; */
+  /*height: 100%; */
+  /*width: 100%; */
+  /*max-width: 100%; */
+  /*max-height: 100%; */
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+}
+
+#sparql-container-left,
+#sparql-container-right {
+  /*display: flex; */
+  flex: 1 0 49%;  
+  flex-direction: column;
+  /*height: 100%; */
+  /*width: 100%; */
+  min-width: 300px; 
+  /*max-width: 100%; */
+  /*max-height: 100%; */
+
+  overflow: auto; 
+  box-sizing: border-box; 
+}
+
+#timestamp-input-container { width: 100%; }
+#timestamp_input-label { margin-bottom: 0 !important; }
+#timestamp_input { flex: 0 1 auto; width: auto; }
+
+#timestamp-help {
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  align-self: center;
+}
+
+#sparql-editor + .CodeMirror {
+  border: 1px solid #646363;  
+  border-radius: 4px;      
+}
+
+.CodeMirror { 
+  flex-grow: 1; 
+  max-width: 100%; 
+}
+
+.CodeMirror .CodeMirror-scroll .CodeMirror-gutters { 
+  background-color: #EDEDED !important; 
+}
+
+#sparql-container-right .CodeMirror { 
+  background-color: #D0D0D0 !important; 
+}
+
+#timestamped-query-label { width: 100%; }
+
+#executeQuery { background-color: #006699; }
+
+/****************************************
+** Data section
+*****************************************/
+#data-section {
+  flex-wrap: wrap;
+  width: 100%;
+  align-content: flex-start;
+}
+
+#result-container {
+  position: relative; /* as a reference point for overlay */
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  flex-grow: 1;
+  position: relative;
+}
+#result-container .title { width: 100%; }
+
+#result-table {
+  position: relative;
+  max-height: 460px;
+  overflow: auto;
+  flex-grow: 1;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.table { border-collapse: collapse; border: none; }
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10; 
+  box-shadow: inset 0 -3px 0 #ccc; 
+  border: none;
+  padding: 8px;
+  text-align: left;
+}
+.table tbody td a { color: #5485AB; }
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(240, 240, 240, 0.8);
+  z-index: 20;
+  pointer-events: all;
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #333;
+}
+.loading-overlay span { font-size: 1.5rem; font-weight: bold; }
+.timer { font-size: 1rem; }
+
+#download-btn { background-color: #007E71; }
+
+/****************************************
+** Tracking infos
+*****************************************/
+#tracking-infos { gap: 1rem; }
+#tracking-infos label { overflow-wrap: anywhere; word-break: break-all; }
+
+#onto-infos { gap: 1rem; }
+#onto-infos .select { width: fit-content; max-width: 100%; flex-shrink: 0; }
+#onto-infos select { width: 100%; }
+
+/****************************************
+** Responsive
+*****************************************/
+@media (max-width: 900px) {
+  .content { display: flex; flex-direction: column; width: 100%; }
+  #mobile-tabs { display: flex; width: 100%; flex-shrink: 0; }
+  #TU_signet { display: block; }
+  #TU_logo { display: none; }
+  #left-section, #main-section, #right-section { flex-grow: 1; }
+  #first_header_row { align-items: flex-start; }
+}
