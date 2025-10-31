@@ -1,5 +1,5 @@
 from genericpath import isfile
-from starvers.starvers import timestamp_query, split_prefixes_query
+from starvers_eval.starvers.starvers import timestamp_query, split_prefixes_query
 from pathlib import Path
 import os
 import sys
