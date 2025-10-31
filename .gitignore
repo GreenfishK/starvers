@@ -4,4 +4,4 @@ build/
 tests/__pycache__/
 src/starvers/__pycache__/
 src/starvers.egg-info/
-.ipynb_checkpoints
+.ipynb_checkpoints/
