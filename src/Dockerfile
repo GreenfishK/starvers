@@ -3,9 +3,10 @@ FROM python:3.10 AS python-backend
 
 WORKDIR /code
 
-COPY ./requirements.txt /code/requirements.txt
-COPY ./app /code/app
-COPY ./evaluation /code/evaluation
+COPY ./starversserver/requirements.txt /code/requirements.txt
+COPY ./starversserver/app /code/app
+COPY ./starvers /code/app/utils/starvers
+COPY ./starversserver/evaluation /code/evaluation
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
@@ -15,7 +16,7 @@ ENV PYTHONPATH="${PYTHONPATH}:/code"
 FROM maven:3.9.6-eclipse-temurin-11 AS rdfvalidator
 
 # Copy only the validator source and POM
-COPY ./app/utils/RDFValidator /code/app/utils/RDFValidator
+COPY ./starversserver/app/utils/RDFValidator /code/app/utils/RDFValidator
 WORKDIR /code/app/utils/RDFValidator
 
 # Build the shaded JAR with all dependencies

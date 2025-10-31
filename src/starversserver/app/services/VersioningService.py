@@ -4,7 +4,7 @@ import shutil
 import time
 from datetime import datetime
 from typing import Optional
-from starvers.starvers import TripleStoreEngine
+from app.utils.starvers.starvers import TripleStoreEngine
 import pandas as pd
 
 from app.AppConfig import Settings

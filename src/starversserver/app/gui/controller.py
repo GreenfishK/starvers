@@ -5,7 +5,7 @@ import networkx as nx
 from typing import List, Dict, Any, Optional, Tuple
 
 # starvers and starversServer imports
-from starvers.starvers import TripleStoreEngine
+from app.utils.starvers.starvers import TripleStoreEngine
 from app.services.ManagementService import get_dataset_metadata_by_repo_name, get_snapshot_stats_by_repo_name_and_snapshot_ts
 from app.persistance.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
