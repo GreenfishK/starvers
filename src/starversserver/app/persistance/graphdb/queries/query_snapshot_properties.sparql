@@ -1,0 +1,127 @@
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT 
+?onto_property 
+?onto_property_label
+?parent_property
+(COALESCE(?cnt_current, 0) AS ?cnt_property_instances_current)
+(COALESCE(?cnt_prev, 0) AS ?cnt_property_instances_prev)
+(COALESCE(?cnt_added, 0) AS ?cnt_properties_added)
+(COALESCE(?cnt_deleted, 0) AS ?cnt_properties_deleted)
+WHERE {
+    {
+        # UNION of all involved properties
+        {
+            SELECT DISTINCT ?onto_property ?parent_property ?onto_property_label WHERE {
+                {
+                    BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                    << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1 .
+                    FILTER(?valid_from_1 <= ?ts_current && ?ts_current < ?valid_until_1)
+                    FILTER(?ptype IN ({:property_identifiers}))
+                    
+                     # Add labels
+                    OPTIONAL {
+                        << <<?onto_property rdfs:label ?onto_property_label>> vers:valid_from ?valid_from_2 >> vers:valid_until ?valid_until_2 .
+                        FILTER(?valid_from_2 <= ?ts_current && ?ts_current < ?valid_until_2) 
+                    }
+    
+                    # also show properties that may have no usage
+                    #OPTIONAL {
+                    #    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_3 >> vers:valid_until ?valid_until_3 .
+                    #    FILTER(?valid_from_3 <= ?ts_current && ?ts_current < ?valid_until_3)
+                    #}
+                    
+                    # Add parents
+                    OPTIONAL {
+                        << <<?onto_property rdfs:subPropertyOf ?parent_property>> vers:valid_from ?valid_from_4 >> vers:valid_until ?valid_until_4 .
+                        FILTER(?valid_from_4 <= ?ts_current && ?ts_current < ?valid_until_4)
+                    }
+                } UNION {
+                    BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                    << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_5 >> vers:valid_until ?valid_until_5 .
+                    FILTER(?valid_from_5 <= ?ts_prev && ?ts_prev < ?valid_until_5)
+                    FILTER(?ptype IN ({:property_identifiers}))
+
+                    # Add labels
+                    OPTIONAL {
+                        << <<?onto_property rdfs:label ?onto_property_label>> vers:valid_from ?valid_from_2a >> vers:valid_until ?valid_until_2a .
+                        FILTER(?valid_from_2a <= ?ts_prev && ?ts_prev < ?valid_until_2a) 
+                    }
+
+                    #OPTIONAL {
+                    #    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_6 >> vers:valid_until ?valid_until_6 .
+                    #    FILTER(?valid_from_6 <= ?ts_prev && ?ts_prev < ?valid_until_6)
+                    #}
+                    # Add parents
+                    OPTIONAL {
+                        << <<?onto_property rdfs:subPropertyOf ?parent_property>> vers:valid_from ?valid_from_7 >> vers:valid_until ?valid_until_7 .
+                        FILTER(?valid_from_7 <= ?ts_prev && ?ts_prev < ?valid_until_7)
+                    }
+                }
+            }
+        }
+        
+        # Current usage count
+        OPTIONAL {
+            SELECT ?onto_property (COUNT(?s) AS ?cnt_current) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_8 >> vers:valid_until ?valid_until_8 .
+                FILTER(?valid_from_8 <= ?ts_current && ?ts_current < ?valid_until_8)
+                << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_9 >> vers:valid_until ?valid_until_9 .
+                FILTER(?valid_from_9 <= ?ts_current && ?ts_current < ?valid_until_9)
+                FILTER(?ptype IN ({:property_identifiers}))
+            } GROUP BY ?onto_property
+        }
+        
+        # Previous usage count
+        OPTIONAL {
+            SELECT ?onto_property (COUNT(?s) AS ?cnt_prev) WHERE {
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_10 >> vers:valid_until ?valid_until_10 .
+                FILTER(?valid_from_10 <= ?ts_prev && ?ts_prev < ?valid_until_10)
+                << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_11 >> vers:valid_until ?valid_until_11 .
+                FILTER(?valid_from_11 <= ?ts_prev && ?ts_prev < ?valid_until_11)
+                FILTER(?ptype IN ({:property_identifiers}))
+            } GROUP BY ?onto_property
+        }
+        
+        # Additions (property assertions newly appearing)
+        OPTIONAL {
+            SELECT ?onto_property (COUNT(?s) AS ?cnt_added) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_12 >> vers:valid_until ?valid_until_12 .
+                FILTER(?valid_from_12 <= ?ts_current && ?ts_current < ?valid_until_12)
+                << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_13 >> vers:valid_until ?valid_until_13 .
+                FILTER(?valid_from_13 <= ?ts_current && ?ts_current < ?valid_until_13)
+                FILTER(?ptype IN ({:property_identifiers}))
+                FILTER NOT EXISTS {
+                    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_14 >> vers:valid_until ?valid_until_14 .
+                    FILTER(?valid_from_14 <= ?ts_prev && ?ts_prev < ?valid_until_14)
+                }
+            } GROUP BY ?onto_property
+        }
+        
+        # Deletions (property assertions that disappeared)
+        OPTIONAL {
+            SELECT ?onto_property (COUNT(?s) AS ?cnt_deleted) WHERE {
+                BIND("{:ts_current}"^^xsd:dateTime AS ?ts_current)
+                BIND("{:ts_prev}"^^xsd:dateTime AS ?ts_prev)
+                << <<?onto_property rdf:type ?ptype>> vers:valid_from ?valid_from_15 >> vers:valid_until ?valid_until_15 .
+                FILTER(?valid_from_15 <= ?ts_prev && ?ts_prev < ?valid_until_15)
+                << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_16 >> vers:valid_until ?valid_until_16 .
+                FILTER(?valid_from_16 <= ?ts_prev && ?ts_prev < ?valid_until_16)
+                FILTER(?ptype IN ({:property_identifiers}))
+                FILTER NOT EXISTS {
+                    << <<?s ?onto_property ?o>> vers:valid_from ?valid_from_17 >> vers:valid_until ?valid_until_17 .
+                    FILTER(?valid_from_17 <= ?ts_current && ?ts_current < ?valid_until_17)
+                }
+            } GROUP BY ?onto_property
+        }
+    }
+}
+ORDER BY DESC(?cnt_property_instances_current)

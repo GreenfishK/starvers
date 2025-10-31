@@ -1,0 +1,56 @@
+/* Override CodeMirror SPARQL mode colors with TU Wien palette */
+
+/* Keywords (SELECT, WHERE, PREFIX...) */
+.cm-s-default .cm-keyword {
+  color: #BA4682 !important;
+  font-weight: bold;
+}
+
+/* Variables (?var) */
+.cm-s-default .cm-variable .cm-variable-2 {
+  color: #006699 !important;
+}
+
+/* Atoms (true, false) */
+.cm-s-default .cm-atom {
+  color: #007E71 !important;
+}
+
+/* Numbers */
+.cm-s-default .cm-number {
+  color: #E18922 !important;
+}
+
+/* Strings */
+.cm-s-default .cm-string {
+  color: #000000 !important;
+}
+
+/* Comments */
+.cm-s-default .cm-comment {
+  color: #646363 !important;
+  font-style: italic !important;
+}
+
+/* Def (IRIs, prefixes) */
+.cm-s-default .cm-def {
+  color: #9D9D9C !important;
+}
+
+/* Built-in functions */
+.cm-s-default .cm-builtin {
+  color: #CD81A8 !important;
+}
+
+.cm-bracket {
+  color: #646363 !important;
+}
+
+.CodeMirror-gutter {
+  background-color: #EDEDED !important;
+}
+
+/* set the font color of CodeMirror-linenumbers*/
+.CodeMirror-linenumber {
+  color: #9D9D9C !important;
+}
