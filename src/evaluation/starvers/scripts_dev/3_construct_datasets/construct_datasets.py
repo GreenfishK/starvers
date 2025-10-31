@@ -13,7 +13,7 @@ import pandas as pd
 import shutil
 from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef
-from starvers.starvers import TripleStoreEngine
+from starvers_eval.starvers.starvers import TripleStoreEngine
 import tomli
 from itertools import product, takewhile
 from functools import partial
@@ -419,6 +419,10 @@ ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos i
 allowed_datasets = list(dataset_versions.keys())
 snapshot_dir = eval_setup['general']['snapshot_dir']
 change_sets_dir = eval_setup['general']['change_sets_dir']
+
+# Set JAVA_HOME and PATH
+os.environ["JAVA_HOME"] = "/opt/java/java11/openjdk"
+os.environ["PATH"] = "/opt/java/java11/openjdk/bin:$PATH"
 
 ############################################# Start procedure #############################################
 for dataset in datasets:

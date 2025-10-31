@@ -9,8 +9,8 @@ log_level="root:INFO"
 # only raw independent copies/snapshots and timestamp- and "named graphs"-based datasets are cleaned. Don't change order!
 policies=("ic" "tb") 
 datasets=("${datasets}") 
-export JAVA_HOME=/usr/local/openjdk-11
-export PATH=/usr/local/openjdk-11/bin:$PATH
+export JAVA_HOME=/opt/java/java11/openjdk
+export PATH=/opt/java/java11/openjdk/bin:$PATH
 
 # Prepare directories and files
 rm -rf /starvers_eval/output/logs/clean_raw_datasets
