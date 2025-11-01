@@ -1,5 +1,3 @@
-from genericpath import isfile
-from starvers_eval.starvers.starvers import timestamp_query, split_prefixes_query
 from pathlib import Path
 import os
 import sys
@@ -9,6 +7,7 @@ import logging
 import re
 import tomli
 
+from starvers.starvers import timestamp_query, split_prefixes_query
 
 def split_solution_modifiers_query(query: str) -> list:
     """
