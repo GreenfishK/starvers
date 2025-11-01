@@ -1,5 +1,5 @@
 # ---------- First Stage: Python Backend ----------
-FROM python:3.10 AS python-backend
+FROM python:3.11 AS python-backend
 
 WORKDIR /code
 
@@ -23,7 +23,7 @@ RUN mvn clean compile assembly:single
 
 
 # ---------- Final Image ----------
-FROM python:3.10
+FROM python:3.11
 
 WORKDIR /code
 

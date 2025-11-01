@@ -1,6 +1,7 @@
 #######################################
 # Notes
-# To use this service, an entry in the Dataset table with the repository name and id must exist!
+# To use this service, an entry in the Dataset
+# table with the repository name and id must exist!
 #######################################
 from datetime import datetime
 import os
