@@ -58,7 +58,6 @@ services:
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
-      - PYTHONPATH=/starvers_eval
       - datasets=${datasets}
       - skip_change_sets=${skip_change_sets}
       - skip_tb_star_ds=${skip_tb_star_ds}

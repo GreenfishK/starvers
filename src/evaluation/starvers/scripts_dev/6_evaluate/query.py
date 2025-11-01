@@ -1,11 +1,9 @@
 from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, JSON
 from rdflib import Graph
 from rdflib.term import URIRef, Literal, BNode
-from rdflib.query import Result
 import pandas as pd
 from typing import Tuple
 import tomli
-
 from pathlib import Path
 import os
 import sys
@@ -127,7 +125,8 @@ dry_run_result = engine.query()
 ###################################### Evaluation ######################################
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
 f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
-df = pd.DataFrame(columns=['triplestore', 'dataset', 'policy', 'query_set', 'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
+df_data = []
+
 for query_set in query_sets:
     for query_version in range(query_set_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
@@ -167,7 +166,8 @@ for query_set in query_sets:
                     "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
 
-                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
+                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0]
+                df_data.append(new_row)
             
             elif policy == "cb_sr_ng":
                 _set_endpoints(dataset, policy, endpoints, engine)   
@@ -253,8 +253,9 @@ for query_set in query_sets:
                     "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
                 
-                df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time], index=df.columns), ignore_index=True)
-            
+                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time]
+                df_data.append(new_row)
+
             elif policy == "ic_mr_tr":
                 for repository in range(1, int(repositories)+1):
                     _set_endpoints(dataset, policy, endpoints, engine, str(repository))
@@ -277,7 +278,9 @@ for query_set in query_sets:
                         "The execution_time will be set to -1. The results will not be serialized.")
                         execution_time = -1
                     snapshot_ts = init_version_timestamp + timedelta(seconds=repository-1)
-                    df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0], index=df.columns), ignore_index=True)
+                    
+                    new_row = [triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0]
+                    df_data.append(new_row)
 
             elif policy == "cb_mr_tr":
                 logger.info("To be implemented")
@@ -371,8 +374,15 @@ for query_set in query_sets:
                     write.writerows(header)
                     write.writerows(list_result)
                     file.close()
-                    df = df.append(pd.Series([triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time], index=df.columns), ignore_index=True)"""
 
-logger.info("Writing performance measurements to disk ...")            
+                    new_row = [triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time]
+                    df_data.append(new_row)"""
+
+logger.info("Writing performance measurements to disk ...")       
+
+df = pd.DataFrame(data=df_data, 
+                  columns=['triplestore', 'dataset', 'policy', 'query_set', 
+                           'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
+
 df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False, mode='a', header=False)
 

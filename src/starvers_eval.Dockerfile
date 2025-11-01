@@ -70,6 +70,9 @@ ENV FUSEKI_HOME=/jena-fuseki
 ENV JVM_ARGS='-Xms45g -Xmx45g'
 ENV ADMIN_PASSWORD=starvers
 
+# For module imports relative to PYTHONPATH
+ENV PYTHONPATH=/starvers_eval
+
 # Docker knowledge
 # RUN is an image build step, the state of the container after a RUN command will be committed to the container image. 
 # A Dockerfile can have many RUN steps that layer on top of one another to build the image. 
