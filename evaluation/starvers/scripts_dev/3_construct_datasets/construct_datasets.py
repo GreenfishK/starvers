@@ -436,9 +436,10 @@ change_sets_dir = eval_setup['general']['change_sets_dir']
 
 
 ############################################# Start procedure #############################################
+logging.info(f"Starting procedure for constructing the different dataset variants for the datasets: {datasets}")
 for dataset in datasets:
     if dataset not in allowed_datasets:
-        logging.info("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
+        logging.error("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
     data_dir = f"/starvers_eval/rawdata/{dataset}"

@@ -105,7 +105,7 @@ Result set:
 
 # Evaluation of RDF-based versioning approaches
 ## Starvers
-See the README file in the [evaluation](https://github.com/GreenfishK/starvers/blob/main/src/evaluation/starvers/README.md) directory.
+See the README file in the [evaluation](https://github.com/GreenfishK/starvers/blob/main/evaluation/starvers/README.md) directory.
 
 ## Starversserver
 TBD
