@@ -15,7 +15,7 @@ docker run hello-world
 Create a directory `/mnt/data/starvers_eval` and make sure that docker can write to it by changing the privileges. This is the default host directory used by the docker-compose services. If you wish to change that, you can so in the .env file.
 
 ## Build docker container from image
-Run the following command in the root directory of this project: `docker build -t starvers_eval .`
+Run the following command from the root directory of this project: `docker build --no-cache -t starvers_eval:latest -f starvers_eval.Dockerfile.`
 
 # Run experiment
 The experiment can be fully run by executing the following 7 docker-compose services one-by-one. This process is not automated as some individual steps need a considerable amount of time to finish. We want to make sure that each of them runs through and repeat them otherwise.

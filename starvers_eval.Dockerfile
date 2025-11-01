@@ -7,10 +7,10 @@
 FROM python:3.11-slim AS install_python_modules
 WORKDIR /
 
-COPY ./starvers /starvers_eval/starvers
-COPY ./evaluation/starvers/scripts_dev/requirements.txt /starvers_eval
-COPY ./evaluation/starvers/scripts_dev/eval_setup.toml /starvers_eval/configs/eval_setup.toml
-COPY ./evaluation/starvers/raw_queries /starvers_eval/queries/raw_queries
+COPY src/starvers /starvers_eval/starvers
+COPY evaluation/starvers/scripts_dev/requirements.txt /starvers_eval
+COPY evaluation/starvers/scripts_dev/eval_setup.toml /starvers_eval/configs/eval_setup.toml
+COPY evaluation/starvers/raw_queries /starvers_eval/queries/raw_queries
 
 # Install requirements for evaluation
 WORKDIR /starvers_eval
