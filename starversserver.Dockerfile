@@ -3,13 +3,13 @@ FROM python:3.10 AS python-backend
 
 WORKDIR /code
 
-COPY ./starversserver/requirements.txt /code/requirements.txt
-COPY ./starversserver/app /code/app
-COPY ./starvers /code/app/utils/starvers
+COPY src/starversserver/requirements.txt /code/requirements.txt
+COPY src/starversserver/app /code/app
+COPY src/starvers /code/app/utils/starvers
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-ENV PYTHONPATH="${PYTHONPATH}:/code"
+ENV PYTHONPATH="/code"
 
 # ---------- Second Stage: Java RDF Validator ----------
 FROM maven:3.9.6-eclipse-temurin-11 AS rdfvalidator
@@ -36,7 +36,7 @@ COPY --from=python-backend /code /code
 
 COPY --from=rdfvalidator /code/app/utils/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /code/app/utils/rdfvalidator-1.0-jar-with-dependencies.jar
 
-ENV PYTHONPATH="${PYTHONPATH}:/code"
+ENV PYTHONPATH="/code"
 
 #CMD ["fastapi", "run", "app/main.py", "--port", "80"]
 CMD ["uvicorn", "app.main:app", "--reload"]
