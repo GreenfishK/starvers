@@ -1,24 +1,6 @@
 services:
-  starversserver:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
-    container_name: starvers-server_dev
-    restart: always
-    ports:
-      - 81:80
-    env_file: "./dev.env"
-    volumes:
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
-      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    depends_on:
-      db:
-        condition: service_started
-      rdfstore:
-        condition: service_started
-    entrypoint: ["uvicorn", "app.main:app", "--reload"]
-  
   gui:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver 
     container_name: starvers-gui_dev
     ports:
       - 5000:5000
@@ -36,6 +18,24 @@ services:
       - "host.docker.internal:host-gateway"
     entrypoint: ["python", "app/run_gui.py"]
 
+  starversserver:
+    image: starversserver 
+    container_name: starvers-server_dev
+    restart: always
+    ports:
+      - 81:80
+    env_file: "./dev.env"
+    volumes:
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
+      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+    depends_on:
+      db:
+        condition: service_started
+      rdfstore:
+        condition: service_started
+    entrypoint: ["uvicorn", "app.main:app", "--reload"]
+  
   db:
     image: postgres
     container_name: starvers-db_dev
@@ -49,7 +49,6 @@ services:
       - 5432:5432
     volumes:
       - ${data_storage}/postgresql/data:/var/lib/postgresql/data
-
 
   rdfstore:
     image: ontotext/graphdb:10.5.0
@@ -76,34 +75,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
   
-
-  # Creates and ingest a timestamped RDF-star dataset and metrics from individual snapshots
-  compute:
-    image: starversserver
-    container_name: starvers-compute_dev
-    env_file: "./dev.env"
-    depends_on:
-      db:
-        condition: service_started
-      rdfstore:
-        condition: service_started
-    volumes:
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
-      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
-    entrypoint: ["python", "evaluation/compute.py", "orkg", "sm"]
-  
-  # Creates plots from the timing files
-  create_plots:
-    image: starversserver
-    container_name: starvers-create-plots_dev
-    env_file: "./dev.env"
-    volumes:
-      - ../evaluation:/data/evaluation
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
-    entrypoint: ["python", "/data/evaluation/evaluation.py"]
-
   validate:
     image: starversserver
     container_name: starvers-validate_dev

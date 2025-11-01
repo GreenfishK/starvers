@@ -45,7 +45,7 @@ services:
     networks:
       - starvers_prod_net
 
-  # Runs versioning and metrics computation tasks for data in ${data_storage}/evaluation. Possible executions are
+  # Runs versioning and metrics computation tasks for the snapshot files in ${data_storage}/evaluation. Possible executions are
   # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>"]
   #   Runs versioning and metrics computation for the specified repository
   # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>", from_scratch, "yyyyMMdd-HHmmss_sss"]
