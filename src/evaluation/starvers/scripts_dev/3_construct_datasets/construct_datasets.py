@@ -431,12 +431,12 @@ change_sets_dir = eval_setup['general']['change_sets_dir']
 ############################################# Start procedure #############################################
 for dataset in datasets:
     if dataset not in allowed_datasets:
-        print("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
+        logging.info("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
     data_dir = f"/starvers_eval/rawdata/{dataset}"
     total_versions = dataset_versions[dataset]
-    print("Constructing datasets for {0}".format(dataset))
+    logging.info("Constructing datasets for {0}".format(dataset))
 
     if not skip_change_sets == "True":
         construct_change_sets(snapshots_dir=f"{data_dir}/{snapshot_dir}", change_sets_dir=f"{data_dir}/{change_sets_dir}",
@@ -461,3 +461,5 @@ for dataset in datasets:
                         destination=f"{data_dir}/alldata.ICNG.trig",
                         last_version=total_versions,
                         basename_length=ic_basename_lengths[dataset])
+    
+    logging.info("Finished with constructing datasets.")
