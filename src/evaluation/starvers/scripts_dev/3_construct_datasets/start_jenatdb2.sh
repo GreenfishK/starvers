@@ -10,7 +10,7 @@ policy=$1
 dataset=$2
 reset=$3
 ingest_empty=$4
-reboot=$5
+shutdown=$5
 
 # Set environment variables
 export JAVA_HOME=/opt/java/java17/openjdk
@@ -68,7 +68,7 @@ if [[ "$ingest_empty" == "true" ]]; then
     /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/construct_datasets/jenatdb2/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
-if [[ "$reboot" == "true" ]]; then
+if [[ "$shutdown" == "true" ]]; then
     shutdown
 fi
 
