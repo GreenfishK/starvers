@@ -1,12 +1,14 @@
+# this image is not ready yet!!!
+
 # ---------- First Stage: Python Backend ----------
 FROM python:3.10 AS python-backend
 
 WORKDIR /code
 
-COPY ./starversserver/requirements.txt /code/requirements.txt
-COPY ./starversserver/app /code/app
-COPY ./starvers /code/app/utils/starvers
-COPY ./evaluation/starversserver /code/evaluation
+COPY src/starversserver/requirements.txt /code/requirements.txt
+COPY src/starversserver/app /code/app
+COPY src/starvers /code/app/utils/starvers
+COPY evaluation/starversserver /code/evaluation
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 

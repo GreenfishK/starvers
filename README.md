@@ -102,3 +102,10 @@ Result set:
 | ----------- |  ----------- |
 | <http://example.com/Obama> | <http://example.com/President> |
 | <http://example.com/Hamilton> | <http://example.com/Formel1Driver> |
+
+# Evaluation of RDF-based versioning approaches
+## Starvers
+See the README file in the [evaluation](https://github.com/GreenfishK/starvers/blob/main/src/evaluation/starvers/README.md) directory.
+
+## Starversserver
+TBD

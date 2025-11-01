@@ -16,6 +16,7 @@ import tomli
 from itertools import product, takewhile
 from functools import partial
 from urllib.error import HTTPError
+import psutil
 
 from starvers.starvers import TripleStoreEngine
 
@@ -96,11 +97,14 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_graphdb.sh',
                                         'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
-                                        'shutdown_process': f'/opt/java/java11/openjdk/bin/java'},
+                                        'shutdown_process': f'/opt/java/java11/openjdk/bin/java',
+                                       },
                             'jenatdb2': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_jenatdb2.sh',
                                         'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
-                                        'shutdown_process': '/jena-fuseki/fuseki-server.jar'}}
+                                        'shutdown_process': '/jena-fuseki/fuseki-server.jar',
+                                        }}
+    
 
     def construct_ds_in_db(triple_store: TripleStore, chunk_size: int, ts_configs: dict):
         logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
@@ -141,7 +145,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
             vers_ts = init_timestamp + timedelta(seconds=version)
 
-            if version % 100 == 0:
+            restart_after_n_versions = triple_store_configs["graphdb"]["restart_after_n_versions"][dataset]
+            mem_in_usage = psutil.virtual_memory().percent
+            logging.info(f"Memory in usage: {mem_in_usage}")
+            if mem_in_usage > 90:
                 # Reboot to free up main memory
                 logging.info("Restarting {0} server.".format(triple_store.name))
                 subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
