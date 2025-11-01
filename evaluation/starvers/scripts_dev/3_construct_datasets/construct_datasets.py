@@ -145,12 +145,11 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
             vers_ts = init_timestamp + timedelta(seconds=version)
 
-            restart_after_n_versions = triple_store_configs["graphdb"]["restart_after_n_versions"][dataset]
             mem_in_usage = psutil.virtual_memory().percent
-            logging.info(f"Memory in usage: {mem_in_usage}")
-            if mem_in_usage > 90:
+            logging.info(f"Memory in usage: {mem_in_usage}%")
+            if mem_in_usage > 85:
                 # Reboot to free up main memory
-                logging.info("Restarting {0} server.".format(triple_store.name))
+                logging.info("Memory usage over 85%. Restarting {0} server.".format(triple_store.name))
                 subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
                     configs['start_script'], policy, dataset, "false", "false", "true")))
             
@@ -193,6 +192,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
         measurements = list(takewhile(lambda x: not measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes)))
         combined_measurements = pd.concat(measurements, join="inner")
+        
         logging.info("Writing performance measurements to disk ...")            
         combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='w', header=True)
 
@@ -205,6 +205,10 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         measurements = construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs)    
 
     logging.info("Extract the whole dataset from the GraphDB repository.")
+    # Reboot to free up main memory
+    #logging.info("Restarting {0} server.".format(triple_store.name))
+    #subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
+    #    configs['start_script'], policy, dataset, "false", "false", "true")))
     sparql_engine = SPARQLWrapper(triple_store_configs['graphdb']['query_endpoint'])
     
     sparql_engine.setReturnFormat(JSON)
