@@ -28,11 +28,11 @@ services:
     container_name: starvers_eval-eval_construct_datasets
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/logs/construct_datasets/graphdb_logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
       - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
-      - ${base_host_dir}/databases/construct_datasets/graphdb/logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     ports:
@@ -50,11 +50,11 @@ services:
       - 3030:3030
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/logs/construct_datasets/graphdb_logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
       - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
-      - ${base_host_dir}/databases/construct_datasets/graphdb/logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:

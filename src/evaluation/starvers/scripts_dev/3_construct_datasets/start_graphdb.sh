@@ -53,7 +53,7 @@ if [[ "$reset" == "true" ]]; then
     rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p /starvers_eval/databases/construct_datasets/graphdb
+    mkdir -p /starvers_eval/databases/construct_datasets/graphdb/repositories/${policy}_${dataset}
     mkdir -p /starvers_eval/configs/construct_datasets/graphdb_${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
