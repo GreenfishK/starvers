@@ -1,10 +1,9 @@
-from datetime import datetime
-from datetime import timedelta, timezone
+from datetime import datetime,  timedelta, timezone
 import os
 from enum import Enum
-import re
 import sys
 import re
+import numpy as np
 import time
 import logging
 import subprocess
@@ -13,11 +12,13 @@ import pandas as pd
 import shutil
 from SPARQLWrapper import SPARQLWrapper, JSON
 from rdflib.term import URIRef
-from starvers_eval.starvers.starvers import TripleStoreEngine
 import tomli
 from itertools import product, takewhile
 from functools import partial
 from urllib.error import HTTPError
+
+from starvers.starvers import TripleStoreEngine
+
 
 class TripleStore(Enum):
     GRAPHDB = 1
@@ -95,7 +96,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_graphdb.sh',
                                         'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
-                                        'shutdown_process': '/opt/java/openjdk/bin/java'},
+                                        'shutdown_process': f'/opt/java/java11/openjdk/bin/java'},
                             'jenatdb2': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_jenatdb2.sh',
                                         'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                         'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
@@ -104,7 +105,6 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     def construct_ds_in_db(triple_store: TripleStore, chunk_size: int, ts_configs: dict):
         logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
         configs = ts_configs[triple_store.name.lower()]
-        df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'])
 
         logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
         subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
@@ -125,7 +125,9 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
             logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
             return False
         execution_time_insert = end - start
-        df = df.append(pd.Series([triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
+        
+        df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'],
+                          data=[[triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert]])
 
         # Map versions to files in chronological orders
         change_sets = {}
@@ -138,9 +140,12 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         # Apply changesets to RDF-star dataset
         for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
             vers_ts = init_timestamp + timedelta(seconds=version)
-            logging.info("Restarting {0} server.".format(triple_store.name))
-            subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-                configs['start_script'], policy, dataset, "false", "false", "true")))
+
+            if version % 100 == 0:
+                # Reboot to free up main memory
+                logging.info("Restarting {0} server.".format(triple_store.name))
+                subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
+                    configs['start_script'], policy, dataset, "false", "false", "true")))
             
             if filename.startswith("data-added"):
                 logging.info("Read positive changeset {0} into memory.".format(filename))
@@ -153,7 +158,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
                 execution_time_insert = end - start
-                df = df.append(pd.Series([triple_store.name, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert], index=df.columns), ignore_index=True)
+                new_row = pd.DataFrame([[triple_store.name, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert]], columns=df.columns)
+                df = pd.concat([df, new_row], ignore_index=True)
 
             if filename.startswith("data-deleted"):
                 logging.info("Read negative changeset {0} into memory.".format(filename))
@@ -166,7 +172,8 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
                 rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
                 end = time.time()
                 execution_time_outdate = end - start
-                df = df.append(pd.Series([triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate], index=df.columns), ignore_index=True)
+                new_row = pd.DataFrame([[triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate]], columns=df.columns)
+                df = pd.concat([df, new_row], ignore_index=True)
         
             df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
@@ -420,9 +427,6 @@ allowed_datasets = list(dataset_versions.keys())
 snapshot_dir = eval_setup['general']['snapshot_dir']
 change_sets_dir = eval_setup['general']['change_sets_dir']
 
-# Set JAVA_HOME and PATH
-os.environ["JAVA_HOME"] = "/opt/java/java11/openjdk"
-os.environ["PATH"] = "/opt/java/java11/openjdk/bin:$PATH"
 
 ############################################# Start procedure #############################################
 for dataset in datasets:
