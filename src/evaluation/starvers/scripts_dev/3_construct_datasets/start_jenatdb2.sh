@@ -10,9 +10,11 @@ policy=$1
 dataset=$2
 reset=$3
 ingest_empty=$4
-shutdown=$5
-export JAVA_HOME=/usr/local/openjdk-11
-export PATH=/usr/local/openjdk-11/bin:$PATH
+reboot=$5
+
+# Set environment variables
+export JAVA_HOME=/opt/java/java17/openjdk
+export PATH=/opt/java/java17/openjdk/bin:$PATH
 
 # Path variables
 script_dir=/starvers_eval/scripts
@@ -24,6 +26,19 @@ shutdown() {
         sleep 1
     done
     echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
+}
+
+startup() {
+    echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
+    cp /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
+    nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+
+    # Wait until server is up
+    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    while [[ $(curl -I http://Starvers:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+        sleep 1s
+    done
+    echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
 }
 
 if [[ "$reset" == "true" ]]; then
@@ -53,18 +68,8 @@ if [[ "$ingest_empty" == "true" ]]; then
     /jena-fuseki/tdbloader2 --loc /starvers_eval/databases/construct_datasets/jenatdb2/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 fi
 
-if [[ "$shutdown" == "true" ]]; then
+if [[ "$reboot" == "true" ]]; then
     shutdown
 fi
 
-
-echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-cp /starvers_eval/configs/construct_datasets/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
-nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
-
-# Wait until server is up
-echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-while [[ $(curl -I http://Starvers:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-    sleep 1s
-done
-echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
+startup

@@ -2,7 +2,7 @@ version: "3.4"
 
 services:
   download:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-download
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -13,7 +13,7 @@ services:
     entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
 
   clean_raw_datasets:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-clean_raw_datasets
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -24,48 +24,51 @@ services:
     entrypoint: [/starvers_eval/scripts/2_clean_raw_datasets/clean_raw_datasets.sh]
   
   eval_construct_datasets:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-eval_construct_datasets
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
-      - ${base_host_dir}/databases/construct_datasets:/starvers_eval/databases/construct_datasets
+      - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
+      - ${base_host_dir}/databases/construct_datasets/graphdb/logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     ports:
-      - 7400:7200
+      - 7600:7200
       - 3050:3030
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
     command: ["bearc", "True", "False", "True", "True"]
   
   construct_datasets:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-construct_datasets
     hostname: Starvers
     ports:
-      - 7200:7200
+      - 7600:7200
       - 3030:3030
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
-      - ${base_host_dir}/databases/construct_datasets:/starvers_eval/databases/construct_datasets
+      - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
+      - ${base_host_dir}/databases/construct_datasets/graphdb/logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
+      - PYTHONPATH=/starvers_eval
       - datasets=${datasets}
       - skip_change_sets=${skip_change_sets}
       - skip_tb_star_ds=${skip_tb_star_ds}
       - skip_cbng_ds=${skip_cbng_ds}
       - skip_icng_ds=${skip_icng_ds}
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
     command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds"]
   
   ingest:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-ingest
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -82,7 +85,7 @@ services:
     entrypoint: ["/starvers_eval/scripts/4_ingest/create_and_load_triplestores.sh"]
   
   construct_queries:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-construct_queries
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -90,10 +93,10 @@ services:
       - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
       - policies=${policies}    
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies"]
 
   evaluate_single:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-evaluate_single
     volumes:
       - /mnt/data/starvers_eval_investigate/output/logs:/starvers_eval/output/logs
@@ -116,7 +119,7 @@ services:
     entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
   
   evaluate:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-evaluate
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -140,7 +143,7 @@ services:
     entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
 
   verify_results:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-verify_results
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -150,11 +153,11 @@ services:
       - triple_stores=${triple_stores}
       - policies=${policies}
       - datasets=${datasets}
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/6_evaluate/verify_results.py"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/6_evaluate/verify_results.py"]
     command: ["$triple_stores", "$policies", "$datasets"]
     
   visualize:
-    image: starvers_eval-migration
+    image: starvers_eval:latest
     container_name: starvers_eval-visualize
     volumes:   
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
@@ -164,5 +167,5 @@ services:
     environment:
       - policies=${policies}  
       - datasets=${datasets}
-    entrypoint: ["/starvers_eval/python_venv/bin/python3", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]

@@ -4,7 +4,7 @@
 #RUN git clone https://github.com/GreenfishK/starvers.git
 
 # Install starvers based on setup.py and modules based on requirements.txt
-FROM python:3.8.15-slim AS install_python_modules
+FROM python:3.11-slim AS install_python_modules
 WORKDIR /
 
 COPY ./starvers /starvers_eval/starvers
@@ -40,14 +40,21 @@ COPY --from=eclipse-temurin:11.0.21_9-jdk /opt/java /opt/java/java11
 
 # Install basic unix/linux tools for the debian distribution
 RUN apt-get update
-RUN apt-get install bc=1.07.1-2+b2 -y
-RUN apt-get install curl -y
-RUN apt-get install wget=1.21-1+deb11u1 -y
-RUN apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y bash coreutils procps grep sed curl bc wget 
+
+# To suppress the GraphDB setlocale() warning and ensure UTF-8 everywhere
+RUN apt-get update && apt-get install -y --no-install-recommends locales \
+    && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+    && locale-gen \
+    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 ## Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
--Xmx90g -Xms90g \
+-Xmx45g -Xms45g \
 -Dgraphdb.dist=/opt/graphdb/dist \
 -Dgraphdb.home.work=/tmp/graphdb/work \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
@@ -60,7 +67,7 @@ ENV GDB_JAVA_OPTS='\
 
 # Set jenatdb2 environment variables
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JVM_ARGS='-Xms90g -Xmx90g'
+ENV JVM_ARGS='-Xms45g -Xmx45g'
 ENV ADMIN_PASSWORD=starvers
 
 # Docker knowledge
