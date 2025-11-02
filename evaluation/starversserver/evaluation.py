@@ -120,7 +120,7 @@ for key, value in df_dict.items():
         # Plot total number of triples for every date in dates_dt 
         cnt_triples = [plot_df[plot_df['mm-dd'] == d]['cnt_triples'].iat[-1] for d in unique_dates]
         ax2 = ax.twinx()  
-        ax2.plot(dates_dt, cnt_triples, color='blue', marker='o', markersize=2, 
+        ax2.plot(dates_dt, cnt_triples, color='#5485AB', marker='o', markersize=2, 
                  label="# triples", linewidth=1)
         ax2.set_ylabel("Number of triples (in millions)")
         ax2.legend(loc='upper center', frameon=True)
@@ -157,9 +157,9 @@ for key, value in df_dict.items():
     insertions_safe = [max(1, val) for val in insertions]
     deletions_safe = [max(1, val) for val in deletions]
 
-    ax_bottom.plot(dates_dt, insertions_safe, color='green', marker='o', markersize=2,
+    ax_bottom.plot(dates_dt, insertions_safe, marker = "x", color='#007E71', markersize=3,
                    label='Insertions', linewidth=1)
-    ax_bottom.plot(dates_dt, deletions_safe, color='red', marker='o', markersize=2,
+    ax_bottom.plot(dates_dt, deletions_safe, marker = "D", color='#BA4682', markersize=1.5,
                    label='Deletions', linewidth=1)
     
     ax_bottom.xaxis.set_major_locator(mdates.MonthLocator(bymonthday=-1))  # last day of each month
