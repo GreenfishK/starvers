@@ -3,17 +3,32 @@ import os
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
+import matplotlib.dates as mdates
+import numpy as np
+from datetime import datetime
+from app.LoggingConfig import get_logger, setup_logging
 
+#######################################
+# Logging
+#######################################
+logger = get_logger(__name__, f"evaluation.log")
+setup_logging()
 
-eval_directory = "/data/evaluation"
+#######################################
+# Process
+#######################################
+eval_dir = "/data/evaluation"
+figures_dir = "/data/figures"
 df_dict: dict[str, tuple[str, str, str]] = {}
 
-for dir in os.listdir(eval_directory):
-    timings_file_iterative = f"{eval_directory}/{dir}/{dir}_timings.csv"
-    timings_file_sparql = f"{eval_directory}/{dir}/{dir}_timings_sparql.csv"
+logger.info("Retrieving file names of the timings CSV files.")
+for dir in os.listdir(eval_dir):
+    logger.info(f"Scanning directory for the <repo>_timings.csv and <repo>_timings_sparql.csv files: {dir}")
+    timings_file_iterative = f"{eval_dir}/{dir}/{dir}_timings.csv"
+    timings_file_sparql = f"{eval_dir}/{dir}/{dir}_timings_sparql.csv"
 
     if not os.path.isfile(timings_file_iterative) and not os.path.isfile(timings_file_sparql):
-        raise FileNotFoundError(f"No timings file found in {eval_directory}/{dir}")
+        raise FileNotFoundError(f"No timings file found in {eval_dir}/{dir}")
 
     # Extract base name by removing known suffixes
     base_name: str = dir
@@ -21,130 +36,154 @@ for dir in os.listdir(eval_directory):
 
 
 for key, value in df_dict.items():
+    logger.info(f"Preparing DataFrame for repo {key} and files: {value}")
     onto_or_kg = key
 
     # Prepare dataframes and labels
     dfs: list[pd.DataFrame] = []
     linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
-    for idx, (name, csv_path_sparql, csv_path_iterative) in enumerate(value):
-        def add_df_to_list(method: str, csv_path: str, dfs: list[pd.DataFrame]):
-            df = pd.read_csv(csv_path)
-            df.columns = df.columns.str.strip()
-            
-            # Remove lines where insertions and deletions are 0
-            if 'insertions' in df.columns and 'deletions' in df.columns:
-                df = df[~((df['insertions'] == 0) & (df['deletions'] == 0))]
-            
-            # Convert timestamp to mm-dd
-            df['mm-dd'] = df['timestamp'].str[:8].apply(lambda x: f"{x[4:6]}-{x[6:8]}")
-            
-            # Convert ns to ms
-            for col in ['time_prepare_ns', 'time_delta_ns', 'time_versioning_ns']:
-                if col in df.columns:
-                    df[col.replace('_ns', '_s')] = df[col] / 1_000_000_000
 
-            # Add a column 'method' to the dataframe
-            df['method'] = method
+    def add_df_to_list(method: str, csv_path: str, dfs: list[pd.DataFrame]):
+        df = pd.read_csv(csv_path)
+        df.columns = df.columns.str.strip()
+        
+        # Remove lines where insertions and deletions are 0
+        if 'insertions' in df.columns and 'deletions' in df.columns:
+            df = df[~((df['insertions'] == 0) & (df['deletions'] == 0))]
+        
+        # Convert timestamp to mm-dd
+        df['mm-dd'] = df['timestamp'].str[:8].apply(lambda x: f"{x[4:6]}-{x[6:8]}")
+        
+        # Convert ns to s
+        for col in ['time_prepare_ns', 'time_delta_ns', 'time_versioning_ns']:
+            if col in df.columns:
+                df[col.replace('_ns', '_s')] = df[col] / 1_000_000_000
 
-            dfs.append(df)
-        add_df_to_list("SPARQL", csv_path_sparql, dfs)
-        add_df_to_list("ITERATIVE", csv_path_iterative, dfs)
+        # Add method label
+        df['method'] = method
 
-    # Stack the dataframes vertically
+        dfs.append(df)
+
+    add_df_to_list("SPARQL", value[1], dfs)
+    add_df_to_list("ITERATIVE", value[2], dfs)
+
     if not dfs:
         continue
+
     plot_df = pd.concat(dfs, ignore_index=True)
 
-    # Remove records after 20250526-233249_190 and before 20250508-210017_658 from the dataframe
-    # Keep only records where timestamp is between these two (inclusive)
+    # Filter timestamp range
     start_ts = "20250508-210017_658"
-    end_ts = "20250526-233249_190"
+    end_ts = "20251031-211417_193"
     plot_df = plot_df[(plot_df['timestamp'] >= start_ts) & (plot_df['timestamp'] <= end_ts)]
 
     # Prepare plot
-    fig, ax = plt.subplots(figsize=(10, 6))
+    logger.info(f"Plotting DataFrame for repo {key}")
+    fig, axes = plt.subplots(
+        3, 1, figsize=(12, 12),
+        sharex=False,
+        gridspec_kw={'height_ratios': [0.4, 0.4, 0.2]}
+    )
 
-    # Get unique methods and mm-dds
-    unique_methods = plot_df['method'].unique()
-    unique_dates = plot_df['mm-dd'].unique()
-
-    # Set bar width and positions
-    bar_width = 0.35
-    n_methods = len(unique_methods)
-    x = range(len(unique_dates))
-
-    # Colors for stacks
-    stack_colors = ['white', 'grey', 'black']
-    stack_labels = ['Prepare', 'Delta Calculation', 'Versioning']
+    methods = ['ITERATIVE', 'SPARQL']
     stack_cols = ['time_prepare_s', 'time_delta_s', 'time_versioning_s']
+    stack_labels = {"ITERATIVE": ['Download, Skolemization, Control Sequence Removal', 'Delta Calculation', 'Versioning'],
+                    "SPARQL": ['Download, Skolemization, Control Sequence Removal, \nIngestion', 'Delta Calculation', 'Versioning']}
+    stack_colors = ['#d9d9d9', '#969696', '#525252']  # light → dark greys
 
-    # For legend handles
-    stack_handles = []
-    method_handles = []
+    # Convert unique_dates to datetime objects (use year from timestamp, e.g., 2025)
+    unique_dates = sorted(plot_df['mm-dd'].unique())
+    dates_dt = [datetime.strptime(plot_df[plot_df['mm-dd'] == d]['timestamp'].iloc[0][:8], '%Y%m%d') 
+                for d in unique_dates]
 
-    # Plot grouped stacked bars
-    for i, method in enumerate(unique_methods):
-        method_df = plot_df[plot_df['method'] == method]
-        # Align bars for each method
-        offsets = [xi + (i - n_methods/2) * bar_width + bar_width/2 for xi in x]
-        bottoms = [0] * len(unique_dates)
-        bars = []
-        for j, (col, color, label) in enumerate(zip(stack_cols, stack_colors, stack_labels)):
-            values = []
-            for date in unique_dates:
-                val = method_df[method_df['mm-dd'] == date][col].sum() if col in method_df.columns else 0
-                values.append(val)
-            bar = ax.bar(offsets, values, bar_width, bottom=bottoms, color=color, 
-                         label=label if i == 0 else "", 
-                         edgecolor='black', linestyle=linestyles[i % len(linestyles)])
-            if i == 0:
-                stack_handles.append(bar)
-            bars.append(bar)
-            bottoms = [bottoms[k] + values[k] for k in range(len(values))]
-        # Add a dummy handle for the method label (use a Line2D for legend)
-        method_handles.append(Line2D([0], [0], color='black', linestyle=linestyles[i % len(linestyles)], label=method))
+    # Top two plots: ITERATIVE and SPARQL stacked areas
+    for ax, method in zip(axes[:2], methods):
+        method_df = plot_df[plot_df['method'].str.lower() == method.lower()]
+        if method_df.empty:
+            ax.text(0.5, 0.5, f'No data for {method}', ha='center', va='center')
+            continue
 
-    # Plot one line (green) for insertions and one line for deletions (red).
-    # Take the data from the SPARQL method
-    sparql_df = plot_df[plot_df['method'].str.lower() == 'sparql']
-    if not sparql_df.empty and 'insertions' in sparql_df.columns and 'deletions' in sparql_df.columns:
-        # Ensure the order of dates matches the bars
-        insertions = []
-        deletions = []
-        for date in unique_dates:
-            insertions.append(sparql_df[sparql_df['mm-dd'] == date]['insertions'].sum())
-            deletions.append(sparql_df[sparql_df['mm-dd'] == date]['deletions'].sum())
+        # Stack performance times
+        y_data = np.zeros((len(stack_cols), len(unique_dates)))
+        for j, col in enumerate(stack_cols):
+            y_data[j, :] = [
+                method_df[method_df['mm-dd'] == d][col].sum() if col in method_df.columns else 0
+                for d in unique_dates
+            ]
 
-        # Add secondary y-axis for insertions/deletions
-        ax2 = ax.twinx()
-        
-        # Plot lines on the secondary y-axis so their values match the axis
-        line1, = ax2.plot(x, insertions, color='green', marker='o', label='Insertions', linewidth=2)
-        line2, = ax2.plot(x, deletions, color='red', marker='o', label='Deletions', linewidth=2)
-        ax2.set_ylabel('Inserted/Deleted Triples')
-        ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: format(int(x), ',')))
-        ax2.set_ylim(bottom=0)
+        bottoms = np.zeros(len(unique_dates))
+        stack_labels_method = stack_labels[method]
+        for j, (col, color, label) in enumerate(zip(stack_cols, stack_colors, stack_labels_method)):
+            ax.fill_between(dates_dt, bottoms, bottoms + y_data[j, :], color=color, alpha=0.8, label=label)
+            bottoms += y_data[j, :]
 
-        # Add to legend handles
-        method_handles.append(Line2D([0], [0], color='green', marker='o', label='Insertions', linewidth=2))
-        method_handles.append(Line2D([0], [0], color='red', marker='o', label='Deletions', linewidth=2))
+        # Plot total number of triples for every date in dates_dt 
+        cnt_triples = [plot_df[plot_df['mm-dd'] == d]['cnt_triples'].iat[-1] for d in unique_dates]
+        ax2 = ax.twinx()  
+        ax2.plot(dates_dt, cnt_triples, color='blue', marker='o', markersize=2, 
+                 label="# triples", linewidth=1)
+        ax2.set_ylabel("Number of triples (in millions)")
+        ax2.legend(loc='upper center', frameon=True)
 
-    # X-axis settings
-    ax.set_xticks(x)
-    ax.set_xticklabels(unique_dates, rotation=45)
-    ax.set_xlabel('Date (mm-dd)')
-    ax.set_ylabel('Performance in seconds')
-    ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+        ax.set_title(f"{method} Delta Calculation Method", fontsize=13, fontweight='bold')
+        ax.set_ylabel("Runtime (minutes)")
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: format(int(x), ',')))
+        ax.legend(loc='upper left', frameon=True)
 
-    # Legend for stacks, methods, and lines
-    handles = [h[0] for h in stack_handles] + method_handles 
-    labels = stack_labels + list(unique_methods) + ['Insertions', 'Deletions']
+        # Set Y-ticks every 1 minute 
+        max_y = ax.get_ylim()[1]  # get top of y-axis
+        yticks = np.arange(0, max_y + 60, 60) 
+        ax.set_yticks(yticks)
+        ax.set_yticklabels([f"{int(t // 60)}" for t in yticks])
+
+        # Set grid lines
+        ax.grid(which='major', axis='x', color='black', alpha=0.3, linestyle='-')
+        ax.grid(which='major', axis='y', color='black', alpha=0.3, linestyle='--')
+
+        ax.xaxis.set_major_locator(mdates.MonthLocator(bymonthday=-1))  # last day of each month
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+        ax.xaxis.set_minor_locator(mdates.DayLocator())  # minor ticks every day
+        ax.tick_params(axis='x', which='minor', labelbottom=False)
+        ax.tick_params(axis='x', rotation=0)
+
+
+    # Bottom plot: insertions and deletions 
+    ax_bottom = axes[2]
+    # Sum across all methods for bottom plot 
+    insertions = [plot_df[plot_df['mm-dd'] == d]['insertions'].iat[0] for d in unique_dates]
+    deletions = [plot_df[plot_df['mm-dd'] == d]['deletions'].iat[0] for d in unique_dates]
+
+    # Flooring values to 1 due to log scale (looks bad in the plot otherwise)
+    insertions_safe = [max(1, val) for val in insertions]
+    deletions_safe = [max(1, val) for val in deletions]
+
+    ax_bottom.plot(dates_dt, insertions_safe, color='green', marker='o', markersize=2,
+                   label='Insertions', linewidth=1)
+    ax_bottom.plot(dates_dt, deletions_safe, color='red', marker='o', markersize=2,
+                   label='Deletions', linewidth=1)
     
-    # Place legend completely outside the plot area, right of the figure
-    ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1.2, 0.5), borderaxespad=0., frameon=True)
+    ax_bottom.xaxis.set_major_locator(mdates.MonthLocator(bymonthday=-1))  # last day of each month
+    ax_bottom.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    ax_bottom.xaxis.set_minor_locator(mdates.DayLocator())  # minor ticks every day
+    ax_bottom.tick_params(axis='x', which='minor', labelbottom=False)
+    ax_bottom.tick_params(axis='x', rotation=0)
 
-    plt.tight_layout(rect=[0, 0, 1, 1])  # Leave space for legend
+    # BLUE GRID: vertical every tick, horizontal at powers of 10 
+    ax_bottom.grid(which='major', axis='x', color='black', alpha=0.3, linestyle='-')
+    ax_bottom.grid(which='major', axis='y', color='black', alpha=0.3, linestyle='--')
+    
+    # Set y-axis scale, labels and title
+    ax_bottom.set_yscale('log')
+    ax_bottom.set_ylabel('Inserted / Deleted\nTriples (log)')
+    ax_bottom.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: format(int(x), ',')))
+    ax_bottom.set_title("Inserted / Deleted Triples", fontsize=13, fontweight='bold')
+    ax_bottom.legend(loc='upper left', frameon=True)
 
-    # Save as vector graphic
-    plt.savefig(f"{eval_directory}/{onto_or_kg}.pdf", format='pdf', bbox_inches='tight')
+    plt.tight_layout(rect=[0, 0, 1, 1])
+
+    # Save figure
+    logger.info(f"Saving plot to {figures_dir}/{onto_or_kg}.pdf")
+    plt.savefig(f"{figures_dir}/{onto_or_kg}.pdf", format='pdf', bbox_inches='tight')
     plt.close()
+
+logger.info("Process finished.")

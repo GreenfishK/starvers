@@ -81,6 +81,7 @@ services:
     volumes:
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
+      - ${data_storage}/output/figures:/data/figures
     entrypoint: ["python", "/code/evaluation/evaluation.py"]
 
 networks:
