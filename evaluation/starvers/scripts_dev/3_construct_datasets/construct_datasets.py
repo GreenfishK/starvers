@@ -188,9 +188,17 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     if dataset == 'bearc':
         # HTTPError
         triple_stores = [TripleStore.GRAPHDB]
-        chunk_sizes = range(1000, 20000, 1000)
+        chunk_sizes = range(1000, 10000, 1000)
         measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
-        measurements = list(takewhile(lambda x: not measure_updates(x[0], x[1]), product(triple_stores, chunk_sizes)))
+
+        measurements: list[pd.DataFrame] = []
+        for ts, chunk_size in product(triple_stores, chunk_sizes):
+            result = measure_updates(ts, chunk_size)
+            if result is False:
+                # Stop iteration if HTTPError occurred
+                break
+            measurements.append(result)
+
         combined_measurements = pd.concat(measurements, join="inner")
         
         logging.info("Writing performance measurements to disk ...")            
@@ -202,7 +210,7 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
         for file in files_to_remove:
             os.remove(file)
     else:
-        measurements = construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs)    
+        construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs)    
 
     logging.info("Extract the whole dataset from the GraphDB repository.")
     # Reboot to free up main memory
