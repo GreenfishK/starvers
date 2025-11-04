@@ -44,8 +44,8 @@ get_snapshot_filename_struc() {
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     # Bash arguments and environment variables
-    export JAVA_HOME=/opt/java/openjdk
-    export PATH=/opt/java/openjdk/bin:$PATH
+    export JAVA_HOME=/opt/java/java11/openjdk
+    export PATH=/opt/java/java11/openjdk/bin:$PATH
     GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
     # Path variables
@@ -168,8 +168,8 @@ fi
 
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     # Bash arguments and environment variables
-    export JAVA_HOME=/usr/local/openjdk-11
-    export PATH=/usr/local/openjdk-11/bin:$PATH
+    export JAVA_HOME=/opt/java/java17/openjdk
+    export PATH=/opt/java/java17/openjdk/bin:$PATH
 
     # Path variables
     configs_dir=/starvers_eval/configs/ingest/jenatdb2

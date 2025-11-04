@@ -71,6 +71,7 @@ services:
     container_name: starvers_eval-ingest
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/logs/ingest/graphdb_logs:/opt/graphdb/dist/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/databases:/starvers_eval/databases
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
