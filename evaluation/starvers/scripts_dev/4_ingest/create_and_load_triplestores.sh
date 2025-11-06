@@ -217,12 +217,17 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                     sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
                     
                     # Load data into Jena
+                    echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
+                    mkdir -p "$data_dir/${repositoryID}"
                     ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
                                     2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                     total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
-                    total_file_size=`echo "$total_file_size + $file_size/1024" | bc`             
+                    echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
 
+                    file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
+                    total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
+                    echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MiB" >> $log_file_jena
+           
                 elif [ "$policy" == "ic_mr_tr" ]; then
                     for c in $(seq -f $file_name_struc 1 ${versions})
                     do
@@ -234,11 +239,17 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                         sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
                         
                         # Load data into Jena
+                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
+                        mkdir -p "$data_dir/${repositoryID}"
                         ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
                                         2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                         total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
+
                         file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
                         total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
+                        echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MiB" >> $log_file_jena
+
                     done
                 
                 elif [ "$policy" == "cb_mr_tr" ]; then
@@ -264,11 +275,16 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                         sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDAdd}.ttl
 
                         # Load data into Jena TDB2
+                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
+                        mkdir -p "$data_dir/${repositoryID}"
                         ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDAdd} /starvers_eval/rawdata/${dataset}/${fileadd}) \
                                         2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                         total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
+                        
                         file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
                         total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
+                        echo "$(log_timestamp) ${log_level}:Total file siz is: $total_file_size MiB" >> $log_file_jena
 
                         # Replace repositoryID in config template
                         cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
@@ -277,11 +293,17 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
                         sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDDel}.ttl
 
                         # Load data into Jena TDB2
+                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
+                        mkdir -p "$data_dir/${repositoryID}"
                         ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDDel} /starvers_eval/rawdata/${dataset}/${filedel}) \
                                         2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
                         total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
+                        
                         file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`               
+                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`    
+                        echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MB" >> $log_file_jena
+           
                     done
                 fi
                 echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file_jena
@@ -289,6 +311,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
                 cat $log_file_jena | grep -v "\[.*\] DEBUG"
                 disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
+                echo "$(log_timestamp) ${log_level}:DB file size is: $disk_usage MB" >> $log_file_jena
                 echo "jenatdb2;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
             done
         done

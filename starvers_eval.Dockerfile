@@ -33,7 +33,7 @@ RUN mkdir -p /starvers_eval/scripts/7_visualize
 
 # copy from other images
 COPY --from=stain/jena-fuseki:5.1.0 /jena-fuseki /jena-fuseki
-COPY --from=stain/jena-fuseki:5.1.0 /opt/java /opt/java/java17 
+COPY --from=eclipse-temurin:17.0.16_8-jdk /opt/java /opt/java/java17
 
 COPY --from=ontotext/graphdb:10.5.0 /opt/graphdb /opt/graphdb
 COPY --from=eclipse-temurin:11.0.21_9-jdk /opt/java /opt/java/java11
