@@ -83,3 +83,25 @@ services:
       -  ${data_storage}/evaluation:/data/evaluation
       -  ${data_storage}/logs:/data/logs
     entrypoint: ["java", "-jar", "/code/app/utils/rdfvalidator-1.0-jar-with-dependencies.jar"]
+
+  test_download:
+    image: starversserver_dev
+    container_name: starvers-download_dev
+    env_file: "./dev.env"
+    ports:
+      - 82:80
+    volumes:
+      - ${data_storage}/evaluation:/data/evaluation
+      - ${data_storage}/logs:/data/logs
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_dev_net
+    entrypoint: ["python", "/code/app/utils/HelperService.py", "obtain_nt",
+     "https://vocab.linkeddata.es/datosabiertos/def/medio-ambiente/calidad-aire/ontology.nt", "/data/evaluation/si/si.raw.nt"]
+    #entrypoint: ["sh"]
+    #tty: true
+    #stdin_open: true
+networks:
+  starvers_dev_net:
+    driver: bridge

@@ -27,7 +27,7 @@ services:
     container_name: starvers-server_prod
     restart: always
     ports:
-      - 81:80
+      - 8000:8000 # default univcorn
     env_file: "./prod.env"
     volumes:
       - ${data_storage}/evaluation:/data/evaluation
@@ -38,9 +38,11 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - starvers_prod_net
-    entrypoint: ["uvicorn", "app.main:app", "--reload"]
+    entrypoint: ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 
   db:
     image: postgres
@@ -151,22 +153,19 @@ services:
       --no-eff-email
       -d starvers.ec.tuwien.ac.at"
 
+  # Reload nginx after renewal
   certbot-renew:
     image: certbot/certbot
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - ./nginx/html:/var/www/certbot
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - starvers_prod_net
       - starvers_bi_net
     entrypoint: >
-      sh -c "trap exit TERM; while :; do
-      certbot renew --webroot --webroot-path=/var/www/certbot &&
-      nginx -s reload;
-      sleep 12h & wait $${!};
-      done"
-
+      sh -c "certbot renew --webroot --webroot-path=/var/www/certbot"
 
 volumes:
   certbot-etc:

@@ -49,7 +49,7 @@ CREATE TABLE dataset (
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     last_modified TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN DEFAULT TRUE,
-    next_run TIMESTAMP WITHOUT TIME ZONE
+    next_run TIMESTAMP WITHOUT TIME ZONE,
     cnt_triples_static_core INTEGER,
     cnt_triples_version_oblivious INTEGER,
     ratio_avg_data_growth DOUBLE PRECISION,
@@ -138,6 +138,18 @@ INSERT INTO dataset (
     TRUE,
     'f2d3c6e1-72b6-4e4f-96c6-2a8f4f61e9d7',
     '2025-08-01 16:36:55.611705'
+),
+(
+    'SI Digital Framework',
+    'si',
+    'https://raw.githubusercontent.com/TheBIPM/SI_Digital_Framework/refs/heads/main/SI_Reference_Point/TTL/si.ttl',
+    86400,
+    NULL,
+    '2025-11-11 10:05:36.792085',
+    '2025-11-11 10:05:36.792085',
+    TRUE,
+    '4a30eec7-59ca-4a2a-8e49-cfbb47276a5f',
+    '2025-11-11 11:05:36.792085'
 );
 
 
