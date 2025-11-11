@@ -32,7 +32,8 @@ class PollingTask():
         self.__versioning_wrapper = None
         self.latest_timestamp = latest_timestamp
         LOG.info(f"Repository name: {self.repository_name}: Polling task created with next_run={self.next_run} latest_timestamp={self.latest_timestamp}.")
-
+        if is_initial:
+            LOG.info(f"Repository name {self.repository_name}: This is the initial version of this dataset.")
 
     @property
     def is_initial_run(self) -> bool:

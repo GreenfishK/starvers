@@ -15,10 +15,10 @@ class DatasetBase(SQLModel):
     last_modified: Optional[datetime] = Field(default_factory=datetime.now)
     active: Optional[bool] = Field(default=True)
     next_run: Optional[datetime] = Field(default=None)
-    cnt_triples_static_core: int = Field(default=None)
-    cnt_triples_version_oblivious: int = Field(default=None)
-    ratio_avg_data_growth: float = Field(default=None)
-    ratio_avg_change: float = Field(default=None)
+    cnt_triples_static_core: Optional[int] = Field(default=None)
+    cnt_triples_version_oblivious: Optional[int]  = Field(default=None)
+    ratio_avg_data_growth: Optional[float]  = Field(default=None)
+    ratio_avg_change: Optional[float]  = Field(default=None)
 
 class Dataset(DatasetBase, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)

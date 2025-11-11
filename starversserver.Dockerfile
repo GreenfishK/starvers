@@ -15,7 +15,7 @@ ENV PYTHONPATH="/code"
 FROM maven:3.9.6-eclipse-temurin-11 AS rdfvalidator
 
 # Copy only the validator source and POM
-COPY ./starversserver/app/utils/RDFValidator /code/app/utils/RDFValidator
+COPY --from=python-backend /code/app/utils/RDFValidator /code/app/utils/RDFValidator
 WORKDIR /code/app/utils/RDFValidator
 
 # Build the shaded JAR with all dependencies
@@ -28,7 +28,7 @@ FROM python:3.11
 WORKDIR /code
 
 # Copy Python app from python-backend stage
-COPY --from=python-backend /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=python-backend /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=python-backend /usr/local/bin /usr/local/bin 
 COPY --from=python-backend /code /code
 

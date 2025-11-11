@@ -2,10 +2,14 @@ from typing import List
 from datetime import datetime
 import requests
 import re
-
+import os
+from rdflib import Graph
 import pandas as pd
 
 from app.exceptions import DatasetNotFoundException
+from app.LoggingConfig import get_logger
+
+LOG = get_logger(__name__)
 
 
 def to_list(nt_text: str) -> List[str]:
@@ -34,20 +38,50 @@ def get_timestamp(timestamp: datetime = datetime.now()) -> str:
     return timestamp.strftime("%Y%m%d-%H%M%S") + f"_{timestamp.microsecond // 1000:03d}"
 
 
-def download_file(url: str, output_path: str, chunk_size: int=65536):
-    with requests.get(url, stream=True) as response:
-        response.raise_for_status()  # Raise error for bad status codes
+def obtain_nt(url: str, output_path: str, chunk_size: int = 65536):
+    """
+    Downloads an RDF file (.nt or .ttl). If TTL, it converts it to N-Triples before saving.
+    """
+    # Check supported extensions
+    if not (url.endswith(".nt") or url.endswith(".ttl")):
+        raise ValueError("Only .nt and .ttl files are supported")
 
+    # Download file
+    LOG.info(f"Downloading file from URL: {url}")
+    print(f"Downloading file from URL: {url}")
+    with requests.get(url, stream=True) as response:
+        response.raise_for_status()
+        temp_path = output_path + ".tmp"
         total_bytes = 0
 
-        with open(output_path, 'wb') as f:
+        with open(temp_path, "wb") as f:
             for chunk in response.iter_content(chunk_size=chunk_size):
-                if chunk:  # Filter out keep-alive chunks
+                if chunk:
                     f.write(chunk)
                     total_bytes += len(chunk)
 
         if total_bytes == 0:
+            os.remove(temp_path)
             raise DatasetNotFoundException("Downloaded file is empty")
+
+    # If file is TTL, convert to NT
+    if url.endswith(".ttl"):
+        LOG.info("Converting .ttl file to .nt file.")
+        print("Converting .ttl file to .nt file.")
+        try:
+            g = Graph()
+            g.parse(temp_path, format="turtle")
+
+            LOG.info(f"Saving file to {output_path}")
+            print(f"Saving file to {output_path}")
+            g.serialize(destination=output_path, format="nt")
+        finally:
+            os.remove(temp_path)
+    else:
+        # For .nt, just rename temporary file
+        LOG.info(f"Renaming {temp_path} to {output_path}")
+        print(f"Renaming {temp_path} to {output_path}")
+        os.rename(temp_path, output_path)
 
     
 def normalize_and_skolemize(input_path: str, output_path: str):
@@ -108,4 +142,3 @@ def normalize_and_skolemize(input_path: str, output_path: str):
                 line = object_pattern.sub(r'\1<\2>\3', line)
 
                 outfile.write(line)
-

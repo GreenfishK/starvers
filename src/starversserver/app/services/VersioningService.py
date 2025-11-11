@@ -12,7 +12,7 @@ from app.LoggingConfig import get_logger
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
-from app.utils.HelperService import get_timestamp, download_file, normalize_and_skolemize
+from app.utils.HelperService import get_timestamp, obtain_nt, normalize_and_skolemize
 from app.persistance.graphdb.GraphDatabaseUtils import get_count_triples_template, import_serverfile, poll_import_status
 
 class VersioningService(ABC):
@@ -80,7 +80,7 @@ class StarVersService(VersioningService):
             for attempt in range(2):
                 self.LOG.info(f"Repository name: {self.repository_name}: Download rdf data dump into {self.snapshot_path} ({attempt+1}. attempt)")
                 try:
-                    download_file(self.tracking_task.rdf_dataset_url, self.snapshot_path)
+                    obtain_nt(self.tracking_task.rdf_dataset_url, self.snapshot_path)
                     break
                 except Exception as e:
                     if attempt == 1:
