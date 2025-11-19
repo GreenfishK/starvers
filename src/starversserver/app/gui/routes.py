@@ -51,7 +51,7 @@ def index():
 
     # Get repo stats
     logger.info(f"Getting repository stats for {repo_name}")
-    ts_start, ts_end, fig_data, fig_layout = controller.build_timeseries()
+    ts_start, ts_end, fig_data, fig_layout = controller.build_timeseries()    
     ts_end_iso8601 = datetime.strptime(ts_end, "%d.%m.%Y %H:%M:%S.%f").isoformat()[:-3]
     logger.info(f"Timestamp: {ts_end}, {ts_end_iso8601}")
 
