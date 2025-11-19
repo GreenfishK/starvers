@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import Logger
 import pandas as pd
 import plotly.graph_objects as go
 import networkx as nx
@@ -12,7 +13,7 @@ from app.enums.TimeAggregationEnum import TimeAggregation
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
 
-logger = get_logger(__name__)
+logger: Logger = get_logger(__name__)
 
 class GuiContr:
     def __init__(self, repo_name: str = "orkg_v2"):
@@ -97,6 +98,7 @@ class GuiContr:
         widths_del = []
         hovertemplates_ins = []
         hovertemplates_del = []
+        hovertemplates_total = []
 
         # compute time differences in milliseconds
         diffs_ms = agg["timestamp"].diff().dt.total_seconds().fillna(0) * 1000
@@ -118,6 +120,8 @@ class GuiContr:
             dels = deletions.iloc[i]
             net = ins - dels
 
+            logger.info(f"Insertions: {ins}; Deletions: {dels}; Net: {net}")
+
             if net > 0:
                 ins_y.append(net)
                 ins_base.append(base_y)
@@ -131,7 +135,7 @@ class GuiContr:
                     del_y.append(0)
                     del_base.append(0)
                     hovertemplates_del.append("No deletions")
-            else:
+            elif net < 0:
                 del_y.append(net)
                 del_base.append(base_y)
                 hovertemplates_del.append(f"{-net:,} deletions (net)")
@@ -144,6 +148,16 @@ class GuiContr:
                     ins_y.append(0)
                     ins_base.append(0)
                     hovertemplates_ins.append("No insertions")
+            else:
+                ins_y.append(0)
+                del_y.append(0)
+                ins_base.append(0)
+                del_base.append(0)
+                hovertemplates_ins.append(f"dummy")
+                hovertemplates_del.append(f"dummy")
+
+            hovertemplates_total.append(f"Insertions: {ins:,}\nDeletions: {dels:,}\nNet: {net:,}")
+
 
         fig = go.Figure()
 
@@ -175,7 +189,8 @@ class GuiContr:
             y=total.tolist(),
             mode="lines+markers",
             name='Total Triples',
-            line=dict(color="#5485AB", width=1)
+            line=dict(color="#5485AB", width=1),
+            hovertemplate=hovertemplates_total
         ))
 
         # compute x_range using datetime, not string
