@@ -103,6 +103,7 @@ services:
         -Dentity-pool-implementation=transactional
         -Dhealth.max.query.time.seconds=60
         -Dgraphdb.append.request.id.headers=true
+        -Dgraphdb.auth=false
         -Dreuse.vars.in.subselects=true
         -Dgraphdb.health.minimal.free.storage.enabled=false
         -Dgraphdb.health.minimal.free.storage.asyncCheck=false
@@ -117,12 +118,13 @@ services:
       - starvers_bi_net
 
   nginx:
-    image: nginx:latest
+    image: openresty/openresty:alpine
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - ./nginx/html:/var/www/certbot
+      - ./nginx/logs:/var/log/nginx
     ports:
       - "80:80"
       - "443:443"
