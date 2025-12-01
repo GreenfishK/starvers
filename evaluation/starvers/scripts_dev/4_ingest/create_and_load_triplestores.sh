@@ -14,7 +14,7 @@ policies=("${policies}")
 
 # Prepare directories and files
 measurements=/starvers_eval/output/measurements/ingestion.csv
-echo "triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
+echo "$(log_timestamp) ${log_level}:triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
 mkdir -p $ingest_logs
 
 # Path variables
@@ -29,7 +29,7 @@ get_snapshot_version() {
     echo "$(log_timestamp) ${log_level}:graphdb: Dataset must be in one of the datasets configured in the eval_setup.toml" >> $log_file
     return 2
   else
-    echo "$result"
+    echo "$(log_timestamp) ${log_level}:$result"
   fi
 }
 
@@ -39,10 +39,11 @@ get_snapshot_filename_struc() {
     echo "Error: snapshot filename structure returned empty." >&2
     return 2
   fi
-  echo "%0${snapshot_filename_struc}g";
+  echo "$(log_timestamp) ${log_level}:%0${snapshot_filename_struc}g";
 }
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
+    echo "$(log_timestamp) ${log_level}:Starting ingestion for GraphDB." >> $log_file_graphdb
     # Bash arguments and environment variables
     export JAVA_HOME=/opt/java/java11/openjdk
     export PATH=/opt/java/java11/openjdk/bin:$PATH
@@ -69,7 +70,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
             tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
             *)
-                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_graphdb
+                echo "$(log_timestamp) ${log_level}:Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_graphdb
                 exit 2
             ;;
         esac
@@ -164,9 +165,12 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
             done
         done
     done
+    echo "$(log_timestamp) ${log_level}:Finished ingestion for GraphDB." >> $log_file_graphdb
 fi
 
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
+    echo "$(log_timestamp) ${log_level}:Starting ingestion for JenaTDB2." >> $log_file_jena
+    
     # Bash arguments and environment variables
     export JAVA_HOME=/opt/java/java17/openjdk
     export PATH=/opt/java/java17/openjdk/bin:$PATH
@@ -316,6 +320,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
             done
         done
     done
+    echo "$(log_timestamp) ${log_level}:Finished ingestion for JenaTDB2." >> $log_file_jena
 fi
 
 
