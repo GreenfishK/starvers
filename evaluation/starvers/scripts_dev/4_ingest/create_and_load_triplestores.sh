@@ -14,7 +14,7 @@ policies=("${policies}")
 
 # Prepare directories and files
 measurements=/starvers_eval/output/measurements/ingestion.csv
-echo "$(log_timestamp) ${log_level}:triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
+echo "triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
 mkdir -p $ingest_logs
 
 # Path variables
@@ -29,7 +29,7 @@ get_snapshot_version() {
     echo "$(log_timestamp) ${log_level}:graphdb: Dataset must be in one of the datasets configured in the eval_setup.toml" >> $log_file
     return 2
   else
-    echo "$(log_timestamp) ${log_level}:$result"
+    echo "$result"
   fi
 }
 
@@ -39,7 +39,7 @@ get_snapshot_filename_struc() {
     echo "Error: snapshot filename structure returned empty." >&2
     return 2
   fi
-  echo "$(log_timestamp) ${log_level}:%0${snapshot_filename_struc}g";
+  echo "%0${snapshot_filename_struc}g";
 }
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
