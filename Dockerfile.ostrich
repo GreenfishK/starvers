@@ -1,0 +1,83 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1) Basic installations
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git curl ca-certificates \
+    cmake ninja-build wget \
+    autoconf automake libtool pkg-config \
+    zlib1g-dev liblzma-dev liblzo2-dev \
+    libraptor2-dev \
+    libserd-dev \
+    libboost-iostreams-dev \
+    python3 python3-pip python3-dev python3-venv \
+    docker.io \
+    && rm -rf /var/lib/apt/lists/*
+    
+# 2) Build & install Kyoto Cabinet 1.2.79 with LZO/LZMA
+WORKDIR /tmp
+RUN wget https://dbmx.net/kyotocabinet/pkg/kyotocabinet-1.2.79.tar.gz \
+  && tar -xzf kyotocabinet-1.2.79.tar.gz \
+  && mv kyotocabinet-1.2.79 kyotocabinet \
+  && cd kyotocabinet \
+  && ./configure --enable-lzo --enable-lzma \
+  && make -j"$(nproc)" \
+  && make install \
+  && ldconfig \
+  && cd / \
+  && rm -rf /tmp/kyotocabinet /tmp/kyotocabinet-1.2.79.tar.gz
+
+# 3) Eval source
+WORKDIR /ostrich_eval
+RUN git clone https://github.com/rdfostrich/ostrich
+
+WORKDIR /ostrich_eval/ostrich
+# If the build context contains a .git folder, pull submodules; otherwise this is a no-op
+RUN if [ -d .git ]; then git submodule update --init --recursive; fi
+
+# 4) Configure & build
+RUN mkdir -p build \
+  && cd build \
+  && cmake -DCMAKE_BUILD_TYPE=Debug .. -Wno-deprecated \
+  && make -j"$(nproc)"
+
+#WORKDIR /ostrich_eval
+#RUN git clone --recursive https://github.com/rdfhdt/hdt-cpp.git && \
+#    cd hdt-cpp && \
+#    ./autogen.sh && \
+#    ./configure && \
+#    make -j"$(nproc)" && \
+#    make install && \
+#    ldconfig
+
+WORKDIR /ostrich_eval
+COPY scripts_dev/requirements.txt /ostrich_eval
+RUN python3 -m pip install -r requirements.txt
+
+
+
+WORKDIR /ostrich_eval
+
+COPY raw_queries /ostrich_eval/queries/raw_queries
+COPY scripts_dev/eval_setup.toml /ostrich_eval/configs
+
+RUN mkdir -p /ostrich_eval/stores
+RUN mkdir -p /ostrich_eval/output/logs
+RUN mkdir -p /ostrich_eval/output/measurements
+RUN mkdir -p /ostrich_eval/output/figures
+RUN mkdir -p /ostrich_eval/rawdata
+RUN mkdir -p /ostrich_eval/scripts/1_download
+RUN mkdir -p /ostrich_eval/scripts/2_clean_raw_datasaets
+RUN mkdir -p /ostrich_eval/scripts/3_construct_datasets
+RUN mkdir -p /ostrich_eval/scripts/4_ingest
+RUN mkdir -p /ostrich_eval/scripts/5_construct_queries
+RUN mkdir -p /ostrich_eval/scripts/6_evaluate
+RUN mkdir -p /ostrich_eval/scripts/7_visualize
+
+EXPOSE 3000
+
+CMD ["bash"]
+
+
+
