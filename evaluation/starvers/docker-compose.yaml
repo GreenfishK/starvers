@@ -169,3 +169,37 @@ services:
       - datasets=${datasets}
     entrypoint: ["python", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
+
+  graphdb:
+    image: starvers_eval:latest
+    container_name: starvers_eval-graphdb
+    restart: always
+    ports: 
+      - 7600:7200
+    volumes:
+      - ${base_host_dir}/databases/graphdb/ic_sr_ng_bearb_hour:/starvers_eval/databases/graphdb/ic_sr_ng_bearb_hour
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_prod_net
+    #hostname: Starvers
+    environment:
+      JAVA_HOME: /opt/java/java11/openjdk
+      PATH: /opt/java/java11/openjdk/bin:$PATH
+      GDB_JAVA_OPTS: >-
+        -Xmx45g -Xms45g 
+        -Dgraphdb.dist=/opt/graphdb/dist 
+        -Dgraphdb.home.work=/tmp/graphdb/work 
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import 
+        -Dgraphdb.workbench.cors.enable=true 
+        -Denable-context-index=true 
+        -Dentity-pool-implementation=transactional 
+        -Dhealth.max.query.time.seconds=60 
+        -Dgraphdb.append.request.id.headers=true 
+        -Dreuse.vars.in.subselects=true
+        -Dgraphdb.home.data=/starvers_eval/databases/graphdb/ic_sr_ng_bearb_hour
+    command: ["/opt/graphdb/dist/bin/graphdb", "server"]
+
+networks:
+  starvers_prod_net:
+    driver: bridge
