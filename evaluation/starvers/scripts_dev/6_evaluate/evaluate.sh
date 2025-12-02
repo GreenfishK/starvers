@@ -36,9 +36,12 @@ done
 
 # main loop
 for triple_store in ${triple_stores[@]}; do
-
     if [ ${triple_store} == "jenatdb2" ]; then
-    mkdir -p /run/configuration
+        # Set environment variables
+        export JAVA_HOME=/opt/java/java17/openjdk
+        export PATH=/opt/java/java17/openjdk/bin:$PATH
+
+        mkdir -p /run/configuration
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
                 # Export variables
@@ -72,23 +75,23 @@ for triple_store in ${triple_stores[@]}; do
                 /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
 
                 # Stop database server
-                echo "$(log_timestamp) ${log_level}:Shutting down fuseki server and finishing evaluation of ${policy}_${dataset}." >> $log_file
+                echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
                 pkill -f '/jena-fuseki/fuseki-server.jar'
                 while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
                     sleep 1
                 done
                 echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
-                
             done
         done
     
-    GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
     elif [ ${triple_store} == "graphdb" ]; then
+        GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
+
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
                 # Export variables
-                export JAVA_HOME=/opt/java/openjdk
-                export PATH=/opt/java/openjdk/bin:$PATH
+                export JAVA_HOME=/opt/java/java11/openjdk
+                export PATH=/opt/java/java11/openjdk/bin:$PATH
                 export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
 
                 # Start database server and run in background
@@ -107,15 +110,15 @@ for triple_store in ${triple_stores[@]}; do
                 rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
+                python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
 
                 # Stop database server
-                echo "$(log_timestamp) ${log_level}:Shutting down GraphDB server and finishing evaluation of ${policy}_${dataset}." >> $log_file
-                pkill -f '/opt/java/openjdk/bin/java'
-                while ps -ef | grep -q '[o]pt/java/openjdk/bin/java'; do
+                echo "$(log_timestamp) ${log_level}:Kill process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file
+                pkill -f ${JAVA_HOME}/bin/java
+                while pgrep -f "${JAVA_HOME}/bin/java" >/dev/null; do
                     sleep 1
                 done
-                echo "$(log_timestamp) ${log_level}:/opt/java/openjdk/bin/java killed." >> $log_file
+                echo "$(log_timestamp) ${log_level}:${JAVA_HOME}/bin/java killed." >> $log_file
 
             done
         done

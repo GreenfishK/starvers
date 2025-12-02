@@ -116,11 +116,15 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
 ###################################### Dry run ########################################
-logger.info("Execute simple SPARQL query to warm up the RDF store and prevent the initial hike during the evaluation.")
 _set_endpoints(dataset, policy, endpoints, engine)   
 dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
 engine.setQuery(dry_run_query)
-dry_run_result = engine.query()
+try:
+    logger.info(f"Execute simple SPARQL query against {engine.endpoint} to warm up the RDF store and prevent the initial hike during the evaluation.")
+    dry_run_result = engine.query()
+except Exception as e:
+    logger.error(f"Dry run query failed against endpoint {engine.endpoint}. Exception: {e}")
+    sys.exit(1)
 
 ###################################### Evaluation ######################################
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
