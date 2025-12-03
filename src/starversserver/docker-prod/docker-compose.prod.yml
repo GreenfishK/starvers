@@ -45,7 +45,7 @@ services:
     entrypoint: ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 
   db:
-    image: postgres
+    image: postgres:17
     container_name: starvers-db_prod
     restart: always
     env_file: "./prod.env"
@@ -121,6 +121,7 @@ services:
     image: openresty/openresty:alpine
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx_default.conf:/etc/nginx/conf.d/default.conf
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
       - ./nginx/html:/var/www/certbot
