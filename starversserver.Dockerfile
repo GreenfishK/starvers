@@ -33,8 +33,11 @@ COPY --from=python-backend /usr/local/bin /usr/local/bin
 COPY --from=python-backend /code /code
 
 # Copy compiled validator JAR from rdfvalidator stage
-
 COPY --from=rdfvalidator /code/app/utils/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /code/app/utils/rdfvalidator-1.0-jar-with-dependencies.jar
+
+COPY src/starversserver/app/gui /code/app/gui
+COPY src/starversserver/app/AppConfig.py /code/app/AppConfig.py
+COPY src/starversserver/app/LoggingConfig.py /code/app/LoggingConfig.py
 
 ENV PYTHONPATH="/code"
 

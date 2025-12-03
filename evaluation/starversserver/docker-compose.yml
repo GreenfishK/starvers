@@ -2,7 +2,7 @@ services:
 
 
   db:
-    image: postgres
+    image: postgres:17
     container_name: starvers-db_prod
     restart: always
     env_file: "./prod.env"
