@@ -5,3 +5,4 @@ tests/__pycache__/
 src/starvers/__pycache__/
 src/starvers.egg-info/
 .ipynb_checkpoints/
+src/starversserver/docker-prod/nginx_default.conf

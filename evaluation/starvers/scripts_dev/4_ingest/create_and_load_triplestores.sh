@@ -4,6 +4,7 @@
 ingest_logs=/starvers_eval/output/logs/ingest
 log_file_graphdb=${ingest_logs}/ingestion_graphdb.txt
 log_file_jena=${ingest_logs}/ingestion_jena.txt
+log_file_ostrich=${ingest_logs}/ingestion_ostrich.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
@@ -19,6 +20,7 @@ mkdir -p $ingest_logs
 
 # Path variables
 script_dir=/starvers_eval/scripts
+data_dir=/starvers_eval/rawdata
 snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 change_sets_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/change_sets_dir/ {print $2}'`
 
@@ -41,6 +43,69 @@ get_snapshot_filename_struc() {
   fi
   echo "%0${snapshot_filename_struc}g";
 }
+
+if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
+    echo "$(log_timestamp) ${log_level}:Starting ingestion for Ostrich." >> $log_file_ostrich
+
+    # Path variables
+    db_dir=/starvers_eval/databases/ostrich
+
+    # Prepare directories and files
+    rm -rf $db_dir
+    mkdir -p $db_dir
+    > $log_file_ostrich
+
+    for policy in ${policies[@]}; do
+        case $policy in 
+            cb_sr_ng) datasetDirOrFile=${data_dir};; # Ostrich cb-based approach
+            *)
+                echo "$(log_timestamp) ${log_level}:Policy must be in cb_sr_ng" >> $log_file_ostrich
+                exit 2
+            ;;
+        esac
+
+        for dataset in ${datasets[@]}; do
+            export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
+            versions=`get_snapshot_version "${dataset}"`
+            file_name_struc=`get_snapshot_filename_struc "${dataset}"`
+
+            # Create a virtual directory and put the file /starvers_eval/rawdata/${dataset}/alldata.IC.nt/000001.nt and all files from /starvers_eval/rawdata/${dataset}/alldata.CB_computed.nt into a virtual directory with magic links
+            ostrich_virtual_dir=/ostrich
+            rm -rf $ostrich_virtual_dir
+            mkdir -p $ostrich_virtual_dir
+
+            ln -s ${datasetDirOrFile}/${dataset}/alldata.CB_computed.nt $ostrich_virtual_dir/alldata.CB_computed.nt
+            ln -s ${datasetDirOrFile}/${dataset}/alldata.IC.nt/`printf "$file_name_struc" 1`.nt $ostrich_virtual_dir/`printf "$file_name_struc" 1`.nt
+            echo "$(log_timestamp) ${log_level}:Created virtual directory for Ostrich at $ostrich_virtual_dir" >> $log_file_ostrich
+
+            for run in {1..10}; do
+                echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB; run: $run" >> $log_file_ostrich
+                total_ingestion_time=0
+                total_file_size=0
+
+                if [[ "$policy" == "cb_sr_ng" ]]; then
+
+                    cd $db_dir
+                    /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions} | tee -a $log_file_ostrich
+                    #ingestion_time=`(time -p /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions}) \
+                    #                    2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
+                    #echo "$(log_timestamp) ${log_level}:${ingestion_time}." >> $log_file_ostrich
+                    #total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                    # This actually measures the directory size
+                    #file_size=`ls -l --block-size=k ${ostrich_virtual_dir} | awk '{print substr($5, 1, length($5)-1)}'`
+                    #total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
+
+                fi
+
+                #disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+                #disk_usage=0
+                #echo "ostrich;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+            
+            done
+        done
+    done
+
+fi
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     echo "$(log_timestamp) ${log_level}:Starting ingestion for GraphDB." >> $log_file_graphdb
@@ -65,10 +130,10 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
         case $policy in 
             ic_mr_tr) datasetDirOrFile=${snapshot_dir};;
             cb_mr_tr) datasetDirOrFile=${change_sets_dir};;
-            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
-            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
-            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
-            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
+            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;; # my ic-based approach
+            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;; # my cb-based approach
+            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;; # bear
+            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;; # rdf-star
             *)
                 echo "$(log_timestamp) ${log_level}:Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_graphdb
                 exit 2
