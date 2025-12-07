@@ -170,6 +170,23 @@ services:
     entrypoint: ["python", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
     command: ["$policies", "$datasets"]
 
+
+# -------------------------------------------------------------------------------------------
+# For testing
+# -------------------------------------------------------------------------------------------
+
+  starvers_eval-tty:
+    image: starvers_eval:latest
+    container_name: starvers_eval-tty
+    tty: true
+    stdin_open: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_prod_net
+    #hostname: Starvers
+    command: ["/bin/bash"]
+
   graphdb:
     image: starvers_eval:latest
     container_name: starvers_eval-graphdb

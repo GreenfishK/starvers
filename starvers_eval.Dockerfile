@@ -62,6 +62,9 @@ COPY evaluation/starvers/raw_queries /starvers_eval/queries/raw_queries
 COPY --from=install_ostrich /usr/local/lib/ /usr/local/lib/
 COPY --from=install_ostrich /usr/local/include/ /usr/local/include/
 COPY --from=install_ostrich /ostrich_eval/ostrich/build/ /opt/ostrich/
+COPY --from=install_ostrich /usr/lib/x86_64-linux-gnu/libboost_iostreams.so.1.74.0 /usr/lib/x86_64-linux-gnu/
+COPY --from=install_ostrich /usr/lib/x86_64-linux-gnu/libboost_iostreams.so /usr/lib/x86_64-linux-gnu/
+
 
 # copy from other images
 COPY --from=stain/jena-fuseki:5.1.0 /jena-fuseki /jena-fuseki
@@ -95,7 +98,7 @@ RUN apt-get install -y bash coreutils procps grep sed curl bc wget
 
 # To suppress the GraphDB setlocale() warning and ensure UTF-8 everywhere
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    locales liblzma5 liblzo2-2 zlib1g libraptor2-0 libserd-0-0 libboost-iostreams1.83.0 \
+    locales liblzma5 liblzo2-2 zlib1g libraptor2-0 libserd-0-0 libboost-iostreams-dev \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
