@@ -70,12 +70,12 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
             # Create a virtual directory and put the file /starvers_eval/rawdata/${dataset}/alldata.IC.nt/000001.nt and all files from /starvers_eval/rawdata/${dataset}/alldata.CB_computed.nt into a virtual directory with magic links
-            ostrich_virtual_dir=/ostrich
-            rm -rf $ostrich_virtual_dir
-            mkdir -p $ostrich_virtual_dir
+            ostrich_virtual_dir=/ostrich/${dataset}
+            rm -rf $ostrich_virtual_dir/alldata.IC.nt
+            mkdir -p $ostrich_virtual_dir/alldata.IC.nt
 
-            ln -s ${datasetDirOrFile}/${dataset}/alldata.CB_computed.nt $ostrich_virtual_dir/alldata.CB_computed.nt
-            ln -s ${datasetDirOrFile}/${dataset}/alldata.IC.nt/`printf "$file_name_struc" 1`.nt $ostrich_virtual_dir/`printf "$file_name_struc" 1`.nt
+            ln -s ${datasetDirOrFile}/${dataset}/alldata.CB_computed.nt $ostrich_virtual_dir/alldata.CB.nt
+            ln -s ${datasetDirOrFile}/${dataset}/alldata.IC.nt/`printf "$file_name_struc" 1`.nt $ostrich_virtual_dir/alldata.IC.nt/`printf "$file_name_struc" 1`.nt
             echo "$(log_timestamp) ${log_level}:Created virtual directory for Ostrich at $ostrich_virtual_dir" >> $log_file_ostrich
 
             for run in {1..10}; do
@@ -87,6 +87,8 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
 
                     cd $db_dir
                     /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions} | tee -a $log_file_ostrich
+                    
+
                     #ingestion_time=`(time -p /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions}) \
                     #                    2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
                     #echo "$(log_timestamp) ${log_level}:${ingestion_time}." >> $log_file_ostrich
