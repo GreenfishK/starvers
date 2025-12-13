@@ -78,7 +78,8 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
             ln -s ${datasetDirOrFile}/${dataset}/alldata.IC.nt/`printf "$file_name_struc" 1`.nt $ostrich_virtual_dir/alldata.IC.nt/`printf "$file_name_struc" 1`.nt
             echo "$(log_timestamp) ${log_level}:Created virtual directory for Ostrich at $ostrich_virtual_dir" >> $log_file_ostrich
 
-            for run in {1..10}; do
+            runs=10
+            for ((run=1; run<=runs; run++)); do
                 echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB; run: $run" >> $log_file_ostrich
                 total_ingestion_time=0
                 total_file_size=0
@@ -97,6 +98,12 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
                     #file_size=`ls -l --block-size=k ${ostrich_virtual_dir} | awk '{print substr($5, 1, length($5)-1)}'`
                     #total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
 
+                fi
+
+                # Delete data in db directory to prepare for next run
+                if $run ne $runs; then
+                    echo "$(log_timestamp) ${log_level}:Cleaning Ostrich database directory for next run." >> $log_file_ostrich
+                    rm -rf $db_dir/* && rm ostrich/.*.tmp
                 fi
 
                 #disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`

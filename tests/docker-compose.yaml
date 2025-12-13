@@ -1,0 +1,23 @@
+version: "3.4"
+
+services:
+  test_ostrich_ingest:
+    image: starvers_eval:latest
+    container_name: starvers_eval-test_ostrich_ingest
+    volumes:
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/databases/ostrich:/starvers_eval/databases/ostrich
+      - ./starvers:/starvers_eval/tests # move to image after development has finished
+    entrypoint: ["/starvers_eval/tests/test_ostrich_ingest.sh"]
+
+  starvers_eval-tty:
+    image: starvers_eval:latest
+    container_name: starvers_eval-tty
+    tty: true
+    stdin_open: true
+    volumes:
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ${base_host_dir}/databases/ostrich:/starvers_eval/databases/ostrich
+      - ./starvers:/starvers_eval/tests # move to image after development has finished
+    #hostname: Starvers
+    command: ["/bin/bash"]
