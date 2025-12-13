@@ -95,7 +95,7 @@ services:
     env_file: "./prod.env"
     environment: 
       GDB_JAVA_OPTS: >-
-        -Xmx32g -Xms32g
+        -Xmx40g -Xms40g
         -Dgraphdb.home=/opt/graphdb/home
         -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
         -Dgraphdb.workbench.cors.enable=true
@@ -116,6 +116,46 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - starvers_bi_net
+
+  rdstore_bi_recovery:
+    image: starvers_eval:latest
+    container_name: starvers-rdfstore_bi_recovery
+    restart: "no"
+    env_file: "./prod.env"
+    environment: 
+      GDB_JAVA_OPTS: >-
+        -Xmx40g -Xms40g
+        -Dgraphdb.home=/opt/graphdb/home
+        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
+        -Dgraphdb.workbench.cors.enable=true
+        -Denable-context-index=true
+        -Dentity-pool-implementation=transactional
+        -Dhealth.max.query.time.seconds=60
+        -Dgraphdb.append.request.id.headers=true
+        -Dgraphdb.auth=false
+        -Dreuse.vars.in.subselects=true
+        -Dgraphdb.health.minimal.free.storage.enabled=false
+        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
+        -Dgraphdb.connector.port=7200
+      JAVA_HOME: /opt/java/java11/openjdk
+      PATH: /opt/java/java11/openjdk/bin:$PATH
+    volumes:
+      - /mnt/data/starversserver_bi/graphdb-data:/opt/graphdb/home
+      - /mnt/data/starversserver_bi/recovery-output:/opt/graphdb/recovery-output
+      - ${home}/starvers/src/starversserver/app/utils/graphdb_recovery.py:/opt/graphdb/run_storage_recovery.py:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - starvers_bi_net
+    entrypoint: >
+      sh -c "
+        echo 'Starting GraphDB recovery wrapper...';
+        python3 /opt/graphdb/run_storage_recovery.py;
+        echo 'Recovery script finished';
+        tail -f /dev/null
+      "
+
+
 
   nginx:
     image: openresty/openresty:alpine
