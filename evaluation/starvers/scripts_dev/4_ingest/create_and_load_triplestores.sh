@@ -13,6 +13,16 @@ datasets=("${datasets}")
 triple_stores=("${triple_stores}")
 policies=("${policies}") 
 
+# Validate policies
+for policy in ${policies[@]}; do
+    if [[ ! " ostrich ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs " =~ " ${policy} " ]]; then
+        echo "$(log_timestamp) ${log_level}:Policy must be in: ostrich, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_ostrich
+        exit 2
+    fi
+done
+
+runs=10
+
 # Prepare directories and files
 measurements=/starvers_eval/output/measurements/ingestion.csv
 echo "triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB" > $measurements
@@ -20,7 +30,6 @@ mkdir -p $ingest_logs
 
 # Path variables
 script_dir=/starvers_eval/scripts
-data_dir=/starvers_eval/rawdata
 snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
 change_sets_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/change_sets_dir/ {print $2}'`
 
@@ -44,8 +53,18 @@ get_snapshot_filename_struc() {
   echo "%0${snapshot_filename_struc}g";
 }
 
+# Create a datasetDirOrFile - policy map
+declare -A datasetDirOrFile_map
+datasetDirOrFile_map["ostrich"]="/starvers_eval/rawdata" # Ostrich cb-based approach
+datasetDirOrFile_map["ic_sr_ng"]="alldata.ICNG.trig" # my ic-based approach
+datasetDirOrFile_map["cb_sr_ng"]="alldata.CBNG.trig" # my cb-based approach
+datasetDirOrFile_map["tb_sr_ng"]="alldata.TB.nq" # bear
+datasetDirOrFile_map["tb_sr_rs"]="alldata.TB_star_hierarchical.ttl" # rdf-star
+
 if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
     echo "$(log_timestamp) ${log_level}:Starting ingestion for Ostrich." >> $log_file_ostrich
+
+    log_file=$log_file_ostrich
 
     # Path variables
     db_dir=/starvers_eval/databases/ostrich
@@ -56,17 +75,16 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
     > $log_file_ostrich
 
     for policy in ${policies[@]}; do
-        case $policy in 
-            cb_sr_ng) datasetDirOrFile=${data_dir};; # Ostrich cb-based approach
-            *)
-                echo "$(log_timestamp) ${log_level}:Policy must be in cb_sr_ng" >> $log_file_ostrich
-                exit 2
-            ;;
-        esac
+        datasetDirOrFile=${datasetDirOrFile_map[$policy]}
+
+        # if policy not one of: ostrich: skip loop
+        if [[ ! " ostrich " =~ " ${policy} " ]]; then
+            echo "$(log_timestamp) ${log_level}:Skipping policy $policy for Ostrich." >> $log_file_ostrich
+            continue
+        fi
 
         for dataset in ${datasets[@]}; do
-            export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
-            versions=`get_snapshot_version "${dataset}"`
+            versions=`get_snapshot_version "${dataset}" "{log_file}"`
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
             # Create a virtual directory and put the file /starvers_eval/rawdata/${dataset}/alldata.IC.nt/000001.nt and all files from /starvers_eval/rawdata/${dataset}/alldata.CB_computed.nt into a virtual directory with magic links
@@ -74,41 +92,44 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
             rm -rf $ostrich_virtual_dir/alldata.IC.nt
             mkdir -p $ostrich_virtual_dir/alldata.IC.nt
 
+            # Create symbolic links to the data files
             ln -s ${datasetDirOrFile}/${dataset}/alldata.CB_computed.nt $ostrich_virtual_dir/alldata.CB.nt
             ln -s ${datasetDirOrFile}/${dataset}/alldata.IC.nt/`printf "$file_name_struc" 1`.nt $ostrich_virtual_dir/alldata.IC.nt/`printf "$file_name_struc" 1`.nt
             echo "$(log_timestamp) ${log_level}:Created virtual directory for Ostrich at $ostrich_virtual_dir" >> $log_file_ostrich
 
-            runs=10
             for ((run=1; run<=runs; run++)); do
-                echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB; run: $run" >> $log_file_ostrich
+                echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for Ostrich; run: $run" >> $log_file_ostrich
                 total_ingestion_time=0
                 total_file_size=0
 
-                if [[ "$policy" == "cb_sr_ng" ]]; then
+                # Create and change to database directory
+                mkdir ${db_dir}/${policy}_${dataset}
+                cd ${db_dir}/${policy}_${dataset}
 
-                    cd $db_dir
-                    /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions} | tee -a $log_file_ostrich
-                    
+                # Measure ingestion time
+                ingestion_time=`(time -p /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions}) \
+                                    2>&1 1>> $log_file_ostrich | grep -oP "real \K.*" | sed "s/,/./g" `
+                echo "$(log_timestamp) ${log_level}:${ingestion_time}." >> $log_file_ostrich
+                total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                
+                # Measure file sizes
+                cb_size=$(du -s --block-size=1M --apparent-size \
+                    "${datasetDirOrFile}/${dataset}/alldata.CB_computed.nt" | awk '{print $1}')
 
-                    #ingestion_time=`(time -p /opt/ostrich/ostrich-evaluate ingest never 0 ${ostrich_virtual_dir} 1 ${versions}) \
-                    #                    2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
-                    #echo "$(log_timestamp) ${log_level}:${ingestion_time}." >> $log_file_ostrich
-                    #total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    # This actually measures the directory size
-                    #file_size=`ls -l --block-size=k ${ostrich_virtual_dir} | awk '{print substr($5, 1, length($5)-1)}'`
-                    #total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
+                ic_size=$(du -s --block-size=1M --apparent-size \
+                    "${datasetDirOrFile}/${dataset}/alldata.IC.nt/$(printf "$file_name_struc" 1).nt" | awk '{print $1}')
 
+                total_file_size=$((cb_size + ic_size))
+
+                # Save measurements
+                disk_usage=`du -s --block-size=M $db_dir/${policy}_${dataset} | awk '{print $1}'`
+                echo "ostrich;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+
+                # Cleanup
+                if [[ $run -lt $runs ]]; then
+                    echo "$(log_timestamp) ${log_level}:Cleaning up database for next run." >> $log_file_graphdb
+                    rm -rf $db_dir/${policy}_${dataset}
                 fi
-
-                # Delete data in db directory to prepare for next run
-                if $run ne $runs; then
-                    echo "$(log_timestamp) ${log_level}:Cleaning Ostrich database directory for next run." >> $log_file_ostrich
-                    rm -rf $db_dir/* && rm ostrich/.*.tmp
-                fi
-
-                #disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
-                #disk_usage=0
-                #echo "ostrich;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
             
             done
         done
@@ -118,6 +139,9 @@ fi
 
 if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
     echo "$(log_timestamp) ${log_level}:Starting ingestion for GraphDB." >> $log_file_graphdb
+
+    log_file=$log_file_graphdb
+
     # Bash arguments and environment variables
     export JAVA_HOME=/opt/java/java11/openjdk
     export PATH=/opt/java/java11/openjdk/bin:$PATH
@@ -136,106 +160,55 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
 
     for policy in ${policies[@]}; do
-        case $policy in 
-            ic_mr_tr) datasetDirOrFile=${snapshot_dir};;
-            cb_mr_tr) datasetDirOrFile=${change_sets_dir};;
-            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;; # my ic-based approach
-            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;; # my cb-based approach
-            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;; # bear
-            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;; # rdf-star
-            *)
-                echo "$(log_timestamp) ${log_level}:Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_graphdb
-                exit 2
-            ;;
-        esac
+        datasetDirOrFile=${datasetDirOrFile_map[$policy]}
+
+        # if policy not one of: ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs: skip loop
+        if [[ ! " ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs " =~ " ${policy} " ]]; then
+            echo "$(log_timestamp) ${log_level}:Skipping policy $policy for GraphDB." >> $log_file_graphdb
+            continue
+        fi
 
         for dataset in ${datasets[@]}; do
             export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
-            versions=`get_snapshot_version "${dataset}"`
+            versions=`get_snapshot_version "${dataset}" "{log_file}"`
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
-
-            for run in {1..10}; do
+            for ((run=1; run<=runs; run++)); do
                 echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for GraphDB; run: $run" >> $log_file_graphdb
                 total_ingestion_time=0
                 total_file_size=0
-                if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
-                    # Replace repositoryID in config template
-                    repositoryID=${policy}_${dataset}
-                    cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
 
-                    # Load data into GraphDB
-                    ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
-                                    2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
-                    total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
-                    total_file_size=`echo "$total_file_size + $file_size/1024" | bc` 
+                # Create and change to database directory
+                mkdir ${db_dir}/${policy}_${dataset}
+                cd ${db_dir}/${policy}_${dataset}
 
-                elif [ "$policy" == "ic_mr_tr" ]; then
-                    for c in $(seq -f $file_name_struc 1 ${versions}) # ${versions}
-                    do
-                        # Replace repositoryID in config template
-                        repositoryID=${policy}_${dataset}_$((10#$c))
-                        cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryID/g"  $configs_dir/${repositoryID}.ttl
+                # Replace repositoryID in config template
+                repositoryID=${policy}_${dataset}
+                cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryID}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
 
-                        # Load data into GraphDB
-                        ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
-                                        2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt  | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
-                    done  
-                            
-                elif [ "$policy" == "cb_mr_tr" ]; then
-                    for v in $(seq 0 1 $((${versions}-1))); do 
-                        ve=$(echo $v+1 | bc)
-                        if [ $v -eq 0 ]; then
-                            file_name=`printf "$file_name_struc" +1`.nt
-                            fileadd="$snapshot_dir/$file_name"
-                            filedel="empty.nt"
-                            repositoryIDAdd=${policy}_${dataset}_ic1
-                            repositoryIDDel=${policy}_${dataset}_empty
-                        else
-                            fileadd="${datasetDirOrFile}/data-added_$v-$ve.ttl"
-                            filedel="${datasetDirOrFile}/data-deleted_$v-$ve.ttl"
-                            repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
-                            repositoryIDDel=${policy}_${dataset}_del_$v-$ve
-                        fi
+                # Load data into GraphDB. $db_dir/${repositoryID} gets created automatically
+                ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryID}.ttl /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
+                                2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
+                total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                
+                # Measure file sizes
+                total_file_size=$(du -s --block-size=1M --apparent-size "/starvers_eval/rawdata/${dataset}/${datasetDirOrFile}" | awk '{print $1}')
 
-                        # Add
-                        # Replace repositoryID in config template
-                        cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
-
-                        # Load data into GraphDB
-                        ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDAdd}.ttl /starvers_eval/rawdata/${dataset}/${fileadd}) \
-                                        2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
-
-                        # Delete
-                        # Replace repositoryID in config template
-                        cp ${script_dir}/4_ingest/configs/graphdb-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryIDDel/g" $configs_dir/${repositoryIDDel}.ttl
-
-                        # Load data into GraphDB
-                        ingestion_time=`(time -p /opt/graphdb/dist/bin/importrdf preload --force -c $configs_dir/${repositoryIDDel}.ttl /starvers_eval/rawdata/${dataset}/${filedel}) \
-                                        2>&1 1>> $log_file_graphdb | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`
-                    done
-                fi
-
+                # Shutdown GraphDB
                 echo "$(log_timestamp) ${log_level}:Kill process /opt/java/openjdk/bin/java to shutdown GraphDB" >> $log_file_graphdb
                 pkill -f /opt/java/openjdk/bin/java
 
+                # Save measurements
                 cat $log_file_graphdb | grep -v "\[.*\] DEBUG"
-                disk_usage=`du -s --block-size=M --apparent-size $db_dir/${policy}_${dataset}/repositories | awk '{print substr($1, 1, length($1)-1)}'`
+                disk_usage=`du -s --block-size=M $db_dir/${policy}_${dataset}/repositories | awk '{print $1}'`
                 echo "graphdb;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+
+                # Cleanup
+                if [[ $run -lt $runs ]]; then
+                    echo "$(log_timestamp) ${log_level}:Cleaning up database for next run." >> $log_file_graphdb
+                    rm -rf $db_dir/${repositoryID}
+                fi
             done
         done
     done
@@ -244,6 +217,8 @@ fi
 
 if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
     echo "$(log_timestamp) ${log_level}:Starting ingestion for JenaTDB2." >> $log_file_jena
+
+    log_file=$log_file_jena
     
     # Bash arguments and environment variables
     export JAVA_HOME=/opt/java/java17/openjdk
@@ -262,135 +237,58 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
 
     for policy in ${policies[@]}; do
-        case $policy in 
-            ic_mr_tr) datasetDirOrFile=${snapshot_dir};;
-            cb_mr_tr) datasetDirOrFile=${change_sets_dir};;
-            ic_sr_ng) datasetDirOrFile=alldata.ICNG.trig;;
-            cb_sr_ng) datasetDirOrFile=alldata.CBNG.trig;;
-            tb_sr_ng) datasetDirOrFile=alldata.TB.nq;;
-            tb_sr_rs) datasetDirOrFile=alldata.TB_star_hierarchical.ttl;;
-            *)
-                echo "Policy must be in ic_mr_tr, cb_mr_tr, ic_sr_ng, cb_sr_ng, tb_sr_ng, tb_sr_rs" >> $log_file_jena
-                exit 2
-            ;;
-        esac
+        datasetDirOrFile=${datasetDirOrFile_map[$policy]}
+
+        # if policy not one of: ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs: skip loop
+        if [[ ! " ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs " =~ " ${policy} " ]]; then
+            echo "$(log_timestamp) ${log_level}:Skipping policy $policy for JenaTDB2." >> $log_file_jena
+            continue
+        fi
 
         for dataset in ${datasets[@]}; do
             # Set variables
             data_dir=$db_dir/${policy}_${dataset}
-            versions=`get_snapshot_version "${dataset}"`
+            versions=`get_snapshot_version "${dataset}" "{log_file}"`
             file_name_struc=`get_snapshot_filename_struc "${dataset}"`
 
-            for run in {1..10}; do
+            for ((run=1; run<=runs; run++)); do
                 echo "$(log_timestamp) ${log_level}:Process is $policy, $dataset for JenaTDB2; run: $run" >> $log_file_jena
                 total_ingestion_time=0
-                total_file_size=0            
-                if [[ "$policy" == "tb_sr_rs" || "$policy" == "tb_sr_ng" || "$policy" == "ic_sr_ng" || "$policy" == "cb_sr_ng" ]]; then
-                    repositoryID=${policy}_${dataset}
-                    # Replace repositoryID in config template
-                    
-                    cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
-                    sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
-                    sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryID}.ttl
-                    sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
-                    
-                    # Load data into Jena
-                    echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
-                    mkdir -p "$data_dir/${repositoryID}"
-                    ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
-                                    2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
-                    total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                    echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
+                total_file_size=0  
 
-                    file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile} | awk '{print substr($5, 1, length($5)-1)}'`
-                    total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
-                    echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MiB" >> $log_file_jena
-           
-                elif [ "$policy" == "ic_mr_tr" ]; then
-                    for c in $(seq -f $file_name_struc 1 ${versions})
-                    do
-                        repositoryID=${policy}_${dataset}_$((10#$c))
-                        # Replace repositoryID in config template
-                        cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
-                        sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryID}.ttl
-                        sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
-                        
-                        # Load data into Jena
-                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
-                        mkdir -p "$data_dir/${repositoryID}"
-                        ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt) \
-                                        2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
-
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}/${c}.nt | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
-                        echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MiB" >> $log_file_jena
-
-                    done
+                repositoryID=${policy}_${dataset}
+                # Replace repositoryID in config template
                 
-                elif [ "$policy" == "cb_mr_tr" ]; then
-                    for v in $(seq 0 1 $((${versions}-1))); do 
-                        ve=$(echo $v+1 | bc)
-                        if [ $v -eq 0 ]; then
-                            file_name=`printf "$file_name_struc" +1`.nt
-                            fileadd="$snapshot_dir/$file_name"
-                            filedel="empty.nt"
-                            repositoryIDAdd=${policy}_${dataset}_ic1
-                            repositoryIDDel=${policy}_${dataset}_empty
-                        else
-                            fileadd="${datasetDirOrFile}/data-added_$v-$ve.ttl"
-                            filedel="${datasetDirOrFile}/data-deleted_$v-$ve.ttl"
-                            repositoryIDAdd=${policy}_${dataset}_add_$v-$ve
-                            repositoryIDDel=${policy}_${dataset}_del_$v-$ve
-                        fi
+                cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryID}.ttl
+                sed -i "s/{{repositoryID}}/$repositoryID/g" $configs_dir/${repositoryID}.ttl
+                sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryID}.ttl
+                sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryID}.ttl
+                
+                # Load data into Jena. $db_dir/${repositoryID} gets created automatically
+                echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
+                mkdir -p "$data_dir/${repositoryID}"
+                ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryID} /starvers_eval/rawdata/${dataset}/${datasetDirOrFile}) \
+                                2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
+                total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
+                echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
 
-                        # Replace repositoryID in config template
-                        cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDAdd}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryIDAdd/g" $configs_dir/${repositoryIDAdd}.ttl
-                        sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryIDAdd}.ttl
-                        sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDAdd}.ttl
+                # Measure file sizes
+                total_file_size=$(du -s --block-size=1M --apparent-size "/starvers_eval/rawdata/${dataset}/${datasetDirOrFile}" | awk '{print $1}')
 
-                        # Load data into Jena TDB2
-                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
-                        mkdir -p "$data_dir/${repositoryID}"
-                        ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDAdd} /starvers_eval/rawdata/${dataset}/${fileadd}) \
-                                        2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
-                        
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${fileadd} | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`  
-                        echo "$(log_timestamp) ${log_level}:Total file siz is: $total_file_size MiB" >> $log_file_jena
-
-                        # Replace repositoryID in config template
-                        cp ${script_dir}/4_ingest/configs/jenatdb2-config_template.ttl $configs_dir/${repositoryIDDel}.ttl
-                        sed -i "s/{{repositoryID}}/$repositoryIDDel/g" $configs_dir/${repositoryIDDel}.ttl
-                        sed -i "s/{{policy}}/$policy/g" $configs_dir/${repositoryIDDel}.ttl
-                        sed -i "s/{{dataset}}/$dataset/g" $configs_dir/${repositoryIDDel}.ttl
-
-                        # Load data into Jena TDB2
-                        echo "$(log_timestamp) ${log_level}:Loading $dataset into JenaTDB2." >> $log_file_jena
-                        mkdir -p "$data_dir/${repositoryID}"
-                        ingestion_time=`(time -p /jena-fuseki/tdbloader2 --loc $data_dir/${repositoryIDDel} /starvers_eval/rawdata/${dataset}/${filedel}) \
-                                        2>&1 1>> $log_file_jena | grep -oP "real \K.*" | sed "s/,/./g" `
-                        total_ingestion_time=`echo "$total_ingestion_time + $ingestion_time" | bc`
-                        echo "$(log_timestamp) ${log_level}:Done loading." >> $log_file_jena
-                        
-                        file_size=`ls -l --block-size=k /starvers_eval/rawdata/${dataset}/${filedel} | awk '{print substr($5, 1, length($5)-1)}'`
-                        total_file_size=`echo "$total_file_size + $file_size/1024" | bc`    
-                        echo "$(log_timestamp) ${log_level}:Total file size is: $total_file_size MB" >> $log_file_jena
-           
-                    done
-                fi
+                # Shutdown Jena Fuseki
                 echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file_jena
                 pkill -f '/jena-fuseki/fuseki-server.jar'
 
+                # Save measurements
                 cat $log_file_jena | grep -v "\[.*\] DEBUG"
-                disk_usage=`du -s --block-size=M --apparent-size $data_dir | awk '{print substr($1, 1, length($1)-1)}'`
-                echo "$(log_timestamp) ${log_level}:DB file size is: $disk_usage MB" >> $log_file_jena
+                disk_usage=`du -s --block-size=M $data_dir | awk '{print $1}'`
                 echo "jenatdb2;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
+
+                # Cleanup
+                if [[ $run -lt $runs ]]; then
+                    echo "$(log_timestamp) ${log_level}:Cleaning up database for next run." >> $log_file_graphdb
+                    rm -rf $db_dir/${repositoryID}
+                fi    
             done
         done
     done
