@@ -22,17 +22,17 @@
         [datasets.beara.query_sets]
             [datasets.beara.query_sets.high]
                 [datasets.beara.query_sets.high.policies]
-                    ic_sr_ng = {versions = 58, template = "icng/ts"}
-                    cb_sr_ng = {versions = 58, template = "ictr/ts"}
-                    tb_sr_ng = {versions = 58, template = "tbng/ts"}
-                    tb_sr_rs = {versions = 58, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 58, template = "ic_sr_ng/ts"}
+                    cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
+                    tb_sr_ng = {versions = 58, template = "tb_sr_ng/ts"}
+                    tb_sr_rs = {versions = 58, template = "tb_sr_rs/ts"}
                     ostrich = {versions = 58, template = "ostrich/ts"}
             [datasets.beara.query_sets.low]
                 [datasets.beara.query_sets.low.policies]
-                    ic_sr_ng = {versions = 58, template = "icng/ts"}
-                    cb_sr_ng = {versions = 58, template = "ictr/ts"}
-                    tb_sr_ng = {versions = 58, template = "tbng/ts"}
-                    tb_sr_rs = {versions = 58, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 58, template = "ic_sr_ng/ts"}
+                    cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
+                    tb_sr_ng = {versions = 58, template = "tb_sr_ng/ts"}
+                    tb_sr_rs = {versions = 58, template = "tb_sr_rs/ts"}
                     ostrich = {versions = 58, template = "ostrich/ts"}
     [datasets.bearb_hour]
         snapshot_versions = 1299
@@ -52,17 +52,17 @@
         [datasets.bearb_hour.query_sets]
             [datasets.bearb_hour.query_sets.join]
                 [datasets.bearb_hour.query_sets.join.policies]
-                    ic_sr_ng = {versions = 1299, template = "icng/bgp"}
-                    cb_sr_ng = {versions = 1299, template = "ictr/bgp"}
-                    tb_sr_ng = {versions = 1299, template = "tbng/bgp"}
-                    tb_sr_rs = {versions = 1299, template = "ictr/bgp"}
+                    ic_sr_ng = {versions = 1299, template = "ic_sr_ng/bgp"}
+                    cb_sr_ng = {versions = 1299, template = "cb_sr_ng/bgp"}
+                    tb_sr_ng = {versions = 1299, template = "tb_sr_ng/bgp"}
+                    tb_sr_rs = {versions = 1299, template = "tb_sr_rs/bgp"}
                     ostrich = {versions = 1299, template = "ostrich/bgp"}
             [datasets.bearb_hour.query_sets.lookup]
                 [datasets.bearb_hour.query_sets.lookup.policies]
-                    ic_sr_ng = {versions = 1299, template = "icng/ts"}
-                    cb_sr_ng = {versions = 1299, template = "ictr/ts"}
-                    tb_sr_ng = {versions = 1299, template = "tbng/ts"}
-                    tb_sr_rs = {versions = 1299, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 1299, template = "ic_sr_ng/ts"}
+                    cb_sr_ng = {versions = 1299, template = "cb_sr_ng/ts"}
+                    tb_sr_ng = {versions = 1299, template = "tb_sr_ng/ts"}
+                    tb_sr_rs = {versions = 1299, template = "tb_sr_rs/ts"}
                     ostrich = {versions = 1299, template = "ostrich/ts"}
     [datasets.bearb_day]
         snapshot_versions = 89
@@ -82,17 +82,17 @@
         [datasets.bearb_day.query_sets]
             [datasets.bearb_day.query_sets.join]
                 [datasets.bearb_day.query_sets.join.policies]
-                    ic_sr_ng = {versions = 89, template = "icng/bgp"}
-                    cb_sr_ng = {versions = 89, template = "ictr/bgp"}
-                    tb_sr_ng = {versions = 89, template = "tbng/bgp"}
-                    tb_sr_rs = {versions = 89, template = "ictr/bgp"}
+                    ic_sr_ng = {versions = 89, template = "ic_sr_ng/bgp"}
+                    cb_sr_ng = {versions = 89, template = "cb_sr_ng/bgp"}
+                    tb_sr_ng = {versions = 89, template = "tb_sr_ng/bgp"}
+                    tb_sr_rs = {versions = 89, template = "tb_sr_rs/bgp"}
                     ostrich = {versions = 89, template = "ostrich/bgp"}
             [datasets.bearb_day.query_sets.lookup]
                 [datasets.bearb_day.query_sets.lookup.policies]
-                    ic_sr_ng = {versions = 89, template = "icng/ts"}
-                    cb_sr_ng = {versions = 89, template = "ictr/ts"}
-                    tb_sr_ng = {versions = 89, template = "tbng/ts"}
-                    tb_sr_rs = {versions = 89, template = "ictr/ts"}
+                    ic_sr_ng = {versions = 89, template = "ic_sr_ng/ts"}
+                    cb_sr_ng = {versions = 89, template = "cb_sr_ng/ts"}
+                    tb_sr_ng = {versions = 89, template = "tb_sr_ng/ts"}
+                    tb_sr_rs = {versions = 89, template = "tb_sr_rs/ts"}
                     ostrich = {versions = 89, template = "ostrich/ts"}
     [datasets.bearc]
         snapshot_versions = 33
@@ -112,10 +112,10 @@
         [datasets.bearc.query_sets]
             [datasets.bearc.query_sets.complex]
                 [datasets.bearc.query_sets.complex.policies]
-                    ic_sr_ng = {versions = 33, template = "icng/sparql"}
-                    cb_sr_ng = {versions = 33, template = "ictr/sparql"}
-                    tb_sr_ng = {versions = 33, template = "tbng/sparql"}
-                    tb_sr_rs = {versions = 33, template = "ictr/sparql"}
+                    ic_sr_ng = {versions = 33, template = "ic_sr_ng/sparql"}
+                    cb_sr_ng = {versions = 33, template = "cb_sr_ng/sparql"}
+                    tb_sr_ng = {versions = 33, template = "tb_sr_ng/sparql"}
+                    tb_sr_rs = {versions = 33, template = "tb_sr_rs/sparql"}
                     ostrich = {versions = 33, template = "ostrich/sparql"}
     [datasets.beart]
         snapshot_versions = 4
