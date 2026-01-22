@@ -122,7 +122,7 @@ if [[ " ${triple_stores[*]} " =~ " ostrich " ]]; then
                 total_file_size=$((cb_size + ic_size))
 
                 # Save measurements
-                disk_usage=`du -s --block-size=M $db_dir/${policy}_${dataset} | awk '{print $1}'`
+                disk_usage=`du -s --block-size=1M $db_dir/${policy}_${dataset} | awk '{print $1}'`
                 echo "ostrich;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
 
                 # Cleanup
@@ -201,7 +201,7 @@ if [[ " ${triple_stores[*]} " =~ " graphdb " ]]; then
 
                 # Save measurements
                 cat $log_file_graphdb | grep -v "\[.*\] DEBUG"
-                disk_usage=`du -s --block-size=M $db_dir/${policy}_${dataset}/repositories | awk '{print $1}'`
+                disk_usage=`du -s --block-size=1M $db_dir/${policy}_${dataset}/repositories | awk '{print $1}'`
                 echo "graphdb;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
 
                 # Cleanup
@@ -281,7 +281,7 @@ if [[ " ${triple_stores[*]} " =~ " jenatdb2 " ]]; then
 
                 # Save measurements
                 cat $log_file_jena | grep -v "\[.*\] DEBUG"
-                disk_usage=`du -s --block-size=M $data_dir | awk '{print $1}'`
+                disk_usage=`du -s --block-size=1M $data_dir | awk '{print $1}'`
                 echo "jenatdb2;${policy};${dataset};${run};${total_ingestion_time};${total_file_size};${disk_usage}" >> $measurements
 
                 # Cleanup
