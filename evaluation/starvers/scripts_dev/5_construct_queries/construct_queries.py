@@ -26,6 +26,7 @@ def main():
     ############################################# Parameters ################################################################
     raw_queries_base="/starvers_eval/queries/raw_queries/"
     output_queries_base="/starvers_eval/queries/final_queries/"
+    query_rewriting_measurements_path="/starvers_eval/output/query_rewriting_measurements/query_rewriting_times.csv"
 
     policies_cmd = sys.argv[1]
     policies = policies_cmd.split(" ")
@@ -106,7 +107,14 @@ def main():
                                 output_query_file_name = raw_query_name.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_set_version) + ".txt"
                                 with open(output_queries_dir_path / output_query_file_name, 'w') as output_file:
                                     if policy in ["tb_sr_rs"]:
+                                        start_time = datetime.now()
                                         timestamped_output_query = timestamp_query(output_query, vers_ts)
+                                        end_time = datetime.now()
+                                        rewriting_time = (end_time - start_time).total_seconds()
+                                        
+                                        with open(query_rewriting_measurements_path, 'a') as measure_file:
+                                            measure_file.write("{0},{1},{2},{3},{4},{5}\n".format(policy, dataset, 
+                                                query_set_name, str(query_set_version), output_query_file_name, rewriting_time))
                                         output_file.write(timestamped_output_query[0])
                                     else:
                                         output_file.write(output_query) 

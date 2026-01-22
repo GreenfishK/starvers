@@ -67,7 +67,7 @@ services:
     env_file: "./prod.env"
     environment: 
       GDB_JAVA_OPTS: >-
-        -Xmx32g -Xms32g
+        -Xms6g -Xmx24g
         -Dgraphdb.home=/opt/graphdb/home
         -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
         -Dgraphdb.workbench.cors.enable=true
@@ -87,6 +87,7 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - starvers_prod_net
+    mem_limit: 32g
 
 networks:
   starvers_prod_net:
