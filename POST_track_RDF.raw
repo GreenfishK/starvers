@@ -1,6 +1,0 @@
-{
-  "name": "SI Digital Framework",
-  "repository_name": "si",
-  "rdf_dataset_url": "https://raw.githubusercontent.com/TheBIPM/SI_Digital_Framework/refs/heads/main/SI_Reference_Point/TTL/si.ttl",
-  "polling_interval": 7200
-}
