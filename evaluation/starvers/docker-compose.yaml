@@ -65,10 +65,10 @@ services:
       - skip_icng_ds=${skip_icng_ds}
     entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
     command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds"]
-  
+
   ingest:
     image: starvers_eval:latest
-    container_name: starvers_eval-ingest
+    container_name: starvers_eval-ingest_test
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/logs/ingest/graphdb_logs:/opt/graphdb/dist/logs
@@ -82,8 +82,9 @@ services:
       - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
-    entrypoint: ["/starvers_eval/scripts/4_ingest/create_and_load_triplestores.sh"]
-  
+    entrypoint: ["python3", "-u", "/starvers_eval/scripts/4_ingest/ingest.py"]
+
+
   construct_queries:
     image: starvers_eval:latest
     container_name: starvers_eval-construct_queries
