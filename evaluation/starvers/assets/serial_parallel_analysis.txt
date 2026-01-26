@@ -1,0 +1,43 @@
+# Serial
+triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
+ostrich;ostrich;bearb_day;1;225.418;22;19
+ostrich;ostrich;bearb_day;2;223.506;22;19
+ostrich;ostrich;bearb_day;3;227.084;22;19
+
+# Serial
+triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
+graphdb;ic_sr_ng;bearb_day;1;51.897;557;342
+graphdb;ic_sr_ng;bearb_day;2;43.14;557;342
+graphdb;ic_sr_ng;bearb_day;3;43.017;557;342
+graphdb;ic_sr_ng;bearb_day;4;42.618;557;342
+
+
+# Serial
+triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
+jenatdb2;ic_sr_ng;bearb_day;1;80.633;557;1171
+jenatdb2;ic_sr_ng;bearb_day;2;84.352;557;1171
+jenatdb2;ic_sr_ng;bearb_day;3;82.786;557;1171
+
+
+# Parallel
+graphdb;ic_sr_ng;bearb_day;1;64.854;557;342
+graphdb;ic_sr_ng;bearb_day;2;63.33;557;342
+graphdb;ic_sr_ng;bearb_day;3;65.297;557;342
+
+
+# Parallel
+triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
+jenatdb2;ic_sr_ng;bearb_day;1;85.192;557;1171
+graphdb;ic_sr_ng;bearb_day;1;101.356;557;342
+jenatdb2;ic_sr_ng;bearb_day;2;85.593;557;1171
+graphdb;ic_sr_ng;bearb_day;2;96.4;557;342
+jenatdb2;ic_sr_ng;bearb_day;3;90.952;557;1171
+graphdb;ic_sr_ng;bearb_day;3;101.064;557;342
+jenatdb2;ic_sr_ng;bearb_day;4;84.771;557;1171
+jenatdb2;ic_sr_ng;bearb_day;5;84.694;557;1171
+graphdb;ic_sr_ng;bearb_day;4;135.595;557;342
+jenatdb2;ic_sr_ng;bearb_day;6;83.045;557;1171
+graphdb;ic_sr_ng;bearb_day;5;98.949;557;342
+jenatdb2;ic_sr_ng;bearb_day;7;86.839;557;1171
+ostrich;ostrich;bearb_day;1;623.661;22;19
+graphdb;ic_sr_ng;bearb_day;6;92.966;557;342

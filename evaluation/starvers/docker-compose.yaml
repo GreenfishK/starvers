@@ -68,7 +68,7 @@ services:
 
   ingest:
     image: starvers_eval:latest
-    container_name: starvers_eval-ingest_test
+    container_name: starvers_eval-ingest
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/logs/ingest/graphdb_logs:/opt/graphdb/dist/logs
@@ -80,8 +80,8 @@ services:
       - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
     environment:
       - datasets=${datasets}
-      - triple_stores=${triple_stores}
-      - policies=${policies}
+      - triple_stores=${triple_stores} # Execute separately for each triplestore to be able to run in parallel
+      - policies=${policies} 
     entrypoint: ["python3", "-u", "/starvers_eval/scripts/4_ingest/ingest.py"]
 
 
@@ -221,3 +221,5 @@ services:
 networks:
   starvers_prod_net:
     driver: bridge
+
+
