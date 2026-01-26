@@ -54,8 +54,8 @@ class Job:
     policy: str
 
     @property
-    def lock_key(self) -> Tuple[str, str]:
-        return (self.dataset, self.policy)
+    def lock_key(self) -> Tuple[str, str, str]:
+        return (self.dataset, self.policy, self.triplestore)
 
 
 # Lock manager for dataset-policy combinations
@@ -191,7 +191,6 @@ def run_graphdb(job: Job, run: int):
     repository_id = f"{policy}_{dataset}"
 
     log(job.triplestore, f"Run {run}: Starting GraphDB ingestion ({policy}, {dataset})")
-
     # Paths ---
     configs_dir = Path("/starvers_eval/configs/ingest/graphdb")
     db_root = Path("/starvers_eval/databases/graphdb")
@@ -229,7 +228,7 @@ def run_graphdb(job: Job, run: int):
             "preload",
             "--force",
             "-c", str(config_file),
-            str(raw_root / dataset_dir_or_file),
+            str(raw_file)
         ],
         env=env,
     )
@@ -347,23 +346,25 @@ def write_result(row):
 
 
 # Worker
-def worker(worker_id: int):
+def worker(worker_id: int, job_queue: queue.Queue):
     while True:
         try:
             job = job_queue.get(timeout=2)
         except queue.Empty:
             return
 
-        # Acquire lock for this dataset-policy
-        lock_manager.acquire(job.lock_key)
-        try:
-            for run in range(1, RUNS + 1):
-                # Clear DB directories per run inside run_ingestion
+        for run in range(1, RUNS + 1):
+            lock_manager.acquire(job.lock_key)
+            try:
                 result = run_ingestion(job, run)
-                write_result(result)
-        finally:
-            lock_manager.release(job.lock_key)
-            job_queue.task_done()
+            finally:
+                lock_manager.release(job.lock_key)
+
+            write_result(result)
+
+        job_queue.task_done()
+
+
 
 
 # Ingestion dispatch
@@ -380,20 +381,17 @@ def run_ingestion(job: Job, run: int):
 
 # Start
 def main():
-    # Ensure directories exist
-    Path(MEASUREMENTS_FILE).parent.mkdir(parents=True, exist_ok=True)
-   
     # Write header
     with open(MEASUREMENTS_FILE, "w") as f:
         f.write("triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB\n")
 
     enqueue_jobs()
 
-    num_workers = min(len(TRIPLE_STORES), os.cpu_count())
+    num_workers =  1
     threads = []
 
     for i in range(num_workers):
-        t = threading.Thread(target=worker, args=(i,), daemon=True)
+        t = threading.Thread(target=worker, args=(i, job_queue), daemon=True)
         t.start()
         threads.append(t)
 
