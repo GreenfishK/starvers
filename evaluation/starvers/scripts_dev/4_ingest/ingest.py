@@ -387,6 +387,10 @@ def main():
 
     enqueue_jobs()
 
+    # Parallel execution changes the runtimes for the evaluated RDF stores unproportionally. 
+    # While Jena needs the same amount of time to ingest data, GraphDB takes twice as much 
+    # while running in parallel to Jena.
+    # That is why we currently limit ourselves to a serial ingest.
     num_workers =  1
     threads = []
 

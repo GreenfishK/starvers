@@ -23,10 +23,10 @@ def split_solution_modifiers_query(query: str) -> list:
 
 
 def main():
-    ############################################# Parameters ################################################################
+    # Parameters 
     raw_queries_base="/starvers_eval/queries/raw_queries/"
     output_queries_base="/starvers_eval/queries/final_queries/"
-    query_rewriting_measurements_path="/starvers_eval/output/query_rewriting_measurements/query_rewriting_times.csv"
+    query_rewriting_measurements_path="/starvers_eval/output/measurements/query_rewriting_times.csv"
 
     policies_cmd = sys.argv[1]
     policies = policies_cmd.split(" ")
@@ -36,7 +36,7 @@ def main():
     init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
     vers_ts = init_version_timestamp
 
-    ############################################# Logging ###############################################################
+    # Logging 
     if not os.path.exists('/starvers_eval/output/logs/construct_queries'):
         os.makedirs('/starvers_eval/output/logs/construct_queries')
     with open('/starvers_eval/output/logs/construct_queries/construct_queries.txt', "w") as log_file:
@@ -49,8 +49,12 @@ def main():
     starvers_log = logging.getLogger("starvers.starvers")
     starvers_log.setLevel(logging.ERROR)
 
-    ################################################## Generate queries ################################################# 
+    # Generate queries  
     for dataset, dataset_infos in eval_setup['datasets'].items():
+        if dataset_infos['query_sets'] is None:
+            logging.info("No query sets defined for dataset {0}, skipping query construction.".format(dataset))
+            continue
+
         query_sets = dataset_infos['query_sets'].items()
         query_set_context = dataset_infos['superset']
         
