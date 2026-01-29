@@ -89,6 +89,7 @@ services:
     container_name: starvers_eval-construct_queries
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
