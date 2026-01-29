@@ -9,8 +9,9 @@ log_level="root:INFO"
 policies=("${policies}") 
 datasets=("${datasets}") 
 triple_stores=("${triple_stores}")
-graphdb_port=$((7200))
-jenatdb2_port=$((3030))
+graphdb_port=$("${graphdb_port}")
+jenatdb2_port=$("${jenatdb2_port}")
+ostrich_port=$("${ostrich_port}")
 
 # Prepare directories and files
 rm -rf /starvers_eval/output/logs/evaluate/
@@ -36,17 +37,41 @@ done
 
 # main loop
 for triple_store in ${triple_stores[@]}; do
-    if [ ${triple_store} == "jenatdb2" ]; then
-        # Set environment variables
+    if [ ${triple_store} == "ostrich" ]; then
+        # Start database server and run in background
+        node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -t 480 -l debug ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
+        echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
+        
+        # Wait until server is up
+        echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+        counter=0
+        while [[ $(curl -I http://Starvers:${ostrich_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+            sleep 1s
+            counter=$((counter + 1))
+            if [[ counter -ge 60 ]]; then
+                echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
+                pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
+                node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -t 480 -l debug ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
+                counter=0
+            fi
+        done
+        echo "$(log_timestamp) ${log_level}:Ostrich server is up." >> $log_file
+
+        # Clean output directory
+        rm -rf /starvers_eval/output/result_sets/${triple_store}/ostrich_${dataset}
+
+        # Evaluate
+        /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ostrich ${dataset} ${ostrich_port}
+
+
+    elif [ ${triple_store} == "jenatdb2" ]; then
+        # Export variables
         export JAVA_HOME=/opt/java/java17/openjdk
         export PATH=/opt/java/java17/openjdk/bin:$PATH
 
         mkdir -p /run/configuration
         for policy in ${policies[@]}; do
             for dataset in ${datasets[@]}; do
-                # Export variables
-                export JAVA_HOME=/usr/local/openjdk-11
-                export PATH=/usr/local/openjdk-11/bin:$PATH
 
                 # Start database server and run in background
                 echo "$(log_timestamp) ${log_level}:Starting Fuseki server for the evaluation of ${policy}_${dataset}..." >> $log_file

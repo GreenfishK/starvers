@@ -84,7 +84,6 @@ services:
       - policies=${policies} 
     entrypoint: ["python3", "-u", "/starvers_eval/scripts/4_ingest/ingest.py"]
 
-
   construct_queries:
     image: starvers_eval:latest
     container_name: starvers_eval-construct_queries
@@ -95,29 +94,6 @@ services:
     environment:
       - policies=${policies}    
     entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies"]
-
-  evaluate_single:
-    image: starvers_eval:latest
-    container_name: starvers_eval-evaluate_single
-    volumes:
-      - /mnt/data/starvers_eval_investigate/output/logs:/starvers_eval/output/logs
-      - /mnt/data/starvers_eval_investigate/configs/ingest/jenatdb2:/starvers_eval/configs/ingest/jenatdb2
-      - /mnt/data/starvers_eval_investigate/databases:/starvers_eval/databases
-      - /mnt/data/starvers_eval_investigate/queries/final_queries:/starvers_eval/queries/final_queries
-      - /mnt/data/starvers_eval_investigate/output/measurements:/starvers_eval/output/measurements
-      - /mnt/data/starvers_eval_investigate/output/result_sets:/starvers_eval/output/result_sets
-      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
-    hostname: Starvers
-    ports:
-      - 7300:7200
-      - 3040:3030
-    environment:
-      - datasets=bearb_hour
-      - triple_stores=jenatdb2
-      - policies=cb_sr_ng
-      - graphdb_port=7200
-      - jenatdb2_port=3030
-    entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
   
   evaluate:
     image: starvers_eval:latest
@@ -135,12 +111,14 @@ services:
     ports:
       - 7200:7200
       - 3030:3030
+      - 42564:42564
     environment:
       - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
       - graphdb_port=${graphdb_port}
       - jenatdb2_port=${jenatdb2_port}
+      - ostrich_port=${ostrich_port}
     entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
 
   verify_results:
@@ -217,6 +195,21 @@ services:
         -Dreuse.vars.in.subselects=true
         -Dgraphdb.home.data=/starvers_eval/databases/graphdb/ic_sr_ng_bearb_hour
     command: ["/opt/graphdb/dist/bin/graphdb", "server"]
+
+  ostrich:
+    image: starvers_eval:latest
+    container_name: starvers_eval-ostrich
+    ports:
+      - 42564:42564
+    networks:
+      - starvers_prod_net
+    environment:
+      - name=value
+    volumes:
+      - ${base_host_dir}/databases/ostrich/ostrich_bearb_day:/var/ostrich
+    entrypoint: ["node","/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js","-p","42564","-t","480","-l","debug","ostrichFile@/var/ostrich"]
+
+
 
 networks:
   starvers_prod_net:
