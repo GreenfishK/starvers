@@ -9,9 +9,28 @@ log_level="root:INFO"
 policies=("${policies}") 
 datasets=("${datasets}") 
 triple_stores=("${triple_stores}")
-graphdb_port=$("${graphdb_port}")
-jenatdb2_port=$("${jenatdb2_port}")
-ostrich_port=$("${ostrich_port}")
+graphdb_port=$(("${graphdb_port}"))
+jenatdb2_port=$(("${jenatdb2_port}"))
+ostrich_port=$(("${ostrich_port}"))
+
+function policy_allowed() {
+    local triplestore=$1
+    local policy=$2
+    if [ "$triplestore" == "jenatdb2" ]; then
+        return 0
+    elif [ "$triplestore" == "graphdb" ]; then
+        return 0
+    elif [ "$triplestore" == "ostrich" ]; then
+        if [ "$policy" == "ostrich" ]; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        return 1
+    fi
+
+}
 
 # Prepare directories and files
 rm -rf /starvers_eval/output/logs/evaluate/
@@ -38,39 +57,43 @@ done
 # main loop
 for triple_store in ${triple_stores[@]}; do
     if [ ${triple_store} == "ostrich" ]; then
-        # Start database server and run in background
-        node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -t 480 -l debug ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
-        echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
-        
-        # Wait until server is up
-        echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-        counter=0
-        while [[ $(curl -I http://Starvers:${ostrich_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-            sleep 1s
-            counter=$((counter + 1))
-            if [[ counter -ge 60 ]]; then
-                echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
-                pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
-                node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -t 480 -l debug ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
-                counter=0
-            fi
+        for dataset in ${datasets[@]}; do
+            # Start database server and run in background
+            node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
+            echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
+            
+            # Wait until server is up
+            echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+
+            counter=0
+            while [[ $(curl -I http://Starvers:${ostrich_port}/sparql 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
+                sleep 1s
+                counter=$((counter + 1))
+                if [[ counter -ge 60 ]]; then
+                    echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
+                    pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
+                    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} &
+                    counter=0
+                fi
+            done
+            echo "$(log_timestamp) ${log_level}:Ostrich server is up." >> $log_file
+
+            # Clean output directory
+            rm -rf /starvers_eval/output/result_sets/${triple_store}/ostrich_${dataset}
+
+            # Evaluate
+            python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} "ostrich" ${dataset} ${ostrich_port}
+            echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
+
+            # Stop database server
+            echo "$(log_timestamp) ${log_level}:Kill process /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
+            pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
+            while ps -ef | grep -q '[h]ttp.js'; do
+                sleep 1
+            done
+            echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
         done
-        echo "$(log_timestamp) ${log_level}:Ostrich server is up." >> $log_file
-
-        # Clean output directory
-        rm -rf /starvers_eval/output/result_sets/${triple_store}/ostrich_${dataset}
-
-        # Evaluate
-        /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ostrich ${dataset} ${ostrich_port}
-
-        # Stop database server
-        echo "$(log_timestamp) ${log_level}:Kill process /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
-        pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
-        while ps -ef | grep -q '[h]ttp.js'; do
-            sleep 1
-        done
-        echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
-
+    
     elif [ ${triple_store} == "jenatdb2" ]; then
         # Export variables
         export JAVA_HOME=/opt/java/java17/openjdk
@@ -78,6 +101,11 @@ for triple_store in ${triple_stores[@]}; do
 
         mkdir -p /run/configuration
         for policy in ${policies[@]}; do
+            if ! policy_allowed ${triple_store} ${policy}; then
+                echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
+                continue
+            fi
+
             for dataset in ${datasets[@]}; do
 
                 # Start database server and run in background
@@ -104,7 +132,8 @@ for triple_store in ${triple_stores[@]}; do
                 rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
                 # Evaluate
-                /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
+                python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
+                echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
 
                 # Stop database server
                 echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
@@ -120,6 +149,11 @@ for triple_store in ${triple_stores[@]}; do
         GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
         for policy in ${policies[@]}; do
+            if ! policy_allowed ${triple_store} ${policy}; then
+                echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
+                continue
+            fi
+
             for dataset in ${datasets[@]}; do
                 # Export variables
                 export JAVA_HOME=/opt/java/java11/openjdk
@@ -143,6 +177,7 @@ for triple_store in ${triple_stores[@]}; do
 
                 # Evaluate
                 python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
+                echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
 
                 # Stop database server
                 echo "$(log_timestamp) ${log_level}:Kill process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file

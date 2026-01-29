@@ -1,49 +1,8 @@
 services:
 
+# The container starvers-db_prod and starvers-rdfstore_prod must be running
+# They can be run with the docker-compose services in src/starversserver/docker-compose.prod.yml
 
-  db:
-    image: postgres:17
-    container_name: starvers-db_prod
-    restart: always
-    env_file: "./prod.env"
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: starvers_db
-    ports:
-      - 5433:5432
-    volumes:
-      - ${data_storage}/postgresql/data:/var/lib/postgresql/data
-    networks:
-      - starvers_prod_net
-
-  rdfstore:
-    image: ontotext/graphdb:10.5.0
-    container_name: starvers-rdfstore_prod
-    restart: always
-    env_file: "./prod.env"
-    environment: 
-      GDB_JAVA_OPTS: >-
-        -Xmx32g -Xms32g
-        -Dgraphdb.home=/opt/graphdb/home
-        -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import
-        -Dgraphdb.workbench.cors.enable=true
-        -Denable-context-index=true
-        -Dentity-pool-implementation=transactional
-        -Dhealth.max.query.time.seconds=60
-        -Dgraphdb.append.request.id.headers=true
-        -Dreuse.vars.in.subselects=true
-        -Dgraphdb.health.minimal.free.storage.enabled=false
-        -Dgraphdb.health.minimal.free.storage.asyncCheck=false
-        -Dgraphdb.connector.port=7200
-    ports: 
-      - 7400:7200
-    volumes:
-      - ${data_storage}/graphdb-data:/opt/graphdb/home
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - starvers_prod_net
 
   # Runs versioning and metrics computation tasks for the snapshot files in ${data_storage}/evaluation. Possible executions are
   # * entrypoint: ["python", "app/utils/compute.py", "<repo_name>"]
@@ -73,7 +32,7 @@ services:
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
     entrypoint: ["python", "/code/evaluation/compute.py", "orkg", "sm,dm", "from_version", "20250828-124726_863"] 
 
-    # Creates plots from the timing files
+  # Creates plots from the timing files
   create_plots:
     image: starversserver_eval
     container_name: starvers-create-plots_prod

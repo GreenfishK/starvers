@@ -23,7 +23,7 @@ services:
     entrypoint: ["python", "app/run_gui.py"]
 
   starversserver:
-    image: starversserver # should be changed to ghcr.io/martinmitteregger/starversserver:main
+    image: starversserver 
     container_name: starvers-server_prod
     restart: always
     ports:
