@@ -63,6 +63,13 @@ for triple_store in ${triple_stores[@]}; do
         # Evaluate
         /starvers_eval/python_venv/bin/python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ostrich ${dataset} ${ostrich_port}
 
+        # Stop database server
+        echo "$(log_timestamp) ${log_level}:Kill process /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
+        pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
+        while ps -ef | grep -q '[h]ttp.js'; do
+            sleep 1
+        done
+        echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
 
     elif [ ${triple_store} == "jenatdb2" ]; then
         # Export variables

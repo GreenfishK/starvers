@@ -53,13 +53,11 @@ init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
     eval_setup = tomli.load(config_file)
 query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup['datasets'][dataset]['query_sets'].keys()]
-# The query set versions are the same for every query set within a dataset. There is just some redundancy in the eval_setup.toml
-# E.g. there are 58 versions for beara and ic_sr_ng for both - high and low query sets
 first_query_set = next(iter(eval_setup['datasets'][dataset]['query_sets']))
 query_set_versions = eval_setup['datasets'][dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
 repositories = eval_setup['datasets'][dataset]['repositories'][policy]
 
-###################################### Helper functions ######################################
+# Helper functions
 def to_list(result: Wrapper.QueryResult) -> list:
     """
 
@@ -115,7 +113,7 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
-###################################### Dry run ########################################
+# Dry run 
 _set_endpoints(dataset, policy, endpoints, engine)   
 dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
 engine.setQuery(dry_run_query)
@@ -126,7 +124,7 @@ except Exception as e:
     logger.error(f"Dry run query failed against endpoint {engine.endpoint}. Exception: {e}")
     sys.exit(1)
 
-###################################### Evaluation ######################################
+# Evaluation 
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
 f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
 df_data = []
@@ -286,102 +284,7 @@ for query_set in query_sets:
                     new_row = [triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0]
                     df_data.append(new_row)
 
-            elif policy == "cb_mr_tr":
-                logger.info("To be implemented")
-                """manager = multiprocessing.Manager()
-                for repository in range(0, int(repositories/2)):
-                    list_result = []     
-                    header = []
-                    engine.setQuery("Select * where { ?s ?p ?o . }")
-                    result_set_creation_time = 0
-                    execution_time = 0
-                    logger.info("Recreating snapshot: " + str(repository))
-
-                    def query_add(execution_time_add: float, result_set_creation_time_add: float, cs_add: list):
-                        engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
-                        engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_add)
-                        
-                        logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                        start = time.time()
-                        result = engine.query()
-                        end = time.time()
-                        execution_time_add.value = end - start
-
-                        start = time.time()
-                        cs_add.extend(to_list(result))
-                        end = time.time()
-                        result_set_creation_time_add.value = end - start
-
-
-                    def query_del(execution_time_del: float, result_set_creation_time_del: float, cs_del: list):
-                        engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
-                        engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
-                        
-                        logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                        start = time.time()
-                        result = engine.query()
-                        end = time.time()
-                        execution_time_del.value = end - start
-
-                        start = time.time()
-                        cs_del.extend(to_list(result))
-                        end = time.time()
-                        result_set_creation_time_del.value = end - start
-
-                    for cs in range(0, repository+1):
-                        if cs == 0:
-                            repository_name_add = "{policy}_{dataset}_ic1".format(policy=policy, dataset=dataset)
-                            repository_name_del = "{policy}_{dataset}_empty".format(policy=policy, dataset=dataset)
-
-                            # Query empty repository just to get header                 
-                            engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name_del)
-                            result = engine.query()
-                            header = to_list(result)[0:1]
-                        else:
-                            repository_name_add = "{policy}_{dataset}_add_{v}-{ve}".format(policy=policy, dataset=dataset, v=cs, ve=cs+1)
-                            repository_name_del = "{policy}_{dataset}_del_{v}-{ve}".format(policy=policy, dataset=dataset, v=cs, ve=cs+1)
-
-                        # Registering shared values between processes
-                        execution_time_add = multiprocessing.Value("f", 0, lock=False)
-                        execution_time_del = multiprocessing.Value("f", 0, lock=False)
-                        result_set_creation_time_add = multiprocessing.Value("f", 0, lock=False)
-                        result_set_creation_time_del = multiprocessing.Value("f", 0, lock=False)
-                        cs_add = manager.list()
-                        cs_del = manager.list()
-
-                        # Creating and starting processes
-                        p1 = multiprocessing.Process(target=query_add, args=[execution_time_add, result_set_creation_time_add, cs_add])
-                        p2 = multiprocessing.Process(target=query_del, args=[execution_time_del, result_set_creation_time_del, cs_del])
-                        p1.start()
-                        p2.start()
-                        p1.join()
-                        p2.join()
-
-                        start = time.time()
-                        list_result.extend(list(cs_add))
-                        cum_result = np.array(list_result)
-                        cs_del_arr = np.array(list(cs_del))
-                        a1_rows = cum_result.view([('', cum_result.dtype)] * cum_result.shape[1]) # if len(list_result)>1 else [[()]]
-                        a2_rows = cs_del_arr.view([('', cs_del_arr.dtype)] * cs_del_arr.shape[1]) # if len(list(cs_del))>1 else [[()]]
-                        list_result = np.setdiff1d(a1_rows, a2_rows).view(cum_result.dtype).reshape(-1, cum_result.shape[1]).tolist()
-                        end = time.time()
-
-                        execution_time = execution_time + execution_time_add.value + execution_time_del.value
-                        result_set_creation_time = result_set_creation_time + result_set_creation_time_add.value + result_set_creation_time_del.value + (end - start)
-                
-                    # Create output directory and save result set
-                    # TODO: format output
-                    result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(repository)
-                    Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                    file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
-                    write = csv.writer(file, delimiter=";")
-                    write.writerows(header)
-                    write.writerows(list_result)
-                    file.close()
-
-                    new_row = [triple_store, dataset, policy, query_set.split('/')[2], repository, query_file_name, execution_time, result_set_creation_time]
-                    df_data.append(new_row)"""
-
+            
 logger.info("Writing performance measurements to disk ...")       
 
 df = pd.DataFrame(data=df_data, 
