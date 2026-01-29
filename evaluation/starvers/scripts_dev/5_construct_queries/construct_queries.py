@@ -52,7 +52,7 @@ def main():
 
     # Generate queries  
     for dataset, dataset_infos in eval_setup['datasets'].items():
-        if dataset_infos['query_sets'] is None:
+        if 'query_sets' not in dataset_infos:
             logging.info("No query sets defined for dataset {0}, skipping query construction.".format(dataset))
             continue
 

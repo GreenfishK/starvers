@@ -25,9 +25,18 @@ logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/
 ###################################### Parameters ######################################
 # Bash arguments and directory paths
 triple_store = sys.argv[1]
+logger.info(f"Parameter: triplestore={triple_store}")
+
 policy = sys.argv[2]
+logger.info(f"Parameter: policy={policy}")
+
 dataset = sys.argv[3]
+logger.info(f"Parameter: dataset={dataset}")
+
 port = sys.argv[4]
+logger.info(f"Parameter: port={port}")
+
+
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
 
@@ -41,11 +50,14 @@ engine.timeout = timeout
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
+engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
 
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
-                        'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
-            'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
-                        'post': 'http://{hostname}:{port}/{repository_name}/update'}}    
+            'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
+'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
+            'post': 'http://{hostname}:{port}/{repository_name}/update'},
+'ostrich': {'get': 'http://localhost:{port}/sparql',
+            'post': 'http://localhost:{port}/update'}}      
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
@@ -58,13 +70,13 @@ query_set_versions = eval_setup['datasets'][dataset]['query_sets'][first_query_s
 repositories = eval_setup['datasets'][dataset]['repositories'][policy]
 
 # Helper functions
-def to_list(result: Wrapper.QueryResult) -> list:
+def parse_results(result: Wrapper.QueryResult) -> list:
     """
 
     :param result:
     :return: Dataframe
     """
-
+    
     results = result.convert()
 
     def format_value(res_value):
@@ -115,7 +127,11 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
 
 # Dry run 
 _set_endpoints(dataset, policy, endpoints, engine)   
-dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
+if triple_store != "ostrich":
+    dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
+else:
+    dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"
+
 engine.setQuery(dry_run_query)
 try:
     logger.info(f"Execute simple SPARQL query against {engine.endpoint} to warm up the RDF store and prevent the initial hike during the evaluation.")
@@ -146,7 +162,7 @@ for query_set in query_sets:
             engine.setQuery(query_text)
             file.close()
 
-            if policy in ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
+            if policy in ["ostrich", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
                 _set_endpoints(dataset, policy, endpoints, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
@@ -161,7 +177,7 @@ for query_set in query_sets:
                     Path(result_set_dir).mkdir(parents=True, exist_ok=True)
                     file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
                     write = csv.writer(file, delimiter=";")
-                    write.writerows(to_list(result))
+                    write.writerows(parse_results(result))
                 except Exception as e:
                     logger.error(e)
                     logger.warning(f"The query execution {query_file_name} might have reached the timeout of {timeout} seconds. " +\
@@ -257,32 +273,6 @@ for query_set in query_sets:
                 
                 new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time]
                 df_data.append(new_row)
-
-            elif policy == "ic_mr_tr":
-                for repository in range(1, int(repositories)+1):
-                    _set_endpoints(dataset, policy, endpoints, engine, str(repository))
-
-                    logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                    try:
-                        start = time.time()
-                        result = engine.query()
-                        end = time.time()
-                        execution_time = end - start
-                        
-                        logger.info("Serializing results.")
-                        result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(repository)
-                        Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                        file = open(result_set_dir + "/" + query_file_name.split('.')[0], 'w')
-                        write = csv.writer(file, delimiter=";")
-                        write.writerows(to_list(result))
-                    except Exception as e:
-                        logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " + \
-                        "The execution_time will be set to -1. The results will not be serialized.")
-                        execution_time = -1
-                    snapshot_ts = init_version_timestamp + timedelta(seconds=repository-1)
-                    
-                    new_row = [triple_store, dataset, policy, query_set.split('/')[2], repository, snapshot_ts, query_file_name, execution_time, 0]
-                    df_data.append(new_row)
 
             
 logger.info("Writing performance measurements to disk ...")       
