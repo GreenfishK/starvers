@@ -29,6 +29,7 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 work_dir = "/starvers_eval/"
 measurements_in = work_dir + "output/measurements/"
 figures_out = work_dir + "output/figures/"
+tables_out = work_dir + "output/tables/"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
@@ -51,13 +52,13 @@ def create_plots(triplestore: str, dataset: str):
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
     # Parameters
-    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs']
+    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs', 'ostrich']
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
     gs = fig.add_gridspec(2, 2)   
-    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*']))
-    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black']))
+    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*', '^']))
+    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black', 'none']))
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
@@ -139,11 +140,12 @@ def create_plots(triplestore: str, dataset: str):
     cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
     tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
-
+    ostrich = mlines.Line2D([], [], color='black', marker='^', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='ostrich')
+    
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
     db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
 
-    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line]
+    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line, ostrich]
     handles2 = [raw_file_size_patch, db_file_size_path]
     fixed_labels = ['raw_file_size_patch', 'db_file_size_path']
 
@@ -163,7 +165,7 @@ def create_plots_update(triplestore: str, dataset: str):
                             dtype={"triplestore": "category", "dataset": "category", "batch": "category",
                             "cnt_batch_trpls": "int", "chunk_size": "category", "execution_time": "float"})
     
-    triplestores_map = {'GRAPHDB': 'GraphDB', 'JENA': 'Jena'}
+    triplestores_map = {'GRAPHDB': 'GraphDB', 'JENA': 'Jena', 'OSTRICH': 'Ostrich'}
     
     # Figure and axes for update performance
     fig = plt.figure()
@@ -216,7 +218,7 @@ def create_plots_update(triplestore: str, dataset: str):
     fig.suptitle(f'Insert and Invalidate performance for a range of chunk sizes (1000-8000) for the {dataset.upper()} dataset and {triplestores_map[triplestore]}')
     
     plt.tight_layout(pad=3.0, w_pad=2, h_pad=1.0)
-    plt.savefig(f"/starvers_eval/output/figures/time_update_{triplestore.lower()}_{dataset}.png")
+    plt.savefig(f"{figures_out}/time_update_{triplestore.lower()}_{dataset}.svg", format='svg')
     plt.close()
 
 
@@ -277,9 +279,9 @@ def create_latex_tables():
     filled_queries = ""
 
     # Queries table values (min, avg, max per dataset)
-    triplestores = ["graphdb", "jenatdb2"]
+    triplestores = ["graphdb", "jenatdb2", "ostrich"]
     query_sets = ["lookup", "join", "complex"]
-    policies = ["cb_sr_ng", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+    policies = ["cb_sr_ng", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "ostrich"]
     datasets = ["bearb_day", "bearb_hour", "bearc"]
     metrics = ["min", "avg", "max"]
 
@@ -313,9 +315,9 @@ def create_latex_tables():
 
     # Storage table values
     value_order_storage = [
-        ("bearb_day", "raw"), ("bearb_day", "graphdb"), ("bearb_day", "jenatdb2"),
-        ("bearb_hour", "raw"), ("bearb_hour", "graphdb"), ("bearb_hour", "jenatdb2"),
-        ("bearc", "raw"), ("bearc", "graphdb"), ("bearc", "jenatdb2")
+        ("bearb_day", "raw"), ("bearb_day", "graphdb"), ("bearb_day", "jenatdb2"), ("bearb_day", "ostrich"),
+        ("bearb_hour", "raw"), ("bearb_hour", "graphdb"), ("bearb_hour", "jenatdb2"), ("bearb_hour", "ostrich"),
+        ("bearc", "raw"), ("bearc", "graphdb"), ("bearc", "jenatdb2"), ("bearc", "ostrich")
     ]
 
     placeholder_map_storage = {}
@@ -364,10 +366,10 @@ def create_latex_tables():
     for placeholder, value_str in placeholder_map_storage.items():
         filled_storage = filled_storage.replace(placeholder, value_str)
 
-    with open(f"{figures_out}/latex_table_queries_filled.tex", "w") as f:
+    with open(f"{tables_out}/latex_table_queries_filled.tex", "w") as f:
         f.write(filled_queries)
 
-    with open(f"{figures_out}/latex_table_storage_filled.tex", "w") as f:
+    with open(f"{tables_out}/latex_table_storage_filled.tex", "w") as f:
         f.write(filled_storage)
 
     logging.info("LaTeX tables filled and saved.")
@@ -376,7 +378,7 @@ def create_latex_tables():
 
 
 # Plots for query performance and ingestion
-args = itertools.product(['graphdb', 'jenatdb2'], datasets)
+args = itertools.product(['graphdb', 'jenatdb2', 'ostrich'], datasets)
 list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
