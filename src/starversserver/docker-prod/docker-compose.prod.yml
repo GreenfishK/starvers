@@ -16,6 +16,7 @@ services:
       rdfstore:
         condition: service_started
     env_file: "./prod.env"
+    mem_limit: 1g
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

@@ -16,9 +16,10 @@ ostrich_port=$(("${ostrich_port}"))
 function policy_allowed() {
     local triplestore=$1
     local policy=$2
-    if [ "$triplestore" == "jenatdb2" ]; then
+    # Allowed policies for Jena TDB2 and GraphDB are: ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs
+    if [ "$triplestore" == "jenatdb2" ] && [[ "ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs" =~ $policy ]]; then
         return 0
-    elif [ "$triplestore" == "graphdb" ]; then
+    elif [ "$triplestore" == "graphdb" ] && [[ "ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs" =~ $policy ]]; then
         return 0
     elif [ "$triplestore" == "ostrich" ]; then
         if [ "$policy" == "ostrich" ]; then
@@ -136,7 +137,8 @@ for triple_store in ${triple_stores[@]}; do
 
         mkdir -p /run/configuration
         for policy in ${policies[@]}; do
-            if ! policy_allowed ${triple_store} ${policy}; then
+            echo "$(log_timestamp) ${log_level}:The value of policy_allowed is: $(policy_allowed ${triple_store} ${policy})" >> $log_file
+            if ! policy_allowed "${triple_store}" "${policy}"; then
                 echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
                 continue
             fi
@@ -190,7 +192,7 @@ for triple_store in ${triple_stores[@]}; do
         GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
         for policy in ${policies[@]}; do
-            if ! policy_allowed ${triple_store} ${policy}; then
+            if ! policy_allowed "${triple_store}" "${policy}"; then
                 echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
                 continue
             fi
