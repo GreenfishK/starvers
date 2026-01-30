@@ -1,0 +1,10 @@
+SELECT DISTINCT ?name
+WHERE {
+  [
+    orkgp:P34 [
+      rdfs:label ?name 
+    ]
+  ].
+  FILTER(STRLEN(?name) > 0)
+}
+ORDER BY ?name

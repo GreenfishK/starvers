@@ -1,0 +1,6 @@
+ASK {
+  orkgr:R34493 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15661 ?funcionals.
+  ?funcionals rdfs:label ?funtionals_labels.
+  FILTER(REGEX(?funtionals_labels, "Cobb-Douglas"))
+}

@@ -1,0 +1,6 @@
+SELECT DISTINCT ?areas, ?areas_labels
+WHERE {
+  orkgr:R155445 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37041 ?areas.
+  ?areas rdfs:label ?areas_labels.
+}

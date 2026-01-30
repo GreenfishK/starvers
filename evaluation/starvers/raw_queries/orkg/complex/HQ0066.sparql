@@ -1,0 +1,7 @@
+SELECT ?substrate
+WHERE {
+  orkgr:R25900 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15090 ?substrate.
+}
+ORDER BY DESC(COUNT(?substrate))
+LIMIT 1

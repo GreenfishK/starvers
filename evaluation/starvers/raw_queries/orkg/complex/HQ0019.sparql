@@ -1,0 +1,14 @@
+SELECT ?uses_ENVI
+WHERE {
+  ?papers rdfs:label ?titles.
+  FILTER(REGEX(?titles, "PRISMA"))
+  ?papers orkgp:P31 ?cont.
+  ?cont orkgp:P23031 ?software.
+  ?software rdfs:label ?software_labels.
+  BIND(
+    IF(?software_labels = "ENVI"^^<http://www.w3.org/2001/XMLSchema#string>, "Yes", "No") 
+    AS ?uses_ENVI
+  )
+}
+ORDER BY DESC(?uses_ENVI)
+LIMIT 1

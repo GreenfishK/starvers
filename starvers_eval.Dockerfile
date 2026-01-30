@@ -121,7 +121,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
--Xmx45g -Xms45g \
+-Xms10g -Xmx45g  \
 -Dgraphdb.dist=/opt/graphdb/dist \
 -Dgraphdb.home.work=/tmp/graphdb/work \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \
@@ -134,7 +134,7 @@ ENV GDB_JAVA_OPTS='\
 
 # Set jenatdb2 environment variables
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JVM_ARGS='-Xms45g -Xmx45g'
+ENV JVM_ARGS='-Xms10g -Xmx45g'
 ENV ADMIN_PASSWORD=starvers
 
 # Set ostrich environment variables

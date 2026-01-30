@@ -1,0 +1,4 @@
+SELECT DISTINCT ?flour
+WHERE {
+  ?_ orkgp:P37571 ?flour.
+}

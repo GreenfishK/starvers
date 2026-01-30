@@ -1,0 +1,10 @@
+ASK {
+  ?papers rdf:type orkgc:Paper.
+  ?papers rdfs:label ?papers_labels.
+  FILTER(REGEX(?papers_labels, "FEEM Sustainability Index"))
+  ?papers orkgp:P31 ?contrib.
+  ?contrib ?properties ?properties_values.
+  ?properties rdfs:label ?properties_labels.
+  FILTER(REGEX(?properties_labels, "air quality", "i"))
+  FILTER(?properties_values = "yes")
+}

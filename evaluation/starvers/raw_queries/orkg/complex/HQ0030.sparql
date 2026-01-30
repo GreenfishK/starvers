@@ -1,0 +1,6 @@
+SELECT DISTINCT ?toxins, ?toxins_labels
+WHERE {
+  orkgr:R69027 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P34037 ?toxins.
+  ?toxins rdfs:label ?toxins_labels.
+}

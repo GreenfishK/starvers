@@ -1,0 +1,8 @@
+SELECT ?full_name
+WHERE {
+  orkgr:R8342 orkgp:compareContribution ?cont.
+  ?cont orkgp:P7034 ?ontology.
+  ?ontology rdfs:label ?ont_lbl;
+            orkgp:P7035 ?full_name. 
+  FILTER(REGEX(STR(?ont_lbl), "expo", "i"))
+}

@@ -1,0 +1,7 @@
+SELECT DISTINCT ?subfields, ?subfields_labels
+WHERE {
+  ?papers orkgp:P30 ?research_fields.
+  ?research_fields rdfs:label "Economics"^^xsd:string.
+  ?research_fields orkgp:P36 ?subfields.
+  ?subfields rdfs:label ?subfields_labels. 
+}

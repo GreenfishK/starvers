@@ -1,0 +1,24 @@
+SELECT (AVG(?numerical_capacity) AS ?mean) 
+WHERE {
+  ?paper a orkgc:Paper;
+         orkgp:P31 [
+           orkgp:P15483 ?capacity
+         ];
+         rdfs:label ?title.
+  BIND(
+    xsd:double(
+      REPLACE(
+        STR(
+          REPLACE(
+            ?capacity,
+            "([0-9]+),([0-9]+)",
+            "$1$2"
+          )
+        ),
+        "([0-9]+).*",
+        "$1"
+      ) 
+    ) AS ?numerical_capacity
+  )
+  FILTER(REGEX(STR(?title), "(fuel|CO2)"))
+}

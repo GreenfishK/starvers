@@ -1,0 +1,10 @@
+SELECT ?product, ?product_label
+WHERE {
+  orkgr:R155272 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P43149 ?product;
+           orkgp:P43148 ?conversion.
+  ?product rdfs:label ?product_label.
+  ?conversion rdfs:label ?conversion_label.
+}
+ORDER BY ASC(xsd:float(?conversion_label))
+LIMIT 1

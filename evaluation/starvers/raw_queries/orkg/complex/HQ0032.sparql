@@ -1,0 +1,7 @@
+SELECT ?compound
+WHERE {
+  orkgr:R75638 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P35194 ?compound.
+}
+ORDER BY DESC(COUNT(?compound))
+LIMIT 1

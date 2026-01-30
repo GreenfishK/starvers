@@ -1,0 +1,8 @@
+ASK
+WHERE {
+  orkgr:R6187 orkgp:compareContribution ?cont.
+  ?paper orkgp:P31 ?cont;
+         rdfs:label ?paper_title.
+  ?cont orkgp:P5002 orkgr:R6006.
+  FILTER(REGEX(STR(?paper_title), "Disambiguating authors in citations on the web and authorship correlations", "i"))
+}

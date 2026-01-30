@@ -1,0 +1,7 @@
+SELECT ?biosensor
+WHERE {
+  orkgr:R151435 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P43095 ?biosensor.
+}
+ORDER BY DESC(COUNT(?biosensor))
+LIMIT 1

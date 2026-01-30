@@ -1,0 +1,13 @@
+SELECT ?label (COUNT(?label) AS ?number)
+WHERE {
+  ?sector rdfs:label ?label;
+          a ?class.
+  ?class owl:equivalentClass <http://openenergy-platform.org/ontology/oeo/OEO_00000367>.
+  orkgr:R150337 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37586 ?scenario.
+  ?scenario orkgp:P37675 ?study.
+  ?study orkgp:P37668 ?sector.
+  
+}
+ORDER BY DESC(?number)
+LIMIT 1

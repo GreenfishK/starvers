@@ -1,0 +1,7 @@
+SELECT ?research_field, ?research_field_labels
+WHERE {
+  ?papers orkgp:P30 ?research_field.
+  ?research_field rdfs:label ?research_field_labels.
+}
+ORDER BY DESC(COUNT(?research_field_labels))
+LIMIT 5

@@ -1,0 +1,9 @@
+SELECT ?datatype 
+WHERE {
+  orkgr:R8364 orkgp:compareContribution ?cont.
+  ?paper orkgp:P31 ?cont;
+         rdfs:label ?title.
+  ?cont  orkgp:P7046 ?sys.
+  ?sys orkgp:P7055 ?datatype.
+  FILTER(REGEX(STR(?title), "Open Research Knowledge Graph"))
+}

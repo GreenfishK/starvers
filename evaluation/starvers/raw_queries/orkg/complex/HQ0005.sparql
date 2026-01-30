@@ -1,0 +1,7 @@
+SELECT DISTINCT ?concept ?rlabel 
+WHERE {
+  orkgr:R6386 orkgp:P31 ?x .
+  ?x orkgp:P32 ?concept.
+  ?concept rdfs:label ?rlabel.
+}
+LIMIT 1

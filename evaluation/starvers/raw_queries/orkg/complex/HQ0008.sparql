@@ -1,0 +1,26 @@
+SELECT DISTINCT ?name
+WHERE {
+ ?paper a orkgc:Paper;
+ orkgp:P31 [
+   orkgp:P5003 [
+     rdfs:label ?name
+   ]
+ ].
+ {
+   SELECT DISTINCT (COUNT(?paper_) AS ?min_papers)
+   WHERE {
+    ?paper_ a orkgc:Paper;
+    orkgp:P31 [
+      orkgp:P5003 [
+      rdfs:label ?name_
+      ]
+    ].
+  }
+  GROUP BY ?name_
+  ORDER BY ?min_papers
+  LIMIT 1
+ }
+}
+GROUP BY ?name ?min_papers
+HAVING(COUNT(?paper) = ?min_papers)
+ORDER BY ?name

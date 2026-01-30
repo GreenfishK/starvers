@@ -1,0 +1,15 @@
+SELECT ?location, ?location_label
+WHERE {
+  {
+    SELECT (MAX(?geo_scale) AS ?max_geo_scale)
+    WHERE {
+      orkgr:R149849 orkgp:compareContribution ?contrib.
+      ?contrib orkgp:P41568 ?geo_scale.
+    }
+  }
+  orkgr:R149849 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P41568 ?geo_scale;
+           orkgp:P37524 ?location.
+  ?location rdfs:label ?location_label.
+  FILTER(?geo_scale = ?max_geo_scale)
+}

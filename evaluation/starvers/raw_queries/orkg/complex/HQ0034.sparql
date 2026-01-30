@@ -1,0 +1,7 @@
+SELECT COUNT(?anions_labels) AS ?chloride_count
+WHERE {
+  orkgr:R110597 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37458 ?anions.
+  ?anions rdfs:label ?anions_labels.
+  FILTER(REGEX(?anions_labels, "Chloride"^^xsd:string))
+}

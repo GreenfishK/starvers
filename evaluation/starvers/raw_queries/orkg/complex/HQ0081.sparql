@@ -1,0 +1,11 @@
+SELECT ?properties_values, ?property_description
+WHERE {
+  ?papers rdf:type orkgc:Paper.
+  ?papers rdfs:label ?papers_labels.
+  FILTER(REGEX(?papers_labels, "Elorza crater", "i"))
+  ?papers orkgp:P31 ?contrib.
+  ?contrib ?properties ?properties_values.
+  ?properties rdfs:label ?properties_labels.
+  FILTER(REGEX(?properties_labels, "FeO"))
+  ?properties orkgp:description ?property_description.
+}

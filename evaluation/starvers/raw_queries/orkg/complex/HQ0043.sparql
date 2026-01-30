@@ -1,0 +1,10 @@
+SELECT ?variables
+WHERE {
+  orkgr:R68871 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P7144 ?models.
+  ?models rdfs:label ?models_labels.
+  FILTER(REGEX(?models_labels, "tmospher"))
+  ?models orkgp:P26032 ?variables.
+}
+ORDER BY DESC(COUNT(?variables))
+LIMIT 3

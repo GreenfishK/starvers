@@ -1,0 +1,11 @@
+ASK {
+  {
+    SELECT (COUNT(?ocean_sampling) AS ?counter)
+    WHERE {
+      orkgr:R155561 orkgp:compareContribution ?contrib.
+      ?contrib orkgp:P41379 ?ocean_sampling.
+      FILTER(?ocean_sampling = "F"^^xsd:string)
+    }
+  }
+  FILTER(?counter = 0)
+}
