@@ -109,6 +109,7 @@ services:
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
     hostname: Starvers
+    mem_limit: 50g
     extra_hosts:
     - "host.docker.internal:host-gateway"
     ports:
