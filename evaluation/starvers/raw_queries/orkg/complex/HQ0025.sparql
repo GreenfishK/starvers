@@ -1,0 +1,7 @@
+SELECT ?title
+WHERE {
+  orkgr:R78023 orkgp:compareContribution ?cont.
+  ?cont orkgp:P7009 ?has_rdf.
+  FILTER(REGEX(?has_rdf, "T"))
+  ?cont rdfs:label ?title
+}

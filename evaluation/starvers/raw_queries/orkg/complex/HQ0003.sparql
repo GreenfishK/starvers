@@ -1,0 +1,9 @@
+SELECT (COUNT(?repr) AS ?cnt) ?repr
+WHERE {
+  orkgr:R8364 orkgp:compareContribution ?cont.
+  ?cont orkgp:P7046 ?sys.
+  ?sys orkgp:P7056 ?repr.
+}
+GROUP BY ?repr
+ORDER BY DESC(?cnt)
+LIMIT 1

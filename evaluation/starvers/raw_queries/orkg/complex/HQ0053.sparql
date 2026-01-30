@@ -1,0 +1,9 @@
+SELECT ?energy_sources_labels (MIN(?elec_gen_value) AS ?min_elec_gen_value) (MAX(?elec_gen_value) AS ?max_elec_gen_value)
+WHERE {
+  orkgr:R153801 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P43135 ?energy_sources.
+  ?energy_sources rdfs:label ?energy_sources_labels;
+                  orkgp:P43134 ?elec_gen.
+  ?elec_gen orkgp:HAS_VALUE ?value.
+  BIND(xsd:float(?value) AS ?elec_gen_value)
+}

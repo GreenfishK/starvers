@@ -1,0 +1,9 @@
+SELECT ?risk_factors, ?risk_factors_labels
+WHERE {
+  orkgr:R110932 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37530 ?osa_frequency.
+  ?osa_frequency rdfs:label ?osa_frequency_values.
+  ?contrib orkgp:P37528 ?risk_factors.
+  ?risk_factors rdfs:label ?risk_factors_labels.
+  FILTER(REGEX(?osa_frequency_values, "100"^^xsd:string))
+}

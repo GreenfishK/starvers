@@ -1,0 +1,7 @@
+SELECT ?female_percantage
+WHERE {
+  orkgr:R44978 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P23154 ?female_percantage.
+}
+ORDER BY DESC(?female_percantage)
+LIMIT 1

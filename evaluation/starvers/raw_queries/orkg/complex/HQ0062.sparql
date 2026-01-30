@@ -1,0 +1,5 @@
+SELECT DISTINCT ?objectives
+WHERE {
+  orkgr:R70642 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15051 ?objectives.
+}

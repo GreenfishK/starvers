@@ -1,0 +1,7 @@
+SELECT ?sample_size
+WHERE {
+  orkgr:R135371 orkgp:compareContribution ?cont.
+  ?cont orkgp:P15687 ?sample_size
+}
+ORDER BY DESC(?sample_size)
+LIMIT 1

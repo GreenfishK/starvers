@@ -1,0 +1,10 @@
+SELECT DISTINCT ?location
+WHERE {
+  ?_ orkgp:compareContribution [
+    orkgp:P32 [
+      rdfs:label ?label
+    ];
+    orkgp:P5049 ?location
+  ]
+  FILTER(REGEX(STR(?label), "geopoli?tics"))
+}

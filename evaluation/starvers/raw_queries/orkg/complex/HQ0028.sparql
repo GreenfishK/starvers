@@ -1,0 +1,6 @@
+SELECT DISTINCT ?indicators, ?indicators_labels
+WHERE {
+  orkgr:R78492 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P36089 ?indicators.
+  ?indicators rdfs:label ?indicators_labels.
+}

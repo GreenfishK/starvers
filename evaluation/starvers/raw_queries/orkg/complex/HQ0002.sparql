@@ -1,0 +1,9 @@
+SELECT ?scope 
+WHERE {
+  orkgr:R8364 orkgp:compareContribution ?cont.
+  ?paper orkgp:P31 ?cont;
+         rdfs:label ?title.
+  ?cont orkgp:P7046 ?sys.
+  ?sys orkgp:P7047 ?scope.
+  FILTER(REGEX(STR(?title), "Decentralised Authoring, Annotations and Notifications for a Read-Write Web with dokieli"))
+}

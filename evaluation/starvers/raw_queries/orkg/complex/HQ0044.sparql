@@ -1,0 +1,6 @@
+SELECT (SUM(?number) AS ?total)
+WHERE {
+  orkgr:R58002 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P31024 ?number_of_species.
+  BIND(xsd:integer(?number_of_species) AS ?number)
+}

@@ -1,0 +1,7 @@
+SELECT ?year
+WHERE {
+  ?papers rdf:type orkgc:Paper.
+  ?papers rdfs:label ?papers_labels.
+  FILTER(REGEX(?papers_labels, "MedPost"))
+  ?papers orkgp:P29 ?year.
+}

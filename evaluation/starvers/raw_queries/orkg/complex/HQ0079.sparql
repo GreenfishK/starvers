@@ -1,0 +1,23 @@
+SELECT ?repo ?scenario ?simulation_parameters
+WHERE {
+  ?paper orkgp:P31 ?contrib.
+  ?contrib orkgp:P37586 ?model.
+  ?model orkgp:P39010 ?code.
+  ?code orkgp:P4077 ?repo.
+  OPTIONAL {
+    ?model orkgp:P43146 ?scenario.
+    {
+      SELECT ?scenario ?simulation_parameters
+      WHERE {
+        ?scenario orkgp:P31 ?contrib2.
+        ?contrib2 orkgp:P37586 ?model2.
+        ?model2 orkgp:P37583 ?data.
+        ?data orkgp:HAS_DATASET ?dataset.
+        ?dataset orkgp:P37343 ?type;
+                 orkgp:P4059 ?simulation_parameters.
+        ?type rdfs:label ?label.
+        FILTER(REGEX(?label, "Technical"))
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+SELECT ?vegetables, ?vegetables_labels
+WHERE {
+  orkgr:R75363 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P35147 ?compounds.
+  ?compounds rdfs:label ?compounds_labels.
+  FILTER(REGEX(?compounds_labels, "etanin"))
+  ?contrib orkgp:P35148 ?vegetables.
+  ?vegetables rdfs:label ?vegetables_labels.
+}

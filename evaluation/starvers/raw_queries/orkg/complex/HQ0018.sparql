@@ -1,0 +1,6 @@
+SELECT DISTINCT ?methods, ?methods_labels
+WHERE {
+  orkgr:R110361 orkgp:compareContribution ?cont.
+  ?cont orkgp:HAS_METHOD ?methods.
+  ?methods rdfs:label ?methods_labels.
+}

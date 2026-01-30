@@ -1,0 +1,7 @@
+SELECT AVG(?efficency_values)
+WHERE {
+  orkgr:R155266 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P43156 ?efficency.
+  ?efficency rdfs:label ?efficency_labels.
+  BIND(xsd:float(?efficency_labels) AS ?efficency_values)
+}

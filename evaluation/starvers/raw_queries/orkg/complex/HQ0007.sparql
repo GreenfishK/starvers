@@ -1,0 +1,11 @@
+SELECT DISTINCT ?title
+WHERE {
+ ?paper a orkgc:Paper;
+ orkgp:P31 [
+   orkgp:P2005 [
+     rdfs:label "DBLP"^^xsd:string
+   ]
+ ];
+ rdfs:label ?title.
+}
+ORDER BY ?title

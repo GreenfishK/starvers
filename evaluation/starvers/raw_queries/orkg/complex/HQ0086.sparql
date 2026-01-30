@@ -1,0 +1,9 @@
+SELECT DISTINCT ?problems, ?problems_labels
+WHERE {
+  ?papers rdf:type orkgc:Paper.
+  ?papers rdfs:label ?papers_labels.
+  FILTER(REGEX(?papers_labels, "Vernier Effect", "i"))
+  ?papers orkgp:P31 ?contrib.
+  ?contrib orkgp:P32 ?problems.
+  ?problems rdfs:label ?problems_labels.
+}

@@ -1,0 +1,6 @@
+SELECT (COUNT(?date) AS ?number_of_studies)
+WHERE {
+  orkgr:R110393 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P9040 ?date.
+  filter(?date > "2019"^^xsd:string)
+}

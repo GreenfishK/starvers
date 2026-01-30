@@ -1,0 +1,6 @@
+SELECT DISTINCT ?prep_methods, ?prep_methods_labels
+WHERE {
+  orkgr:R155154 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P41006 ?prep_methods.
+  ?prep_methods rdfs:label ?prep_methods_labels.
+}

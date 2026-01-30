@@ -1,0 +1,8 @@
+SELECT ?types_of_nanocarriers, ?types_of_nanocarriers_labels
+WHERE {
+  orkgr:R144364 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P41740 ?types_of_nanocarriers.
+  ?contrib orkgp:P41743 ?therapeutic_effect.
+  FILTER(?therapeutic_effect = "T"^^xsd:string)
+  ?types_of_nanocarriers rdfs:label ?types_of_nanocarriers_labels.
+}

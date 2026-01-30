@@ -1,0 +1,9 @@
+SELECT ?paper
+WHERE {
+  orkgr:R113171 orkgp:compareContribution ?cont.
+  ?paper orkgp:P31 ?cont.
+  ?cont orkgp:P37586 ?hasFacts.
+  ?hasFacts orkgp:P37675 ?study.
+  ?study orkgp:P37663 ?sourceOfFunding.
+  FILTER(REGEX(?sourceOfFunding, "public"))
+}

@@ -1,0 +1,6 @@
+SELECT ?reactions_yield WHERE {
+  orkgr:R137086 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37560 ?reactions_yield.
+}
+ORDER BY DESC(?reactions_yield)
+LIMIT 1

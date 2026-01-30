@@ -39,6 +39,7 @@ logger.info(f"Parameter: port={port}")
 
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
+memory_consumption_file = "/starvers_eval/output/measurements/memory_consumption.csv"
 
 # Global configurations for the SPARQL engine
 if triple_store == "jenatdb2" and policy == "tb_sr_rs" and dataset == "bearc":

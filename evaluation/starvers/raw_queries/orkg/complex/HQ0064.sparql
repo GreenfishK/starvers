@@ -1,0 +1,6 @@
+SELECT SUM(?number_of_patients)
+WHERE {
+  orkgr:R33008 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15585 ?patients.
+  BIND(xsd:integer(?patients) AS ?number_of_patients)
+}

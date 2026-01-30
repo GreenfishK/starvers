@@ -1,0 +1,9 @@
+SELECT ?coolant ?coolant_label
+WHERE {
+  ?ASTRID_reactor ?rdfs_label "ASTRID"^^xsd:string.
+  ?contrib ?reactor_predicate ?ASTRID_reactor.
+  ?contrib ?predicates ?coolant.
+  ?predicates rdfs:label ?predicates_label.
+  FILTER(REGEX(?predicates_label, "coolant"))
+  ?coolant rdfs:label ?coolant_label.
+}

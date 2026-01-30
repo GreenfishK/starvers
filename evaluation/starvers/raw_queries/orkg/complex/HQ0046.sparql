@@ -1,0 +1,5 @@
+ASK {
+  orkgr:R44979 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P23161 ?population.
+  FILTER(REGEX(?population, "ildren"))
+}

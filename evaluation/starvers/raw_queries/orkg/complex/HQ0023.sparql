@@ -1,0 +1,10 @@
+SELECT ?evidence ?evidence_title ?limitation
+WHERE {
+  orkgr:R6751 orkgp:compareContribution ?cont.
+  ?paper orkgp:P31 ?cont;
+         rdfs:label ?paper_title.
+  ?cont orkgp:P5004 ?evidence;
+        orkgp:P5006 ?limitation.
+  ?evidence rdfs:label ?evidence_title.
+  FILTER(REGEX(STR(?paper_title), "Evaluating the Use of Social Networks in Author Name Disambiguation in Digital Libraries", "i"))
+}

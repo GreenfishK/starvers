@@ -1,0 +1,8 @@
+SELECT ?co_authors
+WHERE {
+  ?papers rdf:type orkgc:Paper.
+  ?papers orkgp:P27 ?authors.
+  FILTER(REGEX(?authors, "Kurt Thomas"))
+  ?papers orkgp:P27 ?co_authors.
+  FILTER(?co_authors != "Kurt Thomas"^^xsd:string)
+}

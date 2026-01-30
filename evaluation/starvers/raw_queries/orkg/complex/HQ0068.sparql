@@ -1,0 +1,9 @@
+SELECT ?label COUNT(?label)
+WHERE {
+  ?sector rdfs:label ?label;
+          a ?class.
+  ?class owl:equivalentClass <http://openenergy-platform.org/ontology/oeo/OEO_00000367>.
+  [
+    orkgp:P37668 ?sector
+  ].
+}

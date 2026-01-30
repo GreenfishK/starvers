@@ -1,0 +1,9 @@
+SELECT ?metrics, ?metrics_labels
+WHERE {
+  ?papers rdfs:label ?title.
+  FILTER(REGEX(?title, "NMF-based text summarization"))
+  ?papers orkgp:P31 ?cont.
+  ?cont orkgp:P34 ?eval.
+  ?eval orkgp:P2006 ?metrics.
+  ?metrics rdfs:label ?metrics_labels.
+}

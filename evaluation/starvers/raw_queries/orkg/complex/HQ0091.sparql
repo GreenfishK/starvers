@@ -1,0 +1,6 @@
+SELECT ?definitions
+WHERE {
+  ?terms orkgp:P24009 ?definitions.
+  ?terms rdfs:label ?terms_labels.
+  FILTER(REGEX(?terms_labels, "Raman spectroscopy"))
+}

@@ -1,0 +1,8 @@
+SELECT ?iri
+WHERE {
+  orkgr:R8342 orkgp:compareContribution ?cont.
+  ?cont orkgp:P7034 ?ont.
+  ?ont orkgp:P7042 ?iri;
+       orkgp:P7035 ?full_name.
+  FILTER(REGEX(STR(?full_name), "Document Components Ontology", "i"))
+}

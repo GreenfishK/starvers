@@ -1,0 +1,6 @@
+SELECT MAX(?egg_masses_float)
+WHERE {
+  orkgr:R34845 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15692 ?egg_masses.
+  BIND(xsd:float(?egg_masses) AS ?egg_masses_float)
+}

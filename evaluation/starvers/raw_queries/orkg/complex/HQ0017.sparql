@@ -1,0 +1,7 @@
+SELECT ?locations
+WHERE {
+  orkgr:R111045 orkgp:compareContribution ?cont.
+  ?cont orkgp:P37537 ?locations.
+}
+ORDER BY DESC(COUNT(?locations))
+LIMIT 1

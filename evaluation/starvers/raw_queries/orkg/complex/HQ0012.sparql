@@ -1,0 +1,10 @@
+SELECT ?uses_filter
+WHERE {
+  ?paper orkgp:P5025 ?filter;
+         rdfs:label ?title.
+  FILTER(REGEX(?title, "ZoomRDF"))
+  BIND(
+    IF(?filter = "T"^^xsd:string, "Yes", "No")
+    AS ?uses_filter
+  )
+}

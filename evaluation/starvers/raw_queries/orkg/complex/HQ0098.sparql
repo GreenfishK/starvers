@@ -1,0 +1,6 @@
+ASK {
+  ?approach rdfs:label "OWLMAP"^^xsd:string.
+  ?contrib ?predicate ?approach.
+  ?contrib orkgp:P41333 ?integrity_constraints.
+  FILTER(?integrity_constraints = "t"^^xsd:string)
+}

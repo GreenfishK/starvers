@@ -1,0 +1,9 @@
+SELECT ?publication_years
+WHERE {
+  ?papers rdf:type orkgc:Paper.
+  ?papers rdfs:label ?papers_labels.
+  FILTER(REGEX(?papers_labels, "X-ray", "i"))
+  ?papers orkgp:P29 ?publication_years. 
+}
+ORDER BY ASC(?publication_years)
+LIMIT 1

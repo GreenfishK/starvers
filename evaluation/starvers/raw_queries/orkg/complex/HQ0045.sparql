@@ -1,0 +1,8 @@
+SELECT ?country
+WHERE {
+  orkgr:R44980 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P15249 ?country;
+           orkgp:P23169 ?number_of_participants.
+}
+ORDER BY DESC(?number_of_participants)
+LIMIT 1

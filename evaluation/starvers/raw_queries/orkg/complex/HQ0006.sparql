@@ -1,0 +1,8 @@
+SELECT ?graph ?graph_label
+WHERE {
+  ?paper orkgp:P31 ?cont;
+         rdfs:label ?title.
+  FILTER(REGEX(?title, "ADANA"))
+  ?cont orkgp:P5008 ?graph. 
+  ?graph rdfs:label ?graph_label.
+}

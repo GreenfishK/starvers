@@ -1,0 +1,8 @@
+SELECT ?drug, ?drug_labels
+WHERE {
+  orkgr:R155621 orkgp:compareContribution ?contrib.
+  ?contrib orkgp:P37578 ?drug.
+  ?drug rdfs:label ?drug_labels.
+}
+ORDER BY DESC(COUNT(?drug))
+LIMIT 1
