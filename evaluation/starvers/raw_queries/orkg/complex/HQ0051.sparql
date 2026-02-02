@@ -1,9 +1,16 @@
-SELECT ?energy_sources_labels (AVG(?elec_gen_value) AS ?average_elec_gen_value)
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT (?energy_sources_labels (AVG(?elec_gen_value) AS ?average_elec_gen_value))
 WHERE {
   orkgr:R153801 orkgp:compareContribution ?contrib.
   ?contrib orkgp:P43135 ?energy_sources.
   ?energy_sources rdfs:label ?energy_sources_labels;
                   orkgp:P43134 ?elec_gen.
   ?elec_gen orkgp:HAS_VALUE ?value.
-  BIND(xsd:float(?value) AS ?elec_gen_value)
+  (BIND(xsd:float(?value) AS ?elec_gen_value))
 }

@@ -108,4 +108,6 @@ for dataset in ${datasets[@]}; do
     done
 done
 
-
+# Parse SciQA queries
+echo "$(log_timestamp) ${log_level}:Parsing SciQA queries" >> $log_file
+python3 $SCRIPT_DIR/2_clean_raw_datasets/parse_SciQA_queries.py 

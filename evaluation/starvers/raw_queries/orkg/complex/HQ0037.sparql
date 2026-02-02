@@ -1,12 +1,19 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
 SELECT ?author_name
 WHERE {
   {
-    SELECT (COUNT(?paper_) as ?max_n_papers)
+    (SELECT (COUNT(?paper_) as ?max_n_papers))
     WHERE {
       ?paper_ a orkgc:Paper;
       rdfs:label ?title_;
       orkgp:P27 ?author_.
-      FILTER(REGEX(STR(?title_), "2019-nCoV"))
+      (FILTER(REGEX(STR(?title_), "2019-nCoV"))
     }
     GROUP BY ?author_
     ORDER BY DESC(?max_n_papers)
@@ -18,7 +25,7 @@ WHERE {
   OPTIONAL {
     ?author rdfs:label ?author_label
   }
-  BIND(IF(BOUND(?author_label), ?author_label, ?author) as ?author_name)
+  BIND(IF(BOUND(?author_label), ?author_label, ?author) as ?author_name))
   FILTER(REGEX(STR(?title), "2019-nCoV"))
 }
 GROUP BY ?author ?type ?author_name ?max_n_papers

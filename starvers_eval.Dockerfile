@@ -113,6 +113,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgcc-s1 \
     libatomic1 \
     libssl1.1 \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Set locale environment variables
