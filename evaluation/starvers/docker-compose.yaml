@@ -8,6 +8,7 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ./scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
+      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
     environment:
       - datasets=${datasets}
     entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
@@ -19,6 +20,7 @@ services:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ./scripts_dev/2_clean_raw_datasets:/starvers_eval/scripts/2_clean_raw_datasets # move to image after development has finished
+      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
     environment:
       - datasets=${datasets}
     entrypoint: [/starvers_eval/scripts/2_clean_raw_datasets/clean_raw_datasets.sh]
@@ -233,6 +235,32 @@ services:
     command: ["/jena-fuseki/fuseki-server", "--config=/run/configuration/config.ttl", "--port=3030", "--tdb2"]
 
 
+  download_queries:
+    image: starvers_eval:20260202
+    container_name: starvers_eval-download_queries
+    volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
+      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
+    environment:
+      - datasets=${datasets}
+    entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
+
+
+
+  parse_SciQA_queries:
+    image: starvers_eval:20260202
+    container_name: starvers_eval-parse_SciQA_queries
+    volumes:
+      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/2_clean_raw_datasets:/starvers_eval/scripts/2_clean_raw_datasets # move to image after development has finished
+      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
+    environment:
+      - datasets=${datasets}
+    entrypoint: [/starvers_eval/scripts/2_clean_raw_datasets/parse_SciQA_queries.py]
+  
 
 networks:
   starvers_prod_net:

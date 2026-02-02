@@ -1,4 +1,11 @@
-SELECT (COUNT(?date) AS ?number_of_studies)
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+(SELECT (COUNT(?date) AS ?number_of_studies))
 WHERE {
   orkgr:R110393 orkgp:compareContribution ?contrib.
   ?contrib orkgp:P9040 ?date.

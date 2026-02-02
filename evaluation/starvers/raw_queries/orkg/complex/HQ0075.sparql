@@ -1,7 +1,14 @@
-SELECT AVG(?efficency_values)
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT (AVG(?efficency_values)
 WHERE {
   orkgr:R155266 orkgp:compareContribution ?contrib.
   ?contrib orkgp:P43156 ?efficency.
   ?efficency rdfs:label ?efficency_labels.
-  BIND(xsd:float(?efficency_labels) AS ?efficency_values)
+  BIND(xsd:float(?efficency_labels) AS ?efficency_values))
 }

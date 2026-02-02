@@ -1,11 +1,18 @@
-SELECT (AVG(?numerical_capacity) AS ?mean) 
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+(SELECT (AVG(?numerical_capacity) AS ?mean)) 
 WHERE {
   ?paper a orkgc:Paper;
          orkgp:P31 [
            orkgp:P15483 ?capacity
          ];
          rdfs:label ?title.
-  BIND(
+  (BIND(
     xsd:double(
       REPLACE(
         STR(
@@ -18,7 +25,7 @@ WHERE {
         "([0-9]+).*",
         "$1"
       ) 
-    ) AS ?numerical_capacity
+    ) AS ?numerical_capacity)
   )
   FILTER(REGEX(STR(?title), "(fuel|CO2)"))
 }

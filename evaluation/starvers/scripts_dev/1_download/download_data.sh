@@ -15,10 +15,8 @@ snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk
 
 # Other variables
 datasets=("${datasets}") 
-echo "$(log_timestamp) ${log_level}: Downloaded requested for datasets ${datasets} ..." >> $log_file
 registered_datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/eval_setup.toml | awk -F "." '{print $2}' | sed 's/.$//')
 echo "$(log_timestamp) ${log_level}: Registered datasets are ${registered_datasets} ..." >> $log_file
-
 
 for dataset in ${datasets[@]}; do
 
@@ -56,3 +54,13 @@ for dataset in ${datasets[@]}; do
     echo "$(log_timestamp) ${log_level}: Downloading and extracting ${dataset} datasets finished." >> $log_file
 
 done
+
+# Download SqiQA-dataset.zip and extract queries
+wget -t 3 -c \
+  -O /starvers_eval/queries/raw_queries/orkg/complex/SciQA-dataset.zip \
+  https://zenodo.org/records/7744048/files/SciQA-dataset.zip?download=1
+  
+unzip /starvers_eval/queries/raw_queries/orkg/complex/SciQA-dataset.zip -d /starvers_eval/queries/raw_queries/orkg/complex
+
+echo "$(log_timestamp) ${log_level}: Downloaded SciQA query sets and extracted them to /starvers_eval/queries/raw_queries/orkg/complex" >> $log_file
+

@@ -1,9 +1,16 @@
-SELECT ?energy_sources_labels (MIN(?installed_cap_value) AS ?min_installed_cap_value) (MAX(?installed_cap_value) AS ?max_installed_cap_value)
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT (?energy_sources_labels (MIN(?installed_cap_value) AS ?min_installed_cap_value)) (M(AX(?installed_cap_value) AS ?max_installed_cap_value))
 WHERE {
   orkgr:R153801 orkgp:compareContribution ?contrib.
   ?contrib orkgp:P43135 ?energy_sources.
   ?energy_sources rdfs:label ?energy_sources_labels;
                   orkgp:P43133 ?installed_capacity.
   ?installed_capacity orkgp:HAS_VALUE ?value.
-  BIND(xsd:float(?value) AS ?installed_cap_value)
+  (BIND(xsd:float(?value) AS ?installed_cap_value))
 }

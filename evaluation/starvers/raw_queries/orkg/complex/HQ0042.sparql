@@ -1,3 +1,10 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
 SELECT ?author_name
 WHERE {
   {
@@ -12,25 +19,25 @@ WHERE {
       OPTIONAL {
         ?publication_year_ rdfs:label ?publication_year_label_
       }
-      BIND(
+      (BIND(
         xsd:integer(
           IF(
             BOUND(?publication_month_label_),
             ?publication_month_label_,
             ?publication_month_
           )
-        ) AS ?publication_month_as_number_
+        ) AS ?publication_month_as_number_)
       )
-      BIND(
+      (BIND(
         xsd:integer(
           IF(
             BOUND(?publication_year_label_),
             ?publication_year_label_,
             ?publication_year_
           )
-        ) AS ?publication_year_as_number_
+        ) AS ?publication_year_as_number_)
       )
-      BIND(
+      (BIND(
         xsd:dateTime(
           CONCAT(
             ?publication_year_as_number_,
@@ -39,9 +46,9 @@ WHERE {
             "-01T00:00:00.000-00:00"
           )
         )
-        AS ?publication_date_
+        AS ?publication_date_)
       )
-      FILTER(
+      (FILTER(
         ?publication_month_as_number_ > 0 && ?publication_month_as_number_ < 13 && ?publication_year_as_number_ > 0 && ?publication_year_as_number_ < 2023
       )
       FILTER(REGEX(STR(?title_), "insect"))
@@ -68,27 +75,27 @@ WHERE {
       BOUND(?author_label),
       ?author_label,
       ?author
-    ) AS ?author_name
+    ) AS ?author_name)
   )
-  BIND(
+  (BIND(
     xsd:integer(
       IF(
         BOUND(?publication_month_label),
         ?publication_month_label,
         ?publication_month
       )
-    ) AS ?publication_month_as_number
+    ) AS ?publication_month_as_number)
   )
-  BIND(
+  (BIND(
     xsd:integer(
       IF(
         BOUND(?publication_year_label),
         ?publication_year_label,
         ?publication_year
       )
-    ) AS ?publication_year_as_number
+    ) AS ?publication_year_as_number)
   )
-  BIND(
+  (BIND(
     xsd:dateTime(
       CONCAT(
         ?publication_year_as_number,
@@ -97,7 +104,7 @@ WHERE {
         "-01T00:00:00.000-00:00"
       )
     )
-    AS ?publication_date
+    AS ?publication_date)
   )
   FILTER(
     ?publication_month_as_number > 0 && ?publication_month_as_number < 13 && ?publication_year_as_number > 0 && ?publication_year_as_number < 2023
