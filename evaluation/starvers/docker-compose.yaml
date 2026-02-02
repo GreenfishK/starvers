@@ -214,6 +214,25 @@ services:
     entrypoint: ["node","/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js","-p","42564","-t","480","-l","debug","ostrichFile@/var/ostrich"]
 
 
+  jenaTDB2:
+    container_name: jenaTDB2
+    image: stain/jena-fuseki:5.1.0
+    restart: unless-stopped
+    environment: 
+      JVM_ARG: -Xmx8g -Xms8g
+      TDB: 2
+      ADMIN_PASSWORD: admin
+    ports: 
+      - 3030:3030
+    extra_hosts:
+      - "host.docker.internal:127.0.0.1"
+    volumes:
+      - ${base_host_dir}/databases/jenatdb2:/starvers_eval/databases/jenatdb2
+      - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_bearb_day.ttl:/run/configuration/config.ttl
+    user: root
+    command: ["/jena-fuseki/fuseki-server", "--config=/run/configuration/config.ttl", "--port=3030", "--tdb2"]
+
+
 
 networks:
   starvers_prod_net:

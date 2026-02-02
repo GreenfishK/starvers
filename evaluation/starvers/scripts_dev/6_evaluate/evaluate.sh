@@ -137,7 +137,6 @@ for triple_store in ${triple_stores[@]}; do
 
         mkdir -p /run/configuration
         for policy in ${policies[@]}; do
-            echo "$(log_timestamp) ${log_level}:The value of policy_allowed is: $(policy_allowed ${triple_store} ${policy})" >> $log_file
             if ! policy_allowed "${triple_store}" "${policy}"; then
                 echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
                 continue
@@ -148,7 +147,7 @@ for triple_store in ${triple_stores[@]}; do
                 # Start database server and run in background
                 echo "$(log_timestamp) ${log_level}:Starting Fuseki server for the evaluation of ${policy}_${dataset}..." >> $log_file
                 cp /starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}.ttl /run/configuration/config.ttl
-                nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+                nohup /jena-fuseki/fuseki-server --config=/run/configuration/config.ttl --port=3030 --tdb2 &
 
                 # Wait until server is up
                 echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -159,7 +158,7 @@ for triple_store in ${triple_stores[@]}; do
                     if [[ counter -ge 60 ]]; then
                         echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
                         pkill -f '/jena-fuseki/fuseki-server.jar'
-                        nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+                        nohup /jena-fuseki/fuseki-server --config=/run/configuration/config.ttl --port=3030 --tdb2 &
                         counter=0
                     fi
                 done

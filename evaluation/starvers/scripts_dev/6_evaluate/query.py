@@ -1,4 +1,4 @@
-from SPARQLWrapper import SPARQLWrapper, Wrapper, POST, JSON
+from SPARQLWrapper import SPARQLWrapper, Wrapper, GET, POST, POSTDIRECTLY, JSON
 from rdflib import Graph
 from rdflib.term import URIRef, Literal, BNode
 import pandas as pd
@@ -8,8 +8,6 @@ from pathlib import Path
 import os
 import sys
 import time
-import multiprocessing
-import shutil
 import csv
 import logging as logger
 from datetime import datetime
@@ -51,7 +49,6 @@ engine.timeout = timeout
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
-engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
 
 endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
             'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
@@ -126,12 +123,18 @@ def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWra
     engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
     engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
 
-# Dry run 
+# Set endpoints
 _set_endpoints(dataset, policy, endpoints, engine)   
-if triple_store != "ostrich":
+
+
+# Dry run and configuration of the SPARQL engine
+if triple_store == "ostrich":
+    dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"
+    engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
+elif triple_store == "jenatdb2":
     dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
 else:
-    dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"
+    dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
 
 engine.setQuery(dry_run_query)
 try:
