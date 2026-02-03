@@ -1,8 +1,0 @@
-PREFIX dcat: <http://www.w3.org/ns/dcat#> 
-PREFIX dc: <http://purl.org/dc/elements/1.1/>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-{
-    ?dataset rdf:type dcat:Dataset .
-    ?dataset dc:modified ?modified_date .
-}
- 

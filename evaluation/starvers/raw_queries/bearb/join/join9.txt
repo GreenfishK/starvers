@@ -1,4 +1,0 @@
-{ 
-?s <http://xmlns.com/foaf/0.1/name> ?o .
-?o <http://dbpedia.org/property/alternativeNames> ?y .
-}

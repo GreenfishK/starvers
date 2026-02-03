@@ -1,4 +1,0 @@
-{ 
-?s <http://dbpedia.org/property/country> ?o .
-?o <http://www.w3.org/2003/01/geo/wgs84_pos#long> ?y .
-}

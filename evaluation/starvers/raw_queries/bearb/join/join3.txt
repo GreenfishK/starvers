@@ -1,4 +1,0 @@
-{ 
-?s <http://dbpedia.org/property/spouse> ?o .
-?o <http://xmlns.com/foaf/0.1/name> ?y .
-}

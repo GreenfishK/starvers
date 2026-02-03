@@ -1,4 +1,0 @@
-{ 
-?s <http://dbpedia.org/ontology/director> ?o .
-?o <http://dbpedia.org/property/name> ?y .
-}
