@@ -8,7 +8,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?author_name
 WHERE {
   {
-    SELECT ?publication_date_ AS ?date_of_the_latest_paper {
+    SELECT (?publication_date_ AS ?date_of_the_latest_paper) {
       ?paper_ a orkgc:Paper;
               rdfs:label ?title_;
               orkgp:P28 ?publication_month_;
@@ -19,25 +19,25 @@ WHERE {
       OPTIONAL {
         ?publication_year_ rdfs:label ?publication_year_label_
       }
-      (BIND(
+      BIND(
         xsd:integer(
           IF(
             BOUND(?publication_month_label_),
             ?publication_month_label_,
             ?publication_month_
           )
-        ) AS ?publication_month_as_number_)
+        ) AS ?publication_month_as_number_
       )
-      (BIND(
+      BIND(
         xsd:integer(
           IF(
             BOUND(?publication_year_label_),
             ?publication_year_label_,
             ?publication_year_
           )
-        ) AS ?publication_year_as_number_)
+        ) AS ?publication_year_as_number_
       )
-      (BIND(
+      BIND(
         xsd:dateTime(
           CONCAT(
             ?publication_year_as_number_,
@@ -46,9 +46,9 @@ WHERE {
             "-01T00:00:00.000-00:00"
           )
         )
-        AS ?publication_date_)
+        AS ?publication_date_
       )
-      (FILTER(
+      FILTER(
         ?publication_month_as_number_ > 0 && ?publication_month_as_number_ < 13 && ?publication_year_as_number_ > 0 && ?publication_year_as_number_ < 2023
       )
       FILTER(REGEX(STR(?title_), "insect"))
@@ -75,27 +75,27 @@ WHERE {
       BOUND(?author_label),
       ?author_label,
       ?author
-    ) AS ?author_name)
+    ) AS ?author_name
   )
-  (BIND(
+  BIND(
     xsd:integer(
       IF(
         BOUND(?publication_month_label),
         ?publication_month_label,
         ?publication_month
       )
-    ) AS ?publication_month_as_number)
+    ) AS ?publication_month_as_number
   )
-  (BIND(
+  BIND(
     xsd:integer(
       IF(
         BOUND(?publication_year_label),
         ?publication_year_label,
         ?publication_year
       )
-    ) AS ?publication_year_as_number)
+    ) AS ?publication_year_as_number
   )
-  (BIND(
+  BIND(
     xsd:dateTime(
       CONCAT(
         ?publication_year_as_number,
@@ -104,7 +104,7 @@ WHERE {
         "-01T00:00:00.000-00:00"
       )
     )
-    AS ?publication_date)
+    AS ?publication_date
   )
   FILTER(
     ?publication_month_as_number > 0 && ?publication_month_as_number < 13 && ?publication_year_as_number > 0 && ?publication_year_as_number < 2023

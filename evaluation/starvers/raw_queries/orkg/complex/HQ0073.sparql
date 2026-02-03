@@ -7,7 +7,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 ASK {
   {
-    (SELECT (COUNT(?ocean_sampling) AS ?counter))
+    SELECT (COUNT(?ocean_sampling) AS ?counter)
     WHERE {
       orkgr:R155561 orkgp:compareContribution ?contrib.
       ?contrib orkgp:P41379 ?ocean_sampling.

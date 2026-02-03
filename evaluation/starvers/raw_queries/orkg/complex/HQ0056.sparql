@@ -5,13 +5,13 @@ PREFIX orkgp: <http://orkg.org/orkg/predicate/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-SELECT ?rangeId (?energy_sources_labels (AVG(?installed_cap_value AS ?avg_installed_cap_value))
+SELECT ?rangeId ?energy_sources_labels (AVG(?installed_cap_value) AS ?avg_installed_cap_value)
 WHERE {
   orkgr:R153801 orkgp:compareContribution ?contrib.
   ?paper orkgp:P31 ?contrib;
          orkgp:P29 ?year.
-  BIND(xsd:int(?year) AS ?y)).
-  (VALUES(?rangeId ?min ?max) {
+  BIND(xsd:int(?year) AS ?y).
+  VALUES(?rangeId ?min ?max) {
     ("2001-2005" 2001 2005)
     ("2006-2010" 2006 2010)
     ("2011-2015" 2011 2015)
@@ -22,6 +22,6 @@ WHERE {
   ?energy_sources rdfs:label ?energy_sources_labels;
                   orkgp:P43133 ?installed_capacity.
   ?installed_capacity orkgp:HAS_VALUE ?value.
-  BIND(xsd:float(?value) AS ?installed_cap_value)).
+  BIND(xsd:float(?value) AS ?installed_cap_value).
 }
 ORDER BY ASC(?rangeId)

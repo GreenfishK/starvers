@@ -11,7 +11,7 @@ WHERE {
           orkgp:P31 ?contrib;
           rdfs:label ?papers_labels.
   ?contrib orkgp:P41923 ?questions_number_str.
-  (BIND(REPLACE(?questions_number_str, "[+]", "") AS ?questions_number_preprocessed))
-  (BIND(xsd:integer(REPLACE(?questions_number_preprocessed, "","", "")) AS ?questions_number))
+  BIND(REPLACE(?questions_number_str, "[+]", "") AS ?questions_number_preprocessed)
+  BIND(xsd:integer(REPLACE(?questions_number_preprocessed, "","", "")) AS ?questions_number)
   FILTER(?questions_number > 10000)
 }

@@ -4,20 +4,24 @@ import json
 import re
 from pathlib import Path
 import logging
-from venv import logging
 import shutil
+from starvers.starvers import TripleStoreEngine
 
 ############################################# Logging #############################################
 with open('/starvers_eval/output/logs/clean_raw_datasets/parse_sciqa_queries.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/clean_raw_datasets/parse_sciqa_queries.txt", 
-                                                  encoding='utf-8', mode='a+')],
-                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
-                    datefmt="%F %A %T", 
-                    level=logging.INFO)
+logging.basicConfig(
+    handlers=[logging.FileHandler(
+        filename="/starvers_eval/output/logs/clean_raw_datasets/parse_sciqa_queries.txt",
+        encoding='utf-8',
+        mode='a+'
+    )],
+    format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
+    datefmt="%F %A %T",
+    level=logging.INFO
+)
 
 ###################################### Parameters ######################################
-# Bash arguments and directory paths
 
 PREFIXES = \
 """PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -28,37 +32,63 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
-
 BASE_DIR = Path("/starvers_eval/queries/raw_queries/orkg/complex")
 SUBDIRS = ["train", "test", "valid"]
 
+###################################### Regex logic ######################################
 
-ALIAS_EXPR_RE = re.compile(
-    r"""(?<!\()                 # not already wrapped
-        (
-            [^()\s]+             # function or expression start
-            \s*\(.*?\)           # (...) arguments
-            \s+AS\s+\?\w+        # AS ?alias
+
+SELECT_ALIAS_RE = re.compile(
+    r"""
+    (SELECT(?:\s+\?[a-zA-Z0-9_-]*)*)         # capture 'SELECT' + optional variables before alias
+    \s*                                       # optional whitespace
+    (?<!\()                                   # negative lookbehind: not already wrapped
+    (                                         # start group 2: the thing we want to wrap
+        (?:                                   # non-capturing group for aggregation OR simple var
+            (?:COUNT|SUM|AVG|MIN|MAX)\([^\)]+\)  # aggregation function with parentheses
+            |                                 # OR
+            \?[a-zA-Z0-9_-]+                  # simple variable
         )
+        \s+AS\s+\?[a-zA-Z0-9_-]+             # the alias part
+    )
+    (?!\))                                    # negative lookahead: not already wrapped
     """,
-    re.IGNORECASE | re.VERBOSE | re.DOTALL,
+    re.VERBOSE | re.IGNORECASE
 )
 
 
-def wrap_select_aliases(sparql: str) -> str:
-    """
-    Wrap SELECT alias expressions like:
-      COUNT(?x) AS ?y
-    into:
-      (COUNT(?x) AS ?y)
-    """
+AGG_FUNC_RE = re.compile(
+    r"""
+    (?<!\()                     # not already wrapped
+    \b
+    (COUNT|SUM|AVG|MIN|MAX)     # aggregation functions
+    \s*\(                        # opening parenthesis
+        ([^\)]+)                 # everything inside the parentheses
+    \)
+    (?!\s+AS\s+\?[a-zA-Z0-9_-]+) # not already aliased
+    """,
+    re.IGNORECASE | re.VERBOSE
+)
 
-    def replacer(match):
-        expr = match.group(1)
-        return f"({expr})"
 
-    return ALIAS_EXPR_RE.sub(replacer, sparql)
 
+def rewrite_select_aliases(sparql: str) -> str:
+    # keep the first capture group (SELECT + vars) and wrap only the alias
+    return SELECT_ALIAS_RE.sub(r"\1 (\2)", sparql)
+
+def wrap_aggregations(sparql: str) -> str:
+    def repl(m):
+        func = m.group(1).upper()
+        var = m.group(2).strip()
+        # create a default alias
+        alias = f"?{func.lower()}_{var.strip('?')}"
+        return f"({func}({var}) AS {alias})"
+    return AGG_FUNC_RE.sub(repl, sparql)
+
+
+
+
+###################################### Extraction ######################################
 
 def extract_queries():
     for subdir in SUBDIRS:
@@ -78,7 +108,12 @@ def extract_queries():
                 if not qid or not sparql:
                     continue
 
-                sparql = wrap_select_aliases(sparql.strip())
+                sparql = rewrite_select_aliases(sparql.strip())
+                sparql = wrap_aggregations(sparql.strip())
+                
+                # Fix query 56
+                sparql = sparql.replace("(AVG(?installed_cap_value AS ?avg_installed_cap_value))",
+                                             "(AVG(?installed_cap_value) AS ?avg_installed_cap_value)")
 
                 out_file = BASE_DIR / f"{qid}.sparql"
                 out_file.write_text(
@@ -87,8 +122,35 @@ def extract_queries():
                 )
                 logging.info(f"Wrote {out_file}")
 
+
+###################################### Exclusion ######################################
+# Queries that starvers cannot process are excluded
+
+def exclude_queries():
+    queries_to_exlcude = [""]
+
+    rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/tb_sr_rs_bearb_day", "http://Starvers:7200/repositories/tb_sr_rs_bearb_day/statements")
+    for query_file in BASE_DIR.iterdir():
+        if query_file.suffix != ".sparql":
+            continue  # skip non-SPARQL files
+
+        with query_file.open("r", encoding="utf-8") as f:
+            sparql = f.read()
+
+        try:
+            result_set = rdf_star_engine.query(sparql)
+        except Exception as e:
+            logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            queries_to_exlcude.append(query_file.name)
+            query_file.unlink()
+
+    logging.info(f"Exluded the following queries: {queries_to_exlcude}")
+
+# All ASK queries
+
+###################################### Cleanup ######################################
+
 def cleanup():
-    # Remove all directories and files that are not *.sparql files in BASE_DIR
     for item in BASE_DIR.iterdir():
         if item.is_dir() and item.name in SUBDIRS:
             for subitem in item.iterdir():
@@ -98,12 +160,12 @@ def cleanup():
         elif item.is_file() and item.suffix != ".sparql":
             item.unlink()
 
-    # Remove SciQA-dataset directory
     shutil.rmtree(f"{BASE_DIR}/SciQA-dataset")
     logging.info(f"Cleanup completed in {BASE_DIR}")
 
+###################################### Main ######################################
 
 if __name__ == "__main__":
     extract_queries()
-    cleanup()
-
+    exclude_queries()
+    #cleanup()
