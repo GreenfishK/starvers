@@ -127,3 +127,26 @@
             tb_sr_ng = 1
             tb_sr_rs = 1
             ostrich = 1
+    [datasets.orkg]
+        snapshot_versions = 34
+        ic_basename_length = 1
+        superset = "orkg"
+        download_link_snapshots = "tbd"
+        archive_name_snapshots = "tbd"
+        download_link_ng_dataset = "tbd"
+        archive_name_ng_dataset = "tbd"
+        yn_nested_archives = "tbd"
+        [datasets.orkg.repositories]
+            ic_sr_ng = 1
+            cb_sr_ng = 1
+            tb_sr_ng = 1
+            tb_sr_rs = 1
+            ostrich = 1
+        [datasets.orkg.query_sets]
+            [datasets.orkg.query_sets.complex]
+                [datasets.orkg.query_sets.complex.policies]
+                    ic_sr_ng = {versions = 33, template = "ic_sr_ng/ts"}
+                    cb_sr_ng = {versions = 33, template = "cb_sr_ng/sparql_full"}
+                    tb_sr_ng = {versions = 33, template = "tb_sr_ng/ts"}
+                    tb_sr_rs = {versions = 33, template = "tb_sr_rs/"}
+                    ostrich = {versions = 33, template = "ostrich/ts"}
