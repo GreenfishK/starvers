@@ -5,7 +5,7 @@ PREFIX orkgp: <http://orkg.org/orkg/predicate/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-(SELECT (COUNT(?repr) AS ?cnt)) ?repr
+SELECT (COUNT(?repr) AS ?cnt) ?repr
 WHERE {
   orkgr:R8364 orkgp:compareContribution ?cont.
   ?cont orkgp:P7046 ?sys.

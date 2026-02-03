@@ -8,7 +8,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?location, ?location_label
 WHERE {
   {
-    (SELECT (MAX(?geo_scale) AS ?max_geo_scale))
+    SELECT (MAX(?geo_scale) AS ?max_geo_scale)
     WHERE {
       orkgr:R149849 orkgp:compareContribution ?contrib.
       ?contrib orkgp:P41568 ?geo_scale.

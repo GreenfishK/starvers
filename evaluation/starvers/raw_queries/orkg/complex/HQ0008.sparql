@@ -14,7 +14,7 @@ WHERE {
    ]
  ].
  {
-   SELECT (DISTINCT (COUNT(?paper_) AS ?min_papers))
+   SELECT DISTINCT (COUNT(?paper_) AS ?min_papers)
    WHERE {
     ?paper_ a orkgc:Paper;
     orkgp:P31 [

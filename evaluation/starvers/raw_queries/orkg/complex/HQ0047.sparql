@@ -5,10 +5,10 @@ PREFIX orkgp: <http://orkg.org/orkg/predicate/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-(SELECT (AVG(?reproductive_number) AS ?average_reproductive_number))
+SELECT (AVG(?reproductive_number) AS ?average_reproductive_number)
 WHERE {
   orkgr:R44930 orkgp:compareContribution ?contrib.
   ?contrib orkgp:P23140 ?basic_reproductive_number.
   ?basic_reproductive_number orkgp:HAS_VALUE ?value
-  (BIND(xsd:float(?value) AS ?reproductive_number))
+  BIND(xsd:float(?value) AS ?reproductive_number)
 }
