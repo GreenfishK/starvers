@@ -1,6 +1,0 @@
-?s <http://ogp.me/ns#postal-code> ?o .
-?s <http://d-nb.info/standards/elementset/gnd#relatedDdcWithDegreeOfDeterminacy1> ?o .
-?s <http://ogp.me/ns#locality> ?o .
-?s <http://ogp.me/ns#country-name> ?o .
-?s <http://ogp.me/ns#phone_number> ?o .
-?s <http://ogp.me/ns#street-address> ?o .

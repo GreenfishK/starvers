@@ -82,6 +82,12 @@ RUN mkdir -p /starvers_eval/output/measurements
 RUN mkdir -p /starvers_eval/output/result_sets
 RUN mkdir -p /starvers_eval/output/figures
 RUN mkdir -p /starvers_eval/rawdata
+RUN mkdir -p /starvers_eval/queries/raw_queries/beara/low
+RUN mkdir -p /starvers_eval/queries/raw_queries/beara/high
+RUN mkdir -p /starvers_eval/queries/raw_queries/bearb/lookup
+RUN mkdir -p /starvers_eval/queries/raw_queries/bearb/join
+RUN mkdir -p /starvers_eval/queries/raw_queries/bearc/complex
+RUN mkdir -p /starvers_eval/queries/raw_queries/orkg/complex
 RUN mkdir -p /starvers_eval/scripts/1_download
 RUN mkdir -p /starvers_eval/scripts/2_clean_raw_datasaets
 RUN mkdir -p /starvers_eval/scripts/3_construct_datasets
