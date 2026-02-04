@@ -1,20 +1,20 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/clean_raw_datasets/clean_datasets.txt
+log_file=/starvers_eval/output/logs/preprocess_data/clean_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
 # Bash arguments and environment variables
 # only raw independent copies/snapshots and timestamp- and "named graphs"-based datasets are cleaned. Don't change order!
-policies=("ic" "tb") 
+dataset_variants=("ic" "BEAR_ng") 
 datasets=("${datasets}") 
 export JAVA_HOME=/opt/java/java11/openjdk
 export PATH=/opt/java/java11/openjdk/bin:$PATH
 
 # Prepare directories and files
-rm -rf /starvers_eval/output/logs/clean_raw_datasets
-mkdir -p /starvers_eval/output/logs/clean_raw_datasets
+rm -rf /starvers_eval/output/logs/preprocess_data
+mkdir -p /starvers_eval/output/logs/preprocess_data
 > $log_file
 
 # Path variables
@@ -40,7 +40,6 @@ get_snapshot_filename_struc() {
   echo "%0${snapshot_filename_struc}g";
 }
 
-
 echo "$(log_timestamp) ${log_level}:Start corrections" >> $log_file
 for dataset in ${datasets[@]}; do
     versions=`get_snapshot_version "${dataset}"`
@@ -50,16 +49,24 @@ for dataset in ${datasets[@]}; do
         continue
     fi
 
-    for policy in ${policies[@]}; do
-        case $policy in 
+    for ds_var in ${dataset_variants[@]}; do
+
+        case $ds_var in 
             ic) ds_rel_path='${snapshot_dir}/${c}.nt' base_name_tmpl='${c}.nt';;
-            tb) ds_rel_path='alldata.TB.nq' versions=1 base_name_tmpl='alldata.TB';;
+            BEAR_ng) ds_rel_path='alldata.TB.nq' versions=1 base_name_tmpl='alldata.TB';;
             *)
-                echo "$(log_timestamp) ${log_level}:Policy must be in ic or tb, which are the policies of the raw datasets." >> $log_file
+                echo "$(log_timestamp) ${log_level}:Dataset variant must be in ic or BEAR_ng." >> $log_file
                 exit 2
             ;;
         esac
-        echo "$(log_timestamp) ${log_level}:Correcting $dataset for $policy policy" >> $log_file
+
+        # Checking path existance
+        if [[ "$ds_var" == "BEAR_ng" && ! -f "/starvers_eval/rawdata/$dataset/alldata.TB.nq" ]]; then
+            echo "$(log_timestamp) ${log_level}:The BEAR named graphs dataset does not exist at /starvers_eval/rawdata/$dataset/alldata.TB.nq. Skipping processing of this dataset." >> $log_file
+            continue
+        fi
+
+        echo "$(log_timestamp) ${log_level}:Correcting $dataset for $ds_var dataset variant" >> $log_file
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
             base_name=`eval echo $base_name_tmpl`
@@ -108,6 +115,7 @@ for dataset in ${datasets[@]}; do
     done
 done
 
+
 # Parse SciQA queries
 echo "$(log_timestamp) ${log_level}:Parsing SciQA queries" >> $log_file
-python3 $SCRIPT_DIR/2_clean_raw_datasets/parse_SciQA_queries.py 
+python3 $SCRIPT_DIR/2_preprocess_data/parse_SciQA_queries.py 

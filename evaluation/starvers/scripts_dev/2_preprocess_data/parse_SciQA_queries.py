@@ -8,11 +8,11 @@ import shutil
 from starvers.starvers import TripleStoreEngine
 
 ############################################# Logging #############################################
-with open('/starvers_eval/output/logs/clean_raw_datasets/parse_sciqa_queries.txt', "w") as log_file:
+with open('/starvers_eval/output/logs/preprocess_data/parse_sciqa_queries.txt', "w") as log_file:
     log_file.write("")
 logging.basicConfig(
     handlers=[logging.FileHandler(
-        filename="/starvers_eval/output/logs/clean_raw_datasets/parse_sciqa_queries.txt",
+        filename="/starvers_eval/output/logs/preprocess_data/parse_sciqa_queries.txt",
         encoding='utf-8',
         mode='a+'
     )],
@@ -33,6 +33,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
 BASE_DIR = Path("/starvers_eval/queries/raw_queries/orkg/complex")
+SCRIPTS_DIR = Path("/starvers_eval/scripts")
 SUBDIRS = ["train", "test", "valid"]
 
 ###################################### Regex logic ######################################
@@ -129,7 +130,6 @@ def extract_queries():
 def exclude_queries():
     queries_to_exlcude = [""]
 
-    rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/tb_sr_rs_bearb_day", "http://Starvers:7200/repositories/tb_sr_rs_bearb_day/statements")
     for query_file in BASE_DIR.iterdir():
         if query_file.suffix != ".sparql":
             continue  # skip non-SPARQL files
@@ -137,16 +137,32 @@ def exclude_queries():
         with query_file.open("r", encoding="utf-8") as f:
             sparql = f.read()
 
-        try:
-            result_set = rdf_star_engine.query(sparql)
-        except Exception as e:
-            logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+        # Exclude if this is an ASK query 
+        ASK_REGEX = re.compile(
+            r"\bASK\s+(WHERE\s+)?\{",
+            re.IGNORECASE | re.MULTILINE
+        )
+
+        if ASK_REGEX.search(sparql):
+            logging.info(f"Query {query_file.name} is an ASK query and will be excluded")
             queries_to_exlcude.append(query_file.name)
             query_file.unlink()
+            continue
+
+        # Exlude if the RDF-star engine returns an exception (because the query was not rewritten properly).
+        # Startup GraphDB repository 
+        # Call SCRIPTS_DIR / script 3_construct_datasets start_graphdb.sh "dummy" "orkg" "false" "true" "false"
+        #
+        #rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg", "http://Starvers:7200/repositories/dummy_orkg/statements")
+        #try:
+        #    result_set = rdf_star_engine.query(sparql)
+        #except Exception as e:
+        #    logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+        #    queries_to_exlcude.append(query_file.name)
+        #    query_file.unlink()
 
     logging.info(f"Exluded the following queries: {queries_to_exlcude}")
 
-# All ASK queries
 
 ###################################### Cleanup ######################################
 

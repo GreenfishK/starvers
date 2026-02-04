@@ -54,7 +54,6 @@ WORKDIR /
 COPY src/starvers /starvers_eval/starvers
 COPY evaluation/starvers/scripts_dev/requirements.txt /starvers_eval
 COPY evaluation/starvers/scripts_dev/eval_setup.toml /starvers_eval/configs/eval_setup.toml
-COPY evaluation/starvers/raw_queries /starvers_eval/queries/raw_queries
 
 # Copy from previous build stage
 COPY --from=install_ostrich /usr/local/lib/ /usr/local/lib/
@@ -89,7 +88,7 @@ RUN mkdir -p /starvers_eval/queries/raw_queries/bearb/join
 RUN mkdir -p /starvers_eval/queries/raw_queries/bearc/complex
 RUN mkdir -p /starvers_eval/queries/raw_queries/orkg/complex
 RUN mkdir -p /starvers_eval/scripts/1_download
-RUN mkdir -p /starvers_eval/scripts/2_clean_raw_datasaets
+RUN mkdir -p /starvers_eval/scripts/2_preprocess_data
 RUN mkdir -p /starvers_eval/scripts/3_construct_datasets
 RUN mkdir -p /starvers_eval/scripts/4_ingest
 RUN mkdir -p /starvers_eval/scripts/5_construct_queries
