@@ -14,13 +14,15 @@ services:
     entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
 
   preprocess_data:
-    image: starvers_eval:20260203
+    image: starvers_eval:latest
     container_name: starvers_eval-preprocess_data
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/queries/raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
       - ./scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+
     environment:
       - datasets=orkg
     #entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
@@ -38,11 +40,12 @@ services:
       - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     ports:
       - 7600:7200
       - 3050:3030
     entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
-    command: ["bearc", "True", "False", "True", "True"]
+    command: ["bearc", "True", "False", "True", "True", "True"]
   
   construct_datasets:
     image: starvers_eval:latest
@@ -60,14 +63,16 @@ services:
       - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
       - datasets=${datasets}
       - skip_change_sets=${skip_change_sets}
       - skip_tb_star_ds=${skip_tb_star_ds}
       - skip_cbng_ds=${skip_cbng_ds}
       - skip_icng_ds=${skip_icng_ds}
+      - skip_update_measurement=${skip_update_measurement}
     entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
-    command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds"]
+    command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_cbng_ds", "$skip_icng_ds", "$skip_update_measurement"]
 
   ingest:
     image: starvers_eval:latest
