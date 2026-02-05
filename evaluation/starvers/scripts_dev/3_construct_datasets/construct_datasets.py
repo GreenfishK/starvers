@@ -20,10 +20,30 @@ import psutil
 
 from starvers.starvers import TripleStoreEngine
 
+CONFIG_TMPL_DIR="/starvers_eval/scripts/3_construct_datasets/configs"
+CONFIG_DIR="/starvers_eval/configs/construct_datasets"
+
 
 class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
+
+
+def configure_triple_stores(dataset: str, policy:str):
+    triple_store_configs = \
+                        {'graphdb': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh',
+                                    'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
+                                    'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
+                                    'shutdown_process': f'/opt/java/java11/openjdk/bin/java',
+                                    'database_dir': '/starvers_eval/databases/construct_datasets/graphdb'
+                                    },
+                        'jenatdb2': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh',
+                                    'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
+                                    'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
+                                    'shutdown_process': '/jena-fuseki/fuseki-server.jar',
+                                    'database_dir': '/starvers_eval/databases/construct_datasets/jenatdb2'
+                                    }}
+    return triple_store_configs
     
 
 def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: int, format: str, basename_length: int):
@@ -82,7 +102,97 @@ def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: in
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
 
 
-def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_version: int, init_timestamp: datetime, dataset:str):
+def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, ts_configs: dict,
+                        source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
+    logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
+    configs = ts_configs[triple_store.name.lower()]
+    policy = "tb_rs_sr"
+    repository = policy + "_" + dataset
+
+    logging.info("Create GraphDB directories and environment")
+    subprocess.call(shlex.split(f"{configs['start_script']} create_env {policy} {dataset} {configs['database_dir']} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+
+    logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
+    subprocess.call(shlex.split(f"{configs['start_script']} ingest_empty {configs['database_dir']} {policy} {dataset} {CONFIG_DIR}"))
+
+    logging.info("Startup GraphDB engine")
+    subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
+
+    logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
+    added_triples_raw = open(source_ic0, "r").read().splitlines()
+    added_triples_raw = list(filter(None, added_triples_raw))
+    added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
+
+    logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
+    rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
+    try:
+        start = time.time()
+        rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
+        end = time.time()
+    except HTTPError:
+        logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
+        return False
+    execution_time_insert = end - start
+    
+    df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'],
+                        data=[[triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert]])
+
+    # Map versions to files in chronological orders
+    change_sets = {}
+    for filename in sorted(os.listdir(source_cs)):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue 
+        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
+        change_sets[filename] = version
+
+    # Apply changesets to RDF-star dataset
+    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
+        vers_ts = init_timestamp + timedelta(seconds=version)
+
+        mem_in_usage = psutil.virtual_memory().percent
+        logging.info(f"Memory in usage: {mem_in_usage}%")
+        if mem_in_usage > 85:
+            # Reboot to free up main memory
+            subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+            subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
+        
+        if filename.startswith("data-added"):
+            logging.info("Read positive changeset {0} into memory.".format(filename))
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
+            added_triples_raw = list(filter(None, added_triples_raw))
+            cnt_trpls = len(added_triples_raw)
+
+            logging.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
+            start = time.time()
+            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
+            end = time.time()
+            execution_time_insert = end - start
+            new_row = pd.DataFrame([[triple_store.name, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert]], columns=df.columns)
+            df = pd.concat([df, new_row], ignore_index=True)
+
+        if filename.startswith("data-deleted"):
+            logging.info("Read negative changeset {0} into memory.".format(filename))
+            deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
+            deleted_triples_raw = list(filter(None, deleted_triples_raw))
+            cnt_trpls = len(deleted_triples_raw)
+
+            logging.info(f"Oudate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")                
+            start = time.time()
+            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
+            end = time.time()
+            execution_time_outdate = end - start
+            new_row = pd.DataFrame([[triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate]], columns=df.columns)
+            df = pd.concat([df, new_row], ignore_index=True)
+    
+        df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
+
+    # Shutdown engine
+    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+
+    return df
+
+def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str, 
+                         last_version: int, init_timestamp: datetime, dataset:str):
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
@@ -93,212 +203,74 @@ def construct_tb_star_ds(source_ic0, source_cs: str, destination: str, last_vers
     by 2000 in every iteration.
     """
     policy = "tb_rs_sr"
-    repository = policy + "_" + dataset
-    triple_store_configs = {'graphdb': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_graphdb.sh',
-                                        'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-                                        'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
-                                        'shutdown_process': f'/opt/java/java11/openjdk/bin/java',
-                                       },
-                            'jenatdb2': {'start_script': '/starvers_eval/scripts/3_construct_datasets/start_jenatdb2.sh',
-                                        'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-                                        'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
-                                        'shutdown_process': '/jena-fuseki/fuseki-server.jar',
-                                        }}
+    triple_store_configs = configure_triple_stores(dataset, policy)
+    configs = triple_store_configs[TripleStore.GRAPHDB.name.lower()]
+
+    # Insert first snapshot and change sets into GraphDB
+    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
+                       source_ic0=source_ic0, source_cs=source_cs, 
+                       last_version=last_version, init_timestamp=init_timestamp)    
+
+    # Reboot GraphDB to free up main memory
+    logging.info(f"Restarting GraphDB server.")
+    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+    subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
     
-
-    def construct_ds_in_db(triple_store: TripleStore, chunk_size: int, ts_configs: dict):
-        logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
-        configs = ts_configs[triple_store.name.lower()]
-
-        logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
-        subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-            configs['start_script'], policy, dataset, "true", "true", "false")))
-
-        logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
-        added_triples_raw = open(source_ic0, "r").read().splitlines()
-        added_triples_raw = list(filter(None, added_triples_raw))
-        added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
-
-        logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-        rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
-        try:
-            start = time.time()
-            rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
-            end = time.time()
-        except HTTPError:
-            logging.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
-            return False
-        execution_time_insert = end - start
-        
-        df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'],
-                          data=[[triple_store.name, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert]])
-
-        # Map versions to files in chronological orders
-        change_sets = {}
-        for filename in sorted(os.listdir(source_cs)):
-            if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
-                continue 
-            version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
-            change_sets[filename] = version
-
-        # Apply changesets to RDF-star dataset
-        for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
-            vers_ts = init_timestamp + timedelta(seconds=version)
-
-            mem_in_usage = psutil.virtual_memory().percent
-            logging.info(f"Memory in usage: {mem_in_usage}%")
-            if mem_in_usage > 85:
-                # Reboot to free up main memory
-                logging.info("Memory usage over 85%. Restarting {0} server.".format(triple_store.name))
-                subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-                    configs['start_script'], policy, dataset, "false", "false", "true")))
-            
-            if filename.startswith("data-added"):
-                logging.info("Read positive changeset {0} into memory.".format(filename))
-                added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
-                added_triples_raw = list(filter(None, added_triples_raw))
-                cnt_trpls = len(added_triples_raw)
-
-                logging.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
-                start = time.time()
-                rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
-                end = time.time()
-                execution_time_insert = end - start
-                new_row = pd.DataFrame([[triple_store.name, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert]], columns=df.columns)
-                df = pd.concat([df, new_row], ignore_index=True)
-
-            if filename.startswith("data-deleted"):
-                logging.info("Read negative changeset {0} into memory.".format(filename))
-                deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
-                deleted_triples_raw = list(filter(None, deleted_triples_raw))
-                cnt_trpls = len(deleted_triples_raw)
-
-                logging.info(f"Oudate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")                
-                start = time.time()
-                rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
-                end = time.time()
-                execution_time_outdate = end - start
-                new_row = pd.DataFrame([[triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate]], columns=df.columns)
-                df = pd.concat([df, new_row], ignore_index=True)
-        
-            df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
-
-        return df
+    # Extract and dump repository
+    logging.info(f"Extract the whole dataset from the GraphDB repository {policy}_{dataset} and dump it to {destination}.")
+    subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
     
-    if dataset == 'bearc':
-        # HTTPError
-        triple_stores = [TripleStore.GRAPHDB]
-        chunk_sizes = range(1000, 10000, 1000)
-        measure_updates = partial(construct_ds_in_db, ts_configs=triple_store_configs)
-
-        measurements: list[pd.DataFrame] = []
-        for ts, chunk_size in product(triple_stores, chunk_sizes):
-            result = measure_updates(ts, chunk_size)
-            if result is False:
-                # Stop iteration if HTTPError occurred
-                break
-            measurements.append(result)
-
-        combined_measurements = pd.concat(measurements, join="inner")
-        
-        logging.info("Writing performance measurements to disk ...")            
-        combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='w', header=True)
-
-        # Remove temporary output files
-        dir_path = "/starvers_eval/output/measurements/"
-        files_to_remove = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.startswith("time_update_") and f.endswith(".csv")]
-        for file in files_to_remove:
-            os.remove(file)
-    else:
-        construct_ds_in_db(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs)    
-
-    logging.info("Extract the whole dataset from the GraphDB repository.")
-    # Reboot to free up main memory
-    #logging.info("Restarting {0} server.".format(triple_store.name))
-    #subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-    #    configs['start_script'], policy, dataset, "false", "false", "true")))
-    sparql_engine = SPARQLWrapper(triple_store_configs['graphdb']['query_endpoint'])
-    
-    sparql_engine.setReturnFormat(JSON)
-    sparql_engine.setOnlyConneg(True)
-    sparql_engine.setQuery("""
-    select ?s ?p ?o ?x ?y ?a ?b {
-        << <<?s ?p ?o >> ?x ?y >> ?a ?b .
-    }
-    """)
-    results = sparql_engine.queryAndConvert()
-    logging.info("There are {0} triples in the extraction.".format(len(results["results"]["bindings"])))
-
-    logging.info("Line-wise convert JSON output of final RDF-star dataset into N3 format and write to: {0}".format(destination))
-    with open(destination, "w") as rdf_star_ds_file:
-        for r in results["results"]["bindings"]:
-            # Further potential replacements: 
-            # replace(r"\"", '\\"')
-            # replace(r"\x", r"\\x")
-
-            # Parse subject at nesting level 2
-            if r['s']['type'] == "uri":
-                s = "<" + r['s']['value'] + ">"
-            else:
-                s = r['s']['value'] \
-                  .replace("\\","\\\\") \
-                  .replace(r'"', r'\"') \
-                  .replace("\n","\\n") \
-                  .replace("\t", "\\t") \
-                  .replace("\r", "\\r")
-            # Parse predicate at nesting level 2
-            p = URIRef(r['p']['value'])
-
-            # Parse object at nesting level 2
-            if r['o']['type']  == "uri":
-                o = "<" + r['o']['value'] + ">"
-            elif r['o']['type'] == "blank":
-                o = r['o']['value']
-            else:
-                value = r['o']["value"] \
-                  .replace("\\","\\\\") \
-                  .replace(r'"', r'\"') \
-                  .replace("\n","\\n") \
-                  .replace("\t", "\\t") \
-                  .replace("\r", "\\r")
-                lang = r['o'].get("xml:lang", None)
-                datatype = r['o'].get("datatype", None)
-                o = '"' + value + '"'
-                if lang:
-                    o+='@' + lang 
-                elif datatype:
-                    o+="^^" + "<" + datatype + ">"
-            
-            # Parse predicate at nesting level 1
-            x = URIRef(r['x']['value'])
-
-            # Parse object at nesting level 1
-            value = r['y']["value"]
-            datatype = r['y'].get("datatype", None)
-            y = '"' + value + '"^^' + "<" + datatype + ">"
-            
-            # Parse predicate at nesting level 0
-            a = URIRef(r['a']['value'])
-
-            # Parse object at nesting level 0
-            value = r['b']["value"]
-            datatype = r['b'].get("datatype", None)
-            b = '"' + value + '"^^' + "<" + datatype + ">"
-            
-            rdf_star_ds_file.write("<< << " + s + " " + p.n3() + " " + o  + ">>" + x.n3()  + " " + y  + " >>" + a.n3()  + " " + b + " .\n")
-    
+    # Count triples
     cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
     cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
-    logging.info("Shutting down GraphDB server and removing database files.")
-    subprocess.run(["pkill", "-f", "{0}".format(triple_store_configs['graphdb']['shutdown_process'])])
+    # Shutdown triple store
+    logging.info("Shutting down GraphDB server.")
+    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+
+    # Remove database files
+    logging.info("Removing database files.")
     shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
     shutil.rmtree("/run/configuration", ignore_errors=True)
 
 
-def construct_cbng_ds(source_ic0, source_cs: str, destination: str, last_version: int):
+def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
+    # HTTPError
+    policy = "tb_rs_sr"
+    triple_store_configs = configure_triple_stores(dataset, policy)
+
+    triple_stores = [TripleStore.GRAPHDB]
+    chunk_sizes = range(1000, 10000, 1000)
+    measure_ts_with_varying_chunk_sizes = partial(insert_ic0_and_cbs, 
+                                                ts_configs=triple_store_configs,
+                                                source_ic0=source_ic0, 
+                                                source_cs=source_cs, 
+                                                last_version=last_version, 
+                                                init_timestamp=init_timestamp)
+
+    measurements: list[pd.DataFrame] = []
+    for ts, chunk_size in product(triple_stores, chunk_sizes):
+        result = measure_ts_with_varying_chunk_sizes(ts, chunk_size)
+        if result is False:
+            # Stop iteration if HTTPError occurred
+            break
+        measurements.append(result)
+
+    combined_measurements = pd.concat(measurements, join="inner")
+    
+    logging.info("Writing performance measurements to disk ...")            
+    combined_measurements.to_csv("/starvers_eval/output/measurements/time_update.csv", sep=";", index=False, mode='w', header=True)
+
+    # Remove temporary output files
+    dir_path = "/starvers_eval/output/measurements/"
+    files_to_remove = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.startswith("time_update_") and f.endswith(".csv")]
+    for file in files_to_remove:
+        os.remove(file)
+
+
+def construct_cbng_ds(source_ic0: str, source_cs: str, destination: str, last_version: int):
     """
     TODO: write docu
     """
@@ -434,6 +406,7 @@ skip_change_sets = sys.argv[2]
 skip_tb_star_ds = sys.argv[3]
 skip_cbng_ds = sys.argv[4]
 skip_icng_ds = sys.argv[5]
+skip_update_measurement = sys.argv[6]
 
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -469,6 +442,13 @@ for dataset in datasets:
                             last_version=total_versions,
                             init_timestamp=init_version_timestamp,
                             dataset=dataset)    
+        
+    if not skip_update_measurement == "True":
+        measure_updates(dataset=dataset, 
+                        source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                        source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
+                        last_version=total_versions, 
+                        init_timestamp=init_version_timestamp)
     
     if not skip_cbng_ds == "True":
         construct_cbng_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",

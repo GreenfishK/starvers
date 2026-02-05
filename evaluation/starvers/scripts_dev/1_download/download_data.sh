@@ -52,6 +52,7 @@ for dataset in ${datasets[@]}; do
     gzip -d < /starvers_eval/rawdata/${dataset}/${archive_name_ng_dataset} > /starvers_eval/rawdata/${dataset}/alldata.TB.nq
     
     # for CB and CBNG policy: empty initial delete changeset
+    # For filtering ORKG queries. Send them against an empty repository
     > /starvers_eval/rawdata/${dataset}/empty.nt 
     
     echo "$(log_timestamp) ${log_level}: Downloading and extracting ${dataset} datasets finished." >> $log_file

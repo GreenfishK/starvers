@@ -37,13 +37,11 @@ logger.info(f"Parameter: port={port}")
 
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
-memory_consumption_file = "/starvers_eval/output/measurements/memory_consumption.csv"
+time_measurement_file = "/starvers_eval/output/measurements/time.csv"
 
 # Global configurations for the SPARQL engine
-if triple_store == "jenatdb2" and policy == "tb_sr_rs" and dataset == "bearc":
-    timeout = 1
-else:
-    timeout = None
+timeout = 30
+
 engine = SPARQLWrapper(endpoint="dummy")
 engine.timeout = timeout
 engine.setReturnFormat(JSON)
@@ -159,6 +157,7 @@ for query_set in query_sets:
         for query_file_name in os.listdir(query_set_version):
             execution_time = 0
             result_set_creation_time = 0
+            yn_timeout = 0
 
             logger.info("Read query file {0} and pass it to the engine.".format(query_file_name))
             file = open(query_set_version + "/" + query_file_name, "r")
@@ -187,8 +186,9 @@ for query_set in query_sets:
                     logger.warning(f"The query execution {query_file_name} might have reached the timeout of {timeout} seconds. " +\
                     "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
+                    yn_timeout = 1
 
-                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0]
+                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0, yn_timeout]
                 df_data.append(new_row)
             
             elif policy == "cb_sr_ng":
@@ -274,8 +274,9 @@ for query_set in query_sets:
                     logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " + \
                     "The execution_time will be set to -1. The results will not be serialized.")
                     execution_time = -1
+                    yn_timeout = 1
                 
-                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time]
+                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time, yn_timeout]
                 df_data.append(new_row)
 
             
@@ -283,7 +284,7 @@ logger.info("Writing performance measurements to disk ...")
 
 df = pd.DataFrame(data=df_data, 
                   columns=['triplestore', 'dataset', 'policy', 'query_set', 
-                           'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time'])
+                           'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time' 'yn_timeout'])
 
-df.to_csv("/starvers_eval/output/measurements/time.csv", sep=";", index=False, mode='a', header=False)
+df.to_csv(time_measurement_file, sep=";", index=False, mode='a', header=False)
 

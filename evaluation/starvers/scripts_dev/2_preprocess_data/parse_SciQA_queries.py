@@ -1,15 +1,17 @@
-#!/usr/bin/env python3
-
 import json
 import re
 from pathlib import Path
 import logging
 import shutil
 from starvers.starvers import TripleStoreEngine
+import subprocess
+import shlex
 
 ############################################# Logging #############################################
 with open('/starvers_eval/output/logs/preprocess_data/parse_sciqa_queries.txt', "w") as log_file:
     log_file.write("")
+with open('/starvers_eval/output/logs/preprocess_data/excluded_queries.csv', "w") as query_log_file:
+    query_log_file.write("query,yn_excluded,reason\n")
 logging.basicConfig(
     handlers=[logging.FileHandler(
         filename="/starvers_eval/output/logs/preprocess_data/parse_sciqa_queries.txt",
@@ -90,6 +92,12 @@ def wrap_aggregations(sparql: str) -> str:
 
 
 ###################################### Extraction ######################################
+def startup():
+    # Startup GraphDB repository 
+    logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
+    subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
+        "/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh", "dummy", "orkg", "true", "true", "false")))
+    
 
 def extract_queries():
     for subdir in SUBDIRS:
@@ -128,7 +136,8 @@ def extract_queries():
 # Queries that starvers cannot process are excluded
 
 def exclude_queries():
-    queries_to_exlcude = [""]
+
+    queries = []
 
     for query_file in BASE_DIR.iterdir():
         if query_file.suffix != ".sparql":
@@ -145,25 +154,44 @@ def exclude_queries():
 
         if ASK_REGEX.search(sparql):
             logging.info(f"Query {query_file.name} is an ASK query and will be excluded")
-            queries_to_exlcude.append(query_file.name)
+            queries.append([query_file.name, 1, "ASK"])
             query_file.unlink()
             continue
 
         # Exlude if the RDF-star engine returns an exception (because the query was not rewritten properly).
-        # Startup GraphDB repository 
-        # Call SCRIPTS_DIR / script 3_construct_datasets start_graphdb.sh "dummy" "orkg" "false" "true" "false"
-        #
-        #rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg", "http://Starvers:7200/repositories/dummy_orkg/statements")
-        #try:
-        #    result_set = rdf_star_engine.query(sparql)
-        #except Exception as e:
-        #    logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-        #    queries_to_exlcude.append(query_file.name)
-        #    query_file.unlink()
+        rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg", "http://Starvers:7200/repositories/dummy_orkg/statements")
+        
+        # Execute original query
+        try:
+            result_set = rdf_star_engine.query(sparql, yn_timestamp_query=False)
+        except Exception as e:
+            logging.info(f"Original query {query_file.name} is invalid and will be excluded: {e}")
+            queries.append([query_file.name, 1, "Invalid Original"])
+            query_file.unlink()
+            continue
+        
+        # Execute transformed query
+        try:
+            result_set = rdf_star_engine.query(sparql, yn_timestamp_query=True)
+        except Exception as e:
+            logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            queries.append([query_file.name, 1, "Malformed Transformed"])
+            query_file.unlink()
+            continue
+        queries.append([query_file.name, 0, ""])
 
-    logging.info(f"Exluded the following queries: {queries_to_exlcude}")
 
+    queries_to_exlcude = [row[0] for row in queries if row[1] == 1]
+    logging.info(f"Exluded the following {len(queries_to_exlcude)} queries: {queries_to_exlcude}")
 
+    with open('/starvers_eval/output/logs/preprocess_data/excluded_queries.csv', "a") as query_log_file:
+        for row in queries:
+            query_log_file.write(",".join(map(str, row)) + "\n")
+
+    # Shutting down GraphDB
+    subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
+                "/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh", "dummy", "orkg", "false", "false", "true")))
+            
 ###################################### Cleanup ######################################
 
 def cleanup():
@@ -182,6 +210,7 @@ def cleanup():
 ###################################### Main ######################################
 
 if __name__ == "__main__":
+    startup()
     extract_queries()
     exclude_queries()
     #cleanup()
