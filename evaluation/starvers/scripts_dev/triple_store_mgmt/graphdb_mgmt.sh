@@ -31,11 +31,12 @@ shutdown() {
 
 dump_repo() {
     repositoryID=${policy}_${dataset}
-    echo "$(log_timestamp) ${log_level}:Dumping the repository ${repositoryID} to ${data_dir}..." >> $log_file
+    echo "$(log_timestamp) ${log_level}:Dumping the repository ${repositoryID} to ${output_file}..." >> $log_file
 
-    curl 'http://Starvers:7200/repositories/${repositoryID}/statements' \
-        --header 'Accept: text/turtle-star \
-        -O ${data_dir}/alldata.TB_star_hierarchical.ttl'
+    curl "http://Starvers:7200/repositories/${repositoryID}/statements" \
+        -X GET \
+        --header "Accept: application/x-turtlestar" \
+        -o "${output_file}"
 }
 
 create_env() {
@@ -110,14 +111,14 @@ elif [[ ${1:-} == "create_env" ]]; then
 
 elif [[ ${1:-} == "dump_repo" ]]; then
     if [[ $# -ne 5 ]]; then
-        echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <data_dir>"
+        echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
         exit 1
     fi
 
     database_dir=$2
     policy=$3
     dataset=$4
-    data_dir=$5
+    output_file=$5
 
     export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=${database_dir}"
 
@@ -142,7 +143,7 @@ else
     echo "Usage: $0 startup <database_dir>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
-    echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <data_dir>"
+    echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1
