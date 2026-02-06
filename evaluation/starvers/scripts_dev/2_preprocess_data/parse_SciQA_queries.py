@@ -77,11 +77,13 @@ AGG_FUNC_RE = re.compile(
 )
 
 
-
+# Helper
 def rewrite_select_aliases(sparql: str) -> str:
     # keep the first capture group (SELECT + vars) and wrap only the alias
     return SELECT_ALIAS_RE.sub(r"\1 (\2)", sparql)
 
+
+# Helper
 def wrap_aggregations(sparql: str) -> str:
     def repl(m):
         func = m.group(1).upper()
@@ -92,15 +94,15 @@ def wrap_aggregations(sparql: str) -> str:
     return AGG_FUNC_RE.sub(repl, sparql)
 
 
-
-
-###################################### Extraction ######################################
+# Start GraphDB
 def startup():
     # Startup GraphDB repository 
     logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
-    subprocess.call(shlex.split(f"/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh ingest_empty {DATABASE_DIR} dummy orkg {CONFIG_DIR}"))
-    
+    subprocess.call(shlex.split(f"/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh create_env  dummy orkg {DATABASE_DIR} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+    subprocess.call(shlex.split(f"/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh startup {DATABASE_DIR}"))
 
+
+# Extraction from JSON files
 def extract_queries():
     for subdir in SUBDIRS:
         json_path = BASE_DIR / "SciQA-dataset" / subdir / "questions.json"
@@ -134,9 +136,7 @@ def extract_queries():
                 logging.info(f"Wrote {out_file}")
 
 
-###################################### Exclusion ######################################
 # Queries that starvers cannot process are excluded
-
 def exclude_queries():
 
     queries = []
@@ -193,8 +193,8 @@ def exclude_queries():
     # Shutting down GraphDB
     subprocess.call(shlex.split("/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh shutdown"))
             
-###################################### Cleanup ######################################
 
+# Remove database and raw dataset files
 def cleanup():
     for item in BASE_DIR.iterdir():
         if item.is_dir() and item.name in SUBDIRS:
@@ -206,10 +206,13 @@ def cleanup():
             item.unlink()
 
     shutil.rmtree(f"{BASE_DIR}/SciQA-dataset")
-    logging.info(f"Cleanup completed in {BASE_DIR}")
+    logging.info(f"Removed directory {BASE_DIR}")
 
-###################################### Main ######################################
+    shutil.rmtree(f"{DATABASE_DIR}")
+    logging.info(f"Removed directory {DATABASE_DIR}")
 
+
+# Main 
 if __name__ == "__main__":
     startup()
     extract_queries()

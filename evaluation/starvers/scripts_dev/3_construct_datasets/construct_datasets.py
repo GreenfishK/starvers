@@ -213,16 +213,24 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
 
     # Reboot GraphDB to free up main memory
     logging.info(f"Restarting GraphDB server.")
-    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+    #subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
     subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
     
     # Extract and dump repository
     logging.info(f"Extract the whole dataset from the GraphDB repository {policy}_{dataset} and dump it to {destination}.")
-    subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
+    #subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
     
     # Count triples
-    cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["grep", "-c", r"^<<<<.*\.$", destination], capture_output=True, text=True)   
-    logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
+    cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["awk",
+        r'''
+        /^<<<<</ { in_block = 1 }
+        in_block && /\^\^xsd:dateTime \.$/ {
+            count++
+            in_block = 0
+        }
+        END { print count }
+        ''', destination], capture_output=True, text=True)   
+    logging.info("There are {0} timestamped triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
     cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
 
@@ -231,9 +239,9 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
 
     # Remove database files
-    #logging.info("Removing database files.")
-    #shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
-    #shutil.rmtree("/run/configuration", ignore_errors=True)
+    logging.info("Removing database files.")
+    shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
+    shutil.rmtree("/run/configuration", ignore_errors=True)
 
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
