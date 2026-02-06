@@ -32,9 +32,28 @@ shutdown() {
 
 dump_repo() {
     repositoryID=${policy}_${dataset}
-    echo "$(log_timestamp) ${log_level}:Dumping the repository ${repositoryID} to ${data_dir}..." >> $log_file
+    echo "$(log_timestamp) ${log_level}:Dumping the repository ${repositoryID} to ${output_file}..." >> $log_file
 
-    # TODO: implement ...
+    # TODO: Test this function
+
+    # Run CONSTRUCT query
+    /jena-fuseki/bin/s-query \
+        --service "http://Starvers:3030/${repositoryID}/query" \
+        "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+        PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+
+        CONSTRUCT {
+            ?triple vers:valid_until ?valid_until .
+        }
+        WHERE {
+            BIND(<< <<?s ?p ?o>> vers:valid_from ?valid_from >> AS ?triple)
+            ?triple vers:valid_until ?valid_until .
+        }
+        ORDER BY DESC(?valid_from)" \
+        > "${output_file}"
+
+    echo "$(log_timestamp) ${log_level}:Repository ${repositoryID} exported to Turtle-Star" >> $log_file
+
 }
 
 create_env() {
@@ -109,14 +128,14 @@ elif [[ ${1:-} == "create_env" ]]; then
 
 elif [[ ${1:-} == "dump_repo" ]]; then
     if [[ $# -ne 5 ]]; then
-        echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <data_dir>"
+        echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
         exit 1
     fi
 
     database_dir=$2
     policy=$3
     dataset=$4
-    data_dir=$5
+    output_file=$5
 
     dump_repo
 
@@ -137,7 +156,7 @@ else
     echo "Usage: $0 startup <policy> <dataset>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
-    echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <data_dir>"
+    echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1

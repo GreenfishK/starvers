@@ -196,20 +196,20 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     """
     :param: source_ic0: The path in the filesystem to the initial snapshot.
     :param: destination: The path in the filesystem to the resulting dataset.
+    :param: last_version: The last version number of the dataset
     :param: init_timestamp: The initial timestamp that is being incremented by 1sec for each dataset version/pair of changesets.
 
-    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets. It constructs the dataset
-    10 times for each triple store with an initial chunk size of 2000 for the update operations and increasing the chunk size 
-    by 2000 in every iteration.
+    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets and saves
+    it to the :destination path.
     """
     policy = "tb_rs_sr"
     triple_store_configs = configure_triple_stores(dataset, policy)
     configs = triple_store_configs[TripleStore.GRAPHDB.name.lower()]
 
     # Insert first snapshot and change sets into GraphDB
-    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
-                       source_ic0=source_ic0, source_cs=source_cs, 
-                       last_version=last_version, init_timestamp=init_timestamp)    
+    #insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
+    #                   source_ic0=source_ic0, source_cs=source_cs, 
+    #                   last_version=last_version, init_timestamp=init_timestamp)    
 
     # Reboot GraphDB to free up main memory
     logging.info(f"Restarting GraphDB server.")
@@ -221,7 +221,7 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
     
     # Count triples
-    cnt_rdf_star_trpls = subprocess.run(["sed", "-n", '$=', destination], capture_output=True, text=True)   
+    cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["grep", "-c", r"^<<<<.*\.$", destination], capture_output=True, text=True)   
     logging.info("There are {0} triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
     cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
     logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
@@ -231,9 +231,9 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
 
     # Remove database files
-    logging.info("Removing database files.")
-    shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
-    shutil.rmtree("/run/configuration", ignore_errors=True)
+    #logging.info("Removing database files.")
+    #shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
+    #shutil.rmtree("/run/configuration", ignore_errors=True)
 
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):

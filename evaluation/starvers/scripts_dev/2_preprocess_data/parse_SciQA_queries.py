@@ -37,6 +37,9 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 BASE_DIR = Path("/starvers_eval/queries/raw_queries/orkg/complex")
 SCRIPTS_DIR = Path("/starvers_eval/scripts")
 SUBDIRS = ["train", "test", "valid"]
+CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data"
+CONFIG_DIR="/starvers_eval/configs/preprocess_data"
+DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb"
 
 ###################################### Regex logic ######################################
 
@@ -95,8 +98,7 @@ def wrap_aggregations(sparql: str) -> str:
 def startup():
     # Startup GraphDB repository 
     logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
-    subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-        "/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh", "dummy", "orkg", "true", "true", "false")))
+    subprocess.call(shlex.split(f"/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh ingest_empty {DATABASE_DIR} dummy orkg {CONFIG_DIR}"))
     
 
 def extract_queries():
@@ -189,8 +191,7 @@ def exclude_queries():
             query_log_file.write(",".join(map(str, row)) + "\n")
 
     # Shutting down GraphDB
-    subprocess.call(shlex.split('{0} {1} {2} {3} {4} {5}'.format(
-                "/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh", "dummy", "orkg", "false", "false", "true")))
+    subprocess.call(shlex.split("/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh shutdown"))
             
 ###################################### Cleanup ######################################
 
