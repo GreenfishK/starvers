@@ -1,0 +1,20 @@
+# Q1: Count triples per version
+## GraphDB
+
+curl -G "http://localhost:7600/repositories/ic_sr_ng_orkg" \
+  --data-urlencode "query=SELECT ?g (COUNT(*) AS ?count) WHERE { GRAPH ?g {?s ?p ?o }} group by ?g order by ?g" \
+  -H "Accept: application/sparql-results+json"
+
+## JenaTDB2
+curl -G "http://localhost:3030/ic_sr_ng_orkg/sparql" \
+  -u admin:admin \
+  --data-urlencode "query=SELECT ?g (COUNT(*) AS ?count) WHERE { GRAPH ?g {?s ?p ?o }} group by ?g order by ?g" \
+  -H "Accept: application/sparql-results+json"
+
+## Ostrich
+# There can be only one repository in Ostrich
+curl -G "http://localhost:42564/sparql" \
+  --data-urlencode "query=SELECT ?g (COUNT(*) AS ?count) WHERE { GRAPH ?g {?s ?p ?o }} group by ?g order by ?g" \
+  -H "Accept: application/sparql-results+json"
+
+

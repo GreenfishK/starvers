@@ -34,13 +34,11 @@ def configure_triple_stores(dataset: str, policy:str):
                         {'graphdb': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh',
                                     'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
                                     'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
-                                    'shutdown_process': f'/opt/java/java11/openjdk/bin/java',
                                     'database_dir': '/starvers_eval/databases/construct_datasets/graphdb'
                                     },
                         'jenatdb2': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh',
                                     'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
                                     'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
-                                    'shutdown_process': '/jena-fuseki/fuseki-server.jar',
                                     'database_dir': '/starvers_eval/databases/construct_datasets/jenatdb2'
                                     }}
     return triple_store_configs
@@ -207,18 +205,18 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     configs = triple_store_configs[TripleStore.GRAPHDB.name.lower()]
 
     # Insert first snapshot and change sets into GraphDB
-    #insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
-    #                   source_ic0=source_ic0, source_cs=source_cs, 
-    #                   last_version=last_version, init_timestamp=init_timestamp)    
+    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
+                       source_ic0=source_ic0, source_cs=source_cs, 
+                       last_version=last_version, init_timestamp=init_timestamp)    
 
     # Reboot GraphDB to free up main memory
     logging.info(f"Restarting GraphDB server.")
-    #subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
     subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
     
     # Extract and dump repository
     logging.info(f"Extract the whole dataset from the GraphDB repository {policy}_{dataset} and dump it to {destination}.")
-    #subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
+    subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
     
     # Count triples
     cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["awk",

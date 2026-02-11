@@ -6,6 +6,9 @@ log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
 
+#######################################################################
+# Functions
+#######################################################################
 startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
     /opt/graphdb/dist/bin/graphdb -d -s
@@ -65,7 +68,9 @@ ingest_empty() {
     /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
 }
 
-
+#######################################################################
+# Workflow
+#######################################################################
 # Bash arguments and environment variables
 set -euo pipefail
 

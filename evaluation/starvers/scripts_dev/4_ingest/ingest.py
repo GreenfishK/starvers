@@ -83,11 +83,14 @@ def log(triplestore: str, message: str):
         f.write(f"{ts} root:INFO: {message}\n")
 
 
-def policy_allowed(triplestore, policy):
-    if triplestore == "ostrich":
-        return policy == "ostrich"
-    return policy in {"ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"}
-
+def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
+    try:
+        with open(CONFIG_PATH, "rb") as f:
+            CONFIG = tomli.load(f)
+        return policy in CONFIG["evaluations"][triplestore][dataset]
+    except KeyError:
+        return False
+    
 
 def du_mib(path: Path) -> int:
     """
@@ -106,6 +109,8 @@ def ensure_empty_dir(path: Path):
     if path.exists():
         shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
+
+
 
 
 # Ingestion functions
@@ -147,7 +152,7 @@ def run_ostrich(job: Job, run: int):
     ic_src = raw_root / dataset / "alldata.IC.nt" / filename
 
     (vdir / "alldata.CB.nt").symlink_to(cb_src)
-    (ic_dir / filename).symlink_to(ic_src)
+    (ic_dir / filename).symlink_to("000001.nt")
 
     # DB directory
     db_dir = db_root / f"{policy}_{dataset}"
@@ -333,7 +338,7 @@ def enqueue_jobs():
     for triplestore in TRIPLE_STORES:
         for dataset in DATASETS:
             for policy in POLICIES:
-                if not policy_allowed(triplestore, policy):
+                if not eval_combi_exists(triplestore, dataset, policy):
                     continue
                 job_queue.put(Job(triplestore, dataset, policy))
 

@@ -1,4 +1,22 @@
-# TODO: Link all scripts to this golden source
+[evaluations]
+    [evaluations.graphdb]
+        bearb_day   = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_hour = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearc      = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        orkg       = ["ic_sr_ng", "tb_sr_rs"]
+
+    [evaluations.jenatdb2]
+        bearb_day   = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_hour = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearc      = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        orkg       = ["ic_sr_ng", "tb_sr_rs"]
+
+    [evaluations.ostrich]
+        bearb_day   = ["ostrich"]
+        bearb_hour = ["ostrich"]
+        bearc      = ["ostrich"]
+        orkg       = ["ostrich"]
+
 [general]
     snapshot_dir = "alldata.IC.nt"
     change_sets_dir = "alldata.CB_computed"

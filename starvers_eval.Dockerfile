@@ -21,8 +21,9 @@ RUN mkdir -p /root/.cmake-js && chmod 700 /root/.cmake-js
 ENV CC=clang
 ENV CXX=clang++
 
-# Clone repos
-RUN cd /opt && git clone https://github.com/dkw-aau/comunica-feature-versioning.git
+
+
+# Clone repo: Ostrich node (Bindings for JavaScript)
 RUN cd /opt && git clone --branch dev --recurse-submodules https://github.com/dkw-aau/ostrich-node.git
 
 # Install Kyoto Cabinet etc.
@@ -33,10 +34,31 @@ RUN cd /opt/ostrich-node \
     && yarn install --ignore-engines \
     && yarn link
 
+
+
+# Clone repo: Ostrich (Core engine)
+WORKDIR /opt
+RUN cd /opt && git clone https://github.com/rdfostrich/ostrich
+
+# Install Ostrich
+WORKDIR /opt/ostrich
+RUN if [ -d .git ]; then git submodule update --init --recursive; fi
+
+RUN mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Debug .. -Wno-deprecated \
+    && make -j"$(nproc)"
+
+
+    
+# clone repo: Communica (SPARQL engine)
+RUN cd /opt && git clone https://github.com/dkw-aau/comunica-feature-versioning.git
+
 # Link ostrich-bindings into Comunica
 RUN cd /opt/comunica-feature-versioning \
     && yarn link ostrich-bindings \
     && yarn install --ignore-engines
+
+
 
 # Ensure Node can find modules and bindings
 ENV NODE_PATH=/usr/local/lib/node_modules:/opt/comunica-feature-versioning/node_modules
@@ -65,6 +87,9 @@ COPY --from=install_ostrich /usr/lib/x86_64-linux-gnu/libboost_iostreams.so.1.74
 COPY --from=install_ostrich /usr/lib/x86_64-linux-gnu/libboost_iostreams.so /usr/lib/x86_64-linux-gnu/
 COPY --from=install_ostrich /opt/comunica-feature-versioning /opt/comunica-feature-versioning
 COPY --from=install_ostrich /opt/ostrich-node /opt/ostrich-node
+COPY --from=install_ostrich /opt/ostrich/build/ /opt/ostrich/
+
+#COPY --from=install_ostrich /opt/ostrich /opt/ostrich
 
 
 # copy from other images

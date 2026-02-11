@@ -94,6 +94,7 @@ services:
       - policies=${policies} 
     entrypoint: ["python3", "-u", "/starvers_eval/scripts/4_ingest/ingest.py"]
 
+
   construct_queries:
     image: starvers_eval:latest
     container_name: starvers_eval-construct_queries
@@ -187,7 +188,7 @@ services:
     ports: 
       - 7600:7200
     volumes:
-      - ${base_host_dir}/databases/graphdb/ic_sr_ng_bearb_hour:/starvers_eval/databases/graphdb/ic_sr_ng_bearb_hour
+      - ${base_host_dir}/databases/graphdb/ic_sr_ng_orkg:/starvers_eval/databases/graphdb/ic_sr_ng_orkg
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -207,7 +208,7 @@ services:
         -Dhealth.max.query.time.seconds=60 
         -Dgraphdb.append.request.id.headers=true 
         -Dreuse.vars.in.subselects=true
-        -Dgraphdb.home.data=/starvers_eval/databases/graphdb/ic_sr_ng_bearb_hour
+        -Dgraphdb.home.data=/starvers_eval/databases/graphdb/ic_sr_ng_orkg
     command: ["/opt/graphdb/dist/bin/graphdb", "server"]
 
   ostrich:
@@ -220,7 +221,7 @@ services:
     environment:
       - name=value
     volumes:
-      - ${base_host_dir}/databases/ostrich/ostrich_bearb_day:/var/ostrich
+      - ${base_host_dir}/databases/ostrich/ostrich_orkg:/var/ostrich
     entrypoint: ["node","/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js","-p","42564","-t","480","-l","debug","ostrichFile@/var/ostrich"]
 
 
@@ -238,37 +239,12 @@ services:
       - "host.docker.internal:127.0.0.1"
     volumes:
       - ${base_host_dir}/databases/jenatdb2:/starvers_eval/databases/jenatdb2
-      - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_bearb_day.ttl:/run/configuration/config.ttl
+      - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_orkg.ttl:/run/configuration/config.ttl
     user: root
     command: ["/jena-fuseki/fuseki-server", "--config=/run/configuration/config.ttl", "--port=3030", "--tdb2"]
 
 
-  download_queries:
-    image: starvers_eval:20260202
-    container_name: starvers_eval-download_queries
-    volumes:
-      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
-      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
-    environment:
-      - datasets=${datasets}
-    entrypoint: [/starvers_eval/scripts/1_download/download_data.sh]
 
-
-
-  parse_SciQA_queries:
-    image: starvers_eval:20260202
-    container_name: starvers_eval-parse_SciQA_queries
-    volumes:
-      - ${base_host_dir}/output/logs:/starvers_eval/output/logs
-      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
-      - ./raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
-    environment:
-      - datasets=${datasets}
-    entrypoint: [/starvers_eval/scripts/2_preprocess_data/parse_SciQA_queries.py]
-  
 
 networks:
   starvers_prod_net:

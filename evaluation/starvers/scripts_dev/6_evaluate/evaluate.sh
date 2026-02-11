@@ -13,25 +13,32 @@ graphdb_port=$(("${graphdb_port}"))
 jenatdb2_port=$(("${jenatdb2_port}"))
 ostrich_port=$(("${ostrich_port}"))
 
-function policy_allowed() {
-    local triplestore=$1
-    local policy=$2
-    # Allowed policies for Jena TDB2 and GraphDB are: ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs
-    if [ "$triplestore" == "jenatdb2" ] && [[ "ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs" =~ $policy ]]; then
+eval_combi_exists() {
+    local triplestore="$1"
+    local dataset="$2"
+    local policy="$3"
+    local config="/starvers_eval/configs/eval_setup.toml"
+
+    # Extract the block [evaluations.<triplestore>] → next section
+    local line
+    line=$(awk -v store="$triplestore" -v ds="$dataset" '
+        $0 ~ "^\\[evaluations\\."store"\\]" {found=1; next}
+        found && /^\[/ {exit}
+        found && $1 == ds {print; exit}
+    ' "$config")
+
+    # No dataset entry found
+    [[ -z "$line" ]] && return 1
+
+    # Check if policy is inside the array
+    if echo "$line" | grep -qw "\"$policy\""; then
         return 0
-    elif [ "$triplestore" == "graphdb" ] && [[ "ic_sr_ng cb_sr_ng tb_sr_ng tb_sr_rs" =~ $policy ]]; then
-        return 0
-    elif [ "$triplestore" == "ostrich" ]; then
-        if [ "$policy" == "ostrich" ]; then
-            return 0
-        else
-            return 1
-        fi
     else
         return 1
     fi
-
 }
+
+
 
 start_mem_tracker() {
     local pid=$1
@@ -88,9 +95,9 @@ for triple_store in ${triple_stores[@]}; do
     if [ ${triple_store} == "ostrich" ]; then
         for dataset in ${datasets[@]}; do
             # Start database server and run in background
+            echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
             node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
             db_pid=$!
-            echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
             
             # Wait until server is up
             echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -109,7 +116,7 @@ for triple_store in ${triple_stores[@]}; do
             done
             echo "$(log_timestamp) ${log_level}:Ostrich server is up." >> $log_file
 
-            # Start tracling memory consumption
+            # Start tracking memory consumption
             mem_tracker_pid=$(start_mem_tracker $db_pid "ostrich_${dataset}" $mem_file 0.5)
             echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for Ostrich." >> $log_file
 
@@ -137,7 +144,7 @@ for triple_store in ${triple_stores[@]}; do
 
         mkdir -p /run/configuration
         for policy in ${policies[@]}; do
-            if ! policy_allowed "${triple_store}" "${policy}"; then
+            if ! eval_combi_exists "${triple_store}" "${policy}"; then
                 echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
                 continue
             fi
@@ -191,7 +198,7 @@ for triple_store in ${triple_stores[@]}; do
         GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
 
         for policy in ${policies[@]}; do
-            if ! policy_allowed "${triple_store}" "${policy}"; then
+            if ! eval_combi_exists "${triple_store}" "${policy}"; then
                 echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
                 continue
             fi
