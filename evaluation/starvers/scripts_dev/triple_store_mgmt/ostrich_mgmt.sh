@@ -25,10 +25,9 @@ shutdown() {
     echo "$(log_timestamp) ${log_level}:Kill process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file
     pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
     while ps -ef | grep -q '[h]ttp.js'; do
-            sleep 1
-        done
-        echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
+        sleep 1
     done
+    echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
 }
 
 dump_repo() {
@@ -41,7 +40,6 @@ dump_repo() {
         -H "Accept: application/n-quads" \
         -o "${output_file}"
 }
-
 
 create_env() {
     if pgrep -f "/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js" >/dev/null; then

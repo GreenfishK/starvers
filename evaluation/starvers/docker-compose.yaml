@@ -218,8 +218,6 @@ services:
       - 42564:42564
     networks:
       - starvers_prod_net
-    environment:
-      - name=value
     volumes:
       - ${base_host_dir}/databases/ostrich/ostrich_orkg:/var/ostrich
     entrypoint: ["node","/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js","-p","42564","-t","480","-l","debug","ostrichFile@/var/ostrich"]
@@ -242,8 +240,6 @@ services:
       - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_orkg.ttl:/run/configuration/config.ttl
     user: root
     command: ["/jena-fuseki/fuseki-server", "--config=/run/configuration/config.ttl", "--port=3030", "--tdb2"]
-
-
 
 
 networks:
