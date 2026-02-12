@@ -50,18 +50,46 @@ create_env() {
         shutdown
     fi
 
-    echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf ${database_dir}/ostrich_${dataset}
+    # Create database directory
+    echo "$(log_timestamp) ${log_level}:Clean database directory ${database_dir}" >> $log_file
+    rm -rf ${database_dir}
     rm -rf /tmp/*
 
-    echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p ${database_dir}/ostrich_${dataset}
+    echo "$(log_timestamp) ${log_level}:Create database directory ${database_dir}" >> $log_file
+    mkdir -p ${database_dir}
+
+    # Create virtual environment via symlinks 
+    raw_root="/starvers_eval/rawdata"
+    vdir=/starvers_eval/rawdata/${dataset}/alldata_vdir
+
+    # Extract needed config values from toml
+    file_fmt_len=$(python3 - <<EOF
+import tomli
+with open("/starvers_eval/configs/eval_setup.toml","rb") as f:
+    config = tomli.load(f)
+print(config["datasets"]["$dataset"]["ic_basename_length"])
+EOF
+)
+    echo "$(log_timestamp) ${log_level}: File format length: ${file_fmt_len}" >> $log_file
+
+    first_snapshot=$(printf "%0${file_fmt_len}d.nt" 1)
+    cb_src="${raw_root}/${dataset}/alldata.CB_computed.nt"
+    ic_src="${raw_root}/${dataset}/alldata.IC.nt/${first_snapshot}"
+
+    # Create symlinks
+    rm -rf "$vdir"
+    mkdir -p "$vdir/alldata.IC.nt"
+
+    ln -s "$cb_src" "$vdir/alldata.CB.nt"
+    ln -s "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
+
+    echo "$(log_timestamp) ${log_level}:Virtual directory created at $vdir with symlinks." >> $log_file
 
 }
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    cd ${database_dir}/ostrich_${dataset} && /opt/ostrich/ostrich-evaluate ingest never 0 /starvers_eval/rawdata/${dataset}/empty.nt 1 1 
+    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 /starvers_eval/rawdata/${dataset}/empty.nt 1 1 
 }
 
 #######################################################################

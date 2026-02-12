@@ -94,7 +94,7 @@ for triple_store in ${triple_stores[@]}; do
     # Get triple store management script from eval_setup.toml
     triple_store_mgmt=$(python3 - <<EOF
 import tomli
-with open("$CONFIG", "rb") as f:
+with open("/starvers_eval/configs/eval_setup.toml", "rb") as f:
     data = tomli.load(f)
 print(data["rdf_stores"]["$triple_store"]["mgmt_script"])
 EOF

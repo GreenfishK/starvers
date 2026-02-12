@@ -20,7 +20,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON, GET
 LOG_DIR = Path("/starvers_eval/output/logs/ingest")
 MEASUREMENTS_FILE = "/starvers_eval/output/measurements/ingestion.csv"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
-CNT_QUERIES_PATH = "/starvers_eval/cnt_queries"
+CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
 
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 CONFIG_DIR = "/starvers_eval/configs/ingest"
@@ -39,7 +39,7 @@ LOCK_DIR = Path("/starvers_eval/locks")
 LOCK_DIR.mkdir(parents=True, exist_ok=True)
 
 DATASET_DIR_OR_FILE_MAP = {
-    "ostrich": "/starvers_eval/rawdata",
+    "ostrich": "alldata_vdir",
     "ic_sr_ng": "alldata.ICNG.trig",
     "cb_sr_ng": "alldata.CBNG.trig",
     "tb_sr_ng": "alldata.TB.nq",
@@ -102,7 +102,7 @@ def du_mib(path: Path) -> int:
     Return apparent size in MiB (like du --apparent-size -BM).
     """
     result = subprocess.run(
-        ["du", "-s", "--block-size=1M", "--apparent-size", str(path)],
+        ["du", "-s", "-L", "--block-size=1M", "--apparent-size", str(path)],
         capture_output=True,
         text=True,
         check=True,
@@ -121,7 +121,7 @@ def count_triples(job: Job):
     engine.setOnlyConneg(True)
     engine.setMethod(GET)
 
-    if job.policy == "ic_sr_ng":
+    if job.policy in ["ic_sr_ng", "cb_sr_ng", "ostrich"]:
         with open(f"{CNT_QUERIES_PATH}/ic_sr_ng.sparql", "r") as cnt_query:
             engine.setQuery(cnt_query)
             try:
@@ -142,48 +142,30 @@ def ensure_empty_dir(path: Path):
 
 # Ostrich
 def run_ostrich(job: Job, run: int):
-    """
-    Ingest dataset-policy into Ostrich using virtual directory layout.
-    """
-
     dataset = job.dataset
     policy = job.policy
+    repository_id = f"{policy}_{dataset}"
 
     log(job.triplestore, f"Run {run}: Starting ingestion for dataset={dataset}, policy={policy}")
-    
+
+    db_root = Path("/starvers_eval/databases/ostrich")
+    database_dir = db_root / repository_id
+
     with open(CONFIG_PATH, "rb") as f:
         CONFIG = tomli.load(f)
 
-    raw_root = Path("/starvers_eval/rawdata")
-    db_root = Path("/starvers_eval/databases/ostrich")
+    dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/alldata_vdir")
 
-    assert policy == "ostrich"
-
-    # pick the "first" query_set or the one you intend
-    qs_name = list(CONFIG["datasets"][dataset]["query_sets"].keys())[0]
-
-    versions = CONFIG["datasets"][dataset]["query_sets"][qs_name]["policies"][policy]["versions"]
-    file_fmt_len = CONFIG["datasets"][dataset]["ic_basename_length"]
-    first_snapshot = f"{1:0{file_fmt_len}d}.nt"   # zero-padded integer
-
-    # Virtual directory
-    vdir = Path(f"/ostrich/{policy}_{dataset}_run{run}")
-    ensure_empty_dir(vdir)
-
-    ic_dir = vdir / "alldata.IC.nt"
-    ic_dir.mkdir(parents=True, exist_ok=True)
-
-    cb_src = raw_root / dataset / "alldata.CB_computed.nt"
-    ic_src = raw_root / dataset / "alldata.IC.nt" / first_snapshot
-
-    (vdir / "alldata.CB.nt").symlink_to(cb_src)
-    (vdir / "alldata.IC.nt" / first_snapshot).symlink_to(ic_src)
-
-    # DB directory
-    db_dir = db_root / f"{policy}_{dataset}"
-    ensure_empty_dir(db_dir)
+    mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
+    subprocess.run([f"{mgmt_script}", "create_env", policy, dataset, 
+                    database_dir, CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
 
     # Ingest
+    ################################################
+    # triple store-specific code    # pick the "first" query_set or the one you intend
+    qs_name = list(CONFIG["datasets"][dataset]["query_sets"].keys())[0]
+    versions = CONFIG["datasets"][dataset]["query_sets"][qs_name]["policies"][policy]["versions"]
+
     start = time.time()
     subprocess.run(
         [
@@ -191,29 +173,29 @@ def run_ostrich(job: Job, run: int):
             "ingest",
             "never",
             "0",
-            str(vdir),
+            str(dataset_dir),
             "1",
             str(versions),
         ],
         check=True,
-        cwd=db_dir, # Working directory
+        cwd=database_dir ,
     )
     ingestion_time = round(time.time() - start, 3)
+    ################################################
 
     # Metrics
-    raw_size = du_mib(cb_src) + du_mib(ic_src)
-    db_size = du_mib(db_dir)
+    raw_size = du_mib(dataset_dir)
+    db_size = du_mib(database_dir)
     count_triples(job)
 
     # Cleanup
     if run != RUNS:
         log(job.triplestore, f"Run {run}: Cleaning up Ostrich DB and virtual directory for dataset={dataset}, policy={policy}")
-        ensure_empty_dir(db_dir)
-        ensure_empty_dir(vdir)
+        ensure_empty_dir(database_dir)
 
     log(job.triplestore, f"Run {run}: Completed ingestion for dataset={dataset}, policy={policy} in {ingestion_time} seconds.")
 
-    return ("ostrich", policy, dataset, run, ingestion_time, raw_size, db_size)
+    return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, db_size)
 
 
 # GraphDB
@@ -230,46 +212,47 @@ def run_graphdb(job: Job, run: int):
 
     with open(CONFIG_PATH, "rb") as f:
         CONFIG = tomli.load(f)
+
     mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.call(shlex.split(f"{mgmt_script} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
 
+    dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
+
     # Ingest
+    ################################################
+    # triple store-specific code
+
     config_file = f"{CONFIG_DIR}/graphdb/{repository_id}/{repository_id}.ttl"
-    data_file = Path(f"/starvers_eval/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
    
     start = time.time()
-    proc = subprocess.Popen(
+    subprocess.run(
         [
             "/opt/graphdb/dist/bin/importrdf",
             "preload",
             "--force",
             "-c", str(config_file),
-            str(data_file)
-        ]
+            str(dataset_dir)
+        ],
+        check=True,
+        cwd=database_dir
+
     )
-    proc.wait()
     ingestion_time: float = round(time.time() - start, 3)
-
-    # Terminate GraphDB
-    subprocess.run(["pkill", "-P", str(proc.pid)], check=False)
-
-    # Accept GraphDB's non-zero exit
-    if proc.returncode not in (0, 1):
-        raise RuntimeError(f"GraphDB failed (exit={proc.returncode}):\n{proc.stderr}")
+    ################################################
 
     # Metrics 
-    raw_size = du_mib(data_file)
-    disk_usage = du_mib(database_dir / "repositories")
+    raw_size = du_mib(dataset_dir)
+    disk_usage = du_mib(database_dir)
     count_triples(job)
 
     # Cleanup
     if run != RUNS:
         log(job.triplestore, f"Run {run}: Cleaning up GraphDB DB for dataset={dataset}, policy={policy}")
-        ensure_empty_dir(db_root / repository_id)
+        ensure_empty_dir(database_dir)
 
     log(job.triplestore, f"Run {run}: Completed ingestion for dataset={dataset}, policy={policy} in {ingestion_time} seconds.")
 
-    return ("graphdb", policy, dataset, run, ingestion_time, raw_size, disk_usage)
+    return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, disk_usage)
 
 
 
@@ -287,24 +270,26 @@ def run_jena(job: Job, run: int):
 
     with open(CONFIG_PATH, "rb") as f:
         CONFIG = tomli.load(f)
+    
     mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.call(shlex.split(f"{mgmt_script} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
 
     # Ingest
-    data_file = Path(f"/starvers_eval/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
+    ################################################
+    # triple store-specific code
+    dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
 
     start = time.time()
-    proc = subprocess.Popen(
-        ["/jena-fuseki/tdbloader2", "--loc", str(database_dir), str(data_file)]
+    subprocess.run(
+        ["/jena-fuseki/tdbloader2", "--loc", str(database_dir), str(dataset_dir)],
+        check=True,
+        cwd=database_dir
     )
-    proc.wait()
     ingestion_time = round(time.time() - start, 3)
-
-    # Terminate Jena
-    subprocess.run(["pkill", "-P", str(proc.pid)], check=False)
+    ################################################
 
     # Metrics
-    raw_size = du_mib(data_file)
+    raw_size = du_mib(dataset_dir)
     db_size = du_mib(database_dir)
     count_triples(job)
 
@@ -315,7 +300,7 @@ def run_jena(job: Job, run: int):
 
     log(job.triplestore, f"Run {run}: Completed ingestion for dataset={dataset}, policy={policy} in {ingestion_time} seconds.")
 
-    return ("jenatdb2", policy, dataset, run, ingestion_time, raw_size, db_size)
+    return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, db_size)
 
 #####################################################################
 # Job scheduling
@@ -352,7 +337,7 @@ def worker(worker_id: int, job_queue: queue.Queue):
         try:
             job = job_queue.get(timeout=2)
         except queue.Empty:
-            return
+            return        
 
         for run in range(1, RUNS + 1):
             lock_manager.acquire(job.lock_key)
@@ -377,7 +362,6 @@ def run_ingestion(job: Job, run: int):
     if job.triplestore == "jenatdb2":
         return run_jena(job, run)
     raise ValueError(job.triplestore)
-
 
 
 # Start
