@@ -8,8 +8,13 @@ log_level="root:INFO"
 
 startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    cp ${config_dir}/jenatdb2_${policy}_${dataset}/*.ttl /run/configuration
+    mkdir -p /run/configuration
+    cp ${config_dir}/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl /run/configuration
     nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+    
+    # Save process ID
+    db_pid=$!
+    echo $db_pid > /tmp/jenatdb2_${policy}_${dataset}.pid
 
     # Wait until server is up
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -60,22 +65,22 @@ create_env() {
     if ps aux | grep '[j]ena-fuseki/fuseki-server.jar' >/dev/null; then
         shutdown
     fi
-    
+    repositoryID=${policy}_${dataset}
+
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf ${database_dir}/${policy}_${dataset}
-    rm -rf ${config_dir}/jenatdb2_${policy}_${dataset}
+    rm -rf ${database_dir}/${repositoryID}
+    rm -rf ${config_dir}/jenatdb2/${repositoryID}
     rm -rf /run/configuration
     rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p ${database_dir}/${policy}_${dataset}
-    mkdir -p ${config_dir}/jenatdb2_${policy}_${dataset}
+    mkdir -p ${database_dir}/${repositoryID}
+    mkdir -p ${config_dir}/jenatdb2/${repositoryID}
     mkdir -p /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
-    repositoryID=${policy}_${dataset}
-    cp ${config_tmpl_dir}/jenatdb2-config_template.ttl ${config_dir}/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
-    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2_${policy}_${dataset}/${repositoryID}.ttl
+    cp ${config_tmpl_dir}/jenatdb2-config_template.ttl ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
+    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
 }
 
 ingest_empty() {
@@ -94,13 +99,14 @@ export PATH=/opt/java/java17/openjdk/bin:$PATH
 
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 3 ]]; then
-        echo "Usage: $0 startup <policy> <dataset>"
+    if [[ $# -ne 4 ]]; then
+        echo "Usage: $0 startup <database_dir> <policy> <dataset>"
         exit 1
     fi
 
-    policy=$2
-    dataset=$3
+    database_dir=$2
+    policy=$3
+    dataset=$4
 
     startup
 

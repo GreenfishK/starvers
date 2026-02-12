@@ -40,6 +40,7 @@ SUBDIRS = ["train", "test", "valid"]
 CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data"
 CONFIG_DIR="/starvers_eval/configs/preprocess_data"
 DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb"
+GRAPHDB_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
 
 ###################################### Regex logic ######################################
 
@@ -98,8 +99,8 @@ def wrap_aggregations(sparql: str) -> str:
 def startup():
     # Startup GraphDB repository 
     logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
-    subprocess.call(shlex.split(f"/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh create_env  dummy orkg {DATABASE_DIR} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
-    subprocess.call(shlex.split(f"/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh startup {DATABASE_DIR}"))
+    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} create_env dummy orkg {DATABASE_DIR} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} startup {DATABASE_DIR}"))
 
 
 # Extraction from JSON files

@@ -1,3 +1,7 @@
+[general]
+    snapshot_dir = "alldata.IC.nt"
+    change_sets_dir = "alldata.CB_computed"
+
 [evaluations]
     [evaluations.graphdb]
         bearb_day   = ["ic_sr_ng", "cb_sr_ng", "tb_sr_ng", "tb_sr_rs"]
@@ -17,9 +21,11 @@
         bearc      = ["ostrich"]
         orkg       = ["ostrich"]
 
-[general]
-    snapshot_dir = "alldata.IC.nt"
-    change_sets_dir = "alldata.CB_computed"
+[rdf_stores]
+    graphdb = {get = "http://Starvers:7200/repositories/{repo}", post = "http://Starvers:7200/repositories/{repo}/statements", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"}
+    jenatdb2 = {get = "http://Starvers:3030/{repo}/sparql", post = "http://Starvers:7200/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh"}
+    ostrich = {get = "http://Starvers:42564/sparql", post = "http://Starvers:42564/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"}
+
 
 [datasets]
     [datasets.beara]

@@ -12,6 +12,10 @@ log_level="root:INFO"
 startup() {
     echo "$(log_timestamp) ${log_level}:Start Ostrich node in background..." >> $log_file
     node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p 42564 -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
+    
+    # Save process ID
+    db_pid=$!
+    echo $db_pid > /tmp/ostrich_${policy}_${dataset}.pid
 
     # Wait until server is up
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -70,12 +74,14 @@ set -euo pipefail
 
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 2 ]]; then
-        echo "Usage: $0 startup <database_dir>"
+    if [[ $# -ne 4 ]]; then
+        echo "Usage: $0 startup <database_dir> <policy> <dataset>"
         exit 1
     fi
 
     database_dir=$2
+    policy=$3
+    dataset=$4
 
     startup
 

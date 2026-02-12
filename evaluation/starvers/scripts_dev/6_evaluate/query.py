@@ -13,14 +13,19 @@ import logging as logger
 from datetime import datetime
 from datetime import timedelta, timezone
 
-############################################# Logging ###################################################################
+##########################################################
+# Logging
+##########################################################
 logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/logs/evaluate/query.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
                     level=logger.INFO)
 
-###################################### Parameters ######################################
+
+##########################################################
+# Parameters 
+##########################################################
 # Bash arguments and directory paths
 triple_store = sys.argv[1]
 logger.info(f"Parameter: triplestore={triple_store}")
@@ -31,9 +36,7 @@ logger.info(f"Parameter: policy={policy}")
 dataset = sys.argv[3]
 logger.info(f"Parameter: dataset={dataset}")
 
-port = sys.argv[4]
-logger.info(f"Parameter: port={port}")
-
+CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 
 final_queries= "/starvers_eval/queries/final_queries"
 result_sets_dir = "/starvers_eval/output/result_sets"
@@ -48,24 +51,13 @@ engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
 
-endpoints = {'graphdb': {'get': 'http://{hostname}:{port}/repositories/{repository_name}',
-            'post': 'http://{hostname}:{port}/repositories/{repository_name}/statements'},
-'jenatdb2': {'get': 'http://{hostname}:{port}/{repository_name}/sparql',
-            'post': 'http://{hostname}:{port}/{repository_name}/update'},
-'ostrich': {'get': 'http://localhost:{port}/sparql',
-            'post': 'http://localhost:{port}/update'}}      
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
 
-# Parse the relative locations of the query sets, number of repositories and number of query set versions 
-with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
-    eval_setup = tomli.load(config_file)
-query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup['datasets'][dataset]['query_sets'].keys()]
-first_query_set = next(iter(eval_setup['datasets'][dataset]['query_sets']))
-query_set_versions = eval_setup['datasets'][dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
-repositories = eval_setup['datasets'][dataset]['repositories'][policy]
-
+# ##########################################################
 # Helper functions
+# ##########################################################
+
 def parse_results(result: Wrapper.QueryResult) -> list:
     """
 
@@ -110,20 +102,27 @@ def parse_results(result: Wrapper.QueryResult) -> list:
     return [header] + values
 
 
-def _set_endpoints(dataset: str, policy: str, endpoints: dict, engine: SPARQLWrapper, repository_suffix: str = None):
-    if repository_suffix:
-        # For multi repository (mr) storage management policy
-        repository_name = "{policy}_{dataset}_{repository_suffix}".format(policy=policy, dataset=dataset,
-            repository_suffix=repository_suffix)
-    else:
-        # For single repository (sr) storage management policy
-        repository_name = "{policy}_{dataset}".format(policy=policy, dataset=dataset)
-    engine.endpoint = endpoints[triple_store]['get'].format(hostname="Starvers", port=port, repository_name=repository_name)
-    engine.updateEndpoint = endpoints[triple_store]['post'].format(hostname="Starvers", port=port, repository_name=repository_name)
+def _set_endpoints(triple_store: str, dataset: str, policy: str, engine: SPARQLWrapper):
+    with open(CONFIG_PATH, "rb") as f:
+        CONFIG = tomli.load(f)
+
+    engine.endpoint = CONFIG["rdf_stores"][triple_store]["get"].format(repo=f"{policy}_{dataset}")
+    engine.updateEndpoint = CONFIG["rdf_stores"][triple_store]["post"].format(repo=f"{policy}_{dataset}")
+
+
+##########################################################
+# Pipeline
+##########################################################
+# Parse the relative locations of the query sets, number of repositories and number of query set versions 
+with open(CONFIG_PATH, mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
+query_sets = [policy + "/" + dataset + "/" + query_set for query_set in eval_setup['datasets'][dataset]['query_sets'].keys()]
+first_query_set = next(iter(eval_setup['datasets'][dataset]['query_sets']))
+query_set_versions = eval_setup['datasets'][dataset]['query_sets'][first_query_set]['policies'][policy]['versions']
+repositories = eval_setup['datasets'][dataset]['repositories'][policy]
 
 # Set endpoints
-_set_endpoints(dataset, policy, endpoints, engine)   
-
+_set_endpoints(triple_store, dataset, policy, engine)   
 
 # Dry run and configuration of the SPARQL engine
 if triple_store == "ostrich":
@@ -144,7 +143,7 @@ except Exception as e:
 
 # Evaluation 
 logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query_sets} " +
-f"with {query_set_versions} query set versions and {repositories} repositories on port: {port}")
+f"with {query_set_versions} query set versions and {repositories} repositories on endpoint: {engine.endpoint}")
 df_data = []
 
 for query_set in query_sets:
@@ -166,7 +165,7 @@ for query_set in query_sets:
             file.close()
 
             if policy in ["ostrich", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
-                _set_endpoints(dataset, policy, endpoints, engine)   
+                _set_endpoints(triple_store, dataset, policy, engine)   
 
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
                 try:
@@ -192,7 +191,7 @@ for query_set in query_sets:
                 df_data.append(new_row)
             
             elif policy == "cb_sr_ng":
-                _set_endpoints(dataset, policy, endpoints, engine)   
+                _set_endpoints(triple_store, dataset, policy, engine)   
 
                 def build_snapshot(snapshot: Graph):
                     """
@@ -279,7 +278,7 @@ for query_set in query_sets:
                 new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time, yn_timeout]
                 df_data.append(new_row)
 
-            
+# Save measurements
 logger.info("Writing performance measurements to disk ...")       
 
 df = pd.DataFrame(data=df_data, 

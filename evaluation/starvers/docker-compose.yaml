@@ -88,6 +88,7 @@ services:
       - ${base_host_dir}/configs/ingest:/starvers_eval/configs/ingest
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
       - datasets=${datasets}
       - triple_stores=${triple_stores} # Execute separately for each triplestore to be able to run in parallel
@@ -119,6 +120,7 @@ services:
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
       - ${base_host_dir}/tmp:/tmp
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     hostname: Starvers
     mem_limit: 50g
     extra_hosts:
@@ -131,9 +133,6 @@ services:
       - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
-      - graphdb_port=${graphdb_port}
-      - jenatdb2_port=${jenatdb2_port}
-      - ostrich_port=${ostrich_port}
     entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
 
   verify_results:

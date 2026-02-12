@@ -12,7 +12,11 @@ log_level="root:INFO"
 startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
     /opt/graphdb/dist/bin/graphdb -d -s
-
+    
+    # Save process ID
+    db_pid=$(pgrep -f '${JAVA_HOME}/bin/java' | head -n 1)
+    echo $db_pid > /tmp/graphdb_${policy}_${dataset}.pid
+    
     # Wait until server is up
     # GraphDB doesn't deliver HTTP code 200 for some reason ...
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -46,26 +50,26 @@ create_env() {
     if pgrep -f "${JAVA_HOME}/bin/java" >/dev/null; then
         shutdown
     fi
+    repositoryID=${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf ${database_dir}/repositories/${policy}_${dataset}
-    rm -rf ${config_dir}/graphdb_${policy}_${dataset}
+    rm -rf ${database_dir}/repositories/${repositoryID}
+    rm -rf ${config_dir}/graphdb/${repositoryID}
     rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p ${database_dir}/repositories/${policy}_${dataset}
-    mkdir -p ${config_dir}/graphdb_${policy}_${dataset}
+    mkdir -p ${database_dir}/repositories/${repositoryID}
+    mkdir -p ${config_dir}/graphdb/${repositoryID}
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
-    repositoryID=${policy}_${dataset}
-    cp ${config_tmpl_dir}/graphdb-config_template.ttl ${config_dir}/graphdb_${policy}_${dataset}/graphdb-config.ttl
-    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/graphdb_${policy}_${dataset}/graphdb-config.ttl
+    cp ${config_tmpl_dir}/graphdb-config_template.ttl ${config_dir}/graphdb/${repositoryID}/${repositoryID}.ttl
+    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/graphdb/${repositoryID}/${repositoryID}.ttl
 
 }
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb_${policy}_${dataset}/graphdb-config.ttl /starvers_eval/rawdata/${dataset}/empty.nt
+    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb/${policy}_${dataset}.ttl /starvers_eval/rawdata/${dataset}/empty.nt
 }
 
 #######################################################################
@@ -80,12 +84,15 @@ export PATH=/opt/java/java11/openjdk/bin:$PATH
 
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 2 ]]; then
-        echo "Usage: $0 startup <database_dir>"
+    if [[ $# -ne 4 ]]; then
+        echo "Usage: $0 startup <database_dir> <policy> <dataset>"
         exit 1
     fi
 
     database_dir=$2
+    policy=$3
+    dataset=$4
+
     export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dgraphdb.home.data=${database_dir}"
 
     startup

@@ -20,29 +20,52 @@ import psutil
 
 from starvers.starvers import TripleStoreEngine
 
+
+##########################################################################################
+# Logging 
+##########################################################################################
+if not os.path.exists('/starvers_eval/output/logs/construct_datasets'):
+    os.makedirs('/starvers_eval/output/logs/construct_datasets')
+with open('/starvers_eval/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
+    log_file.write("")
+logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/construct_datasets/construct_datasets.txt", 
+                                                  encoding='utf-8', mode='a+')],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+
+
+##########################################################################################
+# Parameters 
+##########################################################################################
+datasets = sys.argv[1].split(" ")
+skip_change_sets = sys.argv[2]
+skip_tb_star_ds = sys.argv[3]
+skip_cbng_ds = sys.argv[4]
+skip_icng_ds = sys.argv[5]
+skip_update_measurement = sys.argv[6]
+
 CONFIG_TMPL_DIR="/starvers_eval/scripts/3_construct_datasets/configs"
 CONFIG_DIR="/starvers_eval/configs/construct_datasets"
 
+in_frm = "nt"
+LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
+init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
+
+with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
+    eval_setup = tomli.load(config_file)
+
+dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in eval_setup['datasets'].items()}
+ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in eval_setup['datasets'].items()}
+allowed_datasets = list(dataset_versions.keys())
+snapshot_dir = eval_setup['general']['snapshot_dir']
+change_sets_dir = eval_setup['general']['change_sets_dir']
+databases_dir = "/starvers_eval/databases/construct_datasets"
 
 class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
-
-
-def configure_triple_stores(dataset: str, policy:str):
-    triple_store_configs = \
-                        {'graphdb': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh',
-                                    'query_endpoint': 'http://Starvers:7200/repositories/{0}_{1}'.format(policy, dataset),
-                                    'update_endpoint': 'http://Starvers:7200/repositories/{0}_{1}/statements'.format(policy, dataset),
-                                    'database_dir': '/starvers_eval/databases/construct_datasets/graphdb'
-                                    },
-                        'jenatdb2': {'start_script': '/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh',
-                                    'query_endpoint': 'http://Starvers:3030/{0}_{1}/sparql'.format(policy, dataset),
-                                    'update_endpoint': 'http://Starvers:3030/{0}_{1}/update'.format(policy, dataset),
-                                    'database_dir': '/starvers_eval/databases/construct_datasets/jenatdb2'
-                                    }}
-    return triple_store_configs
-    
+   
 
 def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: int, format: str, basename_length: int):
     """
@@ -100,21 +123,22 @@ def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: in
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
 
 
-def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, ts_configs: dict,
+def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
                         source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
-    configs = ts_configs[triple_store.name.lower()]
     policy = "tb_rs_sr"
     repository = policy + "_" + dataset
+    database_dir = f"{databases_dir}/{triple_store}"
+    mgmt_script = eval_setup["rdf_stores"][triple_store]["mgmt_script"]
 
     logging.info("Create GraphDB directories and environment")
-    subprocess.call(shlex.split(f"{configs['start_script']} create_env {policy} {dataset} {configs['database_dir']} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+    subprocess.call(shlex.split(f"{mgmt_script} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
 
     logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
-    subprocess.call(shlex.split(f"{configs['start_script']} ingest_empty {configs['database_dir']} {policy} {dataset} {CONFIG_DIR}"))
+    subprocess.call(shlex.split(f"{mgmt_script} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Startup GraphDB engine")
-    subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
+    subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -122,7 +146,10 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, ts_configs: d
     added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
 
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    rdf_star_engine = TripleStoreEngine(configs['query_endpoint'], configs['update_endpoint'])
+    
+    query_endpoint = eval_setup["rdf_stores"][triple_store]["get"].format(repo=f"{policy}_{dataset}")
+    update_endpoint = eval_setup["rdf_stores"][triple_store]["post"].format(repo=f"{policy}_{dataset}")
+    rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint)
     try:
         start = time.time()
         rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
@@ -151,8 +178,8 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, ts_configs: d
         logging.info(f"Memory in usage: {mem_in_usage}%")
         if mem_in_usage > 85:
             # Reboot to free up main memory
-            subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
-            subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
+            subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
+            subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
@@ -185,7 +212,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, ts_configs: d
         df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
     # Shutdown engine
-    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
 
     return df
 
@@ -201,22 +228,23 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     it to the :destination path.
     """
     policy = "tb_rs_sr"
-    triple_store_configs = configure_triple_stores(dataset, policy)
-    configs = triple_store_configs[TripleStore.GRAPHDB.name.lower()]
+
+    mgmt_script = eval_setup["rdf_stores"][TripleStore.GRAPHDB.name.lower()]["mgmt_script"]
+    database_dir = f"{databases_dir}/{TripleStore.GRAPHDB.name.lower()}"
 
     # Insert first snapshot and change sets into GraphDB
-    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, ts_configs=triple_store_configs, 
+    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, dataset=dataset,
                        source_ic0=source_ic0, source_cs=source_cs, 
                        last_version=last_version, init_timestamp=init_timestamp)    
 
     # Reboot GraphDB to free up main memory
     logging.info(f"Restarting GraphDB server.")
-    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
-    subprocess.call(shlex.split(f"{configs['start_script']} startup {configs['database_dir']}"))
+    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
     
     # Extract and dump repository
     logging.info(f"Extract the whole dataset from the GraphDB repository {policy}_{dataset} and dump it to {destination}.")
-    subprocess.call(shlex.split(f"{configs['start_script']} dump_repo {configs['database_dir']} {policy} {dataset} {destination}"))
+    subprocess.call(shlex.split(f"{mgmt_script} dump_repo {database_dir} {policy} {dataset} {destination}"))
     
     # Count triples
     cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["awk",
@@ -234,7 +262,7 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
 
     # Shutdown triple store
     logging.info("Shutting down GraphDB server.")
-    subprocess.call(shlex.split(f"{configs['start_script']} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
 
     # Remove database files
     logging.info("Removing database files.")
@@ -244,13 +272,10 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     # HTTPError
-    policy = "tb_rs_sr"
-    triple_store_configs = configure_triple_stores(dataset, policy)
-
     triple_stores = [TripleStore.GRAPHDB]
     chunk_sizes = range(1000, 10000, 1000)
     measure_ts_with_varying_chunk_sizes = partial(insert_ic0_and_cbs, 
-                                                ts_configs=triple_store_configs,
+                                                dataset=dataset,
                                                 source_ic0=source_ic0, 
                                                 source_cs=source_cs, 
                                                 last_version=last_version, 
@@ -395,35 +420,7 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.write(template.format(str(i), ic) + "\n")
         f.close()
 
-############################################# Logging #############################################
-if not os.path.exists('/starvers_eval/output/logs/construct_datasets'):
-    os.makedirs('/starvers_eval/output/logs/construct_datasets')
-with open('/starvers_eval/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
-    log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/construct_datasets/construct_datasets.txt", 
-                                                  encoding='utf-8', mode='a+')],
-                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
-                    datefmt="%F %A %T", 
-                    level=logging.INFO)
 
-############################################# Parameters #############################################
-datasets = sys.argv[1].split(" ")
-skip_change_sets = sys.argv[2]
-skip_tb_star_ds = sys.argv[3]
-skip_cbng_ds = sys.argv[4]
-skip_icng_ds = sys.argv[5]
-skip_update_measurement = sys.argv[6]
-
-in_frm = "nt"
-LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
-init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
-    eval_setup = tomli.load(config_file)
-dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in eval_setup['datasets'].items()}
-ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in eval_setup['datasets'].items()}
-allowed_datasets = list(dataset_versions.keys())
-snapshot_dir = eval_setup['general']['snapshot_dir']
-change_sets_dir = eval_setup['general']['change_sets_dir']
 
 
 ############################################# Start procedure #############################################

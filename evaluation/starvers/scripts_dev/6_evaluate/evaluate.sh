@@ -1,17 +1,6 @@
 #!/bin/bash
 
-# Logging variables
-log_file=/starvers_eval/output/logs/evaluate/query.txt
-log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
-log_level="root:INFO"
-
-# Bash arguments and environment variables
-policies=("${policies}") 
-datasets=("${datasets}") 
-triple_stores=("${triple_stores}")
-graphdb_port=$(("${graphdb_port}"))
-jenatdb2_port=$(("${jenatdb2_port}"))
-ostrich_port=$(("${ostrich_port}"))
+# Functions
 
 eval_combi_exists() {
     local triplestore="$1"
@@ -39,7 +28,6 @@ eval_combi_exists() {
 }
 
 
-
 start_mem_tracker() {
     local pid=$1
     local label=$2
@@ -59,6 +47,16 @@ start_mem_tracker() {
     echo $!   # return tracker PID
 }
 
+
+# Logging variables
+log_file=/starvers_eval/output/logs/evaluate/query.txt
+log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
+log_level="root:INFO"
+
+# Bash arguments and environment variables
+policies=("${policies}") 
+datasets=("${datasets}") 
+triple_stores=("${triple_stores}")
 
 # Prepare directories and files
 rm -rf /starvers_eval/output/logs/evaluate/
@@ -92,158 +90,67 @@ done
 
 # main loop
 for triple_store in ${triple_stores[@]}; do
-    if [ ${triple_store} == "ostrich" ]; then
+
+    # Get triple store management script from eval_setup.toml
+    triple_store_mgmt=$(python3 - <<EOF
+import tomli
+with open("$CONFIG", "rb") as f:
+    data = tomli.load(f)
+print(data["rdf_stores"]["$triple_store"]["mgmt_script"])
+EOF
+)
+
+    for policy in ${policies[@]}; do
+
+        # Check whether combination is supported
+        if ! eval_combi_exists "${triple_store}" "${dataset}" "${policy}"; then
+            echo "$(log_timestamp) ${log_level}:Policy ${policy} and dataset ${dataset} is not available for triplestore ${triple_store}, skipping..." >> $log_file
+            continue
+        fi
+
         for dataset in ${datasets[@]}; do
             # Start database server and run in background
-            echo "$(log_timestamp) ${log_level}:Starting Ostrich server for the evaluation..." >> $log_file
-            node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
-            db_pid=$!
-            
-            # Wait until server is up
-            echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+            "${triple_store_mgmt}" startup $dataset &
 
-            counter=0
-            while [[ $(curl -I http://Starvers:${ostrich_port}/sparql 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-                sleep 1s
-                counter=$((counter + 1))
-                if [[ counter -ge 60 ]]; then
-                    echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
-                    pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
-                    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p ${ostrich_port} -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
-                    db_pid=$!
-                    counter=0
+            # Get PID
+            pid_file="/tmp/${triple_store}_${policy}_${dataset}.pid"
+
+            max_retries=3
+            retry=1
+            db_pid=""
+
+            while [[ $retry -le $max_retries ]]; do
+                sleep 3
+
+                if [[ -f "$pid_file" ]]; then
+                    db_pid=$(cat "$pid_file")
+                    break
                 fi
+
+                echo "$(log_timestamp) ${log_level}:PID file not found (attempt $retry/$max_retries)" >> $log_file
+                retry=$((retry + 1))
             done
-            echo "$(log_timestamp) ${log_level}:Ostrich server is up." >> $log_file
+
+            if [[ -z "$db_pid" ]]; then
+                echo "$(log_timestamp) ${log_level}:ERROR: Could not obtain PID for ${triple_store} ${dataset}" >> $log_file
+                exit 1
+            fi
 
             # Start tracking memory consumption
-            mem_tracker_pid=$(start_mem_tracker $db_pid "ostrich_${dataset}" $mem_file 0.5)
+            mem_tracker_pid=$(start_mem_tracker $db_pid "${policy}_${dataset}" $mem_file 0.5)
             echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for Ostrich." >> $log_file
 
             # Clean output directory
-            rm -rf /starvers_eval/output/result_sets/${triple_store}/ostrich_${dataset}
+            rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
             # Evaluate
-            python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} "ostrich" ${dataset} ${ostrich_port}
+            python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${triple_store} ${dataset}
             echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
 
             # Stop memory tracker and database server
-            echo "$(log_timestamp) ${log_level}:Kill memory tracker and process /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
+            echo "$(log_timestamp) ${log_level}:Kill memory tracker and process to shutdown ${triple_store}" >> $log_file
             kill "$mem_tracker_pid"
-            pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
-            while ps -ef | grep -q '[h]ttp.js'; do
-                sleep 1
-            done
-            echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
+            "${triple_store_mgmt}" shutdown
         done
-    
-    elif [ ${triple_store} == "jenatdb2" ]; then
-        # Export variables
-        export JAVA_HOME=/opt/java/java17/openjdk
-        export PATH=/opt/java/java17/openjdk/bin:$PATH
-
-        mkdir -p /run/configuration
-        for policy in ${policies[@]}; do
-            if ! eval_combi_exists "${triple_store}" "${policy}"; then
-                echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
-                continue
-            fi
-
-            for dataset in ${datasets[@]}; do
-
-                # Start database server and run in background
-                echo "$(log_timestamp) ${log_level}:Starting Fuseki server for the evaluation of ${policy}_${dataset}..." >> $log_file
-                cp /starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}.ttl /run/configuration/config.ttl
-                nohup /jena-fuseki/fuseki-server --config=/run/configuration/config.ttl --port=3030 --tdb2 &
-
-                # Wait until server is up
-                echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-                counter=0
-                while [[ $(curl -I http://Starvers:${jenatdb2_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-                    sleep 1s
-                    counter=$((counter + 1))
-                    if [[ counter -ge 60 ]]; then
-                        echo "$(log_timestamp) ${log_level}:Server not up after 60 seconds, restarting..." >> $log_file
-                        pkill -f '/jena-fuseki/fuseki-server.jar'
-                        nohup /jena-fuseki/fuseki-server --config=/run/configuration/config.ttl --port=3030 --tdb2 &
-                        counter=0
-                    fi
-                done
-                echo "$(log_timestamp) ${log_level}:Fuseki server is up." >> $log_file
-
-                # Start tracking memory consumption
-                db_pid=$(pgrep -f '/jena-fuseki/fuseki-server.jar' | head -n 1)
-                mem_tracker_pid=$(start_mem_tracker $db_pid "jenatdb2_${policy}_${dataset}" $mem_file 0.5)
-                echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for Jena TDB2." >> $log_file
-
-                # Clean output directory
-                rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
-
-                # Evaluate
-                python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${jenatdb2_port}
-                echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
-
-                # Stop memory tracker and database server
-                echo "$(log_timestamp) ${log_level}:Kill memory tracker and process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
-                kill "$mem_tracker_pid"
-                pkill -f '/jena-fuseki/fuseki-server.jar'
-                while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
-                    sleep 1
-                done
-                echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
-            done
-        done
-    
-    elif [ ${triple_store} == "graphdb" ]; then
-        GDB_JAVA_OPTS_BASE=$GDB_JAVA_OPTS
-
-        for policy in ${policies[@]}; do
-            if ! eval_combi_exists "${triple_store}" "${policy}"; then
-                echo "$(log_timestamp) ${log_level}:Policy ${policy} is not available for triplestore ${triple_store}, skipping..." >> $log_file
-                continue
-            fi
-
-            for dataset in ${datasets[@]}; do
-                # Export variables
-                export JAVA_HOME=/opt/java/java11/openjdk
-                export PATH=/opt/java/java11/openjdk/bin:$PATH
-                export GDB_JAVA_OPTS="$GDB_JAVA_OPTS_BASE -Dgraphdb.home.data=/starvers_eval/databases/graphdb/${policy}_${dataset}"
-
-                # Start database server and run in background
-                echo "$(log_timestamp) ${log_level}:Starting GraphDB server for the evaluation of ${policy}_${dataset}..." >> $log_file
-                /opt/graphdb/dist/bin/graphdb -d -s
-                
-                # Wait until server is up
-                # GraphDB doesn't deliver HTTP code 200 for some reason ...
-                echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-                while [[ $(curl -I http://Starvers:${graphdb_port} 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
-                    sleep 1s
-                done
-                echo "$(log_timestamp) ${log_level}:GraphDB server is up" >> $log_file
-
-                # Start tracking memory consumption
-                db_pid=$(pgrep -f '${JAVA_HOME}/bin/java' | head -n 1)
-                mem_tracker_pid=$(start_mem_tracker $db_pid "graphdb_${policy}_${dataset}" $mem_file 0.5)
-                echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for GraphDB." >> $log_file
-
-                # Clean output directory
-                rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
-
-                # Evaluate
-                python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset} ${graphdb_port}
-                echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
-
-                # Stop memory tracker and database server                
-                echo "$(log_timestamp) ${log_level}:Kill memory tracker and process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file
-                kill "$mem_tracker_pid"
-                pkill -f ${JAVA_HOME}/bin/java
-                while pgrep -f "${JAVA_HOME}/bin/java" >/dev/null; do
-                    sleep 1
-                done
-                echo "$(log_timestamp) ${log_level}:${JAVA_HOME}/bin/java killed." >> $log_file
-
-            done
-        done
-    fi
- 
+    done
 done
