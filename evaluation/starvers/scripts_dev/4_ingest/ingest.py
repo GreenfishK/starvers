@@ -122,13 +122,15 @@ def count_triples(job: Job):
     engine.setMethod(GET)
 
     if job.policy in ["ic_sr_ng", "cb_sr_ng", "ostrich"]:
-        with open(f"{CNT_QUERIES_PATH}/ic_sr_ng.sparql", "r") as cnt_query:
-            engine.setQuery(cnt_query)
+        with open(f"{CNT_QUERIES_PATH}/ic_sr_ng.sparql", "r") as cnt_query_file:
+            query_string = cnt_query_file.read()
+            engine.setQuery(query_string)
             try:
                 result = engine.query()
+                log(job.triplestore, f"Number of triples: {result}")
+
             except Exception as e:
-                log(job.triplestore, f"ERROR: The following exeception occured of triples: {e}")
-            log(job.triplestore, f"Number of triples: {result}")
+                log(job.triplestore, f"ERROR: The following exeception occured while counting triples: {e}")
     else:
         log(job.triplestore, "Supported policies for counting triples are: ic_sr_ng")
 
@@ -146,19 +148,20 @@ def run_ostrich(job: Job, run: int):
     policy = job.policy
     repository_id = f"{policy}_{dataset}"
 
-    log(job.triplestore, f"Run {run}: Starting ingestion for dataset={dataset}, policy={policy}")
-
+    log(job.triplestore, f"Run {run}: Starting {job.triplestore} for dataset={dataset}, policy={policy}")
+    
+    # Setup environment
     db_root = Path("/starvers_eval/databases/ostrich")
     database_dir = db_root / repository_id
 
     with open(CONFIG_PATH, "rb") as f:
         CONFIG = tomli.load(f)
 
-    dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/alldata_vdir")
-
     mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.run([f"{mgmt_script}", "create_env", policy, dataset, 
                     database_dir, CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
+    
+    dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/alldata_vdir")
 
     # Ingest
     ################################################
@@ -178,7 +181,7 @@ def run_ostrich(job: Job, run: int):
             str(versions),
         ],
         check=True,
-        cwd=database_dir ,
+        cwd=database_dir
     )
     ingestion_time = round(time.time() - start, 3)
     ################################################
@@ -190,7 +193,7 @@ def run_ostrich(job: Job, run: int):
 
     # Cleanup
     if run != RUNS:
-        log(job.triplestore, f"Run {run}: Cleaning up Ostrich DB and virtual directory for dataset={dataset}, policy={policy}")
+        log(job.triplestore, f"Run {run}: Cleaning up {job.triplestore} for dataset={dataset}, policy={policy}")
         ensure_empty_dir(database_dir)
 
     log(job.triplestore, f"Run {run}: Completed ingestion for dataset={dataset}, policy={policy} in {ingestion_time} seconds.")
@@ -204,7 +207,7 @@ def run_graphdb(job: Job, run: int):
     policy = job.policy
     repository_id = f"{policy}_{dataset}"
 
-    log(job.triplestore, f"Run {run}: Starting GraphDB ingestion ({policy}, {dataset})")
+    log(job.triplestore, f"Run {run}: Starting {job.triplestore} for dataset={dataset}, policy={policy}")
     
     # Setup environment
     db_root = Path("/starvers_eval/databases/graphdb")
@@ -221,6 +224,16 @@ def run_graphdb(job: Job, run: int):
     # Ingest
     ################################################
     # triple store-specific code
+    env = os.environ.copy()
+    env["JAVA_HOME"] = "/opt/java/java11/openjdk"
+    env["PATH"] = "/opt/java/java11/openjdk/bin:" + env["PATH"]
+
+    gdb_java_opts_base = env.get("GDB_JAVA_OPTS", "")
+    env["GDB_JAVA_OPTS"] = (
+        f"{gdb_java_opts_base} "
+        f"-Dgraphdb.home.data={database_dir}"
+    )
+
 
     config_file = f"{CONFIG_DIR}/graphdb/{repository_id}/{repository_id}.ttl"
    
@@ -234,7 +247,8 @@ def run_graphdb(job: Job, run: int):
             str(dataset_dir)
         ],
         check=True,
-        cwd=database_dir
+        cwd=database_dir,
+        env=env
 
     )
     ingestion_time: float = round(time.time() - start, 3)
@@ -242,17 +256,17 @@ def run_graphdb(job: Job, run: int):
 
     # Metrics 
     raw_size = du_mib(dataset_dir)
-    disk_usage = du_mib(database_dir)
+    db_size = du_mib(database_dir)
     count_triples(job)
 
     # Cleanup
     if run != RUNS:
-        log(job.triplestore, f"Run {run}: Cleaning up GraphDB DB for dataset={dataset}, policy={policy}")
+        log(job.triplestore, f"Run {run}: Cleaning up {job.triplestore} for dataset={dataset}, policy={policy}")
         ensure_empty_dir(database_dir)
 
     log(job.triplestore, f"Run {run}: Completed ingestion for dataset={dataset}, policy={policy} in {ingestion_time} seconds.")
 
-    return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, disk_usage)
+    return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, db_size)
 
 
 
@@ -262,7 +276,7 @@ def run_jena(job: Job, run: int):
     policy = job.policy
     repository_id = f"{policy}_{dataset}"
 
-    log(job.triplestore, f"Run {run}: Starting Jena TDB2 ingestion ({policy}, {dataset})")
+    log(job.triplestore, f"Run {run}: Starting {job.triplestore} for dataset={dataset}, policy={policy}")
 
     # Setup environment
     db_root = Path("/starvers_eval/databases/jenatdb2")
@@ -277,13 +291,19 @@ def run_jena(job: Job, run: int):
     # Ingest
     ################################################
     # triple store-specific code
+    env = os.environ.copy()
+    env["JAVA_HOME"] = "/opt/java/java17/openjdk"
+    env["PATH"] = "/opt/java/java17/openjdk/bin:" + env["PATH"]
+
     dataset_dir = Path(f"/starvers_eval/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
 
     start = time.time()
     subprocess.run(
         ["/jena-fuseki/tdbloader2", "--loc", str(database_dir), str(dataset_dir)],
         check=True,
-        cwd=database_dir
+        cwd=database_dir,
+        env=env
+
     )
     ingestion_time = round(time.time() - start, 3)
     ################################################
