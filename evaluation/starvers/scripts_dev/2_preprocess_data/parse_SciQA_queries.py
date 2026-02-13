@@ -100,7 +100,7 @@ def startup():
     # Startup GraphDB repository 
     logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
     subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} create_env dummy orkg {DATABASE_DIR} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
-    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} startup {DATABASE_DIR}"))
+    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} startup {DATABASE_DIR} dummy dummy"))
 
 
 # Extraction from JSON files
@@ -218,4 +218,4 @@ if __name__ == "__main__":
     startup()
     extract_queries()
     exclude_queries()
-    #cleanup()
+    cleanup()
