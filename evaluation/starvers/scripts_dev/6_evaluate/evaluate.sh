@@ -105,7 +105,7 @@ EOF
                 continue
             fi
             # Start database server and run in background
-            "${triple_store_mgmt}" startup "/starvers_eval/databases/${triple_store}/${policy}_${dataset}" $policy $dataset &
+            "${triple_store_mgmt}" startup "/starvers_eval/databases/${triple_store}/${policy}_${dataset}" $policy $dataset
 
             # Get PID
             pid_file="/tmp/${triple_store}_${policy}_${dataset}.pid"
@@ -133,7 +133,7 @@ EOF
 
             # Start tracking memory consumption
             mem_tracker_pid=$(start_mem_tracker $db_pid "${policy}_${dataset}" $mem_file 0.5)
-            echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for Ostrich." >> $log_file
+            echo "$(log_timestamp) ${log_level}:Started memory tracker with PID ${mem_tracker_pid} for ${triple_store}." >> $log_file
 
             # Clean output directory
             rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}

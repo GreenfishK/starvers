@@ -10,18 +10,20 @@ startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
     nohup /jena-fuseki/fuseki-server --config=/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl --port=3030 --tdb2 &
     
+    # Wait until server is up
+    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    until curl -s -X POST http://Starvers:3030/${policy}_${dataset}/sparql \
+        -H "Content-Type: application/sparql-query" \
+        --data "ASK {}" >/dev/null 2>&1
+    do
+        sleep 1
+    done
+    echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
+
     # Save process ID
     db_pid=$!
     echo $db_pid > /tmp/jenatdb2_${policy}_${dataset}.pid
 
-    # Wait until server is up
-    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-    while [[ $(curl -I http://Starvers:3030 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '200' ]]; do
-        sleep 1s
-    done
-    echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
-
-    sleep 10000s
 }
 
 
@@ -83,6 +85,10 @@ create_env() {
     sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
 }
 
+ingest() {
+    echo "TODO"
+}
+
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     repositoryID=${policy}_${dataset}
@@ -90,7 +96,9 @@ ingest_empty() {
 }
 
 
-
+#######################################################################
+# Workflow
+#######################################################################
 # Bash arguments and environment variables
 set -euo pipefail
 
@@ -159,11 +167,24 @@ elif [[ ${1:-} == "ingest_empty" ]]; then
 
     ingest_empty
 
+elif [[ ${1:-} == "ingest" ]]; then
+    if [[ $# -ne 5 ]]; then
+        echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+        exit 1
+    fi
+
+    database_dir=$2
+    policy=$3
+    dataset=$4
+    config_dir=$5
+
+    ingest
 else
     echo "Usage: $0 startup <policy> <dataset>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
+    echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1

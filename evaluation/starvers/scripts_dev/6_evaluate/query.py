@@ -129,6 +129,7 @@ dry_run_query = eval_setup["rdf_stores"][triple_store]["dry_run_query"]
 engine.setQuery(dry_run_query)
 try:
     logger.info(f"Execute simple SPARQL query against {engine.endpoint} to warm up the RDF store and prevent the initial hike during the evaluation.")
+    logger.info(f"{dry_run_query}")
     dry_run_result = engine.query()
 except Exception as e:
     logger.error(f"Dry run query failed against endpoint {engine.endpoint}. Exception: {e}")
