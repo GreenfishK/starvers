@@ -96,8 +96,8 @@ ingest() {
 import tomli
 with open("/starvers_eval/configs/eval_setup.toml","rb") as f:
     config = tomli.load(f)
-qs_name = list(config["datasets"][dataset]["query_sets"].keys())[0]
-print(config["datasets"][dataset]["query_sets"][qs_name]["policies"][policy]["versions"])
+qs_name = list(config["datasets"]["$dataset"]["query_sets"].keys())[0]
+print(config["datasets"]["$dataset"]["query_sets"][qs_name]["policies"]["$policy"]["versions"])
 EOF
 )
 
