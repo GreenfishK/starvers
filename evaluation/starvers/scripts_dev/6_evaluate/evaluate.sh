@@ -8,23 +8,35 @@ eval_combi_exists() {
     local policy="$3"
     local config="/starvers_eval/configs/eval_setup.toml"
 
-    # Extract the block [evaluations.<triplestore>] → next section
-    local line
-    line=$(awk -v store="$triplestore" -v ds="$dataset" '
-        $0 ~ "^\\[evaluations\\."store"\\]" {found=1; next}
-        found && /^\[/ {exit}
-        found && $1 == ds {print; exit}
-    ' "$config")
+    python3 - <<EOF
+import sys
+import tomli
 
-    # No dataset entry found
-    [[ -z "$line" ]] && return 1
+triplestore = "${triplestore}"
+dataset = "${dataset}"
+policy = "${policy}"
+config_path = "${config}"
 
-    # Check if policy is inside the array
-    if echo "$line" | grep -qw "\"$policy\""; then
-        return 0
-    else
-        return 1
-    fi
+try:
+    with open(config_path, "rb") as f:
+        data = tomli.load(f)
+
+    policies = (
+        data.get("evaluations", {})
+            .get(triplestore, {})
+            .get(dataset, [])
+    )
+
+    if policy in policies:
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+except Exception:
+    sys.exit(1)
+EOF
+
+    return $?
 }
 
 
@@ -73,21 +85,6 @@ time_file="/starvers_eval/output/measurements/time.csv"
 > $time_file
 echo "triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time" >> $time_file
 
-# Exclude queries
-echo "Tag queries query8 and query9 from the BEARC complex query set 
-for the cb_sr_ng policy for excluding their result sets 
-from serialization." >> $log_file
-root_dir="/starvers_eval/queries/final_queries/cb_sr_ng/bearc/complex"
-
-for subdir in $(ls -d ${root_dir}/*); do
-    for file in ${subdir}/query8_q5_v* ${subdir}/query9_q0_v*; do
-        if ! head -n 1 ${file} | grep -q "# Exclude"; then
-            sed -i '1i\# Exclude' ${file}
-        fi
-    done
-done
-
-
 # main loop
 for triple_store in ${triple_stores[@]}; do
 
@@ -99,18 +96,16 @@ with open("/starvers_eval/configs/eval_setup.toml", "rb") as f:
 print(data["rdf_stores"]["$triple_store"]["mgmt_script"])
 EOF
 )
-
     for policy in ${policies[@]}; do
-
-        # Check whether combination is supported
-        if ! eval_combi_exists "${triple_store}" "${dataset}" "${policy}"; then
-            echo "$(log_timestamp) ${log_level}:Policy ${policy} and dataset ${dataset} is not available for triplestore ${triple_store}, skipping..." >> $log_file
-            continue
-        fi
-
         for dataset in ${datasets[@]}; do
+
+            # Check whether combination is supported
+            if ! eval_combi_exists "${triple_store}" "${dataset}" "${policy}"; then
+                echo "$(log_timestamp) ${log_level}:Policy ${policy} and dataset ${dataset} is not available for triplestore ${triple_store}, skipping..." >> $log_file
+                continue
+            fi
             # Start database server and run in background
-            "${triple_store_mgmt}" startup $dataset &
+            "${triple_store_mgmt}" startup "/starvers_eval/databases/${triple_store}/${policy}_${dataset}" $policy $dataset &
 
             # Get PID
             pid_file="/tmp/${triple_store}_${policy}_${dataset}.pid"
@@ -144,7 +139,7 @@ EOF
             rm -rf /starvers_eval/output/result_sets/${triple_store}/${policy}_${dataset}
 
             # Evaluate
-            python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${triple_store} ${dataset}
+            python3 -u /starvers_eval/scripts/6_evaluate/query.py ${triple_store} ${policy} ${dataset}
             echo "$(log_timestamp) ${log_level}:Evaluation finished." >> $log_file
 
             # Stop memory tracker and database server

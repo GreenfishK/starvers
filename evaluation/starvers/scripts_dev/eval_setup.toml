@@ -22,9 +22,9 @@
         orkg       = ["ostrich"]
 
 [rdf_stores]
-    graphdb = {get = "http://Starvers:7200/repositories/{repo}", post = "http://Starvers:7200/repositories/{repo}/statements", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"}
-    jenatdb2 = {get = "http://Starvers:3030/{repo}/sparql", post = "http://Starvers:7200/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh"}
-    ostrich = {get = "http://Starvers:42564/sparql", post = "http://Starvers:42564/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"}
+    graphdb = {get = "http://Starvers:7200/repositories/{repo}", post = "http://Starvers:7200/repositories/{repo}/statements", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
+    jenatdb2 = {get = "http://Starvers:3030/{repo}/sparql", post = "http://Starvers:7200/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
+    ostrich = {get = "http://Starvers:42564/sparql", post = "http://Starvers:42564/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh", dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"}
 
 
 [datasets]

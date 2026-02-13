@@ -236,7 +236,7 @@ services:
       - "host.docker.internal:127.0.0.1"
     volumes:
       - ${base_host_dir}/databases/jenatdb2:/starvers_eval/databases/jenatdb2
-      - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_orkg.ttl:/run/configuration/config.ttl
+      - ${base_host_dir}/configs/ingest/jenatdb2/ic_sr_ng_orkg/ic_sr_ng_orkg.ttl:/run/configuration/config.ttl
     user: root
     command: ["/jena-fuseki/fuseki-server", "--config=/run/configuration/config.ttl", "--port=3030", "--tdb2"]
 

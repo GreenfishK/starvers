@@ -8,9 +8,7 @@ log_level="root:INFO"
 
 startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    mkdir -p /run/configuration
-    cp ${config_dir}/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl /run/configuration
-    nohup /jena-fuseki/fuseki-server --port=3030 --tdb2 &
+    nohup /jena-fuseki/fuseki-server --config=/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl --port=3030 --tdb2 &
     
     # Save process ID
     db_pid=$!
@@ -22,6 +20,8 @@ startup() {
         sleep 1s
     done
     echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
+
+    sleep 10000s
 }
 
 
@@ -88,6 +88,7 @@ ingest_empty() {
     repositoryID=${policy}_${dataset}
     /jena-fuseki/tdbloader2 --loc ${database_dir}/jenatdb2/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
 }
+
 
 
 # Bash arguments and environment variables

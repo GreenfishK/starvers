@@ -14,8 +14,10 @@ startup() {
     /opt/graphdb/dist/bin/graphdb -d -s
     
     # Save process ID
-    db_pid=$(pgrep -f '${JAVA_HOME}/bin/java' | head -n 1)
+    echo "$(log_timestamp) ${log_level}: Obtaining GraphDB PID ..."  >> $log_file
+    db_pid=$(pgrep -f "${JAVA_HOME}/bin/java" | head -n 1)
     echo $db_pid > /tmp/graphdb_${policy}_${dataset}.pid
+    echo "$(log_timestamp) ${log_level}: GraphDB PID is: ${db_pid}"  >> $log_file
     
     # Wait until server is up
     # GraphDB doesn't deliver HTTP code 200 for some reason ...

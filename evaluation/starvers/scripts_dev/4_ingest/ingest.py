@@ -115,6 +115,7 @@ def count_triples(job: Job):
         CONFIG = tomli.load(f)
 
     query_endpoint = CONFIG["rdf_stores"][job.triplestore]["get"].format(repo=f"{job.policy}_{job.dataset}")
+    log(job.triplestore, f"Setting endpoint for counting triples: {query_endpoint}")
 
     engine = SPARQLWrapper(endpoint=query_endpoint)
     engine.setReturnFormat(JSON)

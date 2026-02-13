@@ -22,7 +22,6 @@ logger.basicConfig(handlers=[logger.FileHandler(filename="/starvers_eval/output/
                     datefmt="%F %A %T", 
                     level=logger.INFO)
 
-
 ##########################################################
 # Parameters 
 ##########################################################
@@ -50,6 +49,7 @@ engine.timeout = timeout
 engine.setReturnFormat(JSON)
 engine.setOnlyConneg(True)
 engine.setMethod(POST)
+engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
 
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo                    
 init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
@@ -125,14 +125,7 @@ repositories = eval_setup['datasets'][dataset]['repositories'][policy]
 _set_endpoints(triple_store, dataset, policy, engine)   
 
 # Dry run and configuration of the SPARQL engine
-if triple_store == "ostrich":
-    dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"
-    engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
-elif triple_store == "jenatdb2":
-    dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
-else:
-    dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"
-
+dry_run_query = eval_setup["rdf_stores"][triple_store]["dry_run_query"]
 engine.setQuery(dry_run_query)
 try:
     logger.info(f"Execute simple SPARQL query against {engine.endpoint} to warm up the RDF store and prevent the initial hike during the evaluation.")
@@ -146,6 +139,7 @@ logger.info(f"Evaluate {triple_store}, {policy}, {dataset} and query sets {query
 f"with {query_set_versions} query set versions and {repositories} repositories on endpoint: {engine.endpoint}")
 df_data = []
 
+# Run queries
 for query_set in query_sets:
     for query_version in range(query_set_versions):
         query_set_version = final_queries + "/" + query_set  +  "/" + str(query_version)
@@ -164,126 +158,38 @@ for query_set in query_sets:
             engine.setQuery(query_text)
             file.close()
 
-            if policy in ["ostrich", "ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]:
-                _set_endpoints(triple_store, dataset, policy, engine)   
-
+            _set_endpoints(triple_store, dataset, policy, engine)   
+            try:
                 logger.info("Querying SPARQL endpoint {0} with query {1}". format(engine.endpoint, query_file_name))
-                try:
-                    start = time.time()
-                    result = engine.query()
-                    end = time.time()
-                    execution_time = end - start
+                start = time.time()
+                result = engine.query()
+                end = time.time()
+                execution_time = end - start
 
-                    logger.info("Serializing results.")
-                    result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
-                    Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                    file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
-                    write = csv.writer(file, delimiter=";")
-                    write.writerows(parse_results(result))
-                except Exception as e:
-                    logger.error(e)
-                    logger.warning(f"The query execution {query_file_name} might have reached the timeout of {timeout} seconds. " +\
-                    "The execution_time will be set to -1. The results will not be serialized.")
-                    execution_time = -1
-                    yn_timeout = 1
+                logger.info("Serializing results.")
+                result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
+                Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                file = open(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", 'w')
+                write = csv.writer(file, delimiter=";")
+                write.writerows(parse_results(result))
+            except Exception as e:
+                logger.error(e)
+                logger.warning(f"The query execution {query_file_name} might have reached the timeout of {timeout} seconds. " +\
+                "The execution_time will be set to -1. The results will not be serialized.")
+                execution_time = -1
+                yn_timeout = 1
 
-                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, 0, yn_timeout]
-                df_data.append(new_row)
-            
-            elif policy == "cb_sr_ng":
-                _set_endpoints(triple_store, dataset, policy, engine)   
-
-                def build_snapshot(snapshot: Graph):
-                    """
-                    Build the snapshot at version :query_version by populating :snapshot with triples from the add-set 
-                    to :snapshot and depopulating :snapshot by removing triples that match the ones in the del-set, consecutively.
-                    """
-                    def parse_triple(row) -> Tuple[object, object, object]:
-                        # parse subject
-                        if row['s']['type'] == "uri":
-                            s = URIRef(row['s']['value'])
-                        else:
-                            s = BNode(row['s']['value'])
-
-                        # parse predicate
-                        p = URIRef(row['p']['value'])
-
-                        # parse object
-                        if row['o']['type']  == "uri":
-                            o = URIRef(row['o']['value'])
-                        elif row['o']['type'] == "blank":
-                            o = BNode(row['o']['value'])
-                        else:
-                            value = row['o']["value"]
-                            lang = row['o'].get("xml:lang", None)
-                            datatype = row['o'].get("datatype", None)
-                            o = Literal(value, lang=lang, datatype=datatype)
-                        return (s, p, o)
-
-                    for cs_version in range(query_version + 1):
-                        add_sets_v = """ Select ?graph ?s ?p ?o WHERE {{
-                                graph <http://starvers_eval/v{0}/added> 
-                                {{
-                                    ?s ?p ?o .
-                                }}
-                            }} """.format(str(cs_version).zfill(len(str(query_set_versions))))
-                        engine.setQuery(add_sets_v)
-                        add_set = engine.query().convert()
-                        for r in add_set["results"]["bindings"]:                        
-                            snapshot.add(parse_triple(r))
-
-                        del_sets_v = """ Select ?graph ?s ?p ?o WHERE {{
-                            graph <http://starvers_eval/v{0}/deleted> 
-                            {{
-                                ?s ?p ?o .
-                            }}
-                        }} """.format(str(cs_version).zfill(len(str(query_set_versions))))
-                        engine.setQuery(del_sets_v)
-                        del_set = engine.query().convert()
-                        for r in del_set["results"]["bindings"]:                        
-                            snapshot.remove(parse_triple(r))
-                
-                # Query all changesets from the triplestore until version :query_version 
-                # ordered by change set versions
-                if current_query_version == query_version:
-                    logger.info("Build snapshot version {0} from endpoint {1}". format(str(query_version).zfill(len(str(query_set_versions))),
-                                                           engine.endpoint))
-                    start = time.time()
-                    snapshot_g = Graph()
-                    build_snapshot(snapshot_g)
-                    end = time.time()
-                    snapshot_creation_time = end - start
-                    current_query_version = None
-
-                logger.info("Querying snapshot (rdflib graph object) with query {0}". format(query_file_name))
-                try:
-                    start = time.time()
-                    query_result = snapshot_g.query(query_text)
-                    end = time.time()
-                    execution_time = end - start
-
-                    if query_text.startswith("# Exclude"):
-                        logger.info("Dont serialize query results due to issue in rdflib's serializer with this query: {0}". format(query_file_name))
-                    else:
-                        logger.info("Serializing results.")
-                        result_set_dir = result_sets_dir + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(query_version)
-                        Path(result_set_dir).mkdir(parents=True, exist_ok=True)
-                        query_result.serialize(result_set_dir + "/" + query_file_name.split('.')[0] + ".csv", format="csv")
-                except Exception as e:
-                    logger.warning(f"The query execution {query_file_name} reached the timeout of {timeout}s. " + \
-                    "The execution_time will be set to -1. The results will not be serialized.")
-                    execution_time = -1
-                    yn_timeout = 1
-                
-                new_row = [triple_store, dataset, policy, query_set.split('/')[2], query_version, snapshot_ts, query_file_name, execution_time, snapshot_creation_time, yn_timeout]
-                df_data.append(new_row)
+            new_row = [triple_store, dataset, policy, query_set.split('/')[2], 
+                       query_version, snapshot_ts, query_file_name, execution_time, 0, yn_timeout]
+            df_data.append(new_row)
 
 # Save measurements
 logger.info("Writing performance measurements to disk ...")       
 
 df = pd.DataFrame(data=df_data, 
                   columns=['triplestore', 'dataset', 'policy', 'query_set', 
-                           'snapshot', 'snapshot_ts', 'query', 'execution_time', 'snapshot_creation_time' 'yn_timeout'])
+                           'snapshot', 'snapshot_ts', 'query', 'execution_time',
+                            'snapshot_creation_time', 'yn_timeout'])
 
 df.to_csv(time_measurement_file, sep=";", index=False, mode='a', header=False)
 
