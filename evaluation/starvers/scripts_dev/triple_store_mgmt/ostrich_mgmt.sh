@@ -12,21 +12,25 @@ log_level="root:INFO"
 startup() {
     echo "$(log_timestamp) ${log_level}:Start Ostrich node in background..." >> $log_file
     node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p 42564 -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
-    
+
+    # Wait until server is up
+    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    until curl -s -X POST http://Starvers:42564 \
+        -H "Content-Type: application/sparql-query" \
+        --data "ASK {}" >/dev/null 2>&1
+    do
+        sleep 1
+    done
+
     # Save process ID
     db_pid=$!
     echo $db_pid > /tmp/ostrich_${policy}_${dataset}.pid
 
-    # Wait until server is up
-    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
-    while [[ $(curl -I http://Starvers:42564 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
-        sleep 1s
-    done
     echo "$(log_timestamp) ${log_level}:Ostrich node is up" >> $log_file
 }
 
 shutdown() {
-    echo "$(log_timestamp) ${log_level}:Kill process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file
+    echo "$(log_timestamp) ${log_level}:Kill process $/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
     pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
     while ps -ef | grep -q '[h]ttp.js'; do
         sleep 1
@@ -85,6 +89,10 @@ EOF
 
     echo "$(log_timestamp) ${log_level}:Virtual directory created at $vdir with symlinks." >> $log_file
 
+}
+
+ingest() {
+    echo "TODO"
 }
 
 ingest_empty() {
@@ -161,11 +169,24 @@ elif [[ ${1:-} == "ingest_empty" ]]; then
 
     ingest_empty
 
+elif [[ ${1:-} == "ingest" ]]; then
+    if [[ $# -ne 5 ]]; then
+        echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+        exit 1
+    fi
+
+    database_dir=$2
+    policy=$3
+    dataset=$4
+    config_dir=$5
+
+    ingest
 else
     echo "Usage: $0 startup <database_dir>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
+    echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1
