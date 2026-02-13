@@ -99,6 +99,7 @@ with open("/starvers_eval/configs/eval_setup.toml","rb") as f:
 qs_name = list(config["datasets"][dataset]["query_sets"].keys())[0]
 print(config["datasets"][dataset]["query_sets"][qs_name]["policies"][policy]["versions"])
 EOF
+)
 
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Ostrich" >> $log_file
     cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${dataset_dir_or_file} 1 ${versions}
