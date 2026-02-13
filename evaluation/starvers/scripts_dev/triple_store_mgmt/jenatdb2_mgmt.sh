@@ -86,7 +86,10 @@ create_env() {
 }
 
 ingest() {
-    echo "TODO"
+    echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Jena TDB2" >> $log_file
+    repositoryID=${policy}_${dataset}
+    cd ${database_dir} && /jena-fuseki/tdbloader2 --loc ${database_dir} ${dataset_dir_or_file}
+
 }
 
 ingest_empty() {
@@ -168,15 +171,16 @@ elif [[ ${1:-} == "ingest_empty" ]]; then
     ingest_empty
 
 elif [[ ${1:-} == "ingest" ]]; then
-    if [[ $# -ne 5 ]]; then
-        echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+    if [[ $# -ne 6 ]]; then
+        echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
         exit 1
     fi
 
     database_dir=$2
-    policy=$3
-    dataset=$4
-    config_dir=$5
+    dataset_dir_or_file=$3
+    policy=$4
+    dataset=$5
+    config_dir=$6
 
     ingest
 else

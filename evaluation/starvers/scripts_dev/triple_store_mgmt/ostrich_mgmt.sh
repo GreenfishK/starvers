@@ -92,7 +92,17 @@ EOF
 }
 
 ingest() {
-    echo "TODO"
+    versions=$(python3 - <<EOF
+import tomli
+with open("/starvers_eval/configs/eval_setup.toml","rb") as f:
+    config = tomli.load(f)
+qs_name = list(config["datasets"][dataset]["query_sets"].keys())[0]
+print(config["datasets"][dataset]["query_sets"][qs_name]["policies"][policy]["versions"])
+EOF
+
+    echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Ostrich" >> $log_file
+    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${dataset_dir_or_file} 1 ${versions}
+            
 }
 
 ingest_empty() {
@@ -170,15 +180,16 @@ elif [[ ${1:-} == "ingest_empty" ]]; then
     ingest_empty
 
 elif [[ ${1:-} == "ingest" ]]; then
-    if [[ $# -ne 5 ]]; then
-        echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+    if [[ $# -ne 6 ]]; then
+        echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
         exit 1
     fi
 
     database_dir=$2
-    policy=$3
-    dataset=$4
-    config_dir=$5
+    dataset_dir_or_file=$3
+    policy=$4
+    dataset=$5
+    config_dir=$6
 
     ingest
 else
@@ -186,7 +197,7 @@ else
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
-    echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+    echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1
