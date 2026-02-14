@@ -3,8 +3,6 @@
 SELECT * {{ 
     GRAPH <http://starvers_eval/ic/v{1}> {{
         {2} 
-        
+        {3}
     }}
-
 }}
-{3}

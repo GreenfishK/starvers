@@ -11,7 +11,7 @@ log_level="root:INFO"
 #######################################################################
 startup() {
     echo "$(log_timestamp) ${log_level}:Start Ostrich node in background..." >> $log_file
-    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p 42564 -h 0.0.0.0 -t 480 ostrichFile@/starvers_eval/databases/ostrich/ostrich_${dataset} & 
+    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p 42564 -h 0.0.0.0 -t 480 ostrichFile@${database_dir} & 
 
     # Wait until server is up
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -92,7 +92,8 @@ EOF
 }
 
 ingest() {
-    versions=$(python3 - <<EOF
+    if [[ -z "$versions" ]]; then
+        versions=$(python3 - <<EOF
 import tomli
 with open("/starvers_eval/configs/eval_setup.toml","rb") as f:
     config = tomli.load(f)
@@ -100,6 +101,7 @@ qs_name = list(config["datasets"]["$dataset"]["query_sets"].keys())[0]
 print(config["datasets"]["$dataset"]["query_sets"][qs_name]["policies"]["$policy"]["versions"])
 EOF
 )
+    fi
 
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Ostrich" >> $log_file
     cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${dataset_dir_or_file} 1 ${versions}
@@ -181,8 +183,8 @@ elif [[ ${1:-} == "ingest_empty" ]]; then
     ingest_empty
 
 elif [[ ${1:-} == "ingest" ]]; then
-    if [[ $# -ne 6 ]]; then
-        echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
+    if [[ $# -lt 6 || $# -gt 7 ]]; then
+        echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir> [versions]"
         exit 1
     fi
 
@@ -191,10 +193,11 @@ elif [[ ${1:-} == "ingest" ]]; then
     policy=$4
     dataset=$5
     config_dir=$6
+    versions=${7:-}  
 
     ingest
 else
-    echo "Usage: $0 startup <database_dir>"
+    echo "Usage: $0 startup <database_dir> <policy> <dataset>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"

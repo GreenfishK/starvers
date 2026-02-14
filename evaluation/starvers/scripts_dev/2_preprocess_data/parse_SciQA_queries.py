@@ -3,11 +3,16 @@ import re
 from pathlib import Path
 import logging
 import shutil
-from starvers.starvers import TripleStoreEngine
+import sys
+from starvers.starvers import TripleStoreEngine, split_prefixes_query
+sys.path.append(str(Path("/starvers_eval/scripts/construct_queries").resolve()))
+from construct_queries import split_solution_modifiers_query
 import subprocess
 import shlex
 import time
 import unicodedata
+from SPARQLWrapper import SPARQLWrapper, Wrapper, GET, POST, POSTDIRECTLY, JSON
+
 
 
 ############################################# Logging #############################################
@@ -42,8 +47,10 @@ SCRIPTS_DIR = Path("/starvers_eval/scripts")
 SUBDIRS = ["train", "test", "valid"]
 CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data/configs"
 CONFIG_DIR="/starvers_eval/configs/preprocess_data"
-DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb/dummy_orkg"
+GRAPHDB_DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb/dummy_orkg"
+OSTRICH_DATABASE_DIR="/starvers_eval/databases/preprocess_data/ostrich/dummy_orkg"
 GRAPHDB_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
+OSTRICH_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"
 
 ###################################### Regex logic ######################################
 
@@ -101,23 +108,35 @@ def wrap_aggregations(sparql: str) -> str:
 # Start GraphDB
 def startup():
     # Startup GraphDB repository 
-    logging.info("Create database environment")
-    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "create_env", "dummy", "orkg", f"{DATABASE_DIR}", f"{CONFIG_TMPL_DIR}", f"{CONFIG_DIR}"], check=True)
+    logging.info("Create database environment for GraphDB")
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "create_env", "dummy", "orkg", f"{GRAPHDB_DATABASE_DIR}", f"{CONFIG_TMPL_DIR}", f"{CONFIG_DIR}"], check=True)
     
     logging.info("Ingest empty dataset for testing.")
-    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "ingest_empty", f"{DATABASE_DIR}", f"dummy", f"orkg", f"{CONFIG_DIR}"], check=True)
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "ingest_empty", f"{GRAPHDB_DATABASE_DIR}", f"dummy", f"orkg", f"{CONFIG_DIR}"], check=True)
     logging.info("Ingested empty dataset.")
 
     logging.info("Start GraphDB engine.")
-    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "startup", f"{DATABASE_DIR}", f"dummy", f"orkg"], check=True)
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "startup", f"{GRAPHDB_DATABASE_DIR}", f"dummy", f"orkg"], check=True)
     logging.info("GraphDB is up")
 
+    # Startup Ostrich
+    logging.info("Create database environment for Ostrich")
+    subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "create_env", "dummy", "orkg", f"{OSTRICH_DATABASE_DIR}", "", ""], check=True)
+    
+    logging.info("Ingest the first ORKG snapshot.")
+    subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "ingest", f"{OSTRICH_DATABASE_DIR}", f"/starvers_eval/rawdata/orkg/alldata_vdir", f"ostrich", "orkg", "", "1"], check=True)
+    logging.info("Ingested empty dataset.")
+
+    logging.info("Start Ostrich engine.")
+    subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "startup", f"{OSTRICH_DATABASE_DIR}", f"dummy", f"orkg"], check=True)
+    logging.info("Ostrich is up")
 
 
 
 
 # Extraction from JSON files
 def extract_queries():
+
     for subdir in SUBDIRS:
         json_path = BASE_DIR / "SciQA-dataset" / subdir / "questions.json"
         if not json_path.exists():
@@ -159,6 +178,18 @@ def extract_queries():
 
 # Queries that starvers cannot process are excluded
 def exclude_queries():
+    # For querying Ostrich
+    engine = SPARQLWrapper(endpoint="http://Starvers:42564/sparql")
+    engine.timeout = 30
+    engine.setReturnFormat(JSON)
+    engine.setOnlyConneg(True)
+    engine.setMethod(POST)
+    engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
+
+    # For querying GraphDB
+    rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg",
+                                            "http://Starvers:7200/repositories/dummy_orkg/statements", 
+                                            skip_connection_test=True)
 
     queries = []
 
@@ -181,26 +212,40 @@ def exclude_queries():
             query_file.unlink()
             continue
 
-        # Exlude if the RDF-star engine returns an exception (because the query was not rewritten properly).
-        rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg",
-                                             "http://Starvers:7200/repositories/dummy_orkg/statements", 
-                                             skip_connection_test=True)
         
-        # Execute original query
+        # Execute original query against GraphDB
         try:
             result_set = rdf_star_engine.query(sparql, yn_timestamp_query=False)
         except Exception as e:
-            logging.info(f"Original query {query_file.name} is invalid and will be excluded: {e}")
-            queries.append([query_file.name, 1, "Invalid Original"])
+            logging.info(f"Original query {query_file.name} is invalid in GraphDB and will be excluded: {e}")
+            queries.append([query_file.name, 1, "Invalid Original in GraphDB"])
             query_file.unlink()
             continue
         
+        # Execute original query against Ostrich
+        try:
+            versioned_query = sparql
+            prefixes, versioned_query = split_prefixes_query(versioned_query)
+            modifiers, versioned_query = split_solution_modifiers_query(versioned_query)
+            with open("/starvers_eval/scripts/construct_queries/templates/ostrich/sparql_full.txt", 'r') as templateFile:
+                template = templateFile.read()
+                versioned_query = template.format(prefixes, 0, versioned_query, modifiers)
+                logging.info(f"Versioned query for Ostrich execution: {versioned_query}")
+
+            engine.setQuery(versioned_query) 
+            result_set = engine.query()
+        except Exception as e:
+            logging.info(f"Original query {query_file.name} is invalid in Ostrich and will be excluded: {e}")
+            queries.append([query_file.name, 1, "Invalid Original in Ostrich"])
+            query_file.unlink()
+            continue
+
         # Execute transformed query
         try:
             result_set = rdf_star_engine.query(sparql, yn_timestamp_query=True)
         except Exception as e:
             logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-            queries.append([query_file.name, 1, "Malformed transformation"])
+            queries.append([query_file.name, 1, "Malformed Starvers transformation"])
             query_file.unlink()
             continue
         queries.append([query_file.name, 0, ""])
