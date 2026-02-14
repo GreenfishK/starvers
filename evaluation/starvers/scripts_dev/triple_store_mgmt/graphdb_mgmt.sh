@@ -68,6 +68,7 @@ create_env() {
     cp ${config_tmpl_dir}/graphdb-config_template.ttl ${config_dir}/graphdb/${repositoryID}/${repositoryID}.ttl
     sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/graphdb/${repositoryID}/${repositoryID}.ttl
 
+
 }
 
 ingest() {
@@ -77,7 +78,7 @@ ingest() {
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb/${policy}_${dataset}/${policy}_${dataset}.ttl /starvers_eval/rawdata/${dataset}/empty.nt
+    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb/${policy}_${dataset}/${policy}_${dataset}.ttl /starvers_eval/rawdata/${dataset}/empty.nt  >> $log_file 2>&1
 }
 
 #######################################################################

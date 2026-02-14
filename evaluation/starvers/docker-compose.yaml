@@ -1,5 +1,3 @@
-version: "3.4"
-
 services:
   download:
     image: starvers_eval:latest
@@ -16,6 +14,9 @@ services:
   preprocess_data:
     image: starvers_eval:latest
     container_name: starvers_eval-preprocess_data
+    hostname: Starvers
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
@@ -24,7 +25,8 @@ services:
       - ${base_host_dir}/databases/preprocess_data/graphdb:/starvers_eval/databases/preprocess_data/graphdb
       - ./scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
-
+    ports:
+      - 7350:7200
     environment:
       - datasets=orkg
     #entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
@@ -102,11 +104,13 @@ services:
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
+      - ${base_host_dir}/queries/raw_queries:/starvers_eval/queries/raw_queries
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
       - policies=${policies}    
-    entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies"]
+      - datasets=${datasets}
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "$policies", "${datasets}"]
   
   evaluate:
     image: starvers_eval:latest

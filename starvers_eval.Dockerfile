@@ -92,7 +92,7 @@ COPY --from=install_ostrich /opt/ostrich/build/ /opt/ostrich/
 #COPY --from=install_ostrich /opt/ostrich /opt/ostrich
 
 
-# copy from other images
+# copy from other images: Jena and GraphDB
 COPY --from=stain/jena-fuseki:5.1.0 /jena-fuseki /jena-fuseki
 COPY --from=eclipse-temurin:17.0.16_8-jdk /opt/java /opt/java/java17
 

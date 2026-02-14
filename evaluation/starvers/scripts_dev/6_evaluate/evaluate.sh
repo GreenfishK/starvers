@@ -83,7 +83,7 @@ echo "timestamp;label;pid;rss_gb" >> $mem_file
 
 time_file="/starvers_eval/output/measurements/time.csv"
 > $time_file
-echo "triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time" >> $time_file
+echo "triplestore;dataset;policy;query_set;snapshot;snapshot_ts;query;execution_time;snapshot_creation_time;yn_timeout" >> $time_file
 
 # main loop
 for triple_store in ${triple_stores[@]}; do

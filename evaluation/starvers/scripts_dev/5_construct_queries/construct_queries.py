@@ -10,6 +10,15 @@ import tomli
 
 from starvers.starvers import timestamp_query, split_prefixes_query
 
+def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
+    try:
+        with open(CONFIG_PATH, "rb") as f:
+            CONFIG = tomli.load(f)
+        return policy in CONFIG["evaluations"][triplestore][dataset]
+    except KeyError:
+        return False
+    
+    
 def split_solution_modifiers_query(query: str) -> list:
     """
     Separates following solution modifiers from the query:
@@ -31,6 +40,10 @@ def main():
 
     policies_cmd = sys.argv[1]
     policies = policies_cmd.split(" ")
+
+    datasets_cmd = sys.argv[2]
+    datasets = datasets_cmd.split(" ")
+
     with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
         eval_setup = tomli.load(config_file)
     LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -51,7 +64,13 @@ def main():
     starvers_log.setLevel(logging.ERROR)
 
     # Generate queries  
+    logging.info("Start generating queries.")
     for dataset, dataset_infos in eval_setup['datasets'].items():
+        if dataset not in datasets:
+            logging.info(f"Skipping dataset {dataset} as it is not in the list of requested datasets: {datasets}")
+            continue
+
+        logging.info(f"Generating queries for dataset: {dataset}")
         if 'query_sets' not in dataset_infos:
             logging.info("No query sets defined for dataset {0}, skipping query construction.".format(dataset))
             continue
@@ -60,6 +79,8 @@ def main():
         query_set_context = dataset_infos['superset']
         
         for query_set_name, query_set in query_sets:
+            logging.info(f"Generating queries for dataset: {dataset} and query set {query_set_name}")
+
             policy_infos = query_set['policies'].items()
             raw_queries_dir_path = raw_queries_base + query_set_context + "/" + query_set_name
 
@@ -67,11 +88,14 @@ def main():
                 if policy not in policies:
                     logging.info("Queries for policy {0} will not be constructed as it is not one of the requested policies: {1}".format(policy, policies))
                     continue
+                
+                logging.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, and policy {policy}")
 
                 template_relative_path = infos['template']
                 query_set_versions = infos['versions']
 
                 for query_set_version in range(query_set_versions):
+                    logging.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, policy {policy}, and query set version {query_set_version}")
                     output_queries_dir_path = Path(output_queries_base + policy + "/" + dataset + "/" + query_set_name + "/" + str(query_set_version))
                     if output_queries_dir_path.exists():
                         shutil.rmtree(output_queries_dir_path)
@@ -80,18 +104,27 @@ def main():
                     output_queries_dir_path.mkdir(parents=True, exist_ok=True)
                     
                     logging.info("Create queries and save to {0}".format(output_queries_dir_path))
+                    logging.info(f"There are {len(os.listdir(raw_queries_dir_path))} raw queries.")
+                    logging.info(f"The raw query diretory is: {raw_queries_dir_path}")
+                    
                     for k, raw_query_name in enumerate(os.listdir(raw_queries_dir_path)):
+                        if not raw_query_name.endswith(".txt"):
+                            logging.info(f"Skipping file {raw_query_name} as it does not end with .txt")
+                            continue
+
                         if not os.path.isfile(raw_queries_dir_path + "/" + raw_query_name):
                             logging.error("No such file: " + raw_queries_dir_path + "/" + raw_query_name)
                         
-                        with open(raw_queries_dir_path + "/" + raw_query_name, 'r') as raw_query_file:
-                            if template_relative_path.split('/')[1] == 'ts':
+                        logging.info(f"Template relative path is: {template_relative_path}")
+                        with open(raw_queries_dir_path + "/" + raw_query_name, 'r', encoding='utf-8', errors='ignore') as raw_query_file:
+                            if template_relative_path.split('/')[1] == 'ts' and query_set_name == "lookup": # BEAR lookup queries are just one line
                                 raw_queries = raw_query_file.readlines()
                             else:
-                                raw_queries = [raw_query_file.read()]    
-                            
+                                raw_queries = [raw_query_file.read()]  
+
                             # Iterate over file that holds one or more raw queries.
                             for i, raw_query in enumerate(raw_queries):
+
                                 prefixes, raw_query = split_prefixes_query(raw_query)
                                 modifiers, raw_query = split_solution_modifiers_query(raw_query)
                                 queryCounter =  i if template_relative_path.split('/')[1] == 'ts' else k
@@ -100,13 +133,19 @@ def main():
                                 # Read template and create query string
                                 with open(os.path.join(sys.path[0]) +"/templates/" + template_relative_path + ".txt", 'r') as templateFile:
                                     template = templateFile.read()
+
                                     if policy == "cb_sr_ng":
                                         max_version_digits = len(str(query_set_versions))
-                                        output_query = template.format(prefixes, str(query_set_version).zfill(max_version_digits),
-                                            raw_query, modifiers)
+                                        output_query = template.format(prefixes, 
+                                                                       str(query_set_version).zfill(max_version_digits),
+                                                                       raw_query, 
+                                                                       modifiers)
                                     else:
-                                        output_query = template.format(prefixes, str(query_set_version),
-                                            raw_query, modifiers)
+                                        output_query = template.format(prefixes, 
+                                                                       str(query_set_version),
+                                                                       raw_query, 
+                                                                       modifiers)
+                                
                                 
                                 # Write query string to file. For tb_sr_rs transform it to a timestamp-based rdfstar query first
                                 output_query_file_name = raw_query_name.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_set_version) + ".txt"
@@ -125,7 +164,10 @@ def main():
                                         output_file.write(output_query) 
                     # Only for tb_sr_rs policy
                     vers_ts = vers_ts + timedelta(seconds=1)
-                vers_ts = init_version_timestamp           
+                vers_ts = init_version_timestamp      
+
+    logging.info("Finished generating queries.")
+     
                        
 
 if __name__ == "__main__":

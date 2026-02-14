@@ -1,0 +1,5 @@
+Add it to the starvers_eval.Dockerfile
+
+Update the eval_setup.toml file
+
+create a new <rdfstore>_mgmt.sh file and implement the functions according to the other <rdf_store>_mgmt.sh files

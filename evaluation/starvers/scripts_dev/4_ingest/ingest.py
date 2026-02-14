@@ -46,7 +46,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
 }
 
-RUNS = 1
+RUNS = 10
 
 #####################################################################
 # Classes
