@@ -6,6 +6,9 @@ import shutil
 from starvers.starvers import TripleStoreEngine
 import subprocess
 import shlex
+import time
+import unicodedata
+
 
 ############################################# Logging #############################################
 with open('/starvers_eval/output/logs/preprocess_data/parse_sciqa_queries.txt', "w") as log_file:
@@ -37,9 +40,9 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 BASE_DIR = Path("/starvers_eval/queries/raw_queries/orkg/complex")
 SCRIPTS_DIR = Path("/starvers_eval/scripts")
 SUBDIRS = ["train", "test", "valid"]
-CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data"
+CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data/configs"
 CONFIG_DIR="/starvers_eval/configs/preprocess_data"
-DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb"
+DATABASE_DIR="/starvers_eval/databases/preprocess_data/graphdb/dummy_orkg"
 GRAPHDB_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
 
 ###################################### Regex logic ######################################
@@ -98,9 +101,19 @@ def wrap_aggregations(sparql: str) -> str:
 # Start GraphDB
 def startup():
     # Startup GraphDB repository 
-    logging.info("Ingest empty file into {0} repository and start {1}.".format("dummy_orkg", "GraphDB"))
-    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} create_env dummy orkg {DATABASE_DIR} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
-    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} startup {DATABASE_DIR} dummy dummy"))
+    logging.info("Create database environment")
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "create_env", "dummy", "orkg", f"{DATABASE_DIR}", f"{CONFIG_TMPL_DIR}", f"{CONFIG_DIR}"], check=True)
+    
+    logging.info("Ingest empty dataset for testing.")
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "ingest_empty", f"{DATABASE_DIR}", f"dummy", f"orkg", f"{CONFIG_DIR}"], check=True)
+    logging.info("Ingested empty dataset.")
+
+    logging.info("Start GraphDB engine.")
+    subprocess.run([f"{GRAPHDB_MGMT_SCRIPT}", "startup", f"{DATABASE_DIR}", f"dummy", f"orkg"], check=True)
+    logging.info("GraphDB is up")
+
+
+
 
 
 # Extraction from JSON files
@@ -129,7 +142,14 @@ def extract_queries():
                 sparql = sparql.replace("(AVG(?installed_cap_value AS ?avg_installed_cap_value))",
                                              "(AVG(?installed_cap_value) AS ?avg_installed_cap_value)")
 
-                out_file = BASE_DIR / f"{qid}.sparql"
+
+                # Normalize Unicode (important!)
+                sparql = unicodedata.normalize("NFC", sparql)
+
+                # Remove problematic control characters (keep newline/tab)
+                sparql = re.sub(r"[^\x09\x0A\x0D\x20-\uFFFF]", "", sparql)
+
+                out_file = BASE_DIR / f"{qid}.txt"
                 out_file.write_text(
                     PREFIXES + "\n" + sparql + "\n",
                     encoding="utf-8",
@@ -143,7 +163,7 @@ def exclude_queries():
     queries = []
 
     for query_file in BASE_DIR.iterdir():
-        if query_file.suffix != ".sparql":
+        if query_file.suffix != ".txt":
             continue  # skip non-SPARQL files
 
         with query_file.open("r", encoding="utf-8") as f:
@@ -162,7 +182,9 @@ def exclude_queries():
             continue
 
         # Exlude if the RDF-star engine returns an exception (because the query was not rewritten properly).
-        rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg", "http://Starvers:7200/repositories/dummy_orkg/statements")
+        rdf_star_engine = TripleStoreEngine("http://Starvers:7200/repositories/dummy_orkg",
+                                             "http://Starvers:7200/repositories/dummy_orkg/statements", 
+                                             skip_connection_test=True)
         
         # Execute original query
         try:
@@ -178,7 +200,7 @@ def exclude_queries():
             result_set = rdf_star_engine.query(sparql, yn_timestamp_query=True)
         except Exception as e:
             logging.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-            queries.append([query_file.name, 1, "Malformed Transformed"])
+            queries.append([query_file.name, 1, "Malformed transformation"])
             query_file.unlink()
             continue
         queries.append([query_file.name, 0, ""])
@@ -192,7 +214,7 @@ def exclude_queries():
             query_log_file.write(",".join(map(str, row)) + "\n")
 
     # Shutting down GraphDB
-    subprocess.call(shlex.split("/starvers_eval/scripts/3_construct_datasets/graphdb_mgmt.sh shutdown"))
+    subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} shutdown"))
             
 
 # Remove database and raw dataset files
@@ -200,10 +222,10 @@ def cleanup():
     for item in BASE_DIR.iterdir():
         if item.is_dir() and item.name in SUBDIRS:
             for subitem in item.iterdir():
-                if subitem.is_file() and subitem.suffix != ".sparql":
+                if subitem.is_file() and subitem.suffix != "txt":
                     subitem.unlink()
             item.rmdir()
-        elif item.is_file() and item.suffix != ".sparql":
+        elif item.is_file() and item.suffix != ".txt":
             item.unlink()
 
     shutil.rmtree(f"{BASE_DIR}/SciQA-dataset")

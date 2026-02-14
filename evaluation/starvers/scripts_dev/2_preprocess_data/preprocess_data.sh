@@ -95,8 +95,7 @@ for dataset in ${datasets[@]}; do
                 echo "$(log_timestamp) ${log_level}:${raw_ds}: skolemized blank nodes in object position: 0 in this run. Previously skolemized nodes: See comment in ${raw_ds}" >> $log_file
             fi
 
-            # Read dataset $raw_ds line by line. 
-            # If the triple is invalid write it to $clean_ds with a '#' upfront. Otherwise write the line as it is.
+            # Comment out invalid triples as defined by rdf4j and rio parser
             # TODO: change path to $SCRIPT_DIR/2_clean_raw_datasets/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             echo "$(log_timestamp) ${log_level}:Validating $raw_ds" >> $log_file
             first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`

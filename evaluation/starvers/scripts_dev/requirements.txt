@@ -1,6 +1,6 @@
 matplotlib==3.10.7
 pandas==2.3.3
-rdflib==6.2.0
+rdflib==7.6.0
 SPARQLWrapper==2.0.0
 guppy3==3.1.5
 requests
