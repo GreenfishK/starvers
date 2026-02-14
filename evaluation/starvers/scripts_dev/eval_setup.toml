@@ -169,8 +169,8 @@
         [datasets.orkg.query_sets]
             [datasets.orkg.query_sets.complex]
                 [datasets.orkg.query_sets.complex.policies]
-                    ic_sr_ng = {versions = 33, template = "ic_sr_ng/ts"}
+                    ic_sr_ng = {versions = 33, template = "ic_sr_ng/sparql_full"}
                     cb_sr_ng = {versions = 33, template = "cb_sr_ng/sparql_full"}
-                    tb_sr_ng = {versions = 33, template = "tb_sr_ng/ts"}
+                    tb_sr_ng = {versions = 33, template = "tb_sr_ng/sparql_full"}
                     tb_sr_rs = {versions = 33, template = "tb_sr_rs/sparql_full"}
-                    ostrich = {versions = 33, template = "ostrich/ts"}
+                    ostrich = {versions = 33, template = "ostrich/sparql_full"}

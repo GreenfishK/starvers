@@ -23,14 +23,18 @@ services:
       - ${base_host_dir}/queries/raw_queries/orkg/complex:/starvers_eval/queries/raw_queries/orkg/complex
       - ${base_host_dir}/configs/preprocess_data:/starvers_eval/configs/preprocess_data
       - ${base_host_dir}/databases/preprocess_data/graphdb:/starvers_eval/databases/preprocess_data/graphdb
+      - ${base_host_dir}/databases/preprocess_data/ostrich:/starvers_eval/databases/preprocess_data/ostrich
       - ./scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
+      - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/construct_queries
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+
     ports:
       - 7350:7200
+      - 42564:42564
     environment:
       - datasets=orkg
-    #entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
-    entrypoint: ["python3", "/starvers_eval/scripts/2_preprocess_data/parse_SciQA_queries.py"]
+    entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
+    #entrypoint: ["python3", "/starvers_eval/scripts/2_preprocess_data/parse_SciQA_queries.py"]
   
   eval_construct_datasets:
     image: starvers_eval:latest

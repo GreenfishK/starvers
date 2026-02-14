@@ -4,10 +4,8 @@ SELECT * {{
     GRAPH <http://example.org/versions> {{
         ?graph <http://www.w3.org/2002/07/owl#versionInfo> {1}
     }}
-    GRAPH ?graph {{ 
+    GRAPH ?graph {{
         {2} 
-        
-    }} 
-    
+        {3}
+    }}
 }}
-{3}

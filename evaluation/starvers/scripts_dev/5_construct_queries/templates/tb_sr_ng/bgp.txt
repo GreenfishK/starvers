@@ -6,5 +6,5 @@ SELECT * {{
     }} 
     GRAPH ?graph 
     {2}
+    {3}
 }}
-{3}
