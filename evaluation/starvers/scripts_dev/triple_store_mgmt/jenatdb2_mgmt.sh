@@ -33,7 +33,13 @@ shutdown() {
     while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
         sleep 1
     done
-    echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed." >> $log_file
+
+    while lsof -i :3030 >/dev/null 2>&1; do
+    	echo "Waiting for port 3030 to be released..."
+    	sleep 1
+    done
+
+    echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed and port 3030 released" >> $log_file
 }
 
 

@@ -130,7 +130,7 @@ services:
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     hostname: Starvers
-    mem_limit: 50g
+    mem_limit: 90g
     extra_hosts:
     - "host.docker.internal:host-gateway"
     ports:
@@ -141,7 +141,7 @@ services:
       - datasets=${datasets}
       - triple_stores=${triple_stores}
       - policies=${policies}
-    entrypoint: ["/starvers_eval/scripts/6_evaluate/evaluate.sh"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/6_evaluate/evaluate.py", "$triple_stores", "$policies", "$datasets"]
 
   verify_results:
     image: starvers_eval:latest
@@ -163,13 +163,14 @@ services:
     volumes:   
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
+      - ${base_host_dir}/output/tables:/starvers_eval/output/tables     
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
     environment:
       - policies=${policies}  
       - datasets=${datasets}
-    entrypoint: ["python", "-u", "/starvers_eval/scripts/7_visualize/visualize.py"]
-    command: ["$policies", "$datasets"]
+      - triples_tores=${triple_stores}
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/7_visualize/visualize.py", "$datasets", "$policies", "$triple_stores"]
 
 
 # -------------------------------------------------------------------------------------------

@@ -1,23 +1,93 @@
 \begin{table}
-    \centering
-    \begin{tabular}{p{0.09\textwidth}c|c|c|c|c|c|c|c|c|c|c|c|c|c}
-        &  & \multicolumn{4}{c|}{BEARB\_day} & \multicolumn{4}{c|}{BEARB\_hour} & \multicolumn{4}{c}{BEARC} \\
-        \cline{3-14} 
-        & & Raw  & GraphDB  & Jena & Ostrich  & Raw  & GraphDB  & Jena & Ostrich & Raw  & GraphDB  & Jena & Ostrich  \\                                                        
-        \hline
-    \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Storage\\consumption\\in GiB}}}} & cb\_ng & {{sotrage_consumption_cb_sr_ng}}   \\
-        \multicolumn{1}{c|}{}  & ic\_ng & {{sotrage_consumption_ic_sr_ng}}   \\
-        \multicolumn{1}{c|}{}  & tb\_ng  & {{sotrage_consumption_tb_sr_ng}}    \\
-        \multicolumn{1}{c|}{}  & tb\_rs  & {{sotrage_consumption_tb_sr_rs}}   \\
-        \multicolumn{1}{c|}{}  & tb\_rs  & {{sotrage_consumption_ostrich}}   \\
+\centering
+\begin{tabular}{p{0.09\textwidth}c|cccc|cccc}
+    
+    &  & \multicolumn{4}{c|}{BEARB\_day} & \multicolumn{4}{c}{BEARB\_hour} \\
+    \cline{3-10}
+    & & Raw & GraphDB & Jena & Ostrich & Raw & GraphDB & Jena & Ostrich \\
+    \hline
 
-       \hline
-       \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Ingestion\\time\\in seconds}}}} & cb\_ng & {{ingestion_time_cb_sr_ng}}   \\
-    \multicolumn{1}{c|}{}   & ic\_ng  & {{ingestion_time_ic_sr_ng}}   \\
-    \multicolumn{1}{c|}{}  & tb\_ng  & {{ingestion_time_tb_sr_ng}}  \\
-    \multicolumn{1}{c|}{}   & tb\_rs  & {{ingestion_time_tb_sr_rs}}   \\
-    \multicolumn{1}{c|}{}   & tb\_rs  & {{ingestion_time_ostrich}}   \\
-    \end{tabular}
-    \caption{Storage consumption (in GiB) of the raw file sizes, RDF store file sizes, and the average ingestion time across 10 runs (median, in seconds) of the three datasets BEARB\_day, BEARB\_hour, and BEARC for each versioning policy.}
-    \label{tab:eval_results_storage}
+    % ===================== STORAGE =====================
+    \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Storage\\consumption\\in GiB}}}}
+    & cb\_ng 
+    & {{bearb_day_cb_ng_raw}} & {{bearb_day_cb_ng_graphdb}} & {{bearb_day_cb_ng_jenatdb2}} & {{bearb_day_cb_ng_ostrich}}
+    & {{bearb_hour_cb_ng_raw}} & {{bearb_hour_cb_ng_graphdb}} & {{bearb_hour_cb_ng_jenatdb2}} & {{bearb_hour_cb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & ic\_ng 
+    & {{bearb_day_ic_ng_raw}} & {{bearb_day_ic_ng_graphdb}} & {{bearb_day_ic_ng_jenatdb2}} & {{bearb_day_ic_ng_ostrich}}
+    & {{bearb_hour_ic_ng_raw}} & {{bearb_hour_ic_ng_graphdb}} & {{bearb_hour_ic_ng_jenatdb2}} & {{bearb_hour_ic_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_ng 
+    & {{bearb_day_tb_ng_raw}} & {{bearb_day_tb_ng_graphdb}} & {{bearb_day_tb_ng_jenatdb2}} & {{bearb_day_tb_ng_ostrich}}
+    & {{bearb_hour_tb_ng_raw}} & {{bearb_hour_tb_ng_graphdb}} & {{bearb_hour_tb_ng_jenatdb2}} & {{bearb_hour_tb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_rs 
+    & {{bearb_day_tb_rs_raw}} & {{bearb_day_tb_rs_graphdb}} & {{bearb_day_tb_rs_jenatdb2}} & {{bearb_day_tb_rs_ostrich}}
+    & {{bearb_hour_tb_rs_raw}} & {{bearb_hour_tb_rs_graphdb}} & {{bearb_hour_tb_rs_jenatdb2}} & {{bearb_hour_tb_rs_ostrich}} \\
+
+    \hline
+    \hline
+
+    &  & \multicolumn{4}{c|}{BEARC} & \multicolumn{4}{c}{ORKG} \\
+    \cline{3-10}
+    & & Raw & GraphDB & Jena & Ostrich & Raw & GraphDB & Jena & Ostrich \\
+    \hline
+
+    \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Storage\\consumption\\in GiB}}}}
+    & cb\_ng 
+    & {{bearc_cb_ng_raw}} & {{bearc_cb_ng_graphdb}} & {{bearc_cb_ng_jenatdb2}} & {{bearc_cb_ng_ostrich}}
+    & {{orkg_cb_ng_raw}} & {{orkg_cb_ng_graphdb}} & {{orkg_cb_ng_jenatdb2}} & {{orkg_cb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & ic\_ng 
+    & {{bearc_ic_ng_raw}} & {{bearc_ic_ng_graphdb}} & {{bearc_ic_ng_jenatdb2}} & {{bearc_ic_ng_ostrich}}
+    & {{orkg_ic_ng_raw}} & {{orkg_ic_ng_graphdb}} & {{orkg_ic_ng_jenatdb2}} & {{orkg_ic_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_ng 
+    & {{bearc_tb_ng_raw}} & {{bearc_tb_ng_graphdb}} & {{bearc_tb_ng_jenatdb2}} & {{bearc_tb_ng_ostrich}}
+    & {{orkg_tb_ng_raw}} & {{orkg_tb_ng_graphdb}} & {{orkg_tb_ng_jenatdb2}} & {{orkg_tb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_rs 
+    & {{bearc_tb_rs_raw}} & {{bearc_tb_rs_graphdb}} & {{bearc_tb_rs_jenatdb2}} & {{bearc_tb_rs_ostrich}}
+    & {{orkg_tb_rs_raw}} & {{orkg_tb_rs_graphdb}} & {{orkg_tb_rs_jenatdb2}} & {{orkg_tb_rs_ostrich}} \\
+
+    \hline
+    \hline
+
+    % ===================== INGESTION =====================
+    &  & \multicolumn{4}{c|}{BEARB\_day} & \multicolumn{4}{c}{BEARB\_hour} \\
+    \cline{3-10}
+    & & Raw & GraphDB & Jena & Ostrich & Raw & GraphDB & Jena & Ostrich \\
+    \hline
+
+    \multicolumn{1}{c|}{\multirow{4}{*}{\rotatebox{90}{\parbox{2.0cm}{\centering Ingestion\\time\\in seconds}}}}
+    & cb\_ng 
+    & {{bearb_day_cb_ng_raw}} & {{bearb_day_cb_ng_graphdb}} & {{bearb_day_cb_ng_jenatdb2}} & {{bearb_day_cb_ng_ostrich}}
+    & {{bearb_hour_cb_ng_raw}} & {{bearb_hour_cb_ng_graphdb}} & {{bearb_hour_cb_ng_jenatdb2}} & {{bearb_hour_cb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & ic\_ng 
+    & {{bearb_day_ic_ng_raw}} & {{bearb_day_ic_ng_graphdb}} & {{bearb_day_ic_ng_jenatdb2}} & {{bearb_day_ic_ng_ostrich}}
+    & {{bearb_hour_ic_ng_raw}} & {{bearb_hour_ic_ng_graphdb}} & {{bearb_hour_ic_ng_jenatdb2}} & {{bearb_hour_ic_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_ng 
+    & {{bearb_day_tb_ng_raw}} & {{bearb_day_tb_ng_graphdb}} & {{bearb_day_tb_ng_jenatdb2}} & {{bearb_day_tb_ng_ostrich}}
+    & {{bearb_hour_tb_ng_raw}} & {{bearb_hour_tb_ng_graphdb}} & {{bearb_hour_tb_ng_jenatdb2}} & {{bearb_hour_tb_ng_ostrich}} \\
+
+    \multicolumn{1}{c|}{}  
+    & tb\_rs 
+    & {{bearb_day_tb_rs_raw}} & {{bearb_day_tb_rs_graphdb}} & {{bearb_day_tb_rs_jenatdb2}} & {{bearb_day_tb_rs_ostrich}}
+    & {{bearb_hour_tb_rs_raw}} & {{bearb_hour_tb_rs_graphdb}} & {{bearb_hour_tb_rs_jenatdb2}} & {{bearb_hour_tb_rs_ostrich}} \\
+
+\end{tabular}
+
+\caption{Storage consumption (in GiB) and ingestion time (in seconds) for BEARB\_day, BEARB\_hour, BEARC, and ORKG across versioning policies and RDF-star stores.}
+\label{tab:eval_results_storage}
 \end{table}
+
