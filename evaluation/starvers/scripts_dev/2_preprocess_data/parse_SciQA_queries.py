@@ -276,8 +276,11 @@ def cleanup():
     shutil.rmtree(f"{BASE_DIR}/SciQA-dataset")
     logging.info(f"Removed directory {BASE_DIR}")
 
-    shutil.rmtree(f"{DATABASE_DIR}")
-    logging.info(f"Removed directory {DATABASE_DIR}")
+    shutil.rmtree(f"{GRAPHDB_DATABASE_DIR}")
+    logging.info(f"Removed directory {GRAPHDB_DATABASE_DIR}")
+
+    shutil.rmtree(f"{OSTRICH_DATABASE_DIR}")
+    logging.info(f"Removed directory {OSTRICH_DATABASE_DIR}")
 
 
 # Main 

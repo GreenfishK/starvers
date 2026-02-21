@@ -63,6 +63,10 @@ def main():
     starvers_log = logging.getLogger("starvers.starvers")
     starvers_log.setLevel(logging.ERROR)
 
+    # Write measure file header
+    with open(query_rewriting_measurements_path, 'w') as measure_file:
+        measure_file.write("policy,dataset,query_set,snapshot,query,rewriting_time\n")
+
     # Generate queries  
     logging.info("Start generating queries.")
     for dataset, dataset_infos in eval_setup['datasets'].items():

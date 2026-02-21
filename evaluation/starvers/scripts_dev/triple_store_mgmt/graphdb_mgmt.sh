@@ -11,7 +11,7 @@ log_level="root:INFO"
 #######################################################################
 startup() {
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    /opt/graphdb/dist/bin/graphdb -d -s
+    nohup /opt/graphdb/dist/bin/graphdb -s &
     
     # Wait until server is up
     # GraphDB doesn't deliver HTTP code 200 for some reason ...
@@ -35,7 +35,13 @@ shutdown() {
     while pgrep -f "${JAVA_HOME}/bin/java" >/dev/null; do
         sleep 1
     done
-    echo "$(log_timestamp) ${log_level}:${JAVA_HOME}/bin/java killed." >> $log_file
+
+    while lsof -i :7200 >/dev/null 2>&1; do
+        echo "Waiting for port 7200 to be released..."
+        sleep 1
+    done
+
+    echo "$(log_timestamp) ${log_level}:${JAVA_HOME}/bin/java killed and released port 7200." >> $log_file
 }
 
 
