@@ -30,12 +30,67 @@ startup() {
 }
 
 shutdown() {
-    echo "$(log_timestamp) ${log_level}:Kill process $/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js to shutdown Ostrich" >> $log_file
-    pkill -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js'
-    while ps -ef | grep -q '[h]ttp.js'; do
+    echo "$(log_timestamp) ${log_level}:Shutdown Ostrich start" >> "$log_file"
+
+    # --------------------------------------------------
+    # Locate PID file
+    # --------------------------------------------------
+    pidfile=$(ls /tmp/ostrich_*.pid 2>/dev/null | head -n 1)
+
+    if [ -z "$pidfile" ]; then
+        echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
+        pkill -9 -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js' 2>/dev/null || true
+    else
+        PID=$(cat "$pidfile")
+        echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
+
+        # --------------------------------------------------
+        # Check if process exists
+        # --------------------------------------------------
+        if ps -p "$PID" > /dev/null 2>&1; then
+            echo "$(log_timestamp) ${log_level}:Process $PID is running, attempting kill -9" >> "$log_file"
+
+            kill -9 "$PID" 2>/dev/null || true
+
+            # --------------------------------------------------
+            # Wait with timeout (avoid infinite loop!)
+            # --------------------------------------------------
+            for i in {1..10}; do
+                if ! ps -p "$PID" > /dev/null 2>&1; then
+                    echo "$(log_timestamp) ${log_level}:Process $PID terminated after $i seconds" >> "$log_file"
+                    break
+                fi
+                echo "$(log_timestamp) ${log_level}:Waiting for PID $PID to terminate ($i/10)" >> "$log_file"
+                sleep 1
+            done
+
+        else
+            echo "$(log_timestamp) ${log_level}:Process $PID already not running" >> "$log_file"
+        fi
+
+        # Remove PID file
+        rm -f "$pidfile"
+        echo "$(log_timestamp) ${log_level}:Removed PID file $pidfile" >> "$log_file"
+    fi
+
+    # --------------------------------------------------
+    # Wait for port release
+    # --------------------------------------------------
+    for i in {1..30}; do
+        if ! ss -ltnp | grep -q ':42564'; then
+            echo "$(log_timestamp) ${log_level}:Port 42564 released after $i seconds" >> "$log_file"
+            break
+        fi
+        echo "$(log_timestamp) ${log_level}:Waiting for port 42564 to be released ($i/30)" >> "$log_file"
         sleep 1
     done
-    echo "$(log_timestamp) ${log_level}:/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js killed." >> $log_file
+
+    # Final check
+    if ss -ltnp | grep -q ':42564'; then
+        echo "$(log_timestamp) ${log_level}:WARNING - Port 42564 still in use after timeout" >> "$log_file"
+    fi
+
+    echo "$(log_timestamp) ${log_level}:Shutdown Ostrich complete" >> "$log_file"
 }
 
 dump_repo() {
@@ -121,6 +176,20 @@ set -euo pipefail
 # Set environment variables
 # No env variables for Ostrich
 
+# --------------------------------------------------
+# Optional arguments parsing
+# --------------------------------------------------
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --log-file)
+            log_file="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 if [[ ${1:-} == "startup" ]]; then
     if [[ $# -ne 4 ]]; then

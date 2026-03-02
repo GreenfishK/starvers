@@ -1,0 +1,293 @@
+\begin{table}[ht!]
+\centering
+\caption{Query Execution Time (in seconds) and Storage Consumption (in GiB) metrics for Lookup, Join, and complex queries across datasets, versioning policies, and RDF-star stores.}
+\begin{tabular}{cccc|ccc|ccc|c}
+\multirow{6}{*}{Dataset} & \multirow{6}{*}{Metric Class}  & \multirow{6}{*}{Query Set} & \multirow{6}{*}{Metric}
+& \multicolumn{3}{c|}{GraphDB}
+& \multicolumn{3}{c|}{JenaTDB2}
+& Ostrich \\
+\cline{5-11}
+& & & 
+& \rotatebox{90}{ic\_ng} & \rotatebox{90}{tb\_ng} & \rotatebox{90}{tb\_rs}
+& \rotatebox{90}{ic\_ng} & \rotatebox{90}{tb\_ng} & \rotatebox{90}{tb\_rs}
+& \rotatebox{90}{ostrich}\\
+\hline
+
+% ===================== BEARB_day =====================
+\multirow{9}{*}{\shortstack[c]{BEARB\_day}}
+& \multirow{8}{*}{Queries} & \multirow{4}{*}{lookup} & min  
+  & {{bearb_day_graphdb_lookup_ic_sr_ng_min}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_ng_min}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_rs_min}} 
+  & {{bearb_day_jenatdb2_lookup_ic_sr_ng_min}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_ng_min}}
+  & {{bearb_day_jenatdb2_lookup_tb_sr_rs_min}} 
+  & {{bearb_day_ostrich_lookup_ostrich_min}}  \\
+& & & avg  
+  & {{bearb_day_graphdb_lookup_ic_sr_ng_avg}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_ng_avg}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_rs_avg}} 
+  & {{bearb_day_jenatdb2_lookup_ic_sr_ng_avg}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_ng_avg}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_rs_avg}} 
+  & {{bearb_day_ostrich_lookup_ostrich_avg}}  \\
+& & & max  
+  & {{bearb_day_graphdb_lookup_ic_sr_ng_max}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_ng_max}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_rs_max}} 
+  & {{bearb_day_jenatdb2_lookup_ic_sr_ng_max}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_ng_max}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_rs_max}} 
+  & {{bearb_day_ostrich_lookup_ostrich_max}}  \\
+& & & t-o  
+  & {{bearb_day_graphdb_lookup_ic_sr_ng_to}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_ng_to}} 
+  & {{bearb_day_graphdb_lookup_tb_sr_rs_to}} 
+  & {{bearb_day_jenatdb2_lookup_ic_sr_ng_to}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_ng_to}} 
+  & {{bearb_day_jenatdb2_lookup_tb_sr_rs_to}} 
+  & {{bearb_day_ostrich_lookup_ostrich_to}}  \\
+\cline{5-11}
+&  & \multirow{4}{*}{join} & min  
+  & {{bearb_day_graphdb_join_ic_sr_ng_min}} 
+  & {{bearb_day_graphdb_join_tb_sr_ng_min}} 
+  & {{bearb_day_graphdb_join_tb_sr_rs_min}} 
+  & {{bearb_day_jenatdb2_join_ic_sr_ng_min}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_ng_min}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_rs_min}} 
+  & {{bearb_day_ostrich_join_ostrich_min}}  \\
+& & & avg  
+  & {{bearb_day_graphdb_join_ic_sr_ng_avg}} 
+  & {{bearb_day_graphdb_join_tb_sr_ng_avg}} 
+  & {{bearb_day_graphdb_join_tb_sr_rs_avg}} 
+  & {{bearb_day_jenatdb2_join_ic_sr_ng_avg}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_ng_avg}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_rs_avg}} 
+  & {{bearb_day_ostrich_join_ostrich_avg}}  \\
+& & & max  
+  & {{bearb_day_graphdb_join_ic_sr_ng_max}} 
+  & {{bearb_day_graphdb_join_tb_sr_ng_max}} 
+  & {{bearb_day_graphdb_join_tb_sr_rs_max}} 
+  & {{bearb_day_jenatdb2_join_ic_sr_ng_max}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_ng_max}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_rs_max}} 
+  & {{bearb_day_ostrich_join_ostrich_max}}  \\
+& & & t-o  
+  & {{bearb_day_graphdb_join_ic_sr_ng_to}} 
+  & {{bearb_day_graphdb_join_tb_sr_ng_to}} 
+  & {{bearb_day_graphdb_join_tb_sr_rs_to}} 
+  & {{bearb_day_jenatdb2_join_ic_sr_ng_to}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_ng_to}} 
+  & {{bearb_day_jenatdb2_join_tb_sr_rs_to}} 
+  & {{bearb_day_ostrich_join_ostrich_to}}  \\
+\cline{5-11}
+& \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
+  & {{bearb_day_graphdb_ic_sr_ng_raw}}
+  & {{bearb_day_graphdb_tb_sr_ng_raw}} 
+  & {{bearb_day_graphdb_tb_sr_rs_raw}} 
+  & {{bearb_day_jenatdb2_ic_sr_ng_raw}} 
+  & {{bearb_day_jenatdb2_tb_sr_ng_raw}} 
+  & {{bearb_day_jenatdb2_tb_sr_rs_raw}} 
+  & {{bearb_day_ostrich_ostrich_raw}} \\
+&                          &  & db size 
+  & {{bearb_day_graphdb_ic_sr_ng_storage}} 
+  & {{bearb_day_graphdb_tb_sr_ng_storage}} 
+  & {{bearb_day_graphdb_tb_sr_rs_storage}} 
+  & {{bearb_day_jenatdb2_ic_sr_ng_storage}} 
+  & {{bearb_day_jenatdb2_tb_sr_ng_storage}} 
+  & {{bearb_day_jenatdb2_tb_sr_rs_storage}} 
+  & {{bearb_day_ostrich_ostrich_storage}} \\
+\hline
+
+% ===================== BEARB_hour =====================
+\multirow{9}{*}{\shortstack[c]{BEARB\_hour}}
+& \multirow{8}{*}{Queries} & \multirow{4}{*}{lookup} & min  
+  & {{bearb_hour_graphdb_lookup_ic_sr_ng_min}}
+  & {{bearb_hour_graphdb_lookup_tb_sr_ng_min}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_rs_min}} 
+  & {{bearb_hour_jenatdb2_lookup_ic_sr_ng_min}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_min}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_min}} 
+  & {{bearb_hour_ostrich_lookup_ostrich_min}}  \\
+& & & avg  
+  & {{bearb_hour_graphdb_lookup_ic_sr_ng_avg}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_ng_avg}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_rs_avg}} 
+  & {{bearb_hour_jenatdb2_lookup_ic_sr_ng_avg}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_avg}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_avg}} 
+  & {{bearb_hour_ostrich_lookup_ostrich_avg}}  \\
+& & & max  
+  & {{bearb_hour_graphdb_lookup_ic_sr_ng_max}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_ng_max}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_rs_max}} 
+  & {{bearb_hour_jenatdb2_lookup_ic_sr_ng_max}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_max}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_max}} 
+  & {{bearb_hour_ostrich_lookup_ostrich_max}}  \\
+& & & t-o  
+  & {{bearb_hour_graphdb_lookup_ic_sr_ng_to}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_ng_to}} 
+  & {{bearb_hour_graphdb_lookup_tb_sr_rs_to}} 
+  & {{bearb_hour_jenatdb2_lookup_ic_sr_ng_to}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_to}} 
+  & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_to}} 
+  & {{bearb_hour_ostrich_lookup_ostrich_to}}  \\
+\cline{5-11}
+& & \multirow{4}{*}{join} & min  
+  & {{bearb_hour_graphdb_join_ic_sr_ng_min}} 
+  & {{bearb_hour_graphdb_join_tb_sr_ng_min}} 
+  & {{bearb_hour_graphdb_join_tb_sr_rs_min}} 
+  & {{bearb_hour_jenatdb2_join_ic_sr_ng_min}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_ng_min}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_rs_min}} 
+  & {{bearb_hour_ostrich_join_ostrich_min}}  \\
+& & & avg  
+  & {{bearb_hour_graphdb_join_ic_sr_ng_avg}} 
+  & {{bearb_hour_graphdb_join_tb_sr_ng_avg}} 
+  & {{bearb_hour_graphdb_join_tb_sr_rs_avg}} 
+  & {{bearb_hour_jenatdb2_join_ic_sr_ng_avg}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_ng_avg}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_rs_avg}} 
+  & {{bearb_hour_ostrich_join_ostrich_avg}}  \\
+& & & max  
+  & {{bearb_hour_graphdb_join_ic_sr_ng_max}} 
+  & {{bearb_hour_graphdb_join_tb_sr_ng_max}} 
+  & {{bearb_hour_graphdb_join_tb_sr_rs_max}} 
+  & {{bearb_hour_jenatdb2_join_ic_sr_ng_max}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_ng_max}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_rs_max}} 
+  & {{bearb_hour_ostrich_join_ostrich_max}}  \\
+& & & t-o  
+  & {{bearb_hour_graphdb_join_ic_sr_ng_to}} 
+  & {{bearb_hour_graphdb_join_tb_sr_ng_to}} 
+  & {{bearb_hour_graphdb_join_tb_sr_rs_to}} 
+  & {{bearb_hour_jenatdb2_join_ic_sr_ng_to}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_ng_to}} 
+  & {{bearb_hour_jenatdb2_join_tb_sr_rs_to}} 
+  & {{bearb_hour_ostrich_join_ostrich_to}}  \\
+\cline{5-11}
+& \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
+  & {{bearb_hour_graphdb_ic_sr_ng_raw}}
+  & {{bearb_hour_graphdb_tb_sr_ng_raw}} 
+  & {{bearb_hour_graphdb_tb_sr_rs_raw}} 
+  & {{bearb_hour_jenatdb2_ic_sr_ng_raw}} 
+  & {{bearb_hour_jenatdb2_tb_sr_ng_raw}} 
+  & {{bearb_hour_jenatdb2_tb_sr_rs_raw}} 
+  & {{bearb_hour_ostrich_ostrich_raw}} \\
+&                          &  & db size 
+  & {{bearb_hour_graphdb_ic_sr_ng_storage}} 
+  & {{bearb_hour_graphdb_tb_sr_ng_storage}} 
+  & {{bearb_hour_graphdb_tb_sr_rs_storage}} 
+  & {{bearb_hour_jenatdb2_ic_sr_ng_storage}} 
+  & {{bearb_hour_jenatdb2_tb_sr_ng_storage}} 
+  & {{bearb_hour_jenatdb2_tb_sr_rs_storage}} 
+  & {{bearb_hour_ostrich_ostrich_storage}} \\
+\hline
+
+% ===================== BEARC =====================
+\multirow{5}{*}{\shortstack[c]{BEARC}}
+& \multirow{4}{*}{Queries} & \multirow{4}{*}{complex} & min  
+  & {{bearc_graphdb_complex_ic_sr_ng_min}} 
+  & {{bearc_graphdb_complex_tb_sr_ng_min}} 
+  & {{bearc_graphdb_complex_tb_sr_rs_min}} 
+  & {{bearc_jenatdb2_complex_ic_sr_ng_min}} 
+  & {{bearc_jenatdb2_complex_tb_sr_ng_min}} 
+  & {{bearc_jenatdb2_complex_tb_sr_rs_min}} 
+  & {{bearc_ostrich_complex_ostrich_min}}  \\
+& & & avg  
+  & {{bearc_graphdb_complex_ic_sr_ng_avg}} 
+  & {{bearc_graphdb_complex_tb_sr_ng_avg}} 
+  & {{bearc_graphdb_complex_tb_sr_rs_avg}} 
+  & {{bearc_jenatdb2_complex_ic_sr_ng_avg}} 
+  & {{bearc_jenatdb2_complex_tb_sr_ng_avg}} 
+  & {{bearc_jenatdb2_complex_tb_sr_rs_avg}} 
+  & {{bearc_ostrich_complex_ostrich_avg}}  \\
+& & & max  
+  & {{bearc_graphdb_complex_ic_sr_ng_max}} 
+  & {{bearc_graphdb_complex_tb_sr_ng_max}} 
+  & {{bearc_graphdb_complex_tb_sr_rs_max}} 
+  & {{bearc_jenatdb2_complex_ic_sr_ng_max}} 
+  & {{bearc_jenatdb2_complex_tb_sr_ng_max}} 
+  & {{bearc_jenatdb2_complex_tb_sr_rs_max}} 
+  & {{bearc_ostrich_complex_ostrich_max}}  \\
+& & & t-o  
+  & {{bearc_graphdb_complex_ic_sr_ng_to}} 
+  & {{bearc_graphdb_complex_tb_sr_ng_to}} 
+  & {{bearc_graphdb_complex_tb_sr_rs_to}} 
+  & {{bearc_jenatdb2_complex_ic_sr_ng_to}} 
+  & {{bearc_jenatdb2_complex_tb_sr_ng_to}} 
+  & {{bearc_jenatdb2_complex_tb_sr_rs_to}} 
+  & {{bearc_ostrich_complex_ostrich_to}}  \\
+\cline{5-11}
+& \multirow{2}{*}{Storage} & \multirow{2}{*}{/}  & raw size
+  & {{bearc_graphdb_ic_sr_ng_raw}} 
+  & {{bearc_graphdb_tb_sr_ng_raw}} 
+  & {{bearc_graphdb_tb_sr_rs_raw}} 
+  & {{bearc_jenatdb2_ic_sr_ng_raw}} 
+  & {{bearc_jenatdb2_tb_sr_ng_raw}} 
+  & {{bearc_jenatdb2_tb_sr_rs_raw}} 
+  & {{bearc_ostrich_ostrich_raw}} \\
+&                          &  & db size 
+  & {{bearc_graphdb_ic_sr_ng_storage}} 
+  & {{bearc_graphdb_tb_sr_ng_storage}} 
+  & {{bearc_graphdb_tb_sr_rs_storage}} 
+  & {{bearc_jenatdb2_ic_sr_ng_storage}} 
+  & {{bearc_jenatdb2_tb_sr_ng_storage}} 
+  & {{bearc_jenatdb2_tb_sr_rs_storage}} 
+  & {{bearc_ostrich_ostrich_storage}} \\
+\hline
+
+% ===================== ORKG =====================
+\multirow{5}{*}{\shortstack[c]{ORKG}}
+& \multirow{4}{*}{Queries} & \multirow{4}{*}{complex} & min  
+  & {{orkg_graphdb_complex_ic_sr_ng_min}} 
+  & {{orkg_graphdb_complex_tb_sr_ng_min}} 
+  & {{orkg_graphdb_complex_tb_sr_rs_min}} 
+  & {{orkg_jenatdb2_complex_ic_sr_ng_min}} 
+  & {{orkg_jenatdb2_complex_tb_sr_ng_min}} 
+  & {{orkg_jenatdb2_complex_tb_sr_rs_min}} 
+  & {{orkg_ostrich_complex_ostrich_min}}  \\
+& & & avg  
+  & {{orkg_graphdb_complex_ic_sr_ng_avg}} 
+  & {{orkg_graphdb_complex_tb_sr_ng_avg}} 
+  & {{orkg_graphdb_complex_tb_sr_rs_avg}} 
+  & {{orkg_jenatdb2_complex_ic_sr_ng_avg}} 
+  & {{orkg_jenatdb2_complex_tb_sr_ng_avg}} 
+  & {{orkg_jenatdb2_complex_tb_sr_rs_avg}} 
+  & {{orkg_ostrich_complex_ostrich_avg}}  \\
+& & & max  
+  & {{orkg_graphdb_complex_ic_sr_ng_max}} 
+  & {{orkg_graphdb_complex_tb_sr_ng_max}} 
+  & {{orkg_graphdb_complex_tb_sr_rs_max}} 
+  & {{orkg_jenatdb2_complex_ic_sr_ng_max}} 
+  & {{orkg_jenatdb2_complex_tb_sr_ng_max}} 
+  & {{orkg_jenatdb2_complex_tb_sr_rs_max}} 
+  & {{orkg_ostrich_complex_ostrich_max}}  \\
+& & & t-o  
+  & {{orkg_graphdb_complex_ic_sr_ng_to}} 
+  & {{orkg_graphdb_complex_tb_sr_ng_to}} 
+  & {{orkg_graphdb_complex_tb_sr_rs_to}} 
+  & {{orkg_jenatdb2_complex_ic_sr_ng_to}} 
+  & {{orkg_jenatdb2_complex_tb_sr_ng_to}} 
+  & {{orkg_jenatdb2_complex_tb_sr_rs_to}} 
+  & {{orkg_ostrich_complex_ostrich_to}}  \\
+& \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
+  & {{orkg_graphdb_ic_sr_ng_raw}} 
+  & {{orkg_graphdb_tb_sr_ng_raw}} 
+  & {{orkg_graphdb_tb_sr_rs_raw}} 
+  & {{orkg_jenatdb2_ic_sr_ng_raw}} 
+  & {{orkg_jenatdb2_tb_sr_ng_raw}} 
+  & {{orkg_jenatdb2_tb_sr_rs_raw}} 
+  & {{orkg_ostrich_ostrich_raw}} \\
+&                          &  & db size 
+  & {{orkg_graphdb_ic_sr_ng_storage}} 
+  & {{orkg_graphdb_tb_sr_ng_storage}} 
+  & {{orkg_graphdb_tb_sr_rs_storage}} 
+  & {{orkg_jenatdb2_ic_sr_ng_storage}} 
+  & {{orkg_jenatdb2_tb_sr_ng_storage}} 
+  & {{orkg_jenatdb2_tb_sr_rs_storage}} 
+  & {{orkg_ostrich_ostrich_storage}} \\
+\end{tabular}
+\label{tab:eval_results}
+\end{table}

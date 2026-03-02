@@ -126,7 +126,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Install basic unix/linux tools for the debian distribution
 RUN apt-get update
-RUN apt-get install -y bash coreutils procps grep sed curl bc wget 
+RUN apt-get install -y bash coreutils procps grep sed curl bc wget iproute2 
 
 # Install locales to suppress the GraphDB setlocale() warning and ensure UTF-8 everywhere
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -159,7 +159,7 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.workbench.cors.enable=true \
 -Denable-context-index=true \
 -Dentity-pool-implementation=transactional \
--Dhealth.max.query.time.seconds=60 \
+-Dhealth.max.query.time.seconds=30 \
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 

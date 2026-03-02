@@ -7,8 +7,13 @@ log_level="root:INFO"
 
 
 startup() {
+    echo "$(log_timestamp) ${log_level}:Update query timeouts to 30 sec ..." >> $log_file
+    ttl_file="/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl"
+    # Replace existing timeout values
+    sed -i 's/\(ja:cxtValue "\)0,0/\130000,30000/' "$ttl_file"
+
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    nohup /jena-fuseki/fuseki-server --config=/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl --port=3030 --tdb2 &
+    nohup /jena-fuseki/fuseki-server --config=$ttl_file --port=3030 --tdb2 &
     
     # Wait until server is up
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
@@ -28,20 +33,74 @@ startup() {
 
 
 shutdown() {
-    echo "$(log_timestamp) ${log_level}:Kill process /jena-fuseki/fuseki-server.jar to shutdown Jena" >> $log_file
-    pkill -f '/jena-fuseki/fuseki-server.jar'
-    while ps -ef | grep -q '[j]ena-fuseki/fuseki-server.jar'; do
+    echo "$(log_timestamp) ${log_level}:Shutdown Jena start" >> "$log_file"
+
+    # --------------------------------------------------
+    # Locate PID file
+    # --------------------------------------------------
+    pidfile=$(ls /tmp/jenatdb2_*.pid 2>/dev/null | head -n 1)
+
+    if [ -z "$pidfile" ]; then
+        echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
+        pkill -9 -f ${JAVA_HOME}/bin/java 2>/dev/null || true
+    else
+        PID=$(cat "$pidfile")
+        echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
+
+        # --------------------------------------------------
+        # Check if process exists
+        # --------------------------------------------------
+        if ps -p "$PID" > /dev/null 2>&1; then
+            echo "$(log_timestamp) ${log_level}:Process $PID is running, attempting kill -9" >> "$log_file"
+
+            kill -9 "$PID" 2>/dev/null || true
+
+            # --------------------------------------------------
+            # Wait with timeout (avoid infinite loop!)
+            # --------------------------------------------------
+            for i in {1..10}; do
+                if ! ps -p "$PID" > /dev/null 2>&1; then
+                    echo "$(log_timestamp) ${log_level}:Process $PID terminated after $i seconds" >> "$log_file"
+                    break
+                fi
+                echo "$(log_timestamp) ${log_level}:Waiting for PID $PID to terminate ($i/10)" >> "$log_file"
+                sleep 1
+            done
+
+        else
+            echo "$(log_timestamp) ${log_level}:Process $PID already not running" >> "$log_file"
+        fi
+
+        # Remove PID file
+        rm -f "$pidfile"
+        echo "$(log_timestamp) ${log_level}:Removed PID file $pidfile" >> "$log_file"
+    fi
+
+    # --------------------------------------------------
+    # Give JVM time to release resources
+    # --------------------------------------------------
+    echo "$(log_timestamp) ${log_level}:Waiting 2 seconds for JVM cleanup" >> "$log_file"
+    sleep 2
+
+    # --------------------------------------------------
+    # Wait for port release
+    # --------------------------------------------------
+    for i in {1..30}; do
+        if ! ss -ltnp | grep -q ':3030'; then
+            echo "$(log_timestamp) ${log_level}:Port 3030 released after $i seconds" >> "$log_file"
+            break
+        fi
+        echo "$(log_timestamp) ${log_level}:Waiting for port 3030 to be released ($i/30)" >> "$log_file"
         sleep 1
     done
 
-    while lsof -i :3030 >/dev/null 2>&1; do
-    	echo "Waiting for port 3030 to be released..."
-    	sleep 1
-    done
+    # Final check
+    if ss -ltnp | grep -q ':3030'; then
+        echo "$(log_timestamp) ${log_level}:WARNING - Port 3030 still in use after timeout" >> "$log_file"
+    fi
 
-    echo "$(log_timestamp) ${log_level}:/jena-fuseki/fuseki-server.jar killed and port 3030 released" >> $log_file
+    echo "$(log_timestamp) ${log_level}:Shutdown Jena complete" >> "$log_file"
 }
-
 
 dump_repo() {
     repositoryID=${policy}_${dataset}
@@ -115,6 +174,20 @@ set -euo pipefail
 export JAVA_HOME=/opt/java/java17/openjdk
 export PATH=/opt/java/java17/openjdk/bin:$PATH
 
+# --------------------------------------------------
+# Optional arguments parsing
+# --------------------------------------------------
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --log-file)
+            log_file="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 if [[ ${1:-} == "startup" ]]; then
     if [[ $# -ne 4 ]]; then
