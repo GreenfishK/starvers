@@ -218,6 +218,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
     # Shutdown engine
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
 
     return df
 
@@ -480,7 +481,7 @@ for dataset in datasets:
                                 end_vers=total_versions, format=in_frm, basename_length=ic_basename_lengths[dataset])
 
     if not skip_tb_star_ds == "True":
-        construct_tb_star_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+        construct_tb_star_ds_from_files(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                             source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
                             destination=f"{data_dir}/alldata.TB_star_hierarchical.ttl",
                             last_version=total_versions,
