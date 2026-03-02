@@ -69,7 +69,7 @@ services:
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
       - ${base_host_dir}/databases/construct_datasets/graphdb:/starvers_eval/databases/construct_datasets/graphdb
-      - ${base_host_dir}/tmp:/tmp
+      - ${base_host_dir}/tmp/tmp_construct_datasets:/tmp
       - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
@@ -92,7 +92,7 @@ services:
       - ${base_host_dir}/databases:/starvers_eval/databases
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/configs/ingest:/starvers_eval/configs/ingest
-      - ${base_host_dir}/tmp:/tmp
+      - ${base_host_dir}/tmp/tmp_ingest:/tmp
       - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
@@ -126,7 +126,7 @@ services:
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
-      - ${base_host_dir}/tmp:/tmp
+      - ${base_host_dir}/tmp/tmp_evaluate:/tmp
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     hostname: Starvers

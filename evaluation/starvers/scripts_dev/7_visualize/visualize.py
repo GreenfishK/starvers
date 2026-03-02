@@ -245,7 +245,7 @@ def create_latex_tables():
     # Load data
     # =========================
     queries_data = pd.read_csv(
-        measurements_in + "time_synt.csv",
+        measurements_in + "time_20260222T1755.csv",
         delimiter=";",
         decimal=".",
         dtype={
@@ -278,31 +278,34 @@ def create_latex_tables():
     
 
     ingestion_data = pd.read_csv(
-        measurements_in + "ingestion_synt.csv", delimiter=";", decimal="."
+        measurements_in + "ingestion.csv", delimiter=";", decimal="."
     )
     ingestion_data["triplestore"] = ingestion_data["triplestore"].str.lower()
 
     # =========================
-    # Load templates
+    # Load template
     # =========================
-    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_queries_tmpl.tex", "r") as f:
-        template_queries = f.read()
-
-    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_storage_tmpl.tex", "r") as f:
-        template_storage = f.read()
+    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_results_tmpl.tex", "r") as f:
+        template_results = f.read()
 
     # =========================
     # Aggregation
     # =========================
 
     # Performance per dataset, policy, query_set, triplestore
+    queries_data["execution_time_total_clean"] = queries_data["execution_time_total"].replace(-1, np.nan)   
+
     queries_agg = queries_data.groupby(["triplestore", "dataset", "policy", "query_set"]).agg(
-        min=("execution_time_total", "min"),
-        avg=("execution_time_total", "mean"),
-        max=("execution_time_total", "max"),
+        min=("execution_time_total_clean", "min"),
+        avg=("execution_time_total_clean", "mean"),
+        max=("execution_time_total_clean", "max"),
         cnt_timeout=("yn_timeout", "sum")
     ).reset_index()
     logging.info(f"Aggregated measures:\n{queries_agg}")
+
+    queries_agg = queries_agg[queries_agg["min"].notna()]
+
+    queries_agg.to_csv("/starvers_eval/output/logs/visualize/queries.csv", index=False)
 
     # Storage
     storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"]).agg(
@@ -310,6 +313,11 @@ def create_latex_tables():
         raw_file_size=("raw_file_size_MiB", "mean"),
         db_file_size=("db_files_disk_usage_MiB", "mean")
     ).reset_index()
+    storage_agg.to_csv("/starvers_eval/output/logs/visualize/storage.csv", index=False)
+
+    # TODO: Build dataframe with the same index structure as the latex table
+    
+    
 
     # =========================
     # Formatting helpers
@@ -326,72 +334,66 @@ def create_latex_tables():
     def format_ingestion(v):
         return f"{v:.1f}"
 
-    placeholder_map_queries = {}
+    # =========================
+    # Fill placeholders
+    # =========================
+    placeholder_map = {}
 
     for dataset in datasets:
-        for query_set in query_sets:
-            for triplestore in triplestores:
-                for policy in policies:
-                    match = queries_agg[
-                        (queries_agg["triplestore"] == triplestore)
-                        & (queries_agg["dataset"] == dataset)
-                        & (queries_agg["policy"] == policy)
-                        & (queries_agg["query_set"] == query_set)
-                    ]
-                    if not match.empty:
-                        min_val = format_exec_time(match["min"].values[0])
-                        avg_val = format_exec_time(match["avg"].values[0])
-                        max_val = format_exec_time(match["max"].values[0])
-                        to_val = str(int(match["cnt_timeout"].values[0]))
-                    else:
-                        min_val = avg_val = max_val = to_val = "/"
-
-                    # Add placeholders for min, avg, max, to
-                    logging.info(f"Adding values {min_val}, {avg_val}, {max_val}, {to_val} to {dataset}_{triplestore}_{query_set}_{policy}_min")
-                    placeholder_map_queries[f"{{{{{dataset}_{triplestore}_{query_set}_{policy}_min}}}}"] = min_val
-                    placeholder_map_queries[f"{{{{{dataset}_{triplestore}_{query_set}_{policy}_avg}}}}"] = avg_val
-                    placeholder_map_queries[f"{{{{{dataset}_{triplestore}_{query_set}_{policy}_max}}}}"] = max_val
-                    placeholder_map_queries[f"{{{{{dataset}_{triplestore}_{query_set}_{policy}_to}}}}"] = to_val
-
-    # replace placeholders in queries template
-    filled_queries = template_queries
-    for placeholder, value in placeholder_map_queries.items():
-        logging.info(f"Replacing {placeholder} with {value}")
-        filled_queries = filled_queries.replace(placeholder, value)
-
-    # =========================
-    # Storage table placeholders
-    # =========================
-    placeholder_map_storage = {}
-    for dataset in datasets:
+        # logical size placeholder
         for policy in policies:
-            for triplestore in triplestores:
-                match = storage_agg[
-                    (storage_agg["triplestore"] == triplestore)
-                    & (storage_agg["dataset"] == dataset)
-                    & (storage_agg["policy"] == policy)
+            for store in triplestores:
+                match_storage = storage_agg[
+                    (storage_agg["dataset"] == dataset) &
+                    (storage_agg["policy"] == policy) &
+                    (storage_agg["triplestore"] == store)
                 ]
-                if not match.empty:
-                    storage_val = format_storage(match["db_file_size"].values[0])
-                    ingestion_val = format_ingestion(match["ingestion_time"].values[0])
+                if not match_storage.empty:
+                    storage_val_raw = format_storage(match_storage["raw_file_size"].values[0])
+                    storage_val_db = format_storage(match_storage["db_file_size"].values[0])
                 else:
-                    storage_val = "/"
-                    ingestion_val = "/"
-                placeholder_map_storage[f"{{{{storage_{dataset}_{policy}_{triplestore}}}}}"] = storage_val
-                placeholder_map_storage[f"{{{{ingestion_{dataset}_{policy}_{triplestore}}}}}"] = ingestion_val
+                    storage_val_raw = "x"
+                    storage_val_db = "x"
+                logging.info(f"Replacing {dataset}_{store}_{policy}_raw with {storage_val_raw}")
+                logging.info(f"Replacing {dataset}_{store}_{policy}_storage with {storage_val_db}")
+                
+                placeholder_map[f"{{{{{dataset}_{store}_{policy}_raw}}}}"] = storage_val_raw
+                placeholder_map[f"{{{{{dataset}_{store}_{policy}_storage}}}}"] = storage_val_db
 
-    filled_storage = template_storage
-    for placeholder, value in placeholder_map_storage.items():
-        filled_storage = filled_storage.replace(placeholder, value)
+        # query placeholders
+        for query_set in query_sets:
+            for store in triplestores:
+                for policy in policies:
+                    match_query = queries_agg[
+                        (queries_agg["dataset"] == dataset) &
+                        (queries_agg["query_set"] == query_set) &
+                        (queries_agg["triplestore"] == store) &
+                        (queries_agg["policy"] == policy)
+                    ]
+                    if not match_query.empty:
+                        logging.info(f"Query metrics for {dataset}_{store}_{query_set}_{policy}: {match_query}")
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_min}}}}"] = format_exec_time(match_query["min"].values[0])
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_avg}}}}"] = format_exec_time(match_query["avg"].values[0])
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_max}}}}"] = format_exec_time(match_query["max"].values[0])
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_to}}}}"] = str(int(match_query["cnt_timeout"].values[0]))
+                    else:
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_min}}}}"] = "x"
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_avg}}}}"] = "x"
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_max}}}}"] = "x"
+                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_to}}}}"] = "x"
 
     # =========================
-    # Save files
+    # Replace placeholders in template
     # =========================
-    with open(f"{tables_out}/latex_table_queries_filled.tex", "w") as f:
-        f.write(filled_queries)
+    filled_table = template_results
+    for ph, val in placeholder_map.items():
+        filled_table = filled_table.replace(ph, val)
 
-    with open(f"{tables_out}/latex_table_storage_filled.tex", "w") as f:
-        f.write(filled_storage)
+    # =========================
+    # Save file
+    # =========================
+    with open(f"{tables_out}/latex_table_results.tex", "w") as f:
+        f.write(filled_table)
 
     logging.info("LaTeX tables filled and saved.")
 

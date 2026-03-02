@@ -10,6 +10,9 @@ log_level="root:INFO"
 # Functions
 #######################################################################
 startup() {
+    echo "$(log_timestamp) ${log_level}:Updating query timeouts to 30 sec ..." >> $log_file
+    export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dhealth.max.query.time.seconds=30"
+	
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
     nohup /opt/graphdb/dist/bin/graphdb -s &
     
@@ -30,20 +33,73 @@ startup() {
 }
 
 shutdown() {
-    echo "$(log_timestamp) ${log_level}:Kill process ${JAVA_HOME}/bin/java to shutdown GraphDB" >> $log_file
-    pkill -f ${JAVA_HOME}/bin/java
-    while pgrep -f "${JAVA_HOME}/bin/java" >/dev/null; do
+    echo "$(log_timestamp) ${log_level}:Shutdown GraphDB start" >> "$log_file"
+
+    # --------------------------------------------------
+    # Locate PID file
+    # --------------------------------------------------
+    pidfile=$(ls /tmp/graphdb_*.pid 2>/dev/null | head -n 1)
+
+    if [ -z "$pidfile" ]; then
+        echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback pkill" >> "$log_file"
+        pkill -9 -f ${JAVA_HOME}/bin/java 2>/dev/null || true
+    else
+        PID=$(cat "$pidfile")
+        echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
+
+        # --------------------------------------------------
+        # Check if process exists
+        # --------------------------------------------------
+        if ps -p "$PID" > /dev/null 2>&1; then
+            echo "$(log_timestamp) ${log_level}:Process $PID is running, attempting kill -9" >> "$log_file"
+
+            kill -9 "$PID" 2>/dev/null || true
+
+            # --------------------------------------------------
+            # Wait with timeout (avoid infinite loop!)
+            # --------------------------------------------------
+            for i in {1..10}; do
+                if ! ps -p "$PID" > /dev/null 2>&1; then
+                    echo "$(log_timestamp) ${log_level}:Process $PID terminated after $i seconds" >> "$log_file"
+                    break
+                fi
+                echo "$(log_timestamp) ${log_level}:Waiting for PID $PID to terminate ($i/10)" >> "$log_file"
+                sleep 1
+            done
+        else
+            echo "$(log_timestamp) ${log_level}:Process $PID already not running" >> "$log_file"
+        fi
+
+        # Remove PID file
+        rm -f "$pidfile"
+        echo "$(log_timestamp) ${log_level}:Removed PID file $pidfile" >> "$log_file"
+    fi
+
+    # --------------------------------------------------
+    # Give JVM time to release resources
+    # --------------------------------------------------
+    echo "$(log_timestamp) ${log_level}:Waiting 2 seconds for JVM cleanup" >> "$log_file"
+    sleep 2
+
+    # --------------------------------------------------
+    # Wait for port release (GraphDB default: 7200)
+    # --------------------------------------------------
+    for i in {1..30}; do
+        if ! ss -ltnp | grep -q ':7200'; then
+            echo "$(log_timestamp) ${log_level}:Port 7200 released after $i seconds" >> "$log_file"
+            break
+        fi
+        echo "$(log_timestamp) ${log_level}:Waiting for port 7200 to be released ($i/30)" >> "$log_file"
         sleep 1
     done
 
-    while lsof -i :7200 >/dev/null 2>&1; do
-        echo "Waiting for port 7200 to be released..."
-        sleep 1
-    done
+    # Final check
+    if ss -ltnp | grep -q ':7200'; then
+        echo "$(log_timestamp) ${log_level}:WARNING - Port 7200 still in use after timeout" >> "$log_file"
+    fi
 
-    echo "$(log_timestamp) ${log_level}:${JAVA_HOME}/bin/java killed and released port 7200." >> $log_file
+    echo "$(log_timestamp) ${log_level}:Shutdown GraphDB complete" >> "$log_file"
 }
-
 
 dump_repo() {
     repositoryID=${policy}_${dataset}
@@ -51,8 +107,15 @@ dump_repo() {
 
     curl "http://Starvers:7200/repositories/${repositoryID}/statements" \
         -X GET \
-        --header "Accept: application/x-turtlestar" \
+        --header "Accept: application/x-trigstar" \
         -o "${output_file}"
+
+    #curl -X POST \
+    #    -d "query=CONSTRUCT { ?s ?p ?o . } WHERE { ?s ?p ?o . }" \
+    #    --header "Accept: application/x-trigstar" \
+    #    -o "/home/fkovacev/orkg.ttls" \
+    #    http://localhost:7200/irepositories/orkg     
+
 }
 
 create_env() {
@@ -97,6 +160,20 @@ set -euo pipefail
 export JAVA_HOME=/opt/java/java11/openjdk
 export PATH=/opt/java/java11/openjdk/bin:$PATH
 
+# --------------------------------------------------
+# Optional arguments parsing
+# --------------------------------------------------
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --log-file)
+            log_file="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 if [[ ${1:-} == "startup" ]]; then
     if [[ $# -ne 4 ]]; then
