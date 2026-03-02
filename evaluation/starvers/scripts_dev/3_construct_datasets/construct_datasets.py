@@ -218,6 +218,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
     # Shutdown engine
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
 
     return df
 
