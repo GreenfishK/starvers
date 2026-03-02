@@ -19,7 +19,7 @@ from urllib.error import HTTPError
 import psutil
 
 from starvers.starvers import TripleStoreEngine
-
+from starvers._helper import versioning_timestamp_format
 
 ##########################################################################################
 # Logging 
@@ -34,7 +34,7 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
                     datefmt="%F %A %T", 
                     level=logging.INFO)
 
-
+LOG_FILE = "/starvers_eval/output/logs/construct_datasets/construct_datasets.txt"
 ##########################################################################################
 # Parameters 
 ##########################################################################################
@@ -123,22 +123,27 @@ def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: in
     logging.info("Assertion: Triples that are still valid with the latest snapshot: {0}".format(cnt_valid_triples_last_ic))
 
 
+
+
 def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
                         source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
+    triple_store_name = triple_store.name.lower()
     logging.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
     policy = "tb_rs_sr"
+
     repository = policy + "_" + dataset
-    database_dir = f"{databases_dir}/{triple_store}"
-    mgmt_script = eval_setup["rdf_stores"][triple_store]["mgmt_script"]
+    database_dir = f"{databases_dir}/{triple_store_name}"
+    mgmt_script = eval_setup["rdf_stores"][triple_store_name]["mgmt_script"]
 
     logging.info("Create GraphDB directories and environment")
-    subprocess.call(shlex.split(f"{mgmt_script} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+    logging.info(f"\nDatabase directory {database_dir}\nConfig dirctory:{CONFIG_DIR}\nConfig Template directory:{CONFIG_TMPL_DIR}")
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
 
-    logging.info("Ingest empty file into {0} repository and start {1}.".format(repository, triple_store.name))
-    subprocess.call(shlex.split(f"{mgmt_script} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
+    logging.info(f"Ingest empty file into {repository} repository and start {triple_store_name}.")
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Startup GraphDB engine")
-    subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -147,8 +152,8 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     
-    query_endpoint = eval_setup["rdf_stores"][triple_store]["get"].format(repo=f"{policy}_{dataset}")
-    update_endpoint = eval_setup["rdf_stores"][triple_store]["post"].format(repo=f"{policy}_{dataset}")
+    query_endpoint = eval_setup["rdf_stores"][triple_store_name]["get"].format(repo=f"{policy}_{dataset}")
+    update_endpoint = eval_setup["rdf_stores"][triple_store_name]["post"].format(repo=f"{policy}_{dataset}")
     rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint)
     try:
         start = time.time()
@@ -178,8 +183,8 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
         logging.info(f"Memory in usage: {mem_in_usage}%")
         if mem_in_usage > 85:
             # Reboot to free up main memory
-            subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
-            subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
+            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
+            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
@@ -212,62 +217,98 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
         df.to_csv(f"/starvers_eval/output/measurements/time_update_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
     # Shutdown engine
-    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
 
     return df
 
-def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str, 
+# via composition from raw files
+def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
                          last_version: int, init_timestamp: datetime, dataset:str):
-    """
-    :param: source_ic0: The path in the filesystem to the initial snapshot.
-    :param: destination: The path in the filesystem to the resulting dataset.
-    :param: last_version: The last version number of the dataset
-    :param: init_timestamp: The initial timestamp that is being incremented by 1sec for each dataset version/pair of changesets.
+        
+    init_timestamp_str = f'"{versioning_timestamp_format(init_timestamp)}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+    aet = '"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
 
-    Constructs an rdf-star dataset from the initial snapshot and the subsequent changesets and saves
-    it to the :destination path.
-    """
-    policy = "tb_rs_sr"
+    # Read initial snapshot
+    logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
+    ic0_raw = open(source_ic0, "r").read().splitlines()
+    ic0_list = list(filter(None, ic0_raw))
+    ic0_list_clean = list(filter(lambda x: not x.startswith("# "), ic0_list))
+    ic0_list_timestamped = [f"<< << {triple[:-1].strip()}>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> {init_timestamp_str}>> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> {aet} .\n" for triple in ic0_list_clean]
 
-    mgmt_script = eval_setup["rdf_stores"][TripleStore.GRAPHDB.name.lower()]["mgmt_script"]
-    database_dir = f"{databases_dir}/{TripleStore.GRAPHDB.name.lower()}"
+    # Write timestamped snapshot
+    logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0)) 
+    with open(destination, "w") as rdf_star_dataset:
+        rdf_star_dataset.writelines(ic0_list_timestamped)
 
-    # Insert first snapshot and change sets into GraphDB
-    insert_ic0_and_cbs(TripleStore.GRAPHDB, chunk_size=5000, dataset=dataset,
-                       source_ic0=source_ic0, source_cs=source_cs, 
-                       last_version=last_version, init_timestamp=init_timestamp)    
+    # Map versions to files in chronological orders
+    change_sets = {}
+    for filename in sorted(os.listdir(source_cs)):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue
+        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
+        change_sets[filename] = version
 
-    # Reboot GraphDB to free up main memory
-    logging.info(f"Restarting GraphDB server.")
-    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
-    subprocess.call(shlex.split(f"{mgmt_script} startup {database_dir} {policy} {dataset}"))
-    
-    # Extract and dump repository
-    logging.info(f"Extract the whole dataset from the GraphDB repository {policy}_{dataset} and dump it to {destination}.")
-    subprocess.call(shlex.split(f"{mgmt_script} dump_repo {database_dir} {policy} {dataset} {destination}"))
-    
-    # Count triples
-    cnt_rdf_star_trpls: subprocess.CompletedProcess[str] = subprocess.run(["awk",
-        r'''
-        /^<<<<</ { in_block = 1 }
-        in_block && /\^\^xsd:dateTime \.$/ {
-            count++
-            in_block = 0
-        }
-        END { print count }
-        ''', destination], capture_output=True, text=True)   
-    logging.info("There are {0} timestamped triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_trpls.stdout, destination))
-    cnt_rdf_star_valid_trpls = subprocess.run(["grep", "-c", '<https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T00:00:00.000+02:00"', destination], capture_output=True, text=True)  
-    logging.info("There are {0} not outdated triples in the RDF-star dataset {1}. Should be the same number as in the extraction.".format(cnt_rdf_star_valid_trpls.stdout, destination))
+    # Apply changesets to RDF-star dataset
+    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
+        vers_ts = init_timestamp + timedelta(seconds=version)
+        vers_ts_str = f'"{versioning_timestamp_format(vers_ts)}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+        mem_in_usage = psutil.virtual_memory().percent
+        logging.info(f"Memory in usage: {mem_in_usage}%")
 
-    # Shutdown triple store
-    logging.info("Shutting down GraphDB server.")
-    subprocess.call(shlex.split(f"{mgmt_script} shutdown"))
+        if filename.startswith("data-added"):
+            logging.info("Read positive changeset {0} into memory.".format(filename))
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
+            added_triples_list = list(filter(None, added_triples_raw))
+            added_triples_list_timestamped = [f"<< << {triple[:-1].strip()}>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> {vers_ts_str}>> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> {aet} .\n" for triple in added_triples_list]
+            cnt_trpls = len(added_triples_raw)
 
-    # Remove database files
-    logging.info("Removing database files.")
-    shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
-    shutil.rmtree("/run/configuration", ignore_errors=True)
+            logging.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
+            with open(destination, "a") as rdf_star_dataset:
+                rdf_star_dataset.writelines(added_triples_list_timestamped)
+        
+        if filename.startswith("data-deleted"):
+            logging.info(f"Read negative changeset {filename} into memory.")
+            deleted_triples_raw = open(os.path.join(source_cs, filename), "r").read().splitlines()
+            deleted_triples_list = list(filter(None, deleted_triples_raw))
+            deleted_triples_set = set(t[:-1].strip() for t in deleted_triples_list)
+
+            # Count triples to be invalidated
+            cnt_trpls = len(deleted_triples_list)
+            logging.info(f"Invalidate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")
+
+            # Update aet timestamps for matching triples in the negative delta set
+            logging.info(f"Updating aet timestamps for matching triples in the negative delta set {filename}.")
+            
+            valid_until = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
+            valid_until_escaped = re.escape(valid_until)
+            
+            tmp_out = f"{data_dir}/alldata.TB_star_hierarchical.tmp"
+            total_replacements = 0
+            with open(destination, "r") as rdf_star_graph, open(tmp_out, "w") as fout:
+                for line in rdf_star_graph:
+                    timestamped_triple = line.strip()
+                    fact_triple = timestamped_triple.split(">> <https://github.com/GreenfishK/DataCitation/versioning/valid_from>")[0][6:] 
+
+                    if fact_triple in deleted_triples_set:
+                        parts = timestamped_triple.split(valid_until)
+                        left, _ = parts
+                        left_escaped = re.escape(left)
+
+                        pattern = re.compile(rf'^({left_escaped}{valid_until_escaped}\s+)([^ ]+)(\s+\.)')
+
+                        def replace_valid_until(match):
+                            return f"{match.group(1)}{vers_ts_str}{match.group(3)}"
+
+                        # apply replacement to the CURRENT line
+                        line = pattern.sub(replace_valid_until, line)
+                        total_replacements += 1
+
+                    fout.write(line)
+
+            logging.info(f"Writing updated RDF-star dataset to {destination}.")
+            os.replace(tmp_out, destination)
+            
+            logging.info(f"Invalidated {total_replacements} triples in the RDF-star dataset which match the triples in {filename}.")
 
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):

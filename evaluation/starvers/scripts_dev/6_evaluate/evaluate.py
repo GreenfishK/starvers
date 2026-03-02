@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from itertools import product
 import tomli
 import pandas as pd
-from SPARQLWrapper import SPARQLWrapper, JSON, POST
+from SPARQLWrapper import Wrapper, SPARQLWrapper, JSON, POST
 from SPARQLWrapper.SPARQLExceptions import EndPointInternalError
 
 ##########################################################
@@ -61,22 +61,71 @@ def start_mem_tracker(pid, label, outfile, interval=1):
     return t
 
 
-def set_endpoints(config, triple_store, dataset, policy, engine):
+def config_engine(config, triple_store, dataset, policy):
+    engine = SPARQLWrapper("dummy")
+    engine.timeout = 30
+    engine.setReturnFormat(JSON)
+    engine.setMethod(POST)
+    engine.addCustomHttpHeader("Connection", "close")
+    engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
+
     engine.endpoint = config["rdf_stores"][triple_store]["get"].format(repo=f"{policy}_{dataset}")
     engine.updateEndpoint = config["rdf_stores"][triple_store]["post"].format(repo=f"{policy}_{dataset}")
+
+    return engine
+
+
+def parse_results(result) -> list:
+    """
+
+    :param result:
+    :return: Dataframe
+    """
+
+    if result is None:
+        return [["None"]]
+
+    results = result
+
+    def format_value(res_value):
+        value = res_value["value"]
+        lang = res_value.get("xml:lang", None)
+        datatype = res_value.get("datatype", None)
+        if lang is not None:
+            value += "@" + lang
+        if datatype is not None:
+            value += " [" + datatype + "]"
+        return value
+
+    header = []
+    values = []
+
+    if not "head" in results or not "vars" in results["head"]:
+        return header
+
+    if not "results" in results or not "bindings" in results["results"]:
+        return values
+
+    for var in results["head"]["vars"]:
+        header.append(var)
+
+    for r in results["results"]["bindings"]:
+        row = []
+        for col in results["head"]["vars"]:
+            if col in r:
+                result_value = format_value(r[col])
+            else:
+                result_value = None
+            row.append(result_value)
+        values.append(row)
+
+    return [header] + values
 
 
 ##########################################################
 # QUERY EXECUTION (former query.py)
 ##########################################################
 def run_queries(config, header, triple_store, policy, dataset):
-    engine = SPARQLWrapper("dummy")
-    engine.timeout = 30
-    engine.setReturnFormat(JSON)
-    engine.setMethod(POST)
-
-    set_endpoints(config, triple_store, dataset, policy, engine)
-
     LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
     init_ts = datetime(2022, 10, 1, 12, 0, 0, tzinfo=LOCAL_TIMEZONE)
 
@@ -118,6 +167,7 @@ def run_queries(config, header, triple_store, policy, dataset):
 
         # Dry run
         logging.info("Starting dry run.")
+        engine = config_engine(config, triple_store, dataset, policy)        
         dry_query = config["rdf_stores"][triple_store]["dry_run_query"]
         engine.setQuery(dry_query)
         engine.query()
@@ -132,7 +182,8 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 with open(path) as f:
                     query = f.read()
-
+                
+                engine = config_engine(config, triple_store, dataset, policy)
                 engine.setQuery(query)
 
                 exec_time = -1
@@ -140,7 +191,7 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 try:
                     start = time.time()
-                    response = engine.query()
+                    response = engine.query().convert()
                     exec_time = time.time() - start
 
                 except (TimeoutError, socket.timeout) as e:
@@ -149,14 +200,16 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 except EndPointInternalError as e:
                     yn_timeout = 0
+                    response = None
+                    logging.error(f"The triple store crashed. Restarting triple store ... ")
                     logging.error(e)
 
-                    # After Jena crashes, just save what you have and continue
-                    df = pd.DataFrame(rows, columns=header)
-                    df.to_csv(TIME_FILE, sep=";", index=False, mode='a', header=False)
-                    del df
+                    logging.info("Shutdown")
+                    subprocess.run([mgmt_script, "shutdown"], check=True)
 
-                    continue
+                    logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
+                    subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
+                    
 
                 except Exception as e:
                     yn_timeout = 0
@@ -169,7 +222,15 @@ def run_queries(config, header, triple_store, policy, dataset):
                     file_name, exec_time, 0, yn_timeout
                 ])
 
+                # Serialize
+                result_set_dir = RESULT_DIR + "/" + triple_store + "/" + policy + "_" + dataset + "/" + query_set.split('/')[2] + "/" + str(version)
+                Path(result_set_dir).mkdir(parents=True, exist_ok=True)
+                with open(result_set_dir + "/" + file_name.split('.')[0] + ".csv", 'w') as file:
+                    write = csv.writer(file, delimiter=";")
+                    write.writerows(parse_results(response))
+
         
+        logging.info(f"Writing results to {TIME_FILE}")
         df = pd.DataFrame(rows, columns=header)
         df.to_csv(TIME_FILE, sep=";", index=False, mode='a', header=False)
         del df

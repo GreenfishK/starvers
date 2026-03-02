@@ -32,10 +32,10 @@ ja:RDFDatasetZero  rdfs:subClassOf  ja:RDFDataset .
         fuseki:name                   "{{repositoryID}}" ;
         fuseki:serviceQuery           "query" , "" , "sparql" ;
         fuseki:serviceReadGraphStore  "get" ;
-        fuseki:serviceReadWriteGraphStore
-                "data" ;
+        fuseki:serviceReadWriteGraphStore "data" ;
         fuseki:serviceUpdate          "" , "update" ;
-        fuseki:serviceUpload          "upload" .
+        fuseki:serviceUpload          "upload" ;
+	ja:context [ ja:cxtName "arq:queryTimeout" ; ja:cxtValue "0,0" ] .
 
 :tdb_dataset_readwrite
         rdf:type       tdb2:DatasetTDB2 ;
