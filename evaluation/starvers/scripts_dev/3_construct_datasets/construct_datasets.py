@@ -224,7 +224,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
 # via composition from raw files
 def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
-                         last_version: int, init_timestamp: datetime, dataset:str):
+                         last_version: int, init_timestamp: datetime):
         
     init_timestamp_str = f'"{versioning_timestamp_format(init_timestamp)}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
     aet = '"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
@@ -485,8 +485,7 @@ for dataset in datasets:
                             source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
                             destination=f"{data_dir}/alldata.TB_star_hierarchical.ttl",
                             last_version=total_versions,
-                            init_timestamp=init_version_timestamp,
-                            dataset=dataset)    
+                            init_timestamp=init_version_timestamp)    
         
     if not skip_update_measurement == "True":
         measure_updates(dataset=dataset, 
