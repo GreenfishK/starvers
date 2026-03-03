@@ -259,11 +259,11 @@ elif [[ ${1:-} == "ingest" ]]; then
 
     ingest
 else
-    echo "Usage: $0 startup <database_dir>"
+    echo "Usage: $0 startup <database_dir> <policy> <dataset>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
-    echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+    echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1
