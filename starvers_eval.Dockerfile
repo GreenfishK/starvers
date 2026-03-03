@@ -1,4 +1,6 @@
-########## 1) BUILD STAGE: Install deps, KC, Ostrich ##########
+#########################################################
+# Install Ostrich
+#########################################################
 FROM node:14-bullseye AS install_ostrich
 
 # Install build tools
@@ -20,8 +22,6 @@ RUN mkdir -p /root/.cmake-js && chmod 700 /root/.cmake-js
 
 ENV CC=clang
 ENV CXX=clang++
-
-
 
 # Clone repo: Ostrich node (Bindings for JavaScript)
 RUN cd /opt && git clone --branch dev --recurse-submodules https://github.com/dkw-aau/ostrich-node.git
@@ -69,7 +69,7 @@ RUN node -e "require('ostrich-bindings'); console.log('Ostrich bindings OK')"
 
 
 # Install starvers based on setup.py and modules based on requirements.txt
-FROM python:3.11-slim-bullseye AS install_python_modules
+FROM python:3.11-slim-bookworm AS install_python_modules
 WORKDIR /
 
 # Copy from local build context
@@ -89,16 +89,22 @@ COPY --from=install_ostrich /opt/comunica-feature-versioning /opt/comunica-featu
 COPY --from=install_ostrich /opt/ostrich-node /opt/ostrich-node
 COPY --from=install_ostrich /opt/ostrich/build/ /opt/ostrich/
 
-#COPY --from=install_ostrich /opt/ostrich /opt/ostrich
-
-
-# copy from other images: Jena and GraphDB
+#########################################################
+# Install Jena Fuseki
+#########################################################
 COPY --from=stain/jena-fuseki:5.1.0 /jena-fuseki /jena-fuseki
 COPY --from=eclipse-temurin:17.0.16_8-jdk /opt/java /opt/java/java17
 
+#########################################################
+# Install GraphDB
+#########################################################
 COPY --from=ontotext/graphdb:10.5.0 /opt/graphdb /opt/graphdb
 COPY --from=eclipse-temurin:11.0.21_9-jdk /opt/java /opt/java/java11
 
+
+#########################################################
+# Post-processing and setting up environment
+#########################################################
 # Create /starvers_eval directories
 RUN mkdir -p /starvers_eval/databases
 RUN mkdir -p /starvers_eval/output/logs
@@ -136,15 +142,35 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install node dependencies for Ostrich
+# Install node dependencies for Ostrich and Onyxgraph
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libstdc++6 \
     libgcc-s1 \
     libatomic1 \
-    libssl1.1 \
+    #libssl1.1 \
+    clang \
+    libclang-dev \
     unzip \
+    build-essential \
+    pkg-config \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
+
+#########################################################
+# Install Onyxgraph
+#########################################################
+# install cargo
+RUN curl -o get_cargo.sh https://sh.rustup.rs -s && \
+    chmod +x get_cargo.sh && \
+    ./get_cargo.sh -y --default-toolchain stable && \
+    rm get_cargo.sh
+
+RUN $HOME/.cargo/bin/cargo install oxigraph-cli
+
+#########################################################
+# Set environment variables
+#########################################################
 
 # Set locale environment variables
 ENV LANG=en_US.UTF-8
