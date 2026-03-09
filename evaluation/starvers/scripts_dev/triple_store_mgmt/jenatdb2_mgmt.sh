@@ -160,7 +160,7 @@ ingest() {
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     repositoryID=${policy}_${dataset}
-    /jena-fuseki/tdbloader2 --loc ${database_dir}/jenatdb2/${repositoryID} /starvers_eval/rawdata/${dataset}/empty.nt
+    /jena-fuseki/tdbloader2 --loc ${database_dir} /starvers_eval/rawdata/${dataset}/empty.nt
 }
 
 

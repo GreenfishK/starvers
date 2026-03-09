@@ -178,7 +178,7 @@ ENV LC_ALL=en_US.UTF-8
 
 # Set graphdb environment variables
 ENV GDB_JAVA_OPTS='\
--Xms10g -Xmx80g  \
+-Xms10g -Xmx70g  \
 -Dgraphdb.dist=/opt/graphdb/dist \
 -Dgraphdb.home.work=/tmp/graphdb/work \
 -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import \

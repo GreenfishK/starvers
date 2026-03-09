@@ -136,12 +136,12 @@ create_env() {
 
 ingest() {
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Onyxgraph" >> $log_file
-    /root/.cargo/bin/oxigraph load --location ${database_dir}/${repositoryID} --file ${dataset_dir_or_file}
+    /root/.cargo/bin/oxigraph load --location ${database_dir} --file ${dataset_dir_or_file}
 }
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /root/.cargo/bin/oxigraph load --location ${database_dir}/${repositoryID} --file /starvers_eval/rawdata/${dataset}/empty.nt  >> $log_file 2>&1
+    /root/.cargo/bin/oxigraph load --location ${database_dir} --file /starvers_eval/rawdata/${dataset}/empty.nt  >> $log_file 2>&1
 }
 
 #######################################################################
@@ -257,7 +257,7 @@ else
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
-    echo "Usage: $0 ingest <database_dir> <policy> <dataset> <config_dir>"
+    echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir>"
     echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     
     exit 1
