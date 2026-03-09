@@ -73,7 +73,7 @@ services:
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
       - datasets=${datasets}
-      - triple_stores=${triple_stores} # Execute separately for each triplestore to be able to run in parallel
+      - triple_stores=${triple_stores} 
       - policies=${policies} 
     entrypoint: ["python3", "-u", "/starvers_eval/scripts/4_ingest/ingest.py"]
 
@@ -106,7 +106,7 @@ services:
       - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
       - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     hostname: Starvers
-    mem_limit: 90g
+    mem_limit: 75g
     extra_hosts:
     - "host.docker.internal:host-gateway"
     ports:
@@ -236,6 +236,20 @@ services:
     volumes:
       - ${base_host_dir}/databases/onyxgraph:/starvers_eval/databases/onyxgraph
     entrypoint: ["/root/.cargo/bin/oxigraph", "serve", "--location", "/starvers_eval/databases/onyxgraph/ic_sr_ng_orkg"]
+    
+
+  onyxgraph_ingest:
+    image: starvers_eval:test
+    container_name: starvers_eval-onyxgraph_ingest
+    ports:
+      - 7878:7878
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${base_host_dir}/databases/onyxgraph:/starvers_eval/databases/onyxgraph
+      - ${base_host_dir}/rawdata:/starvers_eval/rawdata
+      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+    entrypoint: ["/starvers_eval/scripts/triple_store_mgmt/onyxgraph_mgmt.sh", "ingest", "/starvers_eval/databases/onyxgraph", "/starvers_eval/rawdata/orkg/alldata.ICNG.trig", "ic_sr_ng", "orkg", "dummy_config_dir"]
     
 networks:
   starvers_prod_net:
