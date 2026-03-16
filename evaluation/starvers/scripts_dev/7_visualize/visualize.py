@@ -295,7 +295,7 @@ def create_latex_tables():
     # Performance per dataset, policy, query_set, triplestore
     queries_data["execution_time_total_clean"] = queries_data["execution_time_total"].replace(-1, np.nan)   
 
-    queries_agg = queries_data.groupby(["triplestore", "dataset", "policy", "query_set"]).agg(
+    queries_agg = queries_data.groupby(["triplestore", "dataset", "policy", "query_set"], observed=False).agg(
         min=("execution_time_total_clean", "min"),
         avg=("execution_time_total_clean", "mean"),
         max=("execution_time_total_clean", "max"),
@@ -308,15 +308,12 @@ def create_latex_tables():
     queries_agg.to_csv("/starvers_eval/output/logs/visualize/queries.csv", index=False)
 
     # Storage
-    storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"]).agg(
+    storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"], observed=False).agg(
         ingestion_time=("ingestion_time", "median"),
         raw_file_size=("raw_file_size_MiB", "mean"),
         db_file_size=("db_files_disk_usage_MiB", "mean")
     ).reset_index()
     storage_agg.to_csv("/starvers_eval/output/logs/visualize/storage.csv", index=False)
-
-    # TODO: Build dataframe with the same index structure as the latex table
-    
     
 
     # =========================
@@ -362,6 +359,9 @@ def create_latex_tables():
 
         # query placeholders
         for query_set in query_sets:
+            lowest_min = None
+            lowest_avg = None
+            lowest_max = None
             for store in triplestores:
                 for policy in policies:
                     match_query = queries_agg[

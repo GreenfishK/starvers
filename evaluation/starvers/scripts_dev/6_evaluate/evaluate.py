@@ -170,7 +170,7 @@ def run_queries(config, header, triple_store, policy, dataset):
         
         # Startup database
         mgmt_script = config["rdf_stores"][triple_store]["mgmt_script"]
-        db_dir = f"{database_dir}/{triple_store}/{policy}_{dataset}"
+        db_dir = f"{databases_dir}/{triple_store}/{policy}_{dataset}"
 
         logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
         subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
@@ -222,6 +222,7 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 except (TimeoutError, socket.timeout) as e:
                     yn_timeout = 1
+                    response = None
                     logging.error(e)
 
                 except EndPointInternalError as e:
@@ -235,10 +236,9 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                     logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
                     subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
-                    
-
                 except Exception as e:
                     yn_timeout = 0
+                    response = None
                     logging.error(e)
 
                 rows.append([

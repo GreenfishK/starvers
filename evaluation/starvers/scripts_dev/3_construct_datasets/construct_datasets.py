@@ -218,6 +218,17 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.close()
 
 
+def construct_bear_ng(source: str, destination: str, last_version: int, basename_length: int):
+    """
+    Creates a dataset variant that includes the version in which a triple was valid in the named grah identifier in the fourth position of a triple, according to the following example:
+        ex:s1 ex:p1 ex:o1 :v_21_22_23_25 .
+        :v_21_22_23_25 owl:versionInfo "21" :versions .
+        :v_21_22_23_25 owl:versionInfo "22" :versions .
+        :v_21_22_23_25 owl:versionInfo "23" :versions .
+        :v_21_22_23_25 owl:versionInfo "25" :versions .
+    """
+    pass
+
 
 
 ############################################# Start procedure #############################################
