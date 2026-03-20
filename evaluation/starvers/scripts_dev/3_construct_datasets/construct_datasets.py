@@ -29,7 +29,7 @@ datasets = sys.argv[1].split(" ")
 skip_change_sets = sys.argv[2]
 skip_tb_star_ds = sys.argv[3]
 skip_icng_ds = sys.argv[4]
-
+skip_tb_ds = sys.argv[5]
 
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -218,16 +218,105 @@ def construct_icng_ds(source: str, destination: str, last_version: int, basename
         f.close()
 
 
-def construct_bear_ng(source: str, destination: str, last_version: int, basename_length: int):
+def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version: int, basename_length: int):
     """
-    Creates a dataset variant that includes the version in which a triple was valid in the named grah identifier in the fourth position of a triple, according to the following example:
-        ex:s1 ex:p1 ex:o1 :v_21_22_23_25 .
-        :v_21_22_23_25 owl:versionInfo "21" :versions .
-        :v_21_22_23_25 owl:versionInfo "22" :versions .
-        :v_21_22_23_25 owl:versionInfo "23" :versions .
-        :v_21_22_23_25 owl:versionInfo "25" :versions .
+    Creates the TB dataset variant that includes the version in which a triple was valid in the named grah identifier in the fourth position of a triple, according to the following example:
+        ex:s1 ex:p1 ex:o1 :v21_22_23_25 .
+        :v21_22_23_25 owl:versionInfo "21" :versions .
+        :v21_22_23_25 owl:versionInfo "22" :versions .
+        :v21_22_23_25 owl:versionInfo "23" :versions .
+        :v21_22_23_25 owl:versionInfo "25" :versions .
     """
-    pass
+    # Description of the general idea:
+    # Create a dictionary with the triples as keys and a list of versions in which they are valid as values
+    # the source dataset is the version 0, and the change set file name holds the information about the version in which a triple was added or deleted
+
+    # Then read all change set files 
+    # In every iteration:
+    # Add the version i+1-1=i to the list for the current triples in the dict, except for those that are in the data-deleted_{i}_{i+1}.nt change set, for which the version i+1-1=i is not added to the list.
+    # When triple is contained in the positive changeset, data-added_{i}-{i+1}.nt, add the triple and the version i+1-1 = i to the dictionary.
+    # Read initial snapshot
+    mem_in_usage = psutil.virtual_memory().percent
+    logging.info(f"Memory in usage: {mem_in_usage}%")
+
+    logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
+    ic0_raw = open(source_ic0, "r").read().splitlines()
+    ic0_list = list(filter(None, ic0_raw))
+    ic0_list_clean = list(filter(lambda x: not x.startswith("# "), ic0_list))
+
+    triples_dict = {}
+
+    for triple in ic0_list_clean:
+        # Read all triples from the source dataset and add them to the dictionary with version 0. 
+        # E.g. {"ex:s1 ex:p1 ex:o1": [0]}
+        triples_dict[triple[:-1].strip()] = [0]
+
+    # Map versions to files in chronological orders
+    change_sets = {}
+    for filename in sorted(os.listdir(source_cs)):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue
+        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
+        change_sets[filename] = version
+
+    mem_in_usage = psutil.virtual_memory().percent
+    logging.info(f"Memory in usage: {mem_in_usage}%")
+
+    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
+        # Update the dictionary with the new version for all triples
+        triples_dict = {triple: versions + [version] for triple, versions in triples_dict.items()}
+
+        if filename.startswith("data-deleted"):
+            logging.info(f"Read negative changeset {filename} into memory.")
+            deleted_triples_raw = open(os.path.join(source_cs, filename), "r").read().splitlines()
+            deleted_triples_list = list(filter(None, deleted_triples_raw))
+            
+            # For all triples in the data-deleted_{i}_{i+1}.nt change set, remove the version i+1-1=i from the list in the dictionary, e.g. {"ex:s1 ex:p1 ex:o1": [0]} becomes {"ex:s1 ex:p1 ex:o1": []} if the triple is deleted in version 1, or remains {"ex:s2 ex:p2 ex:o2": [1]} if the triple is not deleted in version 1.
+            for triple in deleted_triples_list:
+                triple_clean = triple[:-1].strip()
+                logging.info(f"Check triple {triple_clean}.")
+                if triple_clean in triples_dict:
+                    versions = triples_dict[triple_clean]
+                    logging.info(f"Remove last version {versions[:-1]} for triple {triple_clean}: {versions}.")
+
+                    # Remove the last version from the list
+                    versions = versions[:-1]
+                    triples_dict[triple_clean] = versions
+            
+            mem_in_usage = psutil.virtual_memory().percent
+            logging.info(f"Memory in usage: {mem_in_usage}%")
+                   
+                
+        if filename.startswith("data-added"):
+            logging.info("Read positive changeset {0} into memory.".format(filename))
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
+            added_triples_list = list(filter(None, added_triples_raw))
+
+            # Add the triples in the data-added_{i}-{i+1}.nt change set to the dictionary with version i, e.g. {"ex:s1 ex:p1 ex:o1": [0, 1]} if the triple was already in the initial dataset and is added again in version 1, or {"ex:s2 ex:p2 ex:o2": [1]} if the triple is new in version 1.
+            for triple in added_triples_list:
+                triple_clean = triple[:-1].strip()
+                logging.info(f"Check triple {triple_clean}.")
+                if triple_clean in triples_dict: # in case it has been previously added and then deleted
+                    versions = triples_dict[triple_clean]
+                    logging.info(f"Add version {version} for triple {triple_clean}: {versions}.")
+                    versions.append(version)
+                    triples_dict[triple_clean] = versions
+                else:
+                    logging.info(f"Add triple {triple_clean} with version {version} to the dictionary.")
+                    triples_dict[triple_clean] = [version]
+
+                mem_in_usage = psutil.virtual_memory().percent
+                logging.info(f"Memory in usage: {mem_in_usage}%")
+    
+    # Write the triples with their versions to the destination file in the format described above.
+    logging.info(f"Write the triples with their versions to the destination file {destination}.")
+    with open(destination, "w") as TB_dataset:
+        for triple, versions in triples_dict.items():
+            versions_str = "_".join(str(v) for v in versions)
+            TB_dataset.write(f"{triple} :v{versions_str} .\n")
+            for version in versions:
+                TB_dataset.write(f":v{versions_str} owl:versionInfo \"{version}\" :versions .\n")
+
 
 
 
@@ -258,5 +347,12 @@ for dataset in datasets:
                         destination=f"{data_dir}/alldata.ICNG.trig",
                         last_version=total_versions,
                         basename_length=ic_basename_lengths[dataset])
+
+    if not skip_tb_ds == "True":
+        construct_TB(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                     source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
+                     destination=f"{data_dir}/alldata.TB_computed.nt",
+                     last_version=total_versions,
+                     basename_length=ic_basename_lengths[dataset])
     
 logging.info("Finished with constructing datasets.")
