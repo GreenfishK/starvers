@@ -54,6 +54,11 @@ dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in co
 ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in config['datasets'].items()}
 snapshot_dir = config['general']['snapshot_dir']
 change_sets_dir = config['general']['change_sets_dir']
+
+# Create memory file
+with open(MEM_FILE, "w") as f:
+    f.write("timestamp;label;pid;memory_gb\n")
+
 ##########################################################
 # Helpers
 ##########################################################
