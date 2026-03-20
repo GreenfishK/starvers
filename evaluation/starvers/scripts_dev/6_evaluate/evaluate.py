@@ -223,23 +223,23 @@ def run_queries(config, header, triple_store, policy, dataset):
                 except (TimeoutError, socket.timeout) as e:
                     yn_timeout = 1
                     response = None
-                    logging.error(e)
+                    logging.error(f"Timeout error: {e}")
 
                 except EndPointInternalError as e:
                     yn_timeout = 0
                     response = None
-                    logging.error(f"The triple store crashed. Restarting triple store ... ")
-                    logging.error(e)
+                    logging.error(f"The triple store crashed. \n {e}")
 
                     logging.info("Shutdown")
                     subprocess.run([mgmt_script, "shutdown"], check=True)
 
                     logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
                     subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
+                
                 except Exception as e:
                     yn_timeout = 0
                     response = None
-                    logging.error(e)
+                    logging.error(f"Other error: {e}")
 
                 rows.append([
                     triple_store, dataset, policy,
@@ -263,6 +263,9 @@ def run_queries(config, header, triple_store, policy, dataset):
 
         logging.info("Shutdown")
         subprocess.run([mgmt_script, "shutdown"], check=True)
+
+        logging.info("Stopping memory tracker")
+        tracker.join(timeout=1)
 
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
@@ -388,7 +391,6 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
         df.to_csv(f"/starvers_eval/output/measurements/time_update_{dataset}_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
     # Shutdown engine
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
 
     return df
