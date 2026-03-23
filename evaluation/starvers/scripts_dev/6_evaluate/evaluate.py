@@ -55,9 +55,6 @@ ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos i
 snapshot_dir = config['general']['snapshot_dir']
 change_sets_dir = config['general']['change_sets_dir']
 
-# Create memory file
-with open(MEM_FILE, "w") as f:
-    f.write("timestamp;label;pid;memory_gb\n")
 
 ##########################################################
 # Helpers
@@ -199,9 +196,21 @@ def run_queries(config, header, triple_store, policy, dataset):
         # Dry run
         logging.info("Starting dry run.")
         engine = config_engine(config, triple_store, dataset, policy)        
+        
         dry_query = config["rdf_stores"][triple_store]["dry_run_query"]
         engine.setQuery(dry_query)
-        engine.query()
+        logging.info(f"Dry run query:\n{dry_query}")
+
+        # Try 5 times to mitigates Dataase Index buildup
+        try_counter = 0
+        for try_counter in range(5):
+            try:
+                engine.query()
+            except Exception as e:
+                logging.error(f"Dry run failed with error: {e}")
+                logging.info("Retrying dry run after waiting for 5 seconds...")
+                try_counter += 1
+                time.sleep(5)
 
         logging.info("Running queries")
         for version in range(versions):
@@ -420,6 +429,10 @@ def main():
         TIME_FILE, sep=";", index=False, mode='w', header=True
     )
     combinations = product(triple_stores, policies, datasets)
+
+    # Create memory file
+    with open(MEM_FILE, "w") as f:
+        f.write("timestamp;label;pid;memory_gb\n")
 
     # Query evaluation
     for triple_store, policy, dataset in combinations:
