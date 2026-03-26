@@ -227,14 +227,7 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
         :v21_22_23_25 owl:versionInfo "23" :versions .
         :v21_22_23_25 owl:versionInfo "25" :versions .
     """
-    # Description of the general idea:
-    # Create a dictionary with the triples as keys and a list of versions in which they are valid as values
-    # the source dataset is the version 0, and the change set file name holds the information about the version in which a triple was added or deleted
 
-    # Then read all change set files 
-    # In every iteration:
-    # Add the version i+1-1=i to the list for the current triples in the dict, except for those that are in the data-deleted_{i}_{i+1}.nt change set, for which the version i+1-1=i is not added to the list.
-    # When triple is contained in the positive changeset, data-added_{i}-{i+1}.nt, add the triple and the version i+1-1 = i to the dictionary.
     # Read initial snapshot
     mem_in_usage = psutil.virtual_memory().percent
     logging.info(f"Memory in usage: {mem_in_usage}%")
@@ -248,8 +241,11 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
 
     for triple in ic0_list_clean:
         # Read all triples from the source dataset and add them to the dictionary with version 0. 
-        # E.g. {"ex:s1 ex:p1 ex:o1": [0]}
-        triples_dict[triple[:-1].strip()] = [0]
+        # E.g. {"ex:s1 ex:p1 ex:o1": [0, 1]}
+        # The first entry, 0, is the initial version. the second entry, 1, means that the triples are curerntly valid
+        triples_dict[triple[:-1].strip()] = [[0], 1]
+
+    logging.info(f"Initial triples in the dictionary: {len(triples_dict)}")
 
     # Map versions to files in chronological orders
     change_sets = {}
@@ -262,9 +258,19 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
     mem_in_usage = psutil.virtual_memory().percent
     logging.info(f"Memory in usage: {mem_in_usage}%")
 
+    current_version = 0
     for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
+        
         # Update the dictionary with the new version for all triples
-        triples_dict = {triple: versions + [version] for triple, versions in triples_dict.items()}
+        if current_version != version:
+            #triples_dict = {triple: versions[0] = [version] for triple, versions in triples_dict.items() if versions[1] == 1}
+            for triple, versions in triples_dict.items():
+                if triple == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
+                    print(f"Updating triple. Versions: {versions}")
+                if versions[1] == 1:
+                    versions[0].append(version)
+                    triples_dict[triple] = versions
+        current_version = version
 
         if filename.startswith("data-deleted"):
             logging.info(f"Read negative changeset {filename} into memory.")
@@ -277,10 +283,15 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
                 logging.info(f"Check triple {triple_clean}.")
                 if triple_clean in triples_dict:
                     versions = triples_dict[triple_clean]
-                    logging.info(f"Remove last version {versions[:-1]} for triple {triple_clean}: {versions}.")
+                    logging.info(f"Remove last version for triple {triple_clean}: {versions[0]}.")
 
-                    # Remove the last version from the list
-                    versions = versions[:-1]
+                    if triple_clean == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
+                        print(f"Deleting triple. Versions: {versions}")
+
+                    # Remove the last version from the list and set it to currently invalid (versions[1] = 0)
+                    if versions[0]:
+                        versions[0].pop()   # remove last version 
+                    versions[1] = 0
                     triples_dict[triple_clean] = versions
             
             mem_in_usage = psutil.virtual_memory().percent
@@ -298,24 +309,38 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
                 logging.info(f"Check triple {triple_clean}.")
                 if triple_clean in triples_dict: # in case it has been previously added and then deleted
                     versions = triples_dict[triple_clean]
-                    logging.info(f"Add version {version} for triple {triple_clean}: {versions}.")
-                    versions.append(version)
+                    print(f"Add version {version} for triple {triple_clean}: {versions[0]}.")
+                    versions[0].append(version)
+                    versions[1] = 1
+
+                    if triple_clean == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
+                        print(f"Adding triple. Versions: {versions}")
+
                     triples_dict[triple_clean] = versions
                 else:
                     logging.info(f"Add triple {triple_clean} with version {version} to the dictionary.")
-                    triples_dict[triple_clean] = [version]
+                    triples_dict[triple_clean] = [[version], 1]
 
                 mem_in_usage = psutil.virtual_memory().percent
                 logging.info(f"Memory in usage: {mem_in_usage}%")
     
     # Write the triples with their versions to the destination file in the format described above.
     logging.info(f"Write the triples with their versions to the destination file {destination}.")
+    version_strs = set()
     with open(destination, "w") as TB_dataset:
+        # Write all fact triples with their version strings in the fourth position.
         for triple, versions in triples_dict.items():
-            versions_str = "_".join(str(v) for v in versions)
-            TB_dataset.write(f"{triple} :v{versions_str} .\n")
+            versions_str = "_".join(str(v) for v in versions[0])
+            version_strs.add(versions_str)
+            
+            TB_dataset.write(f"{triple} <http://example.org/v{versions_str}> .\n")
+
+        # Write all verison strings and map each version contained in the string to it
+        for version_str in version_strs:
+            # Extract versions from version_str
+            versions = list(map(int, re.findall(r'\d+', version_str)))
             for version in versions:
-                TB_dataset.write(f":v{versions_str} owl:versionInfo \"{version}\" :versions .\n")
+                TB_dataset.write(f"<http://example.org/v{version_str}> <http://www.w3.org/2002/07/owl#versionInfo> \"{version}\"^^<http://www.w3.org/2001/XMLSchema#integer> <http://example.org/versions> .\n")
 
 
 

@@ -32,7 +32,7 @@ services:
       - 7350:7200
       - 42564:42564
     environment:
-      - datasets=orkg
+      - datasets=bearb_day bearb_hour bearc orkg
     entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
     #entrypoint: ["python3", "/starvers_eval/scripts/2_preprocess_data/parse_SciQA_queries.py"]
   
