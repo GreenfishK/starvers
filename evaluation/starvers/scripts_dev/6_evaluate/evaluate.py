@@ -18,6 +18,7 @@ from functools import partial
 from urllib.error import HTTPError
 from enum import Enum
 from starvers.starvers import TripleStoreEngine
+import psutil
 
 ##########################################################
 # Logging
@@ -321,7 +322,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
     repository = policy + "_" + dataset
     database_dir = f"{databases_dir}/{triple_store_name}"
-    mgmt_script = eval_setup["rdf_stores"][triple_store_name]["mgmt_script"]
+    mgmt_script = config["rdf_stores"][triple_store_name]["mgmt_script"]
 
     logging.info("Create GraphDB directories and environment")
     logging.info(f"\nDatabase directory {database_dir}\nConfig dirctory:{CONFIG_DIR}\nConfig Template directory:{CONFIG_TMPL_DIR}")
@@ -340,8 +341,8 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
     logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
     
-    query_endpoint = eval_setup["rdf_stores"][triple_store_name]["get"].format(repo=f"{policy}_{dataset}")
-    update_endpoint = eval_setup["rdf_stores"][triple_store_name]["post"].format(repo=f"{policy}_{dataset}")
+    query_endpoint = config["rdf_stores"][triple_store_name]["get"].format(repo=f"{policy}_{dataset}")
+    update_endpoint = config["rdf_stores"][triple_store_name]["post"].format(repo=f"{policy}_{dataset}")
     rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint)
     try:
         start = time.time()
@@ -411,7 +412,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 
 
 ##########################################################
-# MAIN PIPELINE (former evaluation.sh)
+# MAIN PIPELINE
 ##########################################################
 def main():
     triple_stores = sys.argv[1].split(" ")
