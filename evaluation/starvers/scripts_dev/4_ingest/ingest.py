@@ -42,7 +42,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "ostrich": "alldata_vdir",
     "ic_sr_ng": "alldata.ICNG.trig",
     "cb_sr_ng": "alldata.CBNG.trig",
-    "tb_sr_ng": "alldata.TB.nq",
+    "tb_sr_ng": "alldata.TB_computed.nq",
     "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
 }
 
