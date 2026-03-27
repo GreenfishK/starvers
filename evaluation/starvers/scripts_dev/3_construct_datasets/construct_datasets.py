@@ -265,8 +265,6 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
         if current_version != version:
             #triples_dict = {triple: versions[0] = [version] for triple, versions in triples_dict.items() if versions[1] == 1}
             for triple, versions in triples_dict.items():
-                if triple == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
-                    print(f"Updating triple. Versions: {versions}")
                 if versions[1] == 1:
                     versions[0].append(version)
                     triples_dict[triple] = versions
@@ -284,9 +282,6 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
                 if triple_clean in triples_dict:
                     versions = triples_dict[triple_clean]
                     logging.info(f"Remove last version for triple {triple_clean}: {versions[0]}.")
-
-                    if triple_clean == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
-                        print(f"Deleting triple. Versions: {versions}")
 
                     # Remove the last version from the list and set it to currently invalid (versions[1] = 0)
                     if versions[0]:
@@ -309,12 +304,8 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
                 logging.info(f"Check triple {triple_clean}.")
                 if triple_clean in triples_dict: # in case it has been previously added and then deleted
                     versions = triples_dict[triple_clean]
-                    print(f"Add version {version} for triple {triple_clean}: {versions[0]}.")
                     versions[0].append(version)
                     versions[1] = 1
-
-                    if triple_clean == '<http://dbpedia.org/resource/Night_of_Champions_(2015)> <http://dbpedia.org/ontology/wikiPageRevisionID> "685736236"^^<http://www.w3.org/2001/XMLSchema#integer>':
-                        print(f"Adding triple. Versions: {versions}")
 
                     triples_dict[triple_clean] = versions
                 else:
@@ -376,7 +367,7 @@ for dataset in datasets:
     if not skip_tb_ds == "True":
         construct_TB(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                      source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
-                     destination=f"{data_dir}/alldata.TB_computed.nt",
+                     destination=f"{data_dir}/alldata.TB_computed.nq",
                      last_version=total_versions,
                      basename_length=ic_basename_lengths[dataset])
     

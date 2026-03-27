@@ -10,15 +10,7 @@ import tomli
 
 from starvers.starvers import timestamp_query, split_prefixes_query
 
-def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
-    try:
-        with open(CONFIG_PATH, "rb") as f:
-            CONFIG = tomli.load(f)
-        return policy in CONFIG["evaluations"][triplestore][dataset]
-    except KeyError:
-        return False
-    
-    
+
 def split_solution_modifiers_query(query: str) -> list:
     """
     Separates following solution modifiers from the query:
