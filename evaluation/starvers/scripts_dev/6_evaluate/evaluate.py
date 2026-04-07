@@ -19,6 +19,8 @@ from urllib.error import HTTPError
 from enum import Enum
 from starvers.starvers import TripleStoreEngine
 import psutil
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+import socket
 
 ##########################################################
 # Logging
@@ -92,7 +94,7 @@ def start_mem_tracker(pid, label, outfile, interval=1):
 
 def config_engine(config, triple_store, dataset, policy):
     engine = SPARQLWrapper("dummy")
-    engine.timeout = 30
+    engine.timeout = 0
     engine.setReturnFormat(JSON)
     engine.setMethod(POST)
     engine.addCustomHttpHeader("Connection", "close")
@@ -202,7 +204,7 @@ def run_queries(config, header, triple_store, policy, dataset):
         engine.setQuery(dry_query)
         logging.info(f"Dry run query:\n{dry_query}")
 
-        # Try 5 times to mitigates Dataase Index buildup
+        # Try 5 times to mitigates Database Index buildup
         try_counter = 0
         for try_counter in range(5):
             try:
@@ -214,6 +216,7 @@ def run_queries(config, header, triple_store, policy, dataset):
                 time.sleep(5)
 
         logging.info("Running queries")
+        socket.setdefaulttimeout(30)
         for version in range(versions):
             base = f"/starvers_eval/queries/final_queries/{query_set}/{version}"
             snapshot_ts = init_ts + timedelta(seconds=version)
@@ -231,14 +234,29 @@ def run_queries(config, header, triple_store, policy, dataset):
                 yn_timeout = 0
 
                 try:
-                    start = time.time()
-                    response = engine.query().convert()
-                    exec_time = time.time() - start
+                    executor = ThreadPoolExecutor(max_workers=1)
+                    result = {}
+                    def run(eng=engine):
+                        result['start'] = time.time()
+                        result['response'] = eng.query().convert()
+                        result['end'] = time.time()
 
-                except (TimeoutError, socket.timeout) as e:
-                    yn_timeout = 1
-                    response = None
-                    logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+                    future = executor.submit(run)
+                    
+                    try:
+                        future.result(timeout=30)
+                        response = result['response']
+                        exec_time = result['end'] - result['start']
+                    except FuturesTimeout:
+                        yn_timeout = 1
+                        response = None
+                        logging.error(f"Timeout error for version {version} and query {file_name}")
+                    finally:
+                        executor.shutdown(wait=False)
+                        # If result was never populated, it must have timed out or failed
+                        if 'response' not in result and yn_timeout == 0:
+                            yn_timeout = 1
+                            logging.error(f"Thread hung without timeout for version {version} and query {file_name}")
 
                 except EndPointInternalError as e:
                     yn_timeout = 0
@@ -255,6 +273,7 @@ def run_queries(config, header, triple_store, policy, dataset):
                     yn_timeout = 0
                     response = None
                     logging.error(f"Other error for version {version} and query {file_name}: {e}")
+
 
                 rows.append([
                     triple_store, dataset, policy,

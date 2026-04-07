@@ -1,4 +1,4 @@
-\begin{table}[ht!]
+\begin{table}[htbp]
 \centering
 \caption{Query Execution Time (in seconds) and Storage Consumption (in GiB) metrics for Lookup, Join, and complex queries across datasets, versioning policies, and RDF-star stores.}
 \begin{tabular}{cccc|ccc|ccc|c}
@@ -14,8 +14,8 @@
 \hline
 
 % ===================== BEARB_day =====================
-\multirow{9}{*}{\shortstack[c]{BEARB\_day}}
-& \multirow{8}{*}{Queries} & \multirow{4}{*}{lookup} & min  
+\multirow{7}{*}{\shortstack[c]{BEARB\_day \\ 89 versions}}
+& \multirow{6}{*}{Queries} & \multirow{3}{*}{lookup} & min  
   & {{bearb_day_graphdb_lookup_ic_sr_ng_min}} 
   & {{bearb_day_graphdb_lookup_tb_sr_ng_min}} 
   & {{bearb_day_graphdb_lookup_tb_sr_rs_min}} 
@@ -39,16 +39,8 @@
   & {{bearb_day_jenatdb2_lookup_tb_sr_ng_max}} 
   & {{bearb_day_jenatdb2_lookup_tb_sr_rs_max}} 
   & {{bearb_day_ostrich_lookup_ostrich_max}}  \\
-& & & t-o  
-  & {{bearb_day_graphdb_lookup_ic_sr_ng_to}} 
-  & {{bearb_day_graphdb_lookup_tb_sr_ng_to}} 
-  & {{bearb_day_graphdb_lookup_tb_sr_rs_to}} 
-  & {{bearb_day_jenatdb2_lookup_ic_sr_ng_to}} 
-  & {{bearb_day_jenatdb2_lookup_tb_sr_ng_to}} 
-  & {{bearb_day_jenatdb2_lookup_tb_sr_rs_to}} 
-  & {{bearb_day_ostrich_lookup_ostrich_to}}  \\
 \cline{5-11}
-&  & \multirow{4}{*}{join} & min  
+&  & \multirow{3}{*}{join} & min  
   & {{bearb_day_graphdb_join_ic_sr_ng_min}} 
   & {{bearb_day_graphdb_join_tb_sr_ng_min}} 
   & {{bearb_day_graphdb_join_tb_sr_rs_min}} 
@@ -72,14 +64,6 @@
   & {{bearb_day_jenatdb2_join_tb_sr_ng_max}} 
   & {{bearb_day_jenatdb2_join_tb_sr_rs_max}} 
   & {{bearb_day_ostrich_join_ostrich_max}}  \\
-& & & t-o  
-  & {{bearb_day_graphdb_join_ic_sr_ng_to}} 
-  & {{bearb_day_graphdb_join_tb_sr_ng_to}} 
-  & {{bearb_day_graphdb_join_tb_sr_rs_to}} 
-  & {{bearb_day_jenatdb2_join_ic_sr_ng_to}} 
-  & {{bearb_day_jenatdb2_join_tb_sr_ng_to}} 
-  & {{bearb_day_jenatdb2_join_tb_sr_rs_to}} 
-  & {{bearb_day_ostrich_join_ostrich_to}}  \\
 \cline{5-11}
 & \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
   & {{bearb_day_graphdb_ic_sr_ng_raw}}
@@ -100,8 +84,8 @@
 \hline
 
 % ===================== BEARB_hour =====================
-\multirow{9}{*}{\shortstack[c]{BEARB\_hour}}
-& \multirow{8}{*}{Queries} & \multirow{4}{*}{lookup} & min  
+\multirow{7}{*}{\shortstack[c]{BEARB\_hour \\ 1299 versions}}
+& \multirow{6}{*}{Queries} & \multirow{3}{*}{lookup} & min  
   & {{bearb_hour_graphdb_lookup_ic_sr_ng_min}}
   & {{bearb_hour_graphdb_lookup_tb_sr_ng_min}} 
   & {{bearb_hour_graphdb_lookup_tb_sr_rs_min}} 
@@ -125,16 +109,8 @@
   & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_max}} 
   & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_max}} 
   & {{bearb_hour_ostrich_lookup_ostrich_max}}  \\
-& & & t-o  
-  & {{bearb_hour_graphdb_lookup_ic_sr_ng_to}} 
-  & {{bearb_hour_graphdb_lookup_tb_sr_ng_to}} 
-  & {{bearb_hour_graphdb_lookup_tb_sr_rs_to}} 
-  & {{bearb_hour_jenatdb2_lookup_ic_sr_ng_to}} 
-  & {{bearb_hour_jenatdb2_lookup_tb_sr_ng_to}} 
-  & {{bearb_hour_jenatdb2_lookup_tb_sr_rs_to}} 
-  & {{bearb_hour_ostrich_lookup_ostrich_to}}  \\
 \cline{5-11}
-& & \multirow{4}{*}{join} & min  
+& & \multirow{3}{*}{join} & min  
   & {{bearb_hour_graphdb_join_ic_sr_ng_min}} 
   & {{bearb_hour_graphdb_join_tb_sr_ng_min}} 
   & {{bearb_hour_graphdb_join_tb_sr_rs_min}} 
@@ -158,14 +134,6 @@
   & {{bearb_hour_jenatdb2_join_tb_sr_ng_max}} 
   & {{bearb_hour_jenatdb2_join_tb_sr_rs_max}} 
   & {{bearb_hour_ostrich_join_ostrich_max}}  \\
-& & & t-o  
-  & {{bearb_hour_graphdb_join_ic_sr_ng_to}} 
-  & {{bearb_hour_graphdb_join_tb_sr_ng_to}} 
-  & {{bearb_hour_graphdb_join_tb_sr_rs_to}} 
-  & {{bearb_hour_jenatdb2_join_ic_sr_ng_to}} 
-  & {{bearb_hour_jenatdb2_join_tb_sr_ng_to}} 
-  & {{bearb_hour_jenatdb2_join_tb_sr_rs_to}} 
-  & {{bearb_hour_ostrich_join_ostrich_to}}  \\
 \cline{5-11}
 & \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
   & {{bearb_hour_graphdb_ic_sr_ng_raw}}
@@ -186,8 +154,8 @@
 \hline
 
 % ===================== BEARC =====================
-\multirow{5}{*}{\shortstack[c]{BEARC}}
-& \multirow{4}{*}{Queries} & \multirow{4}{*}{complex} & min  
+\multirow{5}{*}{\shortstack[c]{BEARC \\ 33 versions}}
+& \multirow{3}{*}{Queries} & \multirow{3}{*}{complex} & min  
   & {{bearc_graphdb_complex_ic_sr_ng_min}} 
   & {{bearc_graphdb_complex_tb_sr_ng_min}} 
   & {{bearc_graphdb_complex_tb_sr_rs_min}} 
@@ -211,14 +179,6 @@
   & {{bearc_jenatdb2_complex_tb_sr_ng_max}} 
   & {{bearc_jenatdb2_complex_tb_sr_rs_max}} 
   & {{bearc_ostrich_complex_ostrich_max}}  \\
-& & & t-o  
-  & {{bearc_graphdb_complex_ic_sr_ng_to}} 
-  & {{bearc_graphdb_complex_tb_sr_ng_to}} 
-  & {{bearc_graphdb_complex_tb_sr_rs_to}} 
-  & {{bearc_jenatdb2_complex_ic_sr_ng_to}} 
-  & {{bearc_jenatdb2_complex_tb_sr_ng_to}} 
-  & {{bearc_jenatdb2_complex_tb_sr_rs_to}} 
-  & {{bearc_ostrich_complex_ostrich_to}}  \\
 \cline{5-11}
 & \multirow{2}{*}{Storage} & \multirow{2}{*}{/}  & raw size
   & {{bearc_graphdb_ic_sr_ng_raw}} 
@@ -239,8 +199,8 @@
 \hline
 
 % ===================== ORKG =====================
-\multirow{5}{*}{\shortstack[c]{ORKG}}
-& \multirow{4}{*}{Queries} & \multirow{4}{*}{complex} & min  
+\multirow{5}{*}{\shortstack[c]{ORKG \\ 34 versions}}
+& \multirow{3}{*}{Queries} & \multirow{3}{*}{complex} & min  
   & {{orkg_graphdb_complex_ic_sr_ng_min}} 
   & {{orkg_graphdb_complex_tb_sr_ng_min}} 
   & {{orkg_graphdb_complex_tb_sr_rs_min}} 
@@ -264,14 +224,6 @@
   & {{orkg_jenatdb2_complex_tb_sr_ng_max}} 
   & {{orkg_jenatdb2_complex_tb_sr_rs_max}} 
   & {{orkg_ostrich_complex_ostrich_max}}  \\
-& & & t-o  
-  & {{orkg_graphdb_complex_ic_sr_ng_to}} 
-  & {{orkg_graphdb_complex_tb_sr_ng_to}} 
-  & {{orkg_graphdb_complex_tb_sr_rs_to}} 
-  & {{orkg_jenatdb2_complex_ic_sr_ng_to}} 
-  & {{orkg_jenatdb2_complex_tb_sr_ng_to}} 
-  & {{orkg_jenatdb2_complex_tb_sr_rs_to}} 
-  & {{orkg_ostrich_complex_ostrich_to}}  \\
   \cline{5-11}
 & \multirow{2}{*}{Storage} & \multirow{2}{*}{/} & raw size
   & {{orkg_graphdb_ic_sr_ng_raw}} 
