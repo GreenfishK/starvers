@@ -85,10 +85,11 @@ def main():
                     logging.info("Queries for policy {0} will not be constructed as it is not one of the requested policies: {1}".format(policy, policies))
                     continue
                 
-                logging.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, and policy {policy}")
-
                 template_relative_path = infos['template']
                 query_set_versions = infos['versions']
+
+                logging.info(f"Generating queries for {query_set_versions} dataset versions of {dataset}, query set {query_set_name}, and policy {policy}")
+
 
                 for query_set_version in range(query_set_versions):
                     logging.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, policy {policy}, and query set version {query_set_version}")

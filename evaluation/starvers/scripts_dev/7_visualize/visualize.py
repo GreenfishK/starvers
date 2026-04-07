@@ -12,9 +12,11 @@ import math
 import logging
 import itertools
 import re
-import numpy as np
+import tomli
 
-############################################# Logging #############################################
+#############################################
+# Logging 
+#############################################
 if not os.path.exists('/starvers_eval/output/logs/visualize'):
     os.makedirs('/starvers_eval/output/logs/visualize')
 with open('/starvers_eval/output/logs/visualize/visualize.txt', "w") as log_file:
@@ -24,8 +26,9 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
                     level=logging.INFO)
-
-############################################# Parameters #############################################
+#############################################
+# Parameters 
+#############################################
 work_dir = "/starvers_eval/"
 measurements_in = work_dir + "output/measurements/"
 figures_out = work_dir + "output/figures"
@@ -33,9 +36,15 @@ tables_out = work_dir + "output/tables"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
-############################################# Visualize #############################################
-pd.set_option('display.max_columns', None)
+#############################################
+# Paths and config 
+#############################################
+CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 
+#############################################
+# Visualize 
+#############################################
+pd.set_option('display.max_columns', None)
 
 
 
@@ -44,7 +53,7 @@ def create_plots(triplestore: str, dataset: str):
     Create and save performance and ingestion plots for the specified triplestore and dataset.
     """
     # Data
-    performance_data = pd.read_csv(measurements_in + "time.csv", delimiter=";", decimal=".",
+    performance_data = pd.read_csv(measurements_in + "time_20260330T1215.csv", delimiter=";", decimal=".",
                             dtype={"triplestore": "category", "dataset": "category", "policy": "category",
                             "query_set": "category", "snapshot": "string", "query": "string",
                             "execution_time": "float", "snapshot_creation_time": "float"})
@@ -66,7 +75,7 @@ def create_plots(triplestore: str, dataset: str):
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
-        means = dataset_df.groupby(['policy', 'snapshot']).mean()
+        means = dataset_df.groupby(['policy', 'snapshot'], observed=False).mean()
         means = means.reset_index()
         
         for policy in policies:
@@ -245,7 +254,7 @@ def create_latex_tables():
     # Load data
     # =========================
     queries_data = pd.read_csv(
-        measurements_in + "time_20260222T1755.csv",
+        measurements_in + "time_20260330T1215.csv",
         delimiter=";",
         decimal=".",
         dtype={
@@ -273,10 +282,17 @@ def create_latex_tables():
 
     queries_data = queries_data.merge(query_build_time_data, on=["dataset", "policy", "query_set", "snapshot", "query"], how="left")
     queries_data["rewriting_time"] = queries_data["rewriting_time"].fillna(0)
-
-    queries_data["execution_time_total"] = queries_data["execution_time"] + queries_data["snapshot_creation_time"] + queries_data["rewriting_time"]
     
+    # Set queries_data["execution_time_total"] to 30 for timedout queries and other failure reasons
+    queries_data.loc[queries_data["execution_time"] >= 30, "yn_timeout"] = 1
+    queries_data["execution_time_clean"] = queries_data["execution_time"].where(
+        (queries_data["execution_time"] <= 30) & (queries_data["execution_time"] >= 0), 
+        other=30
+    )
 
+    # total should be max 30
+    queries_data["execution_time_total"] = (queries_data["execution_time_clean"] + queries_data["rewriting_time"]).clip(upper=30)
+    
     ingestion_data = pd.read_csv(
         measurements_in + "ingestion.csv", delimiter=";", decimal="."
     )
@@ -293,12 +309,11 @@ def create_latex_tables():
     # =========================
 
     # Performance per dataset, policy, query_set, triplestore
-    queries_data["execution_time_total_clean"] = queries_data["execution_time_total"].replace(-1, np.nan)   
 
     queries_agg = queries_data.groupby(["triplestore", "dataset", "policy", "query_set"], observed=False).agg(
-        min=("execution_time_total_clean", "min"),
-        avg=("execution_time_total_clean", "mean"),
-        max=("execution_time_total_clean", "max"),
+        min=("execution_time_total", "min"),
+        avg=("execution_time_total", "mean"),
+        max=("execution_time_total", "max"),
         cnt_timeout=("yn_timeout", "sum")
     ).reset_index()
     logging.info(f"Aggregated measures:\n{queries_agg}")
@@ -320,11 +335,15 @@ def create_latex_tables():
     # Formatting helpers
     # =========================
     def format_exec_time(v):
-        if v < 1:
+        if v == 0:
+            return "0"
+        elif v < 0.01:
+            return f"{v:.0e}".replace("e-0", "e-").replace("e+0", "e")
+        elif v < 1:
             return f"{v:.2f}".lstrip("0")
         else:
             return f"{v:.1f}"
-
+            
     def format_storage(v):
         return f"{(v / 1024):.2f}"
 
@@ -370,17 +389,13 @@ def create_latex_tables():
                         (queries_agg["triplestore"] == store) &
                         (queries_agg["policy"] == policy)
                     ]
+                    
                     if not match_query.empty:
                         logging.info(f"Query metrics for {dataset}_{store}_{query_set}_{policy}: {match_query}")
                         placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_min}}}}"] = format_exec_time(match_query["min"].values[0])
                         placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_avg}}}}"] = format_exec_time(match_query["avg"].values[0])
                         placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_max}}}}"] = format_exec_time(match_query["max"].values[0])
-                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_to}}}}"] = str(int(match_query["cnt_timeout"].values[0]))
-                    else:
-                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_min}}}}"] = "x"
-                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_avg}}}}"] = "x"
-                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_max}}}}"] = "x"
-                        placeholder_map[f"{{{{{dataset}_{store}_{query_set}_{policy}_to}}}}"] = "x"
+
 
     # =========================
     # Replace placeholders in template
@@ -389,6 +404,7 @@ def create_latex_tables():
     for ph, val in placeholder_map.items():
         filled_table = filled_table.replace(ph, val)
 
+    
     # =========================
     # Save file
     # =========================
@@ -396,6 +412,217 @@ def create_latex_tables():
         f.write(filled_table)
 
     logging.info("LaTeX tables filled and saved.")
+
+    # =========================
+    # Calculate RDF versioning system evaluation metrics
+    # =========================
+    # --- Load version counts from eval_setup.toml ---
+    with open(CONFIG_PATH, "rb") as f:
+        config = tomli.load(f)
+
+    version_counts = {
+        ds_name: ds_cfg["snapshot_versions"]
+        for ds_name, ds_cfg in config["datasets"].items()
+    }
+    version_counts_normalised = {k.lower().replace("-", "_"): v for k, v in version_counts.items()}
+ 
+    def get_version_count(dataset_value):
+        key = str(dataset_value).lower().replace("-", "_")
+        if key not in version_counts_normalised:
+            raise KeyError(
+                f"Dataset '{dataset_value}' not found in eval_setup.toml. "
+                f"Available keys: {list(version_counts_normalised.keys())}"
+            )
+        return version_counts_normalised[key]
+ 
+    # --- Derive the ordered list of datasets and store-policy combos from the data ---
+    all_datasets   = sorted(queries_agg["dataset"].unique())
+    all_stores     = sorted(queries_agg["triplestore"].unique())
+    all_policies   = sorted(queries_agg["policy"].unique())
+    combo_index    = [(s, p) for s in all_stores for p in all_policies]  # (triplestore, policy)
+ 
+ 
+    # --- Step 2: dataset weights ---
+    # ic_ng raw size for each dataset (MiB → GiB; only need relative proportions so
+    # the unit cancels out, but we convert for interpretability)
+    ic_ng_sizes = (
+        storage_agg[storage_agg["policy"] == "ic_sr_ng"]
+        .drop_duplicates(subset=["dataset"])
+        .set_index("dataset")["raw_file_size"]
+        / 1024.0  # MiB -> GiB
+    )
+ 
+    R = np.array([ic_ng_sizes.loc[d] for d in all_datasets], dtype=float)
+    V = np.array([get_version_count(d) for d in all_datasets], dtype=float)
+
+    # Metric A: size-only weights
+    w_size = R / R.sum()
+ 
+    # Metric B: 0.5 * normalised_size + 0.5 * normalised_versions, then re-normalise
+    w_comb_raw = 0.5 * (R / R.sum()) + 0.5 * (V / V.sum())
+    w_comb = w_comb_raw / w_comb_raw.sum()
+ 
+    dataset_weight_size = dict(zip(all_datasets, w_size))
+    dataset_weight_comb = dict(zip(all_datasets, w_comb))
+ 
+    logging.info(f"Dataset weights (size only): {dataset_weight_size}")
+    logging.info(f"Dataset weights (size+versions): {dataset_weight_comb}")
+ 
+    # --- Step 3: weighted geometric mean of avgs ---
+    # Each query set row gets weight = dataset_weight[d] / #query_sets_for_d
+    # Then re-normalised across all rows so weights sum to 1.
+    #
+    # GeoAvg_s = exp( sum_q( ŵ_q * ln(ã_{q,s}) ) )
+    def weighted_geo_mean_avgs(weight_dict):
+        """
+        Returns a dict {(triplestore, policy): GeoAvg} using the provided dataset weights.
+        """
+        # Count how many query sets exist per dataset (across all combos — use the union)
+        qs_per_dataset = (
+            queries_agg.groupby("dataset", observed=False)["query_set"]
+            .nunique()
+            .to_dict()
+        )
+ 
+        results = {}
+        for store, policy in combo_index:
+            subset = queries_agg[
+                (queries_agg["triplestore"] == store) &
+                (queries_agg["policy"] == policy)
+            ][["dataset", "query_set", "avg"]].copy()
+
+            # Assign per-row weight = dataset_weight / #query_sets_for_that_dataset
+            subset["row_weight"] = subset["dataset"].map(
+                lambda d: weight_dict.get(d, 0.0) / qs_per_dataset.get(d, 1)
+            )
+            # convert to float
+            subset["row_weight"] = subset["row_weight"].astype(float)
+
+            # Drop rows where avg is NaN (query set not available for this combo)
+            subset = subset.dropna(subset=["avg"])
+ 
+            if subset.empty or (subset["avg"] <= 0).any():
+                results[(store, policy)] = np.nan
+                continue
+ 
+            # Re-normalise weights among available rows
+            total_w = subset["row_weight"].sum()
+            if total_w == 0:
+                results[(store, policy)] = np.nan
+                continue
+            subset["row_weight"] = subset["row_weight"] / total_w
+ 
+            geo_mean = np.exp(
+                (subset["row_weight"] * np.log(subset["avg"])).sum()
+            )
+            results[(store, policy)] = geo_mean
+ 
+        return results
+ 
+    geo_avg_A = weighted_geo_mean_avgs(dataset_weight_size)
+    geo_avg_B = weighted_geo_mean_avgs(dataset_weight_comb)
+ 
+    # --- Step 4: weighted arithmetic mean of db sizes ---
+    # WeightedDb_s = sum_d( w_d * db_{d,s} )   (in GiB)
+    def weighted_arith_mean_db(weight_dict):
+        results = {}
+        for store, policy in combo_index:
+            total = 0.0
+            total_w = 0.0
+            for d in all_datasets:
+                match = storage_agg[
+                    (storage_agg["triplestore"] == store) &
+                    (storage_agg["policy"] == policy) &
+                    (storage_agg["dataset"] == d)
+                ]
+                if match.empty:
+                    continue
+                db_gib = match["db_file_size"].values[0] / 1024.0
+                w = weight_dict.get(d, 0.0)
+                total   += w * db_gib
+                total_w += w
+            results[(store, policy)] = total / total_w if total_w > 0 else np.nan
+        return results
+ 
+    weighted_db_A = weighted_arith_mean_db(dataset_weight_size)
+    weighted_db_B = weighted_arith_mean_db(dataset_weight_comb)
+ 
+    # --- Step 5: min-max normalise ---
+    def minmax_dict(d):
+        vals = np.array(list(d.values()), dtype=float)
+        vmin, vmax = np.nanmin(vals), np.nanmax(vals)
+        if vmax == vmin:
+            return {k: 0.0 for k in d}
+        return {k: (v - vmin) / (vmax - vmin) for k, v in d.items()}
+ 
+    norm_avg_A  = minmax_dict(geo_avg_A)
+    norm_avg_B  = minmax_dict(geo_avg_B)
+    norm_db_A   = minmax_dict(weighted_db_A)
+    norm_db_B   = minmax_dict(weighted_db_B)
+ 
+    # --- Step 6: composite score  0.75 * norm_avg + 0.25 * norm_db ---
+    composite_A = {
+        k: 0.75 * norm_avg_A[k] + 0.25 * norm_db_A[k]
+        for k in combo_index
+    }
+    composite_B = {
+        k: 0.75 * norm_avg_B[k] + 0.25 * norm_db_B[k]
+        for k in combo_index
+    }
+ 
+    # --- Build avg pivot for the CSV (one column per combo) ---
+    # Rows = (dataset, query_set), Columns = (triplestore, policy)
+    pivot = queries_agg.pivot_table(
+        index=["dataset", "query_set"],
+        columns=["triplestore", "policy"],
+        values="avg",
+        observed=False
+    )
+    pivot.columns = [
+        f"{s}-{p}_avg" for s, p in pivot.columns
+    ]
+ 
+    # --- Assemble summary rows (one row per store-policy combo) ---
+    def build_metrics_df(weight_dict, geo_avg, weighted_db, norm_avg, norm_db, composite, weight_label):
+        rows = []
+        for store, policy in combo_index:
+            combo_str = f"{store}-{policy}"
+            row = {
+                "triplestore_policy":          combo_str,
+                f"dataset_weight_{weight_label}_BEARB_day":   weight_dict.get("bearb_day",  weight_dict.get("BEARB_day",  np.nan)),
+                f"dataset_weight_{weight_label}_BEARB_hour":  weight_dict.get("bearb_hour", weight_dict.get("BEARB_hour", np.nan)),
+                f"dataset_weight_{weight_label}_BEARC":       weight_dict.get("bearc",      weight_dict.get("BEARC",      np.nan)),
+                f"dataset_weight_{weight_label}_ORKG":        weight_dict.get("orkg",       weight_dict.get("ORKG",       np.nan)),
+                "weighted_geo_mean_avg_s":          geo_avg.get((store, policy), np.nan),
+                "weighted_arith_mean_db_GiB":                 weighted_db.get((store, policy), np.nan),
+                "norm_weighted_geo_mean_avg":       norm_avg.get((store, policy), np.nan),
+                "norm_weighted_arith_mean_db":                norm_db.get((store, policy), np.nan),
+                "composite_score_0.75avg_0.25db":             composite.get((store, policy), np.nan),
+            }
+            rows.append(row)
+        summary_df = pd.DataFrame(rows).set_index("triplestore_policy")
+ 
+        return summary_df
+ 
+    metrics_size     = build_metrics_df(
+        dataset_weight_size, geo_avg_A, weighted_db_A, norm_avg_A, norm_db_A, composite_A,
+        weight_label="size"
+    )
+    metrics_size_ver = build_metrics_df(
+        dataset_weight_comb, geo_avg_B, weighted_db_B, norm_avg_B, norm_db_B, composite_B,
+        weight_label="size_and_version"
+    )
+
+    metrics_size = metrics_size.dropna(subset=["weighted_geo_mean_avg_s"])
+    metrics_size_ver = metrics_size_ver.dropna(subset=["weighted_geo_mean_avg_s"])
+ 
+    # --- Save ---
+    metrics_size.to_csv(f"{tables_out}/metrics_size_weights.csv", sep=";", decimal=".", float_format="%.6f")
+    metrics_size_ver.to_csv(f"{tables_out}/metrics_size_and_version_weights.csv", sep=";", decimal=".", float_format="%.6f")
+ 
+    logging.info(f"Metrics (size weights):\n{metrics_size}")
+    logging.info(f"Metrics (size+version weights):\n{metrics_size_ver}")
+
 
 
 
