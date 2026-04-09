@@ -14,6 +14,7 @@ from app.models.TrackingTaskModel import TrackingTaskDto
 from app.services.DeltaCalculationService import IterativeDeltaQueryService, SparqlDeltaQueryService
 from app.utils.HelperService import get_timestamp, obtain_nt, normalize_and_skolemize
 from app.persistance.graphdb.GraphDatabaseUtils import get_count_triples_template, import_serverfile, poll_import_status
+from app.exceptions.VersioningFailedException import VersioningFailedException
 
 class VersioningService(ABC):
     @abstractmethod
@@ -31,6 +32,7 @@ class VersioningService(ABC):
 class StarVersService(VersioningService):
     def __init__(self, tracking_task: TrackingTaskDto, repository_name: str) -> None:
         self.LOG = get_logger(__name__, f"tracking_{tracking_task.name}.log")
+        
         self.tracking_task = tracking_task
         self.local_file = False
         self.repository_name = repository_name
@@ -262,11 +264,7 @@ class StarVersService(VersioningService):
             shutil.make_archive(f"{tmp_work_dir}{version_timestamp_str}", "zip", f"{tmp_work_dir}{version_timestamp_str}")
             shutil.rmtree(f"{tmp_work_dir}{version_timestamp_str}")
 
-            if len(insertions_n3) > 0 or len(deletions_n3) > 0:
-                self.LOG.info(f"Repository name: {self.repository_name}: Tracked {len(insertions_n3)} insertions and {len(deletions_n3)} deletions")
-            else:
-                self.LOG.info(f"Repository name: {self.repository_name}: No changes tracked")
-                self.LOG.info(f"Repository name: {self.repository_name}: Finished versioning task [{version_timestamp}]")
+            self.LOG.info(f"Repository name: {self.repository_name}: Finished versioning task [{version_timestamp}]")
                 
             return DeltaEvent(
                 id=self.tracking_task.id,
@@ -280,7 +278,6 @@ class StarVersService(VersioningService):
                 )
         except Exception as e:
             self.LOG.error(f"Repository name: {self.repository_name}: Versioning task failed with error {e}")
-            self.LOG.info(f"Repository name: {self.repository_name}: Versioning task will be rescheduled...")
             self.__delta_sparql.clean_up()
             
-            return None
+            raise VersioningFailedException(self.repository_name, f"Versioning task failed with error {e}")

@@ -37,7 +37,7 @@ class ScheduledThreadPoolExecutor(ThreadPoolExecutor):
         if is_scheduled:
             LOG.info(f"Repository name: {repository_name}: Task was put into queue.")
         else:
-            LOG.warning(f"Repository name: {repository_name}: Task was not scheduled.")
+            LOG.warning(f"Repository name: {repository_name}: Task was not put into queue.")
 
         return is_scheduled
     

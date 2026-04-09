@@ -3,10 +3,11 @@ FROM python:3.11 AS python-backend
 
 WORKDIR /code
 
-COPY src/starversserver/requirements.txt /code/requirements.txt
-COPY src/starversserver/app /code/app
-COPY src/starvers /code/app/utils/starvers
+# Is currently bound in the docker-compose service
+#COPY src/starversserver/app /code/app
+#COPY src/starvers /code/app/utils/starvers
 
+COPY src/starversserver/requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 ENV PYTHONPATH="/code"
@@ -15,7 +16,7 @@ ENV PYTHONPATH="/code"
 FROM maven:3.9.6-eclipse-temurin-11 AS rdfvalidator
 
 # Copy only the validator source and POM
-COPY --from=python-backend /code/app/utils/RDFValidator /code/app/utils/RDFValidator
+COPY /src/starversserver/app/utils/RDFValidator /code/app/utils/RDFValidator
 WORKDIR /code/app/utils/RDFValidator
 
 # Build the shaded JAR with all dependencies
@@ -30,14 +31,14 @@ WORKDIR /code
 # Copy Python app from python-backend stage
 COPY --from=python-backend /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=python-backend /usr/local/bin /usr/local/bin 
-COPY --from=python-backend /code /code
+#COPY --from=python-backend /code /code
 
 # Copy compiled validator JAR from rdfvalidator stage
 COPY --from=rdfvalidator /code/app/utils/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar /code/app/utils/rdfvalidator-1.0-jar-with-dependencies.jar
 
-COPY src/starversserver/app/gui /code/app/gui
-COPY src/starversserver/app/AppConfig.py /code/app/AppConfig.py
-COPY src/starversserver/app/LoggingConfig.py /code/app/LoggingConfig.py
+#COPY src/starversserver/app/gui /code/app/gui
+#COPY src/starversserver/app/AppConfig.py /code/app/AppConfig.py
+#COPY src/starversserver/app/LoggingConfig.py /code/app/LoggingConfig.py
 
 ENV PYTHONPATH="/code"
 

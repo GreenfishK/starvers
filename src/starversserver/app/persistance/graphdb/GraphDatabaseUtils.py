@@ -30,6 +30,29 @@ def create_engine(repository_name: str, auth = DIGEST, method = POST, return_for
 
     return sparql_engine
 
+    
+def set_query_timeout(repository_name: str, timeout_seconds: int):
+    # GET current config
+    get_resp = requests.get(
+        f"{Settings().graph_db_url}/rest/repositories/{repository_name}",
+        headers={"Accept": "application/json"}
+    )
+    get_resp.raise_for_status()
+    config = get_resp.json()
+
+    # Set the timeout
+    config["params"]["queryTimeout"]["value"] = str(timeout_seconds)
+
+    # PUT the full config back
+    put_resp = requests.put(
+        f"{Settings().graph_db_url}/rest/repositories/{repository_name}",
+        json=config,
+        headers={"Accept": "application/json"}
+    )
+    put_resp.raise_for_status()
+    get_logger(__name__).info(f"queryTimeout set to {timeout_seconds}s")
+
+
 # Implementation for Graph DB
 def create_repository(repository_name: str): 
     repoConfig = __load_repo_config_file()

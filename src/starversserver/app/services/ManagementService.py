@@ -9,9 +9,10 @@ import pandas as pd
 
 from app.models.DatasetModel import Dataset, DatasetCreate, Snapshot
 from app.services import ScheduledThreadPoolExecutor
-from app.persistance.graphdb.GraphDatabaseUtils import create_repository
+from app.persistance.graphdb.GraphDatabaseUtils import create_repository, set_query_timeout
 from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 from app.LoggingConfig import get_logger
+from app.AppConfig import Settings
 
 LOG = get_logger(__name__)
 
@@ -148,17 +149,20 @@ def delete_all(session: Session) -> List[Dataset]:
 
 def restart(session: Session):
     # Query active dataset from database
-    active_graphs = get_all(session)
+    active_datasets = get_all(session)
 
     # Restart active versioning tasks
-    LOG.info(f'Restart {len(active_graphs)} active versioning task')
-    for graph in active_graphs:
-        __start(session, graph, False)
-        pass
+    LOG.info(f'Restart {len(active_datasets)} active versioning task')
+    for dataset in active_datasets:
+        __start(session, dataset, False)
 
 def __start(session: Session, dataset: Dataset, initial_run:bool=True):
     # Create triple store repository if it does not exist
     create_repository(dataset.repository_name)
+
+    # Set timeout for all repositories
+    LOG.info(f'Set query timeout for {dataset} active repositories')
+    set_query_timeout(dataset.repository_name, Settings().timeout)
 
     # Polling, delta calculation, versioning
     LOG.info(f"Repository name: {dataset.repository_name}: Query latest timestamp from snapshot table.")
@@ -166,3 +170,4 @@ def __start(session: Session, dataset: Dataset, initial_run:bool=True):
     
     LOG.info(f"Repository name: {dataset.repository_name}: Latest timestamp: {latest_timestamp}")
     polling_executor.schedule_polling_at_fixed_rate(dataset.id, dataset.repository_name, latest_timestamp, dataset.polling_interval, initial_run=initial_run)
+
