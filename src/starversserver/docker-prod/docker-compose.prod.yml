@@ -5,9 +5,8 @@ services:
     ports:
       - 5001:5000
     volumes:
-      - ../app/gui:/code/app/gui
-      - ../app/AppConfig.py:/code/app/AppConfig.py
-      - ../app/LoggingConfig.py:/code/app/LoggingConfig.py
+      - ../app:/code/app
+      - ../../starvers:/code/app/utils/starvers
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
     depends_on:
@@ -31,6 +30,8 @@ services:
       - 8000:8000 # default univcorn
     env_file: "./prod.env"
     volumes:
+      - ../app:/code/app
+      - ../../starvers:/code/app/utils/starvers
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs
       - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import

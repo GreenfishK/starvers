@@ -20,7 +20,9 @@ class GuiContr:
         self.repo_name = repo_name
         self.__graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repo_name)
         self.__graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', repo_name)
-        self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint, skip_connection_test=True)
+        self.__starvers_engine = TripleStoreEngine(self.__graph_db_get_endpoint, self.__graph_db_post_endpoint,
+        skip_connection_test=True, timeout=Settings().timeout)
+        
         try:
             session = next(get_session())
             self.dataset_infos = get_dataset_metadata_by_repo_name(repo_name, session)
@@ -45,8 +47,8 @@ class GuiContr:
             logger.info(f"Result set contains {len(result_set_df)} records.")
             timestamped_query = self.__starvers_engine.timestamped_query
             timestamped_query = timestamped_query.lstrip()
-        except Exception as e:
-            raise Exception(f"Error executing query: {e}")
+        except TimeoutError as e:
+            raise Exception(f"Timeout of {self.__starvers_engine.timeout} seconds exceeded: {e}")
 
         return result_set_df, timestamped_query
 

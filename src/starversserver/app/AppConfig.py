@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     graph_db_url_get_endpoint: str = Field(alias='GRAPH_DB_URL_GET')
     graph_db_url_post_endpoint: str = Field(alias='GRAPH_DB_URL_POST')
     evaluation_mode: bool = Field(alias="EVALUATION_MODE", default=False)
+    timeout: int = Field(alias="TIMEOUT", default=10)
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 

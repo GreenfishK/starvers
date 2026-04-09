@@ -12,7 +12,6 @@ import logging
 import time
 from zoneinfo import ZoneInfo
 from typing import Optional
-from datetime import datetime
 from typing import Union
 import rdflib
 from rdflib.term import Variable, Identifier, URIRef
@@ -207,7 +206,7 @@ class TripleStoreEngine:
             self.pw = pw
 
     def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Optional[Credentials] = None,
-                 skip_connection_test: bool=False):
+                 skip_connection_test: bool=False, timeout: Optional[int] = 120):
         """
         During initialization a few queries are executed against the RDF-star store to test connection but also whether
         the RDF-star store in fact supports the 'star' extension. During the execution a side effect may occur and
@@ -231,17 +230,21 @@ class TripleStoreEngine:
         self.sparql_get.setHTTPAuth(DIGEST)
         self.sparql_get.setMethod(GET)
         self.sparql_get.setReturnFormat(JSON)
+        self.sparql_get.setTimeout(timeout)
 
         self.sparql_get_with_post = SPARQLWrapper(query_endpoint)
         self.sparql_get_with_post.setHTTPAuth(DIGEST)
         self.sparql_get_with_post.setMethod(POST)
         self.sparql_get_with_post.setReturnFormat(JSON)
+        self.sparql_get_with_post.setTimeout(timeout)
 
         self.sparql_post = SPARQLWrapper(update_endpoint)
         self.sparql_post.setHTTPAuth(DIGEST)
         self.sparql_post.setMethod(POST)
+        self.sparql_post.setTimeout(timeout)
 
         self.timestamped_query = None
+        self.timeout = timeout
 
         if credentials:
             self.sparql_post.setCredentials(credentials.user_name, credentials.pw)
@@ -410,7 +413,15 @@ class TripleStoreEngine:
         
         #self.sparql_get_with_post.queryType = 'SELECT'
         logger.info("Retrieving results ...")
-        result = self.sparql_get_with_post.query()
+        try:
+            result = self.sparql_get_with_post.query()
+            logging.info("Query executed successfully!")
+        except TimeoutError as e:
+            logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+            raise e
+        except Exception as e:
+            logger.error(f"An error of type {type(e).__name__} occurred during query execution: {e}")
+            raise e
 
         logger.info(f"The result has the return type {result._get_responseFormat()}.")
 
@@ -444,13 +455,19 @@ class TripleStoreEngine:
         self.sparql_get_with_post.setQuery(snapshot_construct_query)
 
         logger.info("Retrieving results ...")
-        result = self.sparql_get_with_post.query().convert().decode("utf-8")
+        try:
+            result = self.sparql_get_with_post.query()
+        except Exception as e:
+            logger.error("An error occurred during query execution: {0}".format(e))
+            raise e
 
+        converted_result = result.convert().decode("utf-8")
+        
         # return to default behaviour
         self.sparql_get_with_post.setReturnFormat('json') 
         self.sparql_get_with_post.clearCustomHttpHeader('Accept')
 
-        return result
+        return converted_result
 
 
     def insert(self, triples: Union[list[str], str], prefixes: Optional[dict[str, str]] = None, timestamp: Optional[datetime] = None, chunk_size: int = 1000):
