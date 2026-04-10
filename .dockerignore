@@ -1,14 +1,4 @@
-.vscode/
-.pytest_cache/
-.ipynb_checkpoints/
-
-build/
-
-tests/__pycache__/
-
-src/starvers/__pycache__/
-src/starvers.egg-info/
-
+evaluation/starvers/output/
 evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/classes/
 evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/archive-tmp/
 evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/generated-sources/

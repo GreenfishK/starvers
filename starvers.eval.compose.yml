@@ -3,9 +3,9 @@ services:
     image: starvers_eval:latest
     container_name: starvers_eval-download
     volumes:
+      - ./evaluation/starvers/scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/1_download:/starvers_eval/scripts/1_download # move to image after development has finished
       - ${base_host_dir}/queries/raw_queries:/starvers_eval/queries/raw_queries
     environment:
       - datasets=${datasets}
@@ -24,9 +24,9 @@ services:
       - ${base_host_dir}/configs/preprocess_data:/starvers_eval/configs/preprocess_data
       - ${base_host_dir}/databases/preprocess_data/graphdb:/starvers_eval/databases/preprocess_data/graphdb
       - ${base_host_dir}/databases/preprocess_data/ostrich:/starvers_eval/databases/preprocess_data/ostrich
-      - ./scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
-      - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/construct_queries
-      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+      - ./evaluation/starvers/scripts_dev/2_preprocess_data:/starvers_eval/scripts/2_preprocess_data # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/5_construct_queries:/starvers_eval/scripts/construct_queries
+      - ./evaluation/starvers/scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
 
     ports:
       - 7350:7200
@@ -34,7 +34,6 @@ services:
     environment:
       - datasets=bearb_day bearb_hour bearc orkg
     entrypoint: [/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh]
-    #entrypoint: ["python3", "/starvers_eval/scripts/2_preprocess_data/parse_SciQA_queries.py"]
   
   construct_datasets:
     image: starvers_eval:latest
@@ -49,7 +48,7 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
       - ${base_host_dir}/configs/construct_datasets:/starvers_eval/configs/construct_datasets
-      - ./scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/3_construct_datasets:/starvers_eval/scripts/3_construct_datasets # move to image after development has finished
     environment:
       - datasets=${datasets}
       - skip_change_sets=${skip_change_sets}
@@ -70,8 +69,8 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/configs/ingest:/starvers_eval/configs/ingest
       - ${base_host_dir}/tmp/tmp_ingest:/tmp
-      - ./scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
-      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+      - ./evaluation/starvers/scripts_dev/4_ingest:/starvers_eval/scripts/4_ingest # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     environment:
       - datasets=${datasets}
       - triple_stores=${triple_stores} 
@@ -87,7 +86,7 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/queries/raw_queries:/starvers_eval/queries/raw_queries
       - ${base_host_dir}/queries/final_queries:/starvers_eval/queries/final_queries
-      - ./scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/5_construct_queries:/starvers_eval/scripts/5_construct_queries # move to image after development has finished
     environment:
       - policies=${policies}    
       - datasets=${datasets}
@@ -104,8 +103,8 @@ services:
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
       - ${base_host_dir}/tmp/tmp_evaluate:/tmp
-      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
-      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+      - ./evaluation/starvers/scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     hostname: Starvers
     mem_limit: 75g
     extra_hosts:
@@ -126,7 +125,7 @@ services:
     volumes:
       - ${base_host_dir}/output/logs:/starvers_eval/output/logs
       - ${base_host_dir}/output/result_sets:/starvers_eval/output/result_sets
-      - ./scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/6_evaluate:/starvers_eval/scripts/6_evaluate # move to image after development has finished
     environment:
       - triple_stores=${triple_stores}
       - policies=${policies}
@@ -142,7 +141,7 @@ services:
       - ${base_host_dir}/output/figures:/starvers_eval/output/figures
       - ${base_host_dir}/output/tables:/starvers_eval/output/tables     
       - ${base_host_dir}/output/measurements:/starvers_eval/output/measurements
-      - ./scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
+      - ./evaluation/starvers/scripts_dev/7_visualize:/starvers_eval/scripts/7_visualize # move to image after development has finished
     environment:
       - policies=${policies}  
       - datasets=${datasets}
@@ -249,7 +248,7 @@ services:
     volumes:
       - ${base_host_dir}/databases/onyxgraph:/starvers_eval/databases/onyxgraph
       - ${base_host_dir}/rawdata:/starvers_eval/rawdata
-      - ./scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
+      - ./evaluation/starvers/scripts_dev/triple_store_mgmt:/starvers_eval/scripts/triple_store_mgmt
     entrypoint: ["/starvers_eval/scripts/triple_store_mgmt/onyxgraph_mgmt.sh", "ingest", "/starvers_eval/databases/onyxgraph", "/starvers_eval/rawdata/orkg/alldata.ICNG.trig", "ic_sr_ng", "orkg", "dummy_config_dir"]
     
 networks:

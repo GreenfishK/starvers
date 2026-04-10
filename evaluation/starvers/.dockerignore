@@ -1,6 +1,0 @@
-output/
-.git
-scripts_dev/2_clean_raw_datasets/RDFValidator/target/classes/
-scripts_dev/2_clean_raw_datasets/RDFValidator/target/archive-tmp/
-scripts_dev/2_clean_raw_datasets/RDFValidator/target/generated-sources/
-scripts_dev/2_clean_raw_datasets/RDFValidator/target/maven-status/
