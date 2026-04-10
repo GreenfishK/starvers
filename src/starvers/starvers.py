@@ -206,7 +206,7 @@ class TripleStoreEngine:
             self.pw = pw
 
     def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Optional[Credentials] = None,
-                 skip_connection_test: bool=False, timeout: Optional[int] = 120):
+                 skip_connection_test: bool=False, timeout: Optional[int] = None):
         """
         During initialization a few queries are executed against the RDF-star store to test connection but also whether
         the RDF-star store in fact supports the 'star' extension. During the execution a side effect may occur and
@@ -230,21 +230,23 @@ class TripleStoreEngine:
         self.sparql_get.setHTTPAuth(DIGEST)
         self.sparql_get.setMethod(GET)
         self.sparql_get.setReturnFormat(JSON)
-        self.sparql_get.setTimeout(timeout)
 
         self.sparql_get_with_post = SPARQLWrapper(query_endpoint)
         self.sparql_get_with_post.setHTTPAuth(DIGEST)
         self.sparql_get_with_post.setMethod(POST)
         self.sparql_get_with_post.setReturnFormat(JSON)
-        self.sparql_get_with_post.setTimeout(timeout)
 
         self.sparql_post = SPARQLWrapper(update_endpoint)
         self.sparql_post.setHTTPAuth(DIGEST)
         self.sparql_post.setMethod(POST)
-        self.sparql_post.setTimeout(timeout)
 
         self.timestamped_query = None
-        self.timeout = timeout
+
+        if timeout is not None:
+            self.sparql_get.setTimeout(timeout)
+            self.sparql_get_with_post.setTimeout(timeout)
+            self.sparql_post.setTimeout(timeout)
+            self.timeout = timeout
 
         if credentials:
             self.sparql_post.setCredentials(credentials.user_name, credentials.pw)
@@ -382,7 +384,11 @@ class TripleStoreEngine:
         update_statement = temp.format(final_prefixes, version_timestamp)
 
         self.sparql_post.setQuery(update_statement)
-        self.sparql_post.query()
+        try:
+            self.sparql_post.query()
+        except TimeoutError as e:
+            logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+            raise e
         logger.info("All rows have been annotated with start date {0} " \
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
@@ -457,6 +463,9 @@ class TripleStoreEngine:
         logger.info("Retrieving results ...")
         try:
             result = self.sparql_get_with_post.query()
+        except TimeoutError as e:
+            logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+            raise e
         except Exception as e:
             logger.error("An error occurred during query execution: {0}".format(e))
             raise e
@@ -526,7 +535,11 @@ class TripleStoreEngine:
             else:
                 insert_statement = statement.format(sparql_prefixes, insert_chunk, "NOW()")
             self.sparql_post.setQuery(insert_statement)
-            self.sparql_post.query()
+            try:
+                self.sparql_post.query()
+            except TimeoutError as e:
+                logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+                raise e
         logger.info("Triples inserted.")
 
 
@@ -578,7 +591,11 @@ class TripleStoreEngine:
             update_chunk = "\n".join(update_block[i:min(i+chunk_size, len(update_block))])
             update_statement = template.format(sparql_prefixes, update_chunk)
             self.sparql_post.setQuery(update_statement)
-            self.sparql_post.query()
+            try:
+                self.sparql_post.query()
+            except TimeoutError as e:
+                logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+                raise e
         logger.info("Triples updated.")
         
 
@@ -638,7 +655,12 @@ class TripleStoreEngine:
             else:
                 outdate_statement = statement.format(sparql_prefixes, outdate_chunk, "NOW()")
             self.sparql_post.setQuery(outdate_statement)
-            self.sparql_post.query()
+            
+            try:
+                self.sparql_post.query()
+            except TimeoutError as e:
+                logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
+                raise e
         logger.info("Triples outdated.")
 
     

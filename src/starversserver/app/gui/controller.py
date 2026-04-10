@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional, Tuple
 
 # starvers and starversServer imports
 from app.utils.starvers.starvers import TripleStoreEngine
-from app.services.ManagementService import get_dataset_metadata_by_repo_name, get_snapshot_stats_by_repo_name_and_snapshot_ts
+from app.services.dataset_repository import get_dataset_metadata_by_repo_name, get_snapshot_stats
 from app.persistance.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
 from app.AppConfig import Settings
@@ -44,10 +44,13 @@ class GuiContr:
         timestamped_query = ""
         try:
             result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+            
             logger.info(f"Result set contains {len(result_set_df)} records.")
             timestamped_query = self.__starvers_engine.timestamped_query
             timestamped_query = timestamped_query.lstrip()
         except TimeoutError as e:
+            # Does only catch timeout from the http request, not the database query itself, 
+            # which can have a different timeout.
             raise Exception(f"Timeout of {self.__starvers_engine.timeout} seconds exceeded: {e}")
 
         return result_set_df, timestamped_query
@@ -251,7 +254,7 @@ class GuiContr:
         repo_name: str = self.repo_name
         session = next(get_session())
         snapshot_ts_dt: datetime = datetime.fromisoformat(snapshot_ts)
-        raw_df: pd.DataFrame = get_snapshot_stats_by_repo_name_and_snapshot_ts(repo_name, snapshot_ts_dt, session)
+        raw_df: pd.DataFrame = get_snapshot_stats(repo_name, snapshot_ts_dt, session)
         session.close()
 
         if raw_df.empty:

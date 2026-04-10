@@ -18,7 +18,7 @@ services:
   compute:
     image: starversserver_eval
     container_name: starvers-compute_prod
-    env_file: "./prod.env"
+    env_file: "./starversserver.eval.env"
     depends_on:
       db:
         condition: service_started
@@ -36,7 +36,7 @@ services:
   create_plots:
     image: starversserver_eval
     container_name: starvers-create-plots_prod
-    env_file: "./prod.env"
+    env_file: "./starversserver.eval.env"
     volumes:
       - ${data_storage}/evaluation:/data/evaluation
       - ${data_storage}/logs:/data/logs

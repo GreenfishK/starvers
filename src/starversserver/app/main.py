@@ -1,47 +1,53 @@
 import random
 import string
 import time
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+
+import uvicorn
 from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.persistance.Database import Session, engine, create_db_and_tables
-
 from app.LoggingConfig import get_logger, setup_logging
-from app.api import ManagementRestService, MockRestService, QueryRestService
+from app.api import mock_router, management_router, query_router
 from app.models.DeltaEventModel import DeltaEvent
-from app.services.ManagementService import restart
+from app.services.tracking_service import restart_active_tracking_tasks
 from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
-import uvicorn
-
 from app.exceptions.RepositoryCreationFailedException import GraphRepositoryCreationFailedException
 from app.exceptions.ServerFileImportFailedException import ServerFileImportFailedException
 
 LOG = get_logger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Application lifespan: startup and shutdown hooks
+# ---------------------------------------------------------------------------
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    LOG.info("Setting up logging...")
     setup_logging()
-
     LOG.info("Creating database tables...")
     create_db_and_tables()
 
-    LOG.info("Starting mocking service")
-    MockRestService.tl.start()
+    LOG.info("Starting mock service...")
+    mock_router.tl.start()
 
+    # Re-schedule any datasets that were active before a restart
     with Session(engine) as session:
-        restart(session)
+        restart_active_tracking_tasks(session)
+
     yield
 
-    # optional action after terminating application here
-    MockRestService.tl.stop()
+    mock_router.tl.stop()
 
+
+# ---------------------------------------------------------------------------
+# FastAPI app setup
+# ---------------------------------------------------------------------------
 
 app = FastAPI(lifespan=lifespan)
-
-app.openapi_tags = [ManagementRestService.tag_metadata]
+app.openapi_tags = [management_router.tag_metadata]
 
 app.add_middleware(
     CORSMiddleware,
@@ -51,52 +57,58 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(ManagementRestService.router)
-app.include_router(QueryRestService.router)
-app.include_router(MockRestService.router)
+app.include_router(management_router.router)
+app.include_router(query_router.router)
+app.include_router(mock_router.router)
+
+
+# ---------------------------------------------------------------------------
+# Request logging middleware
+# ---------------------------------------------------------------------------
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    LOG.info(f"rid={idem} start request path={request.url.path}")
+    request_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    LOG.info(f"rid={request_id} start path={request.url.path}")
+
     start_time = time.time()
-    
     response = await call_next(request)
-    
-    process_time = (time.time() - start_time) * 1000
-    formatted_process_time = '{0:.2f}'.format(process_time)
-    LOG.info(f"rid={idem} completed_in={formatted_process_time}ms status_code={response.status_code}")
-    
+    elapsed_ms = '{0:.2f}'.format((time.time() - start_time) * 1000)
+
+    LOG.info(f"rid={request_id} completed_in={elapsed_ms}ms status={response.status_code}")
     return response
 
+
+# ---------------------------------------------------------------------------
+# Exception handlers
+# ---------------------------------------------------------------------------
+
 @app.exception_handler(DatasetNotFoundException)
-async def dataset_not_found_exception_handler(request: Request, exc: DatasetNotFoundException):
-    return JSONResponse(
-        status_code=404,
-        content={"message": f"Oops! Dataset with id {exc.id} not found!"},
-    )
+async def handle_dataset_not_found(request: Request, exc: DatasetNotFoundException):
+    return JSONResponse(status_code=404, content={"message": f"Dataset with id {exc.id} not found."})
+
 
 @app.exception_handler(GraphRepositoryCreationFailedException)
-async def graph_creation_failed_exception_handler(request: Request, exc: GraphRepositoryCreationFailedException):
-    return JSONResponse(
-        status_code=400,
-        content={"message": f"Oops! Creation for Repository with name {exc.repository_name}! [{exc.error}]"},
-    )
+async def handle_graph_creation_failed(request: Request, exc: GraphRepositoryCreationFailedException):
+    return JSONResponse(status_code=400, content={"message": f"Failed to create repository '{exc.repository_name}': {exc.error}"})
+
 
 @app.exception_handler(ServerFileImportFailedException)
-async def serverfile_import_failed_exception_handler(request: Request, exc: ServerFileImportFailedException):
-    return JSONResponse(
-        status_code=400,
-        content={"message": f"Oops! Importing server file for Repository with name {exc.repository_name} failed! [{exc.error}]"},
-    )
+async def handle_serverfile_import_failed(request: Request, exc: ServerFileImportFailedException):
+    return JSONResponse(status_code=400, content={"message": f"Failed to import server file for repository '{exc.repository_name}': {exc.error}"})
+
+
+# ---------------------------------------------------------------------------
+# Webhook documentation stub
+# ---------------------------------------------------------------------------
 
 @app.webhooks.post("delta-event")
 def delta_event_notification(body: DeltaEvent):
     """
-    When someone subscribes to the DeltaQueryService results, the service will send a POST request to the registered URL
-    every time a delta was calculated. The request payload contains relevant data to be able to query the corresponding rdf dataset.
+    Subscribers receive a POST to their registered URL each time a delta is calculated.
+    The payload contains enough information to query the corresponding RDF dataset.
     """
 
-# for manual start via python main.py
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
