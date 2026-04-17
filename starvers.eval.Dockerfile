@@ -98,8 +98,11 @@ FROM python:3.11-slim-bookworm AS python_base
 WORKDIR /starvers_eval
 
 COPY src/starvers /starvers_eval/starvers
-COPY evaluation/starvers/scripts_dev/requirements.txt            .
+COPY evaluation/starvers/scripts_dev/requirements.txt .
+COPY evaluation/starvers/gui .
 COPY evaluation/starvers/scripts_dev/eval_setup.toml  /starvers_eval/configs/eval_setup.toml
+COPY evaluation/starvers/scripts_dev /starvers_eval/scripts
+COPY run_starvers_eval.py /starvers_eval/run_starvers_eval.py
 
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -149,14 +152,6 @@ COPY --from=python_base /starvers_eval         /starvers_eval
 COPY --from=python_base /usr/local/lib/python3.11/site-packages \
                         /usr/local/lib/python3.11/site-packages
 
-# ── Directory structure ───────────────────────────────
-RUN mkdir -p \
-    /starvers_eval/databases \
-    /starvers_eval/output/{logs,measurements,result_sets,figures} \
-    /starvers_eval/rawdata \
-    /starvers_eval/queries/raw_queries/{beara/{low,high},bearb/{lookup,join},bearc/complex,orkg/complex} \
-    /starvers_eval/scripts/{1_download,2_preprocess_data,3_construct_datasets,4_ingest,5_construct_queries,6_evaluate,7_visualize}
-
 # ── System packages ───────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash coreutils procps grep sed curl bc wget iproute2 \
@@ -177,7 +172,8 @@ ENV PATH=/usr/local/bin:$PATH
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV NODE_PATH=/usr/local/lib/node_modules:/opt/comunica-feature-versioning/node_modules
-
+ENV DATA_DIR=/mnt/data/starvers_eval
+ENV PORT=8080
 ENV GDB_JAVA_OPTS='\
 -Xms10g -Xmx70g \
 -Dgraphdb.dist=/opt/graphdb/dist \
@@ -189,7 +185,15 @@ ENV GDB_JAVA_OPTS='\
 -Dhealth.max.query.time.seconds=30 \
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
-
 ENV FUSEKI_HOME=/jena-fuseki
 ENV JVM_ARGS='-Xms10g -Xmx80g'
 ENV ADMIN_PASSWORD=starvers
+
+# ── Expose ports ────────────────────────────────────── 
+
+# for starvers gui
+EXPOSE 8080 
+
+ENTRYPOINT [ "python", "/starvers_eval/run_starvers_eval.py" ]
+# Expect additional arguments to specify which evaluation to run, e.g.: python run_starvers_eval.py run all
+CMD [ "run", "all" ]

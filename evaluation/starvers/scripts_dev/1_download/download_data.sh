@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/download/downloads.txt
+log_file=$RUN_DIR/output/logs/download/downloads.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
 # Prepare directories and files
-rm -rf /starvers_eval/output/logs/download
-mkdir -p /starvers_eval/output/logs/download
+rm -rf $RUN_DIR/output/logs/download
+mkdir -p $RUN_DIR/output/logs/download
 > $log_file
 
 # Path variables
@@ -19,7 +19,7 @@ registered_datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/
 echo "$(log_timestamp) ${log_level}: Registered datasets are ${registered_datasets} ..." >> $log_file
 
 ######################################################
-# Datasets
+# Datasets: BEAR and ORKG
 ######################################################
 for dataset in ${datasets[@]}; do
 
@@ -34,35 +34,39 @@ for dataset in ${datasets[@]}; do
     archive_name_ng_dataset=`grep -A 8 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'archive_name_ng_dataset' | awk '{print $3}' | sed 's/"//g'`
     yn_nested_archives=`grep -A 8 -E "\[datasets\.${dataset}\]" /starvers_eval/configs/eval_setup.toml | grep 'yn_nested_archives' | awk '{print $3}' | sed 's/"//g'`
 
+    # tar
     echo "$(log_timestamp) ${log_level}: Downloading ${dataset} snapshots..." >> $log_file
-    wget -t 3 -c -P /starvers_eval/rawdata/${dataset} ${download_link_snapshots}
-    mkdir -p /starvers_eval/rawdata/${dataset}/${snapshot_dir}
+    wget -t 3 -c -P $RUN_DIR/rawdata/${dataset} ${download_link_snapshots}
+    mkdir -p $RUN_DIR/rawdata/${dataset}/${snapshot_dir}
     echo "$(log_timestamp) ${log_level}: Extracting ${dataset} snapshots..." >> $log_file
-    tar -xf /starvers_eval/rawdata/${dataset}/${archive_name_snapshots} -C /starvers_eval/rawdata/${dataset}/${snapshot_dir}
-    
+    tar -xf $RUN_DIR/rawdata/${dataset}/${archive_name_snapshots} -C $RUN_DIR/rawdata/${dataset}/${snapshot_dir}
+
     if [[ $yn_nested_archives == "true" ]]; then
-        cd /starvers_eval/rawdata/${dataset}/${snapshot_dir}
-        for f in *.gz ; do gzip -d < "$f" > /starvers_eval/rawdata/${dataset}/${snapshot_dir}/"${f%.*}" ; done
+        cd $RUN_DIR/rawdata/${dataset}/${snapshot_dir}
+        for f in *.gz ; do gzip -d < "$f" > $RUN_DIR/rawdata/${dataset}/${snapshot_dir}/"${f%.*}" ; done
         rm *.gz
     fi
     
+    # gz
     echo "$(log_timestamp) ${log_level}: Downloading ${dataset} named graphs dataset..." >> $log_file
-    wget -t 3 -c -P /starvers_eval/rawdata/${dataset} ${download_link_ng_dataset}
+    wget -t 3 -c -P $RUN_DIR/rawdata/${dataset} ${download_link_ng_dataset}
     echo "$(log_timestamp) ${log_level}: Extracting ${dataset} named graphs dataset..." >> $log_file
-    gzip -d < /starvers_eval/rawdata/${dataset}/${archive_name_ng_dataset} > /starvers_eval/rawdata/${dataset}/alldata.TB.nq
+    gzip -d < $RUN_DIR/rawdata/${dataset}/${archive_name_ng_dataset} > $RUN_DIR/rawdata/${dataset}/alldata.TB.nq
     
     # for CB and CBNG policy: empty initial delete changeset
     # For filtering ORKG queries. Send them against an empty repository
-    > /starvers_eval/rawdata/${dataset}/empty.nt 
+    > $RUN_DIR/rawdata/${dataset}/empty.nt 
     
     echo "$(log_timestamp) ${log_level}: Downloading and extracting ${dataset} datasets finished." >> $log_file
 
 done
 
+
+
 ######################################################
 # Query sets
 ######################################################
-raw_queries_path=/starvers_eval/queries/raw_queries
+raw_queries_path=$RUN_DIR/queries/raw_queries
 # Download BEAR query sets and extract queries
 
 # Create directories
@@ -107,7 +111,7 @@ for ((i=1; i<=10; i++)); do
   wget -t 3 -c -P ${raw_queries_path}/bearc/complex "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q${i}.txt"
 done
 
-# SciQA complex
+# SciQA complex (ORKG)
 wget -t 3 -c -O ${raw_queries_path}/orkg/complex/SciQA-dataset.zip https://zenodo.org/records/7744048/files/SciQA-dataset.zip?download=1
 unzip ${raw_queries_path}/orkg/complex/SciQA-dataset.zip -d ${raw_queries_path}/orkg/complex
 

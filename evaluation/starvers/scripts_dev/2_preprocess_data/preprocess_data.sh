@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/preprocess_data/clean_datasets.txt
+log_file=$RUN_DIR/output/logs/preprocess_data/clean_datasets.txt
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
@@ -13,8 +13,8 @@ export JAVA_HOME=/opt/java/java11/openjdk
 export PATH=/opt/java/java11/openjdk/bin:$PATH
 
 # Prepare directories and files
-rm -rf /starvers_eval/output/logs/preprocess_data
-mkdir -p /starvers_eval/output/logs/preprocess_data
+rm -rf $RUN_DIR/output/logs/preprocess_data
+mkdir -p $RUN_DIR/output/logs/preprocess_data
 > $log_file
 
 # Path variables
@@ -61,8 +61,8 @@ for dataset in ${datasets[@]}; do
         esac
 
         # Checking path existance
-        if [[ "$ds_var" == "BEAR_ng" && ! -f "/starvers_eval/rawdata/$dataset/alldata.TB.nq" ]]; then
-            echo "$(log_timestamp) ${log_level}:The BEAR named graphs dataset does not exist at /starvers_eval/rawdata/$dataset/alldata.TB.nq. Skipping processing of this dataset." >> $log_file
+        if [[ "$ds_var" == "BEAR_ng" && ! -f "$RUN_DIR/rawdata/$dataset/alldata.TB.nq" ]]; then
+            echo "$(log_timestamp) ${log_level}:The BEAR named graphs dataset does not exist at $RUN_DIR/rawdata/$dataset/alldata.TB.nq. Skipping processing of this dataset." >> $log_file
             continue
         fi
 
@@ -70,7 +70,7 @@ for dataset in ${datasets[@]}; do
         for c in $(seq -f $file_name_struc 1 ${versions})
         do
             base_name=`eval echo $base_name_tmpl`
-            raw_ds=`eval echo /starvers_eval/rawdata/$dataset/${ds_rel_path}`
+            raw_ds=`eval echo $RUN_DIR/rawdata/$dataset/${ds_rel_path}`
             clean_ds=${raw_ds/${base_name}/${base_name}_clean}
 
             # Skolemize blank nodes in subject position
@@ -96,11 +96,11 @@ for dataset in ${datasets[@]}; do
             fi
 
             # Comment out invalid triples as defined by rdf4j and rio parser
-            # TODO: change path to $SCRIPT_DIR/2_clean_raw_datasets/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
+            # TODO: change path to $SCRIPT_DIR/2_preprocess_data/rdfvalidator-1.0-jar-with-dependencies.jar once you move the RDFValidator to the docker image
             echo "$(log_timestamp) ${log_level}:Validating $raw_ds" >> $log_file
             first_line=`head -3 $raw_ds | grep -E -m 1 '^# invalid_lines_excluded'`
             if [[ -z "$first_line" ]]; then
-                java -jar $SCRIPT_DIR/2_clean_raw_datasets/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
+                java -jar $SCRIPT_DIR/2_preprocess_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar $raw_ds $clean_ds
                 mv $clean_ds $raw_ds
                 excluded_lines=`grep -c '^# ' ${raw_ds}`
                 excluded_lines=$(($excluded_lines - 2))

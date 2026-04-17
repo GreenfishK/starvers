@@ -6,7 +6,7 @@ import os
 from rdflib import Graph
 import pandas as pd
 
-from app.exceptions import DatasetNotFoundException
+from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 from app.LoggingConfig import get_logger
 
 LOG = get_logger(__name__)
