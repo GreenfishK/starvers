@@ -103,9 +103,172 @@ Result set:
 | <http://example.com/Obama> | <http://example.com/President> |
 | <http://example.com/Hamilton> | <http://example.com/Formel1Driver> |
 
-# Evaluation of RDF-based versioning approaches
-## Starvers
-See the README file in the [evaluation](https://github.com/GreenfishK/starvers/blob/main/evaluation/starvers/README.md) directory.
 
-## Starversserver
-TBD
+# Evaluation 
+
+The two Python scripts `run_starvers_eval.py` and `run_starversserver_eval.py` replace
+direct `docker compose run` invocations with a managed orchestration layer that records
+start/end times per step and supports resuming interrupted runs.
+
+---
+
+## Starvers Evaluation
+
+### Pipeline Steps
+
+| # | Step | Docker-Compose Service |
+|---|------|------------------------|
+| 1 | download | `download` |
+| 2 | preprocess_data | `preprocess_data` |
+| 3 | construct_datasets | `construct_datasets` |
+| 4 | ingest | `ingest` |
+| 5 | construct_queries | `construct_queries` |
+| 6 | evaluate | `evaluate` |
+| 7 | visualize | `visualize` |
+
+Each step is a `docker compose run --rm <service>` call using `starvers.eval.compose.yml`.
+Infrastructure-level variables (volume paths, etc.) are read from the `.env` file as defined
+in the compose file.
+
+### Run the full pipeline
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest run all
+```
+
+### Run a single step
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest run step download
+```
+
+### Run from a specific step
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest run from construct_datasets
+```
+
+### Continue a previously interrupted run
+
+The orchestrator records each step's start time, end time, and status in
+`/mnt/data/starvers_eval/<timestamp>/execution.csv`. If a run was interrupted
+or a step failed, resume from the last unfinished step:
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest continue
+```
+
+### List all runs
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest list
+```
+
+### Delete old runs
+
+```bash
+# Delete all run directories created before 2026-01-01 00:00:00
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest delete --older-than 20260101T000000
+```
+
+---
+
+## Starversserver Evaluation
+
+### Pipeline Steps
+
+| # | Step | Docker-Compose Service |
+|---|------|------------------------|
+| 1 | compute | `compute` |
+| 2 | create_plots | `create_plots` |
+
+Steps are run via `starversserver.eval.compose.yml` with runtime variables from
+`starversserver.eval.env` and infrastructure variables from `.env`.
+
+### Run the full pipeline
+
+```bash
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd):/workspace \
+  -v /mnt/data/starversserver_eval:/mnt/data/starversserver_eval \
+  -w /workspace \
+  python:3.11-slim \
+  python run_starversserver_eval.py run all
+```
+
+### Run a single step
+
+```bash
+python run_starversserver_eval.py run step compute
+```
+
+### Run from a specific step
+
+```bash
+python run_starversserver_eval.py run from create_plots
+```
+
+### Continue a previously interrupted run
+
+```bash
+python run_starversserver_eval.py continue
+```
+
+### List / delete runs
+
+```bash
+python run_starversserver_eval.py list
+python run_starversserver_eval.py delete --older-than 20260101T000000
+```
+
+---
+
+## Monitoring GUIs
+
+Both pipelines have a web-based monitoring GUI backed by a small Flask API that
+reads the `execution.csv` files written by the orchestrators.
+
+### Starvers GUI
+
+Run the gui:
+
+```bash
+docker run -d --rm \
+--env-file .env \
+-v /mnt/data/starvers_eval:/mnt/data/starvers_eval \
+-p 8080:8080 \
+starvers_eval:latest python /starvers_eval/evaluation/gui/api.py
+```
+
+### Starversserver GUI
+
+```bash
+docker build -t starversserver-gui evaluation/starversserver/gui/
+
+docker run -d \
+  --name starversserver-gui \
+  --network starvers_prod_net \
+  -v /mnt/data/starversserver_eval:/mnt/data/starversserver_eval:ro \
+  -p 8081:8081 \
+  starversserver-gui
+```
+

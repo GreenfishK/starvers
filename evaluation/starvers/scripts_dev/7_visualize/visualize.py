@@ -17,11 +17,11 @@ import tomli
 #############################################
 # Logging 
 #############################################
-if not os.path.exists('/starvers_eval/output/logs/visualize'):
-    os.makedirs('/starvers_eval/output/logs/visualize')
-with open('/starvers_eval/output/logs/visualize/visualize.txt', "w") as log_file:
+if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/visualize'):
+    os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/visualize')
+with open(f'{os.environ["RUN_DIR"]/output/logs/visualize/visualize.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/visualize/visualize.txt", 
+logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']/output/logs/visualize/visualize.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
@@ -30,9 +30,9 @@ logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/outpu
 # Parameters 
 #############################################
 work_dir = "/starvers_eval/"
-measurements_in = work_dir + "output/measurements/"
-figures_out = work_dir + "output/figures"
-tables_out = work_dir + "output/tables"
+measurements_in = work_dir + "data/output/measurements/"
+figures_out = work_dir + "data/output/figures"
+tables_out = work_dir + "data/output/tables"
 policies = sys.argv[1].split(" ")
 datasets = sys.argv[2].split(" ")
 
@@ -320,7 +320,7 @@ def create_latex_tables():
 
     queries_agg = queries_agg[queries_agg["min"].notna()]
 
-    queries_agg.to_csv("/starvers_eval/output/logs/visualize/queries.csv", index=False)
+    queries_agg.to_csv(f"{os.environ['RUN_DIR']/output/logs/visualize/queries.csv", index=False)
 
     # Storage
     storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"], observed=False).agg(
@@ -328,7 +328,7 @@ def create_latex_tables():
         raw_file_size=("raw_file_size_MiB", "mean"),
         db_file_size=("db_files_disk_usage_MiB", "mean")
     ).reset_index()
-    storage_agg.to_csv("/starvers_eval/output/logs/visualize/storage.csv", index=False)
+    storage_agg.to_csv(f"{os.environ['RUN_DIR']/output/logs/visualize/storage.csv", index=False)
     
 
     # =========================

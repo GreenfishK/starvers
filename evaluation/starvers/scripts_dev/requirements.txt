@@ -6,3 +6,4 @@ guppy3==3.1.5
 requests
 tomli==2.3.0
 psutil==7.1.2
+flask

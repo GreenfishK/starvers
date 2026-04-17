@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Starvers Evaluation Monitor</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --border: #2a2d3a;
+    --accent: #5b7cfa;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 600; }
+  header .badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  header .auto-refresh {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  header .auto-refresh select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  main { padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* Run list */
+  .runs-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .run-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .run-card:hover, .run-card.active { border-color: var(--accent); }
+  .run-card .ts {
+    font-family: monospace;
+    font-size: 0.9rem;
+    flex: 1;
+  }
+  .progress-bar {
+    flex: 2;
+    background: var(--border);
+    border-radius: 9999px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: var(--accent);
+    transition: width 0.3s;
+  }
+  .run-card .pct { font-size: 0.85rem; color: var(--muted); width: 40px; text-align: right; }
+  .run-card .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-success { background: var(--green); }
+  .dot-failed  { background: var(--red); }
+  .dot-running { background: var(--yellow); animation: pulse 1s infinite; }
+  .dot-pending { background: var(--muted); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* Step detail table */
+  .detail-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .detail-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--bg);
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  td { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 0.88rem; }
+  tr:hover td { background: rgba(91,124,250,0.04); }
+
+  .chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .chip-success { background: rgba(52,211,153,.15); color: var(--green); }
+  .chip-failed  { background: rgba(248,113,113,.15); color: var(--red); }
+  .chip-running { background: rgba(251,191,36,.15);  color: var(--yellow); }
+  .chip-pending { background: rgba(100,116,139,.15); color: var(--muted); }
+
+  .empty { text-align: center; padding: 48px; color: var(--muted); font-size: 0.9rem; }
+
+  .error-box {
+    background: rgba(248,113,113,.08);
+    border: 1px solid rgba(248,113,113,.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--red);
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Starvers Evaluation Monitor</h1>
+  <span class="badge">starvers</span>
+  <div class="auto-refresh">
+    Auto-refresh
+    <select id="refreshSelect" onchange="setRefresh(this.value)">
+      <option value="0">Off</option>
+      <option value="5">5s</option>
+      <option value="15" selected>15s</option>
+      <option value="30">30s</option>
+      <option value="60">60s</option>
+    </select>
+    <span id="countdown" style="width:32px;text-align:right"></span>
+  </div>
+</header>
+
+<main>
+  <div id="errorBox" class="error-box" style="display:none"></div>
+
+  <div class="section-title">Pipeline Runs</div>
+  <div class="runs-grid" id="runsList"></div>
+
+  <div class="section-title">Step Details</div>
+  <div class="detail-box" id="detailBox">
+    <div class="empty">Select a run above to view step details</div>
+  </div>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// Config: adjust DATA_BASE_URL to point to the JSON API served by the backend.
+// The backend (a small Flask/FastAPI app or nginx alias) should expose:
+//   GET /evaluation/starvers/api/runs          -> [{ts, steps:[...]}]
+//   GET /evaluation/starvers/api/runs/:ts      -> {ts, steps:[...]}
+// For local demo / static serving, we use mock data when the API is unavailable.
+// ---------------------------------------------------------------------------
+const API_BASE = '/evaluation/starvers/api';
+const ALL_STEPS = [
+  'download','preprocess_data','construct_datasets','ingest',
+  'construct_queries','evaluate','verify_results','visualize'
+];
+
+let selectedRun = null;
+let refreshTimer = null;
+let countdown = 15;
+let refreshInterval = 15;
+
+// ---- Fetch helpers ----
+async function fetchRuns() {
+  const r = await fetch(`${API_BASE}/runs`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+async function fetchRun(ts) {
+  const r = await fetch(`${API_BASE}/runs/${ts}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// ---- Rendering ----
+function overallStatus(steps) {
+  if (steps.some(s => s.status === 'failed'))  return 'failed';
+  if (steps.some(s => s.status === 'running')) return 'running';
+  if (steps.every(s => s.status === 'success')) return 'success';
+  return 'pending';
+}
+
+function renderRunCard(run, index) {
+  const steps = run.steps || [];
+  const done = steps.filter(s => s.status === 'success').length;
+  const total = ALL_STEPS.length;
+  const pct = Math.round((done / total) * 100);
+  const status = overallStatus(steps);
+  const isActive = selectedRun === run.ts;
+  return `
+    <div class="run-card ${isActive ? 'active' : ''}" onclick="selectRun('${run.ts}')">
+      <span class="status-dot dot-${status}"></span>
+      <span class="ts">${run.ts}</span>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <span class="pct">${pct}%</span>
+      <span style="color:var(--muted);font-size:.8rem">${done}/${total} steps</span>
+    </div>`;
+}
+
+function chipHtml(status) {
+  const s = status || 'pending';
+  return `<span class="chip chip-${s}">${s}</span>`;
+}
+
+function renderDetail(run) {
+  const steps = run.steps || [];
+  const stepMap = {};
+  steps.forEach(s => { stepMap[s.step_name] = s; });
+
+  const rows = ALL_STEPS.map((name, i) => {
+    const s = stepMap[name] || { step_number: i+1, step_name: name, status: 'pending', start_time: '', end_time: '' };
+    let duration = '—';
+    if (s.start_time && s.end_time) {
+      const ms = new Date(s.end_time.replace('T',' ') + 'Z') - new Date(s.start_time.replace('T',' ') + 'Z');
+      duration = ms >= 60000 ? `${Math.round(ms/60000)}m ${Math.round((ms%60000)/1000)}s` : `${Math.round(ms/1000)}s`;
+    }
+    return `<tr>
+      <td>${s.step_number || i+1}</td>
+      <td>${name}</td>
+      <td>${chipHtml(s.status)}</td>
+      <td style="font-family:monospace;font-size:.8rem">${s.start_time || '—'}</td>
+      <td style="font-family:monospace;font-size:.8rem">${s.end_time || '—'}</td>
+      <td>${duration}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('detailBox').innerHTML = `
+    <div class="detail-header">
+      📋 Run: <code style="font-size:.85rem">${run.ts}</code>
+    </div>
+    <table>
+      <thead><tr>
+        <th>#</th><th>Step</th><th>Status</th><th>Start</th><th>End</th><th>Duration</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+async function selectRun(ts) {
+  selectedRun = ts;
+  try {
+    const run = await fetchRun(ts);
+    renderDetail(run);
+  } catch(e) {
+    renderDetail({ ts, steps: [] });
+  }
+  // re-render card list to update active state
+  loadRuns(false);
+}
+
+async function loadRuns(selectFirst = true) {
+  try {
+    document.getElementById('errorBox').style.display = 'none';
+    const runs = await fetchRuns();
+    const list = document.getElementById('runsList');
+    if (!runs.length) {
+      list.innerHTML = '<div class="empty">No evaluation runs found yet.</div>';
+      return;
+    }
+    list.innerHTML = runs.map(renderRunCard).join('');
+    if (selectFirst && !selectedRun && runs.length) {
+      selectRun(runs[0].ts);
+    } else if (selectedRun) {
+      selectRun(selectedRun);
+    }
+  } catch(e) {
+    document.getElementById('errorBox').textContent =
+      `Could not reach API at ${API_BASE}/runs — is the backend running? (${e.message})`;
+    document.getElementById('errorBox').style.display = 'block';
+    // Show demo data so the UI is still useful
+    loadDemoData();
+  }
+}
+
+function loadDemoData() {
+  const demo = [
+    {ts: '20260410T10:00:00.000', steps: [
+      {step_number:1,step_name:'download',status:'success',start_time:'20260410T10:00:00.000',end_time:'20260410T10:05:12.000'},
+      {step_number:2,step_name:'preprocess_data',status:'success',start_time:'20260410T10:05:13.000',end_time:'20260410T10:22:44.000'},
+      {step_number:3,step_name:'construct_datasets',status:'failed',start_time:'20260410T10:22:45.000',end_time:'20260410T10:23:01.000'},
+    ]},
+    {ts: '20260409T08:30:00.000', steps: ALL_STEPS.map((n,i) => ({step_number:i+1,step_name:n,status:'success',start_time:'',end_time:''}))}
+  ];
+  const list = document.getElementById('runsList');
+  list.innerHTML = demo.map(renderRunCard).join('');
+  if (!selectedRun) renderDetail(demo[0]);
+}
+
+// ---- Refresh ----
+function setRefresh(val) {
+  refreshInterval = parseInt(val);
+  clearInterval(refreshTimer);
+  countdown = refreshInterval;
+  if (refreshInterval > 0) {
+    refreshTimer = setInterval(tick, 1000);
+  } else {
+    document.getElementById('countdown').textContent = '';
+  }
+}
+
+function tick() {
+  countdown--;
+  document.getElementById('countdown').textContent = countdown + 's';
+  if (countdown <= 0) {
+    countdown = refreshInterval;
+    loadRuns(false);
+  }
+}
+
+// ---- Init ----
+loadRuns(true);
+setRefresh(15);
+</script>
+</body>
+</html>

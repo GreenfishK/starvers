@@ -56,7 +56,6 @@ services:
       - skip_icng_ds=${skip_icng_ds}
       - skip_tb_ds=${skip_tb_ds}
     entrypoint: ["python", "-u", "/starvers_eval/scripts/3_construct_datasets/construct_datasets.py"]
-    command: ["$datasets", "$skip_change_sets", "$skip_tb_star_ds", "$skip_icng_ds", "$skip_tb_ds"]
 
   ingest:
     image: starvers_eval:latest
@@ -90,7 +89,7 @@ services:
     environment:
       - policies=${policies}    
       - datasets=${datasets}
-    entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py", "${policies}", "${datasets}"]
+    entrypoint: ["python", "-u", "/starvers_eval/scripts/5_construct_queries/construct_queries.py"]
   
   evaluate:
     image: starvers_eval:latest

@@ -11,25 +11,25 @@ from starvers._helper import versioning_timestamp_format
 ##########################################################################################
 # Logging 
 ##########################################################################################
-if not os.path.exists('/starvers_eval/output/logs/construct_datasets'):
-    os.makedirs('/starvers_eval/output/logs/construct_datasets')
-with open('/starvers_eval/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
+if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets'):
+    os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets')
+with open(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename="/starvers_eval/output/logs/construct_datasets/construct_datasets.txt", 
+logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']/output/logs/construct_datasets/construct_datasets.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
                     level=logging.INFO)
 
-LOG_FILE = "/starvers_eval/output/logs/construct_datasets/construct_datasets.txt"
+LOG_FILE = f"{os.environ['RUN_DIR']/output/logs/construct_datasets/construct_datasets.txt"
 ##########################################################################################
 # Parameters 
 ##########################################################################################
-datasets = sys.argv[1].split(" ")
-skip_change_sets = sys.argv[2]
-skip_tb_star_ds = sys.argv[3]
-skip_icng_ds = sys.argv[4]
-skip_tb_ds = sys.argv[5]
+datasets = os.environ.get("datasets").split(" ")
+skip_change_sets = os.environ.get("skip_change_sets")
+skip_tb_star_ds = os.environ.get("skip_tb_star_ds")
+skip_icng_ds = os.environ.get("skip_icng_ds")
+skip_tb_ds = os.environ.get("skip_tb_ds")
 
 in_frm = "nt"
 LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
@@ -343,7 +343,7 @@ for dataset in datasets:
         logging.error("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
-    data_dir = f"/starvers_eval/rawdata/{dataset}"
+    data_dir = f"{os.environ['RUN_DIR']/rawdata/{dataset}"
     total_versions = dataset_versions[dataset]
     logging.info("Constructing datasets for {0}".format(dataset))
 
