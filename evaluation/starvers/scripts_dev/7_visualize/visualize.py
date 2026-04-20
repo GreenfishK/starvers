@@ -33,8 +33,8 @@ work_dir = "/starvers_eval/"
 measurements_in = work_dir + "data/output/measurements/"
 figures_out = work_dir + "data/output/figures"
 tables_out = work_dir + "data/output/tables"
-policies = sys.argv[1].split(" ")
-datasets = sys.argv[2].split(" ")
+policies =  os.environ.get("policies").split(" ")
+datasets =  os.environ.get("datasets").split(" ")
 
 #############################################
 # Paths and config 

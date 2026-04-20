@@ -438,9 +438,9 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
 # MAIN PIPELINE
 ##########################################################
 def main():
-    triple_stores = sys.argv[1].split(" ")
-    policies = sys.argv[2].split(" ")
-    datasets = sys.argv[3].split(" ")
+    triple_stores =  os.environ.get("triple_stores").split(" ")
+    policies =  os.environ.get("policies").split(" ")
+    datasets =  os.environ.get("datasets").split(" ")
 
     header = [
         'triplestore', 'dataset', 'policy', 'query_set',
