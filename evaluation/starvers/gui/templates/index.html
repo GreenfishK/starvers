@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StarVers · Evaluation Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-star">★</span>
+        <span class="logo-text">StarVers</span>
+        <span class="logo-sub">Evaluation Pipeline</span>
+      </div>
+      <div class="header-meta">
+        <span id="runCount" class="badge">— runs</span>
+        <button id="refreshBtn" class="btn-icon" title="Refresh">↻</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left panel: run list -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span class="label">RUNS</span>
+      </div>
+      <ul id="runList"></ul>
+    </aside>
+
+    <!-- Right panel: run detail -->
+    <section id="content">
+      <div id="placeholder">
+        <div class="placeholder-icon">⬡</div>
+        <p>Select a run to inspect its execution details.</p>
+      </div>
+      <div id="detailPanel" class="hidden">
+        <div id="runMeta"></div>
+        <div id="stepsGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Step detail drawer -->
+  <div id="drawer" class="drawer hidden">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <span id="drawerTitle"></span>
+        <button id="drawerClose" class="btn-icon">✕</button>
+      </div>
+      <div id="drawerBody"></div>
+    </div>
+  </div>
+  <div id="overlay" class="overlay hidden"></div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

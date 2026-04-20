@@ -1,8 +1,10 @@
-from flask import Flask
-from werkzeug.middleware.proxy_fix import ProxyFix
 from app.gui.routes import routes
 from app.LoggingConfig import get_logger, setup_logging
 import os
+
+from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 logger = get_logger(__name__)
 
@@ -28,4 +30,4 @@ app.register_blueprint(routes)
 if __name__ == "__main__":
     setup_logging()
     logger.info("Starting Flask application...")
-    app.run(debug=True, port="5000", host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0", port="5000")
