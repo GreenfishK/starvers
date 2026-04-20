@@ -12,7 +12,8 @@ import datetime
 import shutil
 import tomli
 from SPARQLWrapper import SPARQLWrapper, JSON, GET
-
+import logging
+import sys
 
 #####################################################################
 # Configuration
@@ -85,10 +86,14 @@ class DatasetPolicyLock:
 #####################################################################
 # Helpers
 def log(triplestore: str, message: str):
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %A %H:%M:%S")
-    log_file = LOG_FILES[triplestore]
-    with open(log_file, "a") as f:
-        f.write(f"{ts} root:INFO: {message}\n")
+    log_file = str(LOG_FILES[triplestore])
+    logging.basicConfig(handlers=[logging.FileHandler(filename=log_file, 
+                                                  encoding='utf-8', mode='a+'),
+                              logging.StreamHandler(sys.stdout)],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+    logging.info(f"{message}")
 
 
 def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
