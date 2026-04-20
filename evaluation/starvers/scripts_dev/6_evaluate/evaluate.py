@@ -25,9 +25,13 @@ import socket
 ##########################################################
 # Logging
 ##########################################################
+if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets'):
+    os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets')
+
 LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/evaluate/evaluate.txt"
 logging.basicConfig(
-    handlers=[logging.FileHandler(filename=LOG_FILE, encoding='utf-8', mode='w+')],
+    handlers=[logging.FileHandler(filename=LOG_FILE, encoding='utf-8', mode='w+'),
+              logging.StreamHandler(sys.stdout)],
     format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
     datefmt="%F %A %T",
     level=logging.INFO

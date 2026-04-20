@@ -18,6 +18,10 @@ from SPARQLWrapper import SPARQLWrapper, JSON, GET
 # Configuration
 #####################################################################
 LOG_DIR = Path(f"{os.environ['RUN_DIR']}/output/logs/ingest")
+
+if not LOG_DIR.exists():
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+
 MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
