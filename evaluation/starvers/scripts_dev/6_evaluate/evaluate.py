@@ -25,7 +25,7 @@ import socket
 ##########################################################
 # Logging
 ##########################################################
-LOG_FILE = f"{os.environ['RUN_DIR']/output/logs/evaluate/evaluate.txt"
+LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/evaluate/evaluate.txt"
 logging.basicConfig(
     handlers=[logging.FileHandler(filename=LOG_FILE, encoding='utf-8', mode='w+')],
     format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
@@ -39,10 +39,10 @@ logging.basicConfig(
 CONFIG_TMPL_DIR="/starvers_eval/scripts/3_construct_datasets/configs"
 CONFIG_DIR="/starvers_eval/configs/construct_datasets"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
-RESULT_DIR = f"{os.environ['RUN_DIR']/output/result_sets"
-TIME_FILE = f"{os.environ['RUN_DIR']/output/measurements/time.csv"
-MEM_FILE = f"{os.environ['RUN_DIR']/output/measurements/memory_consumption.csv"
-databases_dir = f"{os.environ['RUN_DIR']/databases"
+RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
+TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
+MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
+databases_dir = f"{os.environ['RUN_DIR']}/databases"
 
 
 # For update evaluation
@@ -218,7 +218,7 @@ def run_queries(config, header, triple_store, policy, dataset):
         logging.info("Running queries")
         socket.setdefaulttimeout(30)
         for version in range(versions):
-            base = f"{os.environ['RUN_DIR']/queries/final_queries/{query_set}/{version}"
+            base = f"{os.environ['RUN_DIR']}/queries/final_queries/{query_set}/{version}"
             snapshot_ts = init_ts + timedelta(seconds=version)
 
             for file_name in os.listdir(base):
@@ -324,10 +324,10 @@ def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: 
     combined_measurements = pd.concat(measurements, join="inner")
     
     logging.info("Writing performance measurements to disk ...")            
-    combined_measurements.to_csv(f"{os.environ['RUN_DIR']/output/measurements/time_update_{dataset}.csv", sep=";", index=False, mode='w', header=True)
+    combined_measurements.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{dataset}.csv", sep=";", index=False, mode='w', header=True)
 
     # Remove temporary output files
-    dir_path = f"{os.environ['RUN_DIR']/output/measurements/"
+    dir_path = f"{os.environ['RUN_DIR']}/output/measurements/"
     files_to_remove = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.startswith(f"time_update_{dataset}_") and f.endswith(".csv")]
     for file in files_to_remove:
         os.remove(file)
@@ -422,7 +422,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
             new_row = pd.DataFrame([[triple_store.name, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate]], columns=df.columns)
             df = pd.concat([df, new_row], ignore_index=True)
     
-        df.to_csv(f"{os.environ['RUN_DIR']/output/measurements/time_update_{dataset}_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
+        df.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{dataset}_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
 
     # Shutdown engine
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
@@ -465,7 +465,7 @@ def main():
 
     # Update evaluation
     for dataset in datasets:
-        data_dir = f"{os.environ['RUN_DIR']/rawdata/{dataset}"
+        data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
         total_versions = dataset_versions[dataset]
 
         #measure_updates(dataset=dataset, 

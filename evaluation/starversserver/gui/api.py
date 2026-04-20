@@ -21,8 +21,8 @@ from flask import Flask, jsonify, send_from_directory, abort
 
 app = Flask(__name__, static_folder=".")
 
-DATA_DIR = Path(os.environ.get("DATA_DIR", "/mnt/data/starversserver_eval"))
-PORT = int(os.environ.get("PORT", 8081))
+DATA_DIR = Path("/starversserver/evaluation")
+PORT = 8081
 
 
 def _read_run(run_dir: Path) -> dict:

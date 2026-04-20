@@ -17,8 +17,8 @@ from SPARQLWrapper import SPARQLWrapper, JSON, GET
 #####################################################################
 # Configuration
 #####################################################################
-LOG_DIR = Path(f"{os.environ['RUN_DIR']/output/logs/ingest")
-MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']/output/measurements/ingestion.csv"
+LOG_DIR = Path(f"{os.environ['RUN_DIR']}/output/logs/ingest")
+MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
@@ -200,7 +200,7 @@ def run_ingestion(job: Job, run: int):
     log(job.triplestore, f"Run {run}: Starting {job.triplestore} for dataset={dataset}, policy={policy}")
     
     # Setup environment
-    db_root = Path(f"{os.environ['RUN_DIR']/databases/{job.triplestore}")
+    db_root = Path(f"{os.environ['RUN_DIR']}/databases/{job.triplestore}")
     database_dir = db_root / repository_id
 
     with open(CONFIG_PATH, "rb") as f:
@@ -209,7 +209,7 @@ def run_ingestion(job: Job, run: int):
     mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.run([f"{mgmt_script}", "create_env", policy, dataset, database_dir, CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
     
-    dataset_dir = Path(f"{os.environ['RUN_DIR']/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
+    dataset_dir = Path(f"{os.environ['RUN_DIR']}/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
 
     # Ingest and measure time
     start = time.time()

@@ -26,9 +26,9 @@ def split_solution_modifiers_query(query: str) -> list:
 
 def main():
     # Parameters 
-    raw_queries_base=f"{os.environ['RUN_DIR']/queries/raw_queries/"
-    output_queries_base=f"{os.environ['RUN_DIR']/queries/final_queries/"
-    query_rewriting_measurements_path=f"{os.environ['RUN_DIR']/output/measurements/query_rewriting_times.csv"
+    raw_queries_base=f"{os.environ['RUN_DIR']}/queries/raw_queries/"
+    output_queries_base=f"{os.environ['RUN_DIR']}/queries/final_queries/"
+    query_rewriting_measurements_path=f"{os.environ['RUN_DIR']}/output/measurements/query_rewriting_times.csv"
 
     policies = os.environ.get("policies").split(" ")
     datasets = os.environ.get("datasets").split(" ")
@@ -40,11 +40,11 @@ def main():
     vers_ts = init_version_timestamp
 
     # Logging 
-    if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/construct_queries'):
-        os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/construct_queries')
-    with open(f'{os.environ["RUN_DIR"]/output/logs/construct_queries/construct_queries.txt', "w") as log_file:
+    if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/construct_queries'):
+        os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/construct_queries')
+    with open(f'{os.environ["RUN_DIR"]}/output/logs/construct_queries/construct_queries.txt', "w") as log_file:
         log_file.write("")
-    logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']/output/logs/construct_queries/construct_queries.txt", 
+    logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']}/output/logs/construct_queries/construct_queries.txt", 
                                                     encoding='utf-8', mode='a+')],
                         format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                         datefmt="%F %A %T", 

@@ -99,7 +99,7 @@ WORKDIR /starvers_eval
 
 COPY src/starvers /starvers_eval/starvers
 COPY evaluation/starvers/scripts_dev/requirements.txt .
-COPY evaluation/starvers/gui .
+COPY evaluation/starvers/gui /starvers_eval/gui
 COPY evaluation/starvers/scripts_dev/eval_setup.toml  /starvers_eval/configs/eval_setup.toml
 COPY evaluation/starvers/scripts_dev /starvers_eval/scripts
 COPY run_starvers_eval.py /starvers_eval/run_starvers_eval.py
@@ -172,7 +172,7 @@ ENV PATH=/usr/local/bin:$PATH
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV NODE_PATH=/usr/local/lib/node_modules:/opt/comunica-feature-versioning/node_modules
-ENV DATA_DIR=/mnt/data/starvers_eval
+ENV DATA_DIR=/starvers_eval/data
 ENV PORT=8080
 ENV GDB_JAVA_OPTS='\
 -Xms10g -Xmx70g \

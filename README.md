@@ -191,7 +191,7 @@ starvers_eval:latest delete --older-than 20260101T000000
 
 ---
 
-## Starversserver Evaluation
+## Starversserver Evaluation (**work in progress**)
 
 ### Pipeline Steps
 
@@ -254,12 +254,14 @@ Run the gui:
 ```bash
 docker run -d --rm \
 --env-file .env \
--v /mnt/data/starvers_eval:/mnt/data/starvers_eval \
--p 8080:8080 \
-starvers_eval:latest python /starvers_eval/evaluation/gui/api.py
+--name starvers-gui \
+--network starvers_prod_net \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest gui
 ```
 
-### Starversserver GUI
+### Starversserver GUI (**work in progress**)
+
 
 ```bash
 docker build -t starversserver-gui evaluation/starversserver/gui/

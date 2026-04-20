@@ -10,7 +10,7 @@ Run (inside container):
   python api.py
 
 Environment variables:
-  DATA_DIR   – host path where run directories live (default: /mnt/data/starvers_eval)
+  DATA_DIR   – host path where run directories live (default: /starvers_eval/data)
   PORT       – port to bind (default: 8080)
 """
 
@@ -22,7 +22,7 @@ from flask import Flask, jsonify, send_from_directory, abort
 
 app = Flask(__name__, static_folder=".")
 
-DATA_DIR = Path(os.environ.get("DATA_DIR", "/mnt/data/starvers_eval"))
+DATA_DIR = Path(os.environ.get("DATA_DIR", "/starvers_eval/data"))
 PORT = int(os.environ.get("PORT", 8080))
 
 ALL_STEPS = [
@@ -40,7 +40,7 @@ def _read_run(run_dir: Path) -> dict:
     return {"ts": run_dir.name, "steps": steps}
 
 
-@app.get("/evaluation/starvers/api/runs")
+@app.get("/api/runs")
 def list_runs():
     if not DATA_DIR.exists():
         return jsonify([])
@@ -48,7 +48,7 @@ def list_runs():
     return jsonify([_read_run(d) for d in dirs])
 
 
-@app.get("/evaluation/starvers/api/runs/<ts>")
+@app.get("/api/runs/<ts>")
 def get_run(ts: str):
     run_dir = DATA_DIR / ts
     if not run_dir.is_dir():
@@ -56,11 +56,10 @@ def get_run(ts: str):
     return jsonify(_read_run(run_dir))
 
 
-@app.get("/evaluation/starvers/")
-@app.get("/evaluation/starvers")
+@app.get("/")
 def serve_gui():
     return send_from_directory(".", "index.html")
 
-
-if __name__ == "__main__":
+def run_api():
     app.run(host="0.0.0.0", port=PORT)
+

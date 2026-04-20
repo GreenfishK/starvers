@@ -211,7 +211,7 @@
 const API_BASE = '/evaluation/starvers/api';
 const ALL_STEPS = [
   'download','preprocess_data','construct_datasets','ingest',
-  'construct_queries','evaluate','verify_results','visualize'
+  'construct_queries','evaluate','visualize'
 ];
 
 let selectedRun = null;
@@ -270,8 +270,14 @@ function renderDetail(run) {
     const s = stepMap[name] || { step_number: i+1, step_name: name, status: 'pending', start_time: '', end_time: '' };
     let duration = '—';
     if (s.start_time && s.end_time) {
-      const ms = new Date(s.end_time.replace('T',' ') + 'Z') - new Date(s.start_time.replace('T',' ') + 'Z');
-      duration = ms >= 60000 ? `${Math.round(ms/60000)}m ${Math.round((ms%60000)/1000)}s` : `${Math.round(ms/1000)}s`;
+      const start = parseTs(s.start_time);
+      const end   = parseTs(s.end_time);
+      if (start && end) {
+        const ms = end - start;
+        duration = ms >= 60000
+          ? `${Math.round(ms/60000)}m ${Math.round((ms%60000)/1000)}s`
+          : `${Math.round(ms/1000)}s`;
+      }
     }
     return `<tr>
       <td>${s.step_number || i+1}</td>
@@ -343,6 +349,14 @@ function loadDemoData() {
   const list = document.getElementById('runsList');
   list.innerHTML = demo.map(renderRunCard).join('');
   if (!selectedRun) renderDetail(demo[0]);
+}
+
+function parseTs(ts) {
+  if (!ts) return null;
+  // Convert "20260417T15:59:19.564" → "2026-04-17T15:59:19.564Z"
+  const m = ts.match(/^(\d{4})(\d{2})(\d{2})T(\d{2}:\d{2}:\d{2}(?:\.\d+)?)$/);
+  if (!m) return null;
+  return new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}Z`);
 }
 
 // ---- Refresh ----
