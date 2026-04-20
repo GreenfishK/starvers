@@ -1,10 +1,19 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/graphdb_mgmt.txt
+log_file=${RUN_DIR}/output/logs/graphdb_mgmt.txt
+log_dir=$(dirname "$log_file")
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
 
+# Ensure directory exists
+mkdir -p "$log_dir"
+
+# Ensure file exists
+if [ ! -f "$log_file" ]; then
+    echo "Create log file $log_file"
+    > "$log_file"
+fi
 
 #######################################################################
 # Functions
@@ -147,7 +156,7 @@ ingest() {
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb/${policy}_${dataset}/${policy}_${dataset}.ttl /starvers_eval/rawdata/${dataset}/empty.nt  >> $log_file 2>&1
+    /opt/graphdb/dist/bin/importrdf preload --force -c ${config_dir}/graphdb/${policy}_${dataset}/${policy}_${dataset}.ttl ${RUN_DIR}/rawdata/${dataset}/empty.nt  >> $log_file 2>&1
 }
 
 #######################################################################

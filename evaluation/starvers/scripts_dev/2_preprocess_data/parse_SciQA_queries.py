@@ -22,7 +22,7 @@ with open(f'{os.environ["RUN_DIR"]/output/logs/preprocess_data/excluded_queries.
     query_log_file.write("query,yn_excluded,reason\n")
 logging.basicConfig(
     handlers=[logging.FileHandler(
-        filename=f"{os.environ['RUN_DIR']/output/logs/preprocess_data/parse_sciqa_queries.txt",
+        filename=f"{os.environ['RUN_DIR']}/output/logs/preprocess_data/parse_sciqa_queries.txt",
         encoding='utf-8',
         mode='a+'
     )],
@@ -42,13 +42,13 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
-BASE_DIR = Path(f"{os.environ['RUN_DIR']/queries/raw_queries/orkg/complex")
+BASE_DIR = Path(f"{os.environ['RUN_DIR']}/queries/raw_queries/orkg/complex")
 SCRIPTS_DIR = Path("/starvers_eval/scripts")
 SUBDIRS = ["train", "test", "valid"]
 CONFIG_TMPL_DIR="/starvers_eval/scripts/2_preprocess_data/configs"
 CONFIG_DIR="/starvers_eval/configs/preprocess_data"
-GRAPHDB_DATABASE_DIR=f"{os.environ['RUN_DIR']/databases/preprocess_data/graphdb/dummy_orkg"
-OSTRICH_DATABASE_DIR=f"{os.environ['RUN_DIR']/databases/preprocess_data/ostrich/dummy_orkg"
+GRAPHDB_DATABASE_DIR=f"{os.environ['RUN_DIR']}/databases/preprocess_data/graphdb/dummy_orkg"
+OSTRICH_DATABASE_DIR=f"{os.environ['RUN_DIR']}/databases/preprocess_data/ostrich/dummy_orkg"
 GRAPHDB_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
 OSTRICH_MGMT_SCRIPT="/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"
 
@@ -124,7 +124,7 @@ def startup():
     subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "create_env", "dummy", "orkg", f"{OSTRICH_DATABASE_DIR}", "", ""], check=True)
     
     logging.info("Ingest the first ORKG snapshot.")
-    subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "ingest", f"{OSTRICH_DATABASE_DIR}", f"{os.environ['RUN_DIR']/rawdata/orkg/alldata_vdir", f"ostrich", "orkg", "", "1"], check=True)
+    subprocess.run([f"{OSTRICH_MGMT_SCRIPT}", "ingest", f"{OSTRICH_DATABASE_DIR}", f"{os.environ['RUN_DIR']}/rawdata/orkg/alldata_vdir", f"ostrich", "orkg", "", "1"], check=True)
     logging.info("Ingested empty dataset.")
 
     logging.info("Start Ostrich engine.")

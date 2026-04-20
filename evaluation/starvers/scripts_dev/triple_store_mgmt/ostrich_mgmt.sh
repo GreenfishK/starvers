@@ -1,9 +1,19 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/ostrich_mgmt.txt
+log_file=${RUN_DIR}/output/logs/ostrich_mgmt.txt
+log_dir=$(dirname "$log_file")
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
+
+# Ensure directory exists
+mkdir -p "$log_dir"
+
+# Ensure file exists
+if [ ! -f "$log_file" ]; then
+    echo "Create log file $log_file"
+    > "$log_file"
+fi
 
 
 #######################################################################
@@ -118,8 +128,8 @@ create_env() {
     mkdir -p ${database_dir}
 
     # Create virtual environment via symlinks 
-    raw_root="/starvers_eval/rawdata"
-    vdir=/starvers_eval/rawdata/${dataset}/alldata_vdir
+    raw_root="${RUN_DIR}/rawdata"
+    vdir=${RUN_DIR}/rawdata/${dataset}/alldata_vdir
 
     # Extract needed config values from toml
     file_fmt_len=$(python3 - <<EOF
@@ -165,7 +175,7 @@ EOF
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
-    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 /starvers_eval/rawdata/${dataset}/empty.nt 1 1 
+    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${RUN_DIR}/rawdata/${dataset}/empty.nt 1 1 
 }
 
 #######################################################################

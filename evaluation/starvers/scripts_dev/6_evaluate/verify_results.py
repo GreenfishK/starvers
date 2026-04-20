@@ -9,7 +9,7 @@ if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/evaluate'):
     os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/evaluate')
 with open(f'{os.environ["RUN_DIR"]/output/logs/evaluate/verify_results.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']/output/logs/evaluate/verify_results.txt", 
+logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']}/output/logs/evaluate/verify_results.txt", 
                                                   encoding='utf-8', mode='a+')],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
@@ -19,7 +19,7 @@ logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DI
 triple_stores = sys.argv[1].split(" ")
 policies = sys.argv[2].split(" ")
 datasets = sys.argv[3].split(" ")
-result_sets_dir = f"{os.environ['RUN_DIR']/output/result_sets"
+result_sets_dir = f"{os.environ['RUN_DIR']}/output/result_sets"
 with open("/starvers_eval/configs/eval_setup.toml", mode="rb") as config_file:
     eval_setup = tomli.load(config_file)
 result_set_org={dataset: {'snapshots': infos['snapshot_versions'], 'query_sets': list(infos['query_sets'].keys())} 

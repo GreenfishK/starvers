@@ -19,6 +19,8 @@ Usage:
   python run_starvers_eval.py continue
   python run_starvers_eval.py delete --older-than <YYYYMMDDThhmmss>
   python run_starvers_eval.py list
+  python run_starvers_eval.py gui
+
 """
 
 import argparse
@@ -29,6 +31,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.append(str(Path("/starvers_eval/gui").resolve()))
+from api import run_api
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -37,7 +42,7 @@ BASE_DATA_DIR = Path("/starvers_eval/data")
 
 STEPS: list[dict] = [
     {"number": 1, "name": "download",           "script": Path("/starvers_eval/scripts/1_download/download_data.sh")},
-    {"number": 2, "name": "preprocess_data",    "script": Path("/starvers_eval/scripts/2_preprocess_data/preprocess_data.sh")},
+    {"number": 2, "name": "preprocess_data",    "script": Path("/starvers_eval/scripts/2_preprocess_data/preprocess_data.py")},
     {"number": 3, "name": "construct_datasets", "script": Path("/starvers_eval/scripts/3_construct_datasets/construct_datasets.py")},
     {"number": 4, "name": "ingest",             "script": Path("/starvers_eval/scripts/4_ingest/ingest.py")},
     {"number": 5, "name": "construct_queries",  "script": Path("/starvers_eval/scripts/5_construct_queries/construct_queries.py")},
@@ -133,7 +138,6 @@ def _run_step(step: dict, run_dir: Path) -> int:
     print(f"\n[starvers_eval] Running step: {step['name']}")
     print(f"[starvers_eval] Command: {' '.join(cmd)}\n")
 
-    print(f"Env variables:\n {os.environ.copy()}")
     # Inherit the full environment so scripts can read $datasets, $policies, etc.
     result = subprocess.run(cmd, env=os.environ.copy())
     return result.returncode
@@ -287,6 +291,11 @@ def cmd_list(args) -> None:
         print(f"{d.name:<30} {completed}/{len(STEPS)}")
 
 
+def cmd_gui(args) -> None:
+    # execute: /starvers_eval/evaluation/gui/api.py
+    run_api()
+
+
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
@@ -317,6 +326,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("list", help="List all runs and their status")
 
+    sub.add_parser("gui", help="Run the evaluation GUI")  
+
     return parser
 
 
@@ -329,6 +340,7 @@ def main() -> None:
         "continue": cmd_continue,
         "delete": cmd_delete,
         "list": cmd_list,
+        "gui": cmd_gui
     }
     dispatch[args.command](args)
 

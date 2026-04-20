@@ -16,7 +16,7 @@ services:
         condition: service_started
       rdfstore:
         condition: service_started
-    env_file: "./starversserver.dev.env"
+    env_file: "./starversserver.env"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     entrypoint: ["python", "app/run_gui.py"]
@@ -31,7 +31,7 @@ services:
     restart: always
     ports:
       - 81:80
-    env_file: "./starversserver.dev.env"
+    env_file: "./starversserver.env"
     volumes:
       - ${data_storage_dev}/evaluation:/data/evaluation
       - ${data_storage_dev}/logs:/data/logs
@@ -47,7 +47,7 @@ services:
     image: postgres
     container_name: starvers-db_dev
     restart: always
-    env_file: "./starversserver.dev.env"
+    env_file: "./starversserver.env"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -61,7 +61,7 @@ services:
     image: ontotext/graphdb:10.5.0
     container_name: starvers-rdfstore_dev
     restart: always
-    env_file: "./starversserver.dev.env"
+    env_file: "./starversserver.env"
     environment: 
       GDB_JAVA_OPTS: >-
         -Xmx32g -Xms32g

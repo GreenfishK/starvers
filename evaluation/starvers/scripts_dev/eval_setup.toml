@@ -155,7 +155,7 @@
         snapshot_versions = 34
         ic_basename_length = 1
         superset = "orkg"
-        download_link_snapshots = "https://zenodo.org/records/19616362/files/orkg.tar.gz"
+        download_link_snapshots = "https://zenodo.org/records/19632548/files/alldata.IC.nt.tar.gz"
         archive_name_snapshots = "alldata.IC.nt.tar.gz"
         download_link_ng_dataset = "https://zenodo.org/records/19632548/files/alldata.TB.nq.gz"
         archive_name_ng_dataset = "alldata.TB.nq.gz"

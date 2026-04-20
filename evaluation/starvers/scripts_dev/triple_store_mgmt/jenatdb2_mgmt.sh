@@ -1,9 +1,20 @@
 #!/bin/bash
 
 # Logging variables
-log_file=/starvers_eval/output/logs/jenatdb2_mgmt.txt
+log_file=${RUN_DIR}/output/logs/jenatdb2_mgmt.txt
+log_dir=$(dirname "$log_file")
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
+
+# Ensure directory exists
+mkdir -p "$log_dir"
+
+# Ensure file exists
+if [ ! -f "$log_file" ]; then
+    echo "Create log file $log_file"
+    > "$log_file"
+fi
+
 
 
 startup() {
@@ -160,7 +171,7 @@ ingest() {
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     repositoryID=${policy}_${dataset}
-    /jena-fuseki/tdbloader2 --loc ${database_dir} /starvers_eval/rawdata/${dataset}/empty.nt
+    /jena-fuseki/tdbloader2 --loc ${database_dir} ${RUN_DIR}/rawdata/${dataset}/empty.nt
 }
 
 

@@ -11,17 +11,18 @@ from starvers._helper import versioning_timestamp_format
 ##########################################################################################
 # Logging 
 ##########################################################################################
-if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets'):
-    os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets')
-with open(f'{os.environ["RUN_DIR"]/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
+if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets'):
+    os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets')
+with open(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
     log_file.write("")
-logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']/output/logs/construct_datasets/construct_datasets.txt", 
-                                                  encoding='utf-8', mode='a+')],
+logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']}/output/logs/construct_datasets/construct_datasets.txt", 
+                                                  encoding='utf-8', mode='a+'),
+                              logging.StreamHandler(sys.stdout)],
                     format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
                     datefmt="%F %A %T", 
                     level=logging.INFO)
 
-LOG_FILE = f"{os.environ['RUN_DIR']/output/logs/construct_datasets/construct_datasets.txt"
+LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/construct_datasets/construct_datasets.txt"
 ##########################################################################################
 # Parameters 
 ##########################################################################################
@@ -309,11 +310,10 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
 
                     triples_dict[triple_clean] = versions
                 else:
-                    logging.info(f"Add triple {triple_clean} with version {version} to the dictionary.")
                     triples_dict[triple_clean] = [[version], 1]
 
-                mem_in_usage = psutil.virtual_memory().percent
-                logging.info(f"Memory in usage: {mem_in_usage}%")
+            mem_in_usage = psutil.virtual_memory().percent
+            logging.info(f"Memory in usage: {mem_in_usage}%")
     
     # Write the triples with their versions to the destination file in the format described above.
     logging.info(f"Write the triples with their versions to the destination file {destination}.")
@@ -343,7 +343,7 @@ for dataset in datasets:
         logging.error("Dataset must be one of: ", allowed_datasets, "but is: {0}".format(dataset))
         break
 
-    data_dir = f"{os.environ['RUN_DIR']/rawdata/{dataset}"
+    data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
     total_versions = dataset_versions[dataset]
     logging.info("Constructing datasets for {0}".format(dataset))
 
