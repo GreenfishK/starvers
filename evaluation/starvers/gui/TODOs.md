@@ -6,6 +6,17 @@ Extra infos: Each of the seven steps is individual in its way regarding the inpu
 Development principles 
 * You should divide the code into css, html and scripts and not have everything in one html.
 
+* Scope: starvers/evaluation/starvers/gui
+
+* No need to update the dockerfile. The gui will be run in a container with: 
+```
+docker run -d --rm \
+--env-file .env \
+--name starvers-gui \
+--network starvers_prod_net \
+-v /mnt/data/starvers_eval:/starvers_eval/data \
+starvers_eval:latest gui
+```
 
 ## Download
 * Which datasets are downloaded
@@ -55,12 +66,12 @@ Development principles
         :v21_22_23_25 owl:versionInfo "23" :versions .
         :v21_22_23_25 owl:versionInfo "25" :versions ."""
     * alldata.TB_star_hierarchical.ttl
-        * << <<s p o>> vers:valid_from creation_timestamp_literal >> vers:valid_until >> expiration_timestamp_literal .
+        * << << s p o >> vers:valid_from creation_timestamp_literal >> vers:valid_until >> expiration_timestamp_literal .
     * alldata.ICNG.trig: 
         * GRAPH <http://starvers_eval/ic/v0> { triples  }
         GRAPH <http://starvers_eval/ic/v1> { triples  }
         
-## ingest
+## Ingest
 * The ingest information in ${RUN_DIR}/output/measurements/ingestion.csv displayed with tables and figures in a nice way. the header is: triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB
     * Source of information: ${RUN_DIR}/output/measurements/ingestion.csv
 How many ingest runs: 10 (hardcoded)
@@ -87,7 +98,7 @@ How many ingest runs: 10 (hardcoded)
     Count the query files ending with .txt by traversing the directories recursively until you reach the bottom and find the .txt files
     * The policy codes ic_sr_ng, ostrich, tb_sr_ng, tb_sr_rs correspond to the dataset variants alldata.ICNG.trig, first IC + change sets, alldata.TB_computed.nq and alldata.TB_star_hierarchical.ttl, respectively.
 
-## evaluate
+## Evaluate
 * How many queries are executed against each combination of triple_store, policy, dataset.
     * Source of information: eval_setup.toml, "evaluations" section
 
