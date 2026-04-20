@@ -17,9 +17,9 @@ import tomli
 #############################################
 # Logging 
 #############################################
-if not os.path.exists(f'{os.environ["RUN_DIR"]/output/logs/visualize'):
-    os.makedirs(f'{os.environ["RUN_DIR"]/output/logs/visualize')
-with open(f'{os.environ["RUN_DIR"]/output/logs/visualize/visualize.txt', "w") as log_file:
+if not os.path.exists(f'{os.environ['RUN_DIR']}/output/logs/visualize'):
+    os.makedirs(f'{os.environ['RUN_DIR']}/output/logs/visualize')
+with open(f'{os.environ['RUN_DIR']}/output/logs/visualize/visualize.txt', "w") as log_file:
     log_file.write("")
 logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']}/output/logs/visualize/visualize.txt", 
                                                   encoding='utf-8', mode='a+')],
