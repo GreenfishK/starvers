@@ -18,11 +18,15 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 import tomli
+import logging
 
 from werkzeug.middleware.proxy_fix import ProxyFix
 from flask import Flask, abort, jsonify, render_template
 
+logging.basicConfig(level=logging.INFO)
+
 _here = os.path.dirname(os.path.abspath(__file__))
+logging.info("API initialized at %s", _here)
  
 app = Flask(
     __name__,
@@ -360,6 +364,14 @@ def _detail_visualize(run_dir: Path) -> dict:
 # ---------------------------------------------------------------------------
 # Static file serving
 # ---------------------------------------------------------------------------
+@app.get("/debug")
+def debug():
+    from flask import request
+    return {
+        "script_name": request.environ.get("SCRIPT_NAME", ""),
+        "url_for_static": url_for("static", filename="style.css"),
+        "x_forwarded_prefix": request.headers.get("X-Forwarded-Prefix", "not set"),
+    }
 
 @app.get("/")
 def serve_gui():

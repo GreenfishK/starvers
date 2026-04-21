@@ -27,7 +27,7 @@ starvers_eval:latest gui
 * How many versions a dataset has
     * Source of information: eval_setup.toml
 * How big in size a dataset is
-    * Source of information: a separate file datasets_meta.csv should be logged in RUN_DIR/output/logs/downloads/datasets_meta.csv where the avg size per snapshot is recorded. The recording should be implemented in the download_data.sh
+    * Source of information: a separate file datasets_meta.csv should be logged in RUN_DIR/output/logs/downloads/datasets_meta.csv where the size of all snapshots combined is recorded. The recording should be implemented in the download_data.sh
 
 ## Preprocess Data
 * The essential substeps executed
@@ -104,3 +104,59 @@ How many ingest runs: 10 (hardcoded)
 
 ## Visualize
 * Present the latex table at ${RUN_DIR}/output/tables/latex_table_results.tex
+
+
+# Fixes
+## 21.04.2026
+
+### color scheme
+use the same color scheme (TU Wien colors) as for the gui in https://github.com/GreenfishK/starvers/tree/main/src/starversserver/app/gui, which is a light mode color scheme
+
+### download
+The dataset details should show the size per dataset as recorded in $RUN_DIR/output/logs/download/datasets_meta.csv
+
+The dataset details also should show the link per dataset, as found in the eval_setup.toml under [datasets] [datasets.<dataset_name>] download_link_snapshots=<link>
+
+### preprocess data
+RDF validators don't show the versions. This needs a fix
+
+The skolemization summary does not show the dataset from which the triples where excluded and the skolemized blank nodes. it must show this info per dataset
+
+### construct datasets
+The table created for the construct datasets details does not show a column for the actual dataset prior to the VARIANT column
+
+the RDF versioning approach should only be shown once per variant. maybe a table is not the ideal visualization but rather a section per variant where sizes are shown for each dataset and the versioning approach is shown as a sort of description.
+
+### ingest
+don't shot the full ingest table. Only show the avg per triple store, policy and dataset. also show the db size. use a visualization approach that does not have redundancies, i.e. repeated values. 
+
+
+### construct queries
+check what's going on with consturct queries as the details could not be loaded
+
+### evaluate
+throws a syntax error due to wrong retrieval of the policy, which does not exist as an attribute. this is how the data is structured:
+[evaluations]
+    [evaluations.graphdb]
+        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+
+    [evaluations.jenatdb2]
+        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+
+    [evaluations.ostrich]
+        bearb_day   = ["ostrich"]
+        bearb_hour = ["ostrich"]
+        bearc      = ["ostrich"]
+        orkg       = ["ostrich"]
+
+the policies are the list values
+
+### visualize
+the latex table should be interpreted, not shown as a raw table
+
