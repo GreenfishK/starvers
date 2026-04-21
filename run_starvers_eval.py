@@ -223,6 +223,15 @@ def cmd_run(args) -> None:
         idx = STEPS.index(step)
         execute_steps(STEPS[idx:], run_dir)
 
+    elif args.subcommand == "step_at":
+        run_dir = BASE_DATA_DIR / args.timestamp
+        if not run_dir.exists():
+            print(f"[starvers_eval] ERROR: Run directory not found for timestamp: {args.timestamp}", file=sys.stderr)
+            sys.exit(1)
+        print(f"[starvers_eval] Run directory: {run_dir}")
+        step = _resolve_step(args.step_id)
+        execute_steps([step], run_dir)
+
     else:
         print(f"Unknown run subcommand: {args.subcommand}", file=sys.stderr)
         sys.exit(1)
@@ -315,6 +324,12 @@ def build_parser() -> argparse.ArgumentParser:
     step_p.add_argument("step_id", help="Step number (1-7) or name")
     from_p = run_sub.add_parser("from", help="Run from a specific step onwards")
     from_p.add_argument("step_id", help="Step number (1-7) or name")
+
+    # add argument after step <step_id> at <timestamp> to run a step for a specific run
+    after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
+    after_p.add_argument("step_id", help="Step number (1-7) or name")
+    after_p.add_argument("timestamp", help="Run timestamp")
+
 
     sub.add_parser("continue", help="Continue the last failed/interrupted run")
 

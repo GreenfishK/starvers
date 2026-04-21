@@ -17,9 +17,9 @@ import tomli
 #############################################
 # Logging 
 #############################################
-if not os.path.exists(f'{os.environ['RUN_DIR']}/output/logs/visualize'):
-    os.makedirs(f'{os.environ['RUN_DIR']}/output/logs/visualize')
-with open(f'{os.environ['RUN_DIR']}/output/logs/visualize/visualize.txt', "w") as log_file:
+if not os.path.exists(f"{os.environ['RUN_DIR']}/output/logs/visualize"):
+    os.makedirs(f"{os.environ['RUN_DIR']}/output/logs/visualize")
+with open(f"{os.environ['RUN_DIR']}/output/logs/visualize/visualize.txt", "w") as log_file:
     log_file.write("")
 logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DIR']}/output/logs/visualize/visualize.txt", 
                                                   encoding='utf-8', mode='a+')],
@@ -27,19 +27,21 @@ logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DI
                     datefmt="%F %A %T", 
                     level=logging.INFO)
 #############################################
-# Parameters 
+# Paths and parameters
 #############################################
+# f"{os.environ['RUN_DIR']}
 work_dir = "/starvers_eval/"
-measurements_in = work_dir + "data/output/measurements/"
-figures_out = work_dir + "data/output/figures"
-tables_out = work_dir + "data/output/tables"
+CONFIG_PATH = f"{work_dir}configs/eval_setup.toml"
+RESULTS_TMPL = f"{work_dir}scripts/7_visualize/templates/latex_table_results_tmpl.tex"
+
+RUN_DIR = os.environ['RUN_DIR']
+measurements_in = RUN_DIR + "/output/measurements/"
+figures_out = RUN_DIR + "/output/figures"
+tables_out = RUN_DIR + "/output/tables"
+
 policies =  os.environ.get("policies").split(" ")
 datasets =  os.environ.get("datasets").split(" ")
 
-#############################################
-# Paths and config 
-#############################################
-CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 
 #############################################
 # Visualize 
@@ -61,6 +63,12 @@ def create_plots(triplestore: str, dataset: str):
     performance_data['execution_time_total'] = performance_data['execution_time'] + performance_data['snapshot_creation_time']
     performance_data = performance_data[['triplestore', 'dataset', 'policy', 'snapshot', 'query_set', 'execution_time_total']]
 
+    # Convert category columns to string before groupby aggregation —
+    # pandas category dtype does not support mean() directly
+    for col in ['triplestore', 'dataset', 'policy', 'query_set']:
+        if performance_data[col].dtype.name == 'category':
+            performance_data[col] = performance_data[col].astype(str)
+
     ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
@@ -75,7 +83,7 @@ def create_plots(triplestore: str, dataset: str):
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
-        means = dataset_df.groupby(['policy', 'snapshot'], observed=False).mean()
+        means = dataset_df.groupby(['policy', 'snapshot'], observed=False).mean(numeric_only=True)
         means = means.reset_index()
         
         for policy in policies:
@@ -84,6 +92,8 @@ def create_plots(triplestore: str, dataset: str):
                 markevery = math.ceil(len(policy_df['snapshot'])/120)
             else:
                 markevery = math.ceil(len(policy_df['snapshot'])/60)
+            markevery = max(markevery, 1)
+
             ax.set_yscale('log')
             ax.plot(policy_df['snapshot'], policy_df['execution_time_total'], linestyle='none',
                 marker=symbol_map[policy], markersize=7, markerfacecolor=markerfacecolors[policy], markeredgewidth=1, drawstyle='steps', linewidth=0.5,
@@ -245,9 +255,9 @@ def create_latex_tables():
     # =========================
     # Parameters
     # =========================
-    datasets = set(sys.argv[1].split(" "))
-    policies = set(sys.argv[2].split(" "))
-    triplestores = set(sys.argv[3].split(" "))
+    datasets = set(os.environ.get("datasets").split(" "))
+    policies = set(os.environ.get("policies").split(" "))
+    triplestores = set(os.environ.get("triple_stores").split(" "))
     query_sets = ["lookup", "join", "complex"]
 
     # =========================
@@ -301,7 +311,7 @@ def create_latex_tables():
     # =========================
     # Load template
     # =========================
-    with open(f"{work_dir}scripts/7_visualize/templates/latex_table_results_tmpl.tex", "r") as f:
+    with open(RESULTS_TMPL, "r") as f:
         template_results = f.read()
 
     # =========================
@@ -628,8 +638,8 @@ def create_latex_tables():
 
 
 # Plots for query performance and ingestion
-#args = itertools.product(['graphdb', 'jenatdb2', 'ostrich'], datasets)
-#list(map(lambda x: create_plots(*x), args))
+args = itertools.product(['graphdb', 'jenatdb2', 'ostrich'], datasets)
+list(map(lambda x: create_plots(*x), args))
 
 # Plots for update performance 
 #create_plots_update("GRAPHDB", 'bearc')

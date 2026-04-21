@@ -1,14 +1,10 @@
 """
 api.py – Flask backend for the StarVers Evaluation GUI.
-
-Endpoints:
-  GET /api/runs                          → list of runs
-  GET /api/runs/<ts>                     → steps for one run
-  GET /api/step-detail/<ts>/<step_name>  → rich detail for one step
-  GET /                                  → index.html (rendered via Jinja)
 """
 
+import base64
 import csv
+import math
 import os
 import re
 import subprocess
@@ -49,8 +45,7 @@ VERSIONING_APPROACH = {
     ),
     "alldata.ICNG.trig": (
         "GRAPH <http://starvers_eval/ic/v0> { triples }\n"
-        "GRAPH <http://starvers_eval/ic/v1> { triples }\n"
-        " ..."
+        "GRAPH <http://starvers_eval/ic/v1> { triples }"
     ),
     "first IC + change sets": (
         "No versioning at RDF-level. Ingested as independent copies (IC) "
@@ -59,10 +54,10 @@ VERSIONING_APPROACH = {
 }
 
 VARIANT_FILES = [
-    ("alldata.CB_computed.nt",           "first IC + change sets",          True),   # is directory
-    ("alldata.TB_computed.nq",           "alldata.TB_computed.nq",          False),
-    ("alldata.TB_star_hierarchical.ttl", "alldata.TB_star_hierarchical.ttl",False),
-    ("alldata.ICNG.trig",                "alldata.ICNG.trig",               False),
+    ("alldata.CB_computed.nt",            "first IC + change sets",           True),
+    ("alldata.TB_computed.nq",            "alldata.TB_computed.nq",           False),
+    ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl", False),
+    ("alldata.ICNG.trig",                 "alldata.ICNG.trig",                False),
 ]
 
 
@@ -105,43 +100,12 @@ def _count_txt_files(directory: Path) -> int:
     return sum(1 for f in directory.rglob("*.txt") if f.is_file())
 
 
-def _parse_latex_table(tex: str) -> dict | None:
-    """
-    Parse a LaTeX tabular environment into headers + rows.
-    Returns None if parsing fails.
-    """
-    # Find tabular content
-    m = re.search(r'\\begin\{tabular\}.*?\n(.*?)\\end\{tabular\}', tex, re.DOTALL)
-    if not m:
-        return None
-    body = m.group(1)
-
-    rows = []
-    for line in body.splitlines():
-        line = line.strip()
-        if not line or line.startswith('%') or line.startswith('\\hline') or line.startswith('\\toprule') \
-                or line.startswith('\\midrule') or line.startswith('\\bottomrule'):
-            continue
-        if '\\\\' in line:
-            row_str = line.split('\\\\')[0]
-            cells = [_clean_latex_cell(c) for c in row_str.split('&')]
-            rows.append(cells)
-
-    if not rows:
-        return None
-
-    return {"headers": rows[0], "rows": rows[1:]}
-
-
-def _clean_latex_cell(cell: str) -> str:
-    cell = cell.strip()
-    # Remove common LaTeX commands
-    cell = re.sub(r'\\textbf\{([^}]*)\}', r'\1', cell)
-    cell = re.sub(r'\\textit\{([^}]*)\}', r'\1', cell)
-    cell = re.sub(r'\\multicolumn\{\d+\}\{[^}]*\}\{([^}]*)\}', r'\1', cell)
-    cell = re.sub(r'\\[a-zA-Z]+', '', cell)
-    cell = re.sub(r'\{|\}', '', cell)
-    return cell.strip()
+def _discovered_datasets(run_dir: Path) -> list[str]:
+    """Return dataset names that actually exist under RUN_DIR/rawdata/."""
+    rawdata = run_dir / "rawdata"
+    if not rawdata.exists():
+        return []
+    return [d.name for d in sorted(rawdata.iterdir()) if d.is_dir()]
 
 
 # ---------------------------------------------------------------------------
@@ -193,9 +157,12 @@ def get_step_detail(ts: str, step_name: str):
 # ---------------------------------------------------------------------------
 
 def _detail_download(run_dir: Path) -> dict:
-    config  = _load_config()
+    config       = _load_config()
     datasets_cfg = config.get("datasets", {})
-    detail  = {"datasets": [], "query_sets": []}
+    detail       = {"datasets": [], "query_sets": []}
+
+    # Only show datasets that actually exist on disk
+    discovered = set(_discovered_datasets(run_dir))
 
     # Load size info from datasets_meta.csv
     sizes: dict[str, float] = {}
@@ -209,16 +176,16 @@ def _detail_download(run_dir: Path) -> dict:
                 except ValueError:
                     pass
 
-    # Build dataset entries with versions, size, and download link from toml
     for name, meta in datasets_cfg.items():
+        if name not in discovered:
+            continue
         detail["datasets"].append({
             "name":          name,
             "versions":      meta.get("snapshot_versions", "?"),
             "size_mb":       sizes.get(name),
-            "download_link": meta.get("download_link_snapshots", None),
+            "download_link": meta.get("download_link_snapshots"),
         })
 
-    # Query set file counts
     query_sets_cfg = config.get("query_sets", {})
     for qset_name in query_sets_cfg:
         qset_dir = run_dir / "queries" / "raw_queries" / qset_name
@@ -231,8 +198,8 @@ def _detail_download(run_dir: Path) -> dict:
 def _detail_preprocess(run_dir: Path) -> dict:
     detail: dict = {}
 
-    # --- Validator versions: scan POM files for version numbers
-    validator_dir = Path("/starvers_eval/scripts/2_preprocess_data/RDFValidator")
+    # Validator versions from POM filenames
+    validator_dir = Path("/starvers_eval/scripts/2_preprocess_data/RDFValidator/target")
     rdf4j_ver, jena_ver = None, None
     if validator_dir.exists():
         for pom in validator_dir.rglob("*.pom"):
@@ -248,16 +215,14 @@ def _detail_preprocess(run_dir: Path) -> dict:
         "jena":  jena_ver  or "not found",
     }
 
-    # --- Skolemization per dataset: scan header comments in each .nt file
+    # Skolemization per dataset
     per_dataset: dict[str, dict] = {}
     rawdata_dir = run_dir / "rawdata"
     if rawdata_dir.exists():
-        for dataset_dir in rawdata_dir.iterdir():
+        for dataset_dir in sorted(rawdata_dir.iterdir()):
             if not dataset_dir.is_dir():
                 continue
-            dataset_name = dataset_dir.name
             totals = {"subject": 0, "object": 0, "invalid": 0}
-
             for nt_file in dataset_dir.rglob("*.nt"):
                 try:
                     with open(nt_file, "r", encoding="utf-8", errors="ignore") as f:
@@ -275,15 +240,13 @@ def _detail_preprocess(run_dir: Path) -> dict:
                                     totals[key] += int(mm.group(1))
                 except Exception:
                     continue
-
-            if any(v > 0 for v in totals.values()):
-                per_dataset[dataset_name] = totals
+            per_dataset[dataset_dir.name] = totals
 
     detail["skolemization_per_dataset"] = [
         {"dataset": ds, **vals} for ds, vals in per_dataset.items()
     ]
 
-    # --- Excluded queries from CSV, grouped by reason
+    # Excluded SciQA queries grouped by reason
     excl_csv = run_dir / "output" / "logs" / "preprocess_data" / "excluded_queries.csv"
     if excl_csv.exists():
         counts: dict[str, int] = defaultdict(int)
@@ -297,13 +260,13 @@ def _detail_preprocess(run_dir: Path) -> dict:
 
 
 def _detail_construct_datasets(run_dir: Path) -> dict:
-    config   = _load_config()
-    datasets = list(config.get("datasets", {}).keys())
-    variants = []
+    config    = _load_config()
+    discovered = _discovered_datasets(run_dir)
+    variants  = []
 
-    for dataset in datasets:
+    for dataset in discovered:
         ds_dir = run_dir / "rawdata" / dataset
-        for fname, variant_name, is_dir in VARIANT_FILES:
+        for fname, variant_name, _ in VARIANT_FILES:
             path    = ds_dir / fname
             size_mb = _du_mb(path)
             variants.append({
@@ -321,34 +284,28 @@ def _detail_ingest(run_dir: Path) -> dict:
     if not ingest_csv.exists():
         return {}
 
-    # Aggregate: group by (triplestore, policy, dataset), average ingestion_time and db_size
-    from collections import defaultdict
     groups: dict[tuple, list] = defaultdict(list)
-
     with open(ingest_csv, newline="") as f:
         for row in csv.DictReader(f, delimiter=";"):
-            key = (
-                row.get("triplestore", ""),
-                row.get("policy", ""),
-                row.get("dataset", ""),
-            )
+            key = (row.get("triplestore",""), row.get("policy",""), row.get("dataset",""))
             try:
-                ingest_time = float(row.get("ingestion_time", 0))
-                db_size     = float(row.get("db_files_disk_usage_MiB", 0))
-                groups[key].append((ingest_time, db_size))
+                groups[key].append((
+                    float(row.get("ingestion_time", 0)),
+                    float(row.get("db_files_disk_usage_MiB", 0)),
+                    float(row.get("raw_file_size_MiB", 0)),
+                ))
             except ValueError:
                 continue
 
     summary = []
     for (triplestore, policy, dataset), values in sorted(groups.items()):
-        avg_time = sum(v[0] for v in values) / len(values)
-        avg_db   = sum(v[1] for v in values) / len(values)
         summary.append({
             "triplestore":        triplestore,
             "policy":             policy,
             "dataset":            dataset,
-            "avg_ingestion_time": avg_time,
-            "avg_db_size_mib":    avg_db,
+            "avg_ingestion_time": sum(v[0] for v in values) / len(values),
+            "avg_db_size_mib":    sum(v[1] for v in values) / len(values),
+            "avg_raw_size_mib":   sum(v[2] for v in values) / len(values),
         })
 
     return {"ingestion_summary": summary}
@@ -373,14 +330,24 @@ def _detail_construct_queries(run_dir: Path) -> dict:
                 label = f"{policy} / {dataset} / {query_set}"
                 query_counts[label] = count
 
-    return {"query_counts": query_counts}
+    # Total per dataset, calculated from query_counts dict
+    totals = defaultdict(int)
+    for label, count in query_counts.items():
+        parts = label.split(" / ")
+        if len(parts) == 3:
+            _, dataset, _ = parts
+            totals[dataset] += count
+
+    POLICY_DIRS  = ["ic_sr_ng", "ostrich", "tb_sr_ng", "tb_sr_rs"]
+    DATASET_DIRS = ["bearb_day", "bearb_hour", "bearc", "orkg"]
+
+    return {"query_counts": query_counts, "totals_per_dataset": totals, "policies": POLICY_DIRS, "datasets": DATASET_DIRS}
 
 
 def _detail_evaluate(run_dir: Path) -> dict:
-    config     = _load_config()
-    # Structure: evaluations.<triplestore>.<dataset> = [list of policies]
-    eval_cfg   = config.get("evaluations", {})
-    rows       = []
+    config   = _load_config()
+    eval_cfg = config.get("evaluations", {})
+    rows     = []
 
     for triplestore, datasets in eval_cfg.items():
         if not isinstance(datasets, dict):
@@ -388,12 +355,10 @@ def _detail_evaluate(run_dir: Path) -> dict:
         for dataset, policies in datasets.items():
             if not isinstance(policies, list):
                 continue
-            # Count query files for each policy/dataset combination
-            total_queries = 0
-            for policy in policies:
-                qdir = run_dir / "queries" / "final_queries" / policy / dataset
-                total_queries += _count_txt_files(qdir)
-
+            total_queries = sum(
+                _count_txt_files(run_dir / "queries" / "final_queries" / p / dataset)
+                for p in policies
+            )
             rows.append({
                 "triplestore":  triplestore,
                 "dataset":      dataset,
@@ -405,32 +370,30 @@ def _detail_evaluate(run_dir: Path) -> dict:
 
 
 def _detail_visualize(run_dir: Path) -> dict:
-    tex_path = run_dir / "output" / "tables" / "latex_table_results.tex"
-    if not tex_path.exists():
-        return {}
+    """Return base64-encoded PNG plots from the figures directory."""
+    figures_dir = run_dir / "output" / "figures"
+    if not figures_dir.exists():
+        return {"plots": []}
 
-    tex = tex_path.read_text(encoding="utf-8")
-    parsed = _parse_latex_table(tex)
+    plots = []
+    for png in sorted(figures_dir.glob("*.png")):
+        try:
+            data = base64.b64encode(png.read_bytes()).decode("ascii")
+            plots.append({"filename": png.name, "data": data})
+        except Exception:
+            continue
 
-    if parsed:
-        return {"result_table": parsed}
-    else:
-        # Fallback: show raw LaTeX
-        return {"latex_raw": tex}
+    return {"plots": plots}
 
 
 # ---------------------------------------------------------------------------
-# Static serving
+# Serve GUI
 # ---------------------------------------------------------------------------
 
 @app.get("/")
 def serve_gui():
     return render_template("index.html")
 
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 def run_api():
     app.run(host="0.0.0.0", port=PORT)
