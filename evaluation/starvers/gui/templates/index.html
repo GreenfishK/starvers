@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StarVers · Evaluation Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
@@ -25,15 +25,13 @@
   </header>
 
   <main>
-    <!-- Left panel: run list -->
     <aside id="sidebar">
       <div class="sidebar-header">
-        <span class="label">RUNS</span>
+        <span class="label">Runs</span>
       </div>
       <ul id="runList"></ul>
     </aside>
 
-    <!-- Right panel: run detail -->
     <section id="content">
       <div id="placeholder">
         <div class="placeholder-icon">⬡</div>
@@ -45,18 +43,6 @@
       </div>
     </section>
   </main>
-
-  <!-- Step detail drawer -->
-  <div id="drawer" class="drawer hidden">
-    <div class="drawer-inner">
-      <div class="drawer-header">
-        <span id="drawerTitle"></span>
-        <button id="drawerClose" class="btn-icon">✕</button>
-      </div>
-      <div id="drawerBody"></div>
-    </div>
-  </div>
-  <div id="overlay" class="overlay hidden"></div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

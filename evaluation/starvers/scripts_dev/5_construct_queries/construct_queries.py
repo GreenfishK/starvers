@@ -23,6 +23,31 @@ def split_solution_modifiers_query(query: str) -> list:
     return solution_modifiers, query_without_solution_modifiers
 
 
+def _count_queries():
+    # Iterate recursively through f"{os.environ['RUN_DIR']}/queries/final_queries/"
+    # Count the .txt files at the bottom of each branch and
+    #  aggregate the counts on the third directory level,
+    #  e.g. f"{os.environ['RUN_DIR']}/queries/final_queries/ic_sr_ng/orkg/complex
+    # Save the counts for each policy, dataset, and query set in a csv file at f"{os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv" with columns: policy, dataset, query_set, query_count
+
+    QUERIES_DIR = f"{os.environ['RUN_DIR']}/queries/final_queries/"
+    query_count = 0
+    with open(f"{os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv", 'w') as count_file:
+        count_file.write("policy,dataset,query_set,query_count\n")
+        for policy in os.listdir(QUERIES_DIR):
+            policy_path = os.path.join(QUERIES_DIR, policy)
+            if not os.path.isdir(policy_path):
+                continue
+            for dataset in os.listdir(policy_path):
+                dataset_path = os.path.join(policy_path, dataset)
+                if not os.path.isdir(dataset_path):
+                    continue
+                for query_set in os.listdir(dataset_path):
+                    query_set_path = os.path.join(dataset_path, query_set)
+                    if not os.path.isdir(query_set_path):
+                        continue
+                    query_count = sum([len(files) for r, d, files in os.walk(query_set_path) if any(file.endswith('.txt') for file in files)])
+                    count_file.write(f"{policy},{dataset},{query_set},{query_count}\n")
 
 def main():
     # Parameters 
@@ -161,8 +186,11 @@ def main():
                 vers_ts = init_version_timestamp      
 
     logging.info("Finished generating queries.")
-     
-                       
+
+    # Count generated queries
+    logging.info("Counting generated queries.")
+    _count_queries()
+    logging.info(f"Finished counting generated queries. File saved to {os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv")
 
 if __name__ == "__main__":
     main()
