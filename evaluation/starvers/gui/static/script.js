@@ -168,7 +168,7 @@ function renderStepInfo(stepName, info) {
         </tr>`).join('');
       sections.push(section('Datasets', `
         <table class="data-table">
-          <thead><tr><th>Dataset</th><th>Versions</th><th>Avg Snapshot Size</th><th>Source</th></tr></thead>
+          <thead><tr><th>Dataset</th><th>Versions</th><th>All Snapshots Size</th><th>Source</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`));
     }
