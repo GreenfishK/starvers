@@ -107,7 +107,7 @@ How many ingest runs: 10 (hardcoded)
 
 
 # Fixes
-## 21.04.2026
+## 21.04.2026 08:30
 
 ### color scheme
 use the same color scheme (TU Wien colors) as for the gui in https://github.com/GreenfishK/starvers/tree/main/src/starversserver/app/gui, which is a light mode color scheme
@@ -160,3 +160,34 @@ the policies are the list values
 ### visualize
 the latex table should be interpreted, not shown as a raw table
 
+## 21.04.2026 11:07
+### General
+in the run details the "01 Apr 2026, 09:49:06 UTC" should be labeled as "Execution start date"
+
+The unformattad timestamp on the right in the same container as "01 Apr 2026, 09:49:06 UTC" should be removed
+
+another font should be taken for the table headers as the current font is somehow hard to read
+
+The runtimes should not be displayed in just minutes but also in hours and days if minutes >=60 and if hours >=24
+
+thousand separator for MB sizes and numbers in general (e.g. in Download and Construct Datasets)
+
+### Download
+only display datasets that you find under RUN_DIR/raw_data/<dataset_name>.
+
+
+### Preprocess data
+* Display the substeps executed as a flow, with arrows in between the substeps (horizontally)
+* Add: How many queries got excluded from the SciQA dataset for which reason
+    * Source of information: csv file at ${RUN_DIR}output/logs/preprocess_data/excluded_queries.csv. count the total number of rows in the csv file minus the header grouped by the "reason" column
+
+
+### Construct datasets
+only display datasets that you find under RUN_DIR/raw_data/<dataset_name>.
+
+### ingest
+use a bar plot to show the ingest results per triple store
+
+### Construct queries
+A line should also show the total amount of queries at the bottom.
+Since the query counts are the same for each policy, choose a more compact representation/visualization
