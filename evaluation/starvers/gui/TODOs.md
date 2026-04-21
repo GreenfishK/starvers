@@ -191,3 +191,9 @@ use a bar plot to show the ingest results per triple store
 ### Construct queries
 A line should also show the total amount of queries at the bottom.
 Since the query counts are the same for each policy, choose a more compact representation/visualization
+
+## 21.04.2026 14:50
+### Construct queries
+The html content should be the following:
+* A table showing a two-level row-header with policy - query_set as indexes.
+* A "total" row outside of the table that shows the formula for the total number of queries, which is: sum(table cell values) * number_of_datasets. The formula should be shown in two rows. the first row is the theoretical formula and the second one with the concrete values, whereas the first value is the sum and the second the number of the datasets.

@@ -650,3 +650,84 @@ main {
   #sidebar { width: 220px; }
   .step-card-header { grid-template-columns: 24px 1fr auto; }
 }
+
+/* ── Run meta label ──────────────────────────────────────────── */
+.run-meta-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  margin-right: -8px;
+}
+
+/* ── Table header font override ──────────────────────────────── */
+.data-table th {
+  font-family: var(--font-body);
+  letter-spacing: 0.03em;
+  text-transform: none;
+  font-size: 12px;
+}
+
+/* ── Total row in query table ────────────────────────────────── */
+.total-row td {
+  background: var(--tuw-blue-light) !important;
+  border-top: 2px solid var(--tuw-blue);
+}
+
+/* ── Substep flow ────────────────────────────────────────────── */
+.flow-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.flow-step {
+  background: var(--tuw-blue-light);
+  border: 1px solid var(--tuw-blue);
+  color: var(--tuw-blue-dark);
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.flow-arrow {
+  color: var(--tuw-blue);
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* ── Ingest bar chart 4-column layout ───────────────────────── */
+.bar-row {
+  grid-template-columns: 200px 1fr 80px 80px;
+}
+
+/* ── Plot grid ───────────────────────────────────────────────── */
+.plots-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.plot-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+.plot-title {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tuw-blue-dark);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  text-transform: capitalize;
+}
+.plot-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
