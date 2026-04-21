@@ -20,7 +20,7 @@ from pathlib import Path
 import tomli
 
 from werkzeug.middleware.proxy_fix import ProxyFix
-from flask import Flask, abort, jsonify, send_from_directory
+from flask import Flask, abort, jsonify, render_template
 
 _here = os.path.dirname(os.path.abspath(__file__))
  
@@ -114,7 +114,6 @@ def _count_txt_files(directory: Path) -> int:
 # ---------------------------------------------------------------------------
 
 @app.get("/api/runs")
-@app.get("/evaluation/starvers/api/runs")
 def list_runs():
     if not DATA_DIR.exists():
         return jsonify([])
@@ -123,7 +122,6 @@ def list_runs():
 
 
 @app.get("/api/runs/<ts>")
-@app.get("/evaluation/starvers/api/runs/<ts>")
 def get_run(ts: str):
     run_dir = DATA_DIR / ts
     if not run_dir.is_dir():
@@ -136,7 +134,6 @@ def get_run(ts: str):
 # ---------------------------------------------------------------------------
 
 @app.get("/api/step-detail/<ts>/<step_name>")
-@app.get("/evaluation/starvers/api/step-detail/<ts>/<step_name>")
 def get_step_detail(ts: str, step_name: str):
     run_dir = DATA_DIR / ts
     if not run_dir.is_dir():
@@ -365,10 +362,8 @@ def _detail_visualize(run_dir: Path) -> dict:
 # ---------------------------------------------------------------------------
 
 @app.get("/")
-@app.get("/evaluation/starvers/")
-@app.get("/evaluation/starvers")
 def serve_gui():
-    return send_from_directory(".", "templates/index.html")
+    return render_template("index.html")
 
 
 # ---------------------------------------------------------------------------
