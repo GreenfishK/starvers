@@ -21,7 +21,9 @@ QUERY_DIR =  os.path.join(BASE_DIR, 'queries')
 
 def create_engine(repository_name: str, auth = DIGEST, method = POST, return_format = CSV, query_type = 'SELECT'):
     graph_db_get_endpoint = Settings().graph_db_url_get_endpoint.replace('{:repo_name}', repository_name)
-    sparql_engine = SPARQLWrapper(graph_db_get_endpoint)
+    graph_db_post_endpoint = Settings().graph_db_url_post_endpoint.replace('{:repo_name}', repository_name)
+    sparql_engine = SPARQLWrapper(graph_db_get_endpoint, graph_db_post_endpoint)
+    
     sparql_engine.setHTTPAuth(auth)
     sparql_engine.setMethod(method)
     sparql_engine.setReturnFormat(return_format)

@@ -25,3 +25,6 @@ COPY evaluation/starversserver /code/evaluation
 
 ENV PYTHONPATH="/code"
 
+ENTRYPOINT [ "python" ]
+# Expect additional arguments to specify which evaluation to run
+CMD [ "/code/evaluation/compute.py", "air_quality_ontology" ]

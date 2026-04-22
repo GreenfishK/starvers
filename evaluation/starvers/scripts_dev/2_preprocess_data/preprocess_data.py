@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import time
+from turtle import pd
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -74,6 +75,7 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE   = LOG_DIR / "preprocess_data.txt"
 EXCLUDE_CSV = LOG_DIR / "excluded_queries.csv"
+PREPROCESS_CSV = LOG_DIR / "preprocess_summary.csv"
 
 # Clear log files (mirrors > $log_file and the open(..., "w") calls in the original)
 LOG_FILE.write_text("")
@@ -129,9 +131,6 @@ def get_snapshot_filename_format(config: dict, dataset: str) -> str | None:
     return f"%0{entry['ic_basename_length']}g"
 
 
-def get_snapshot_dir(config: dict) -> Path:
-    return Path(config["general"]["snapshot_dir"])
-
 
 # ---------------------------------------------------------------------------
 # Phase 1 helpers: skolemization and RDF validation (idempotent)
@@ -164,7 +163,7 @@ def _first_n_lines(path: Path, n: int = 3) -> list[str]:
     return lines
 
 
-def skolemize_subject_blanks(raw_ds: Path):
+def skolemize_subject_blanks(dataset: str, variant: str, raw_ds: Path, file_number: int, preprocess_df: pd.DataFrame):
     """
     Replace blank nodes in subject position (_:xxx ...) with URIs (<_:xxx ...>).
     Idempotent: skips if the header comment is already present.
@@ -173,6 +172,10 @@ def skolemize_subject_blanks(raw_ds: Path):
     already_done = any(header_marker in l for l in _first_n_lines(raw_ds))
 
     if already_done:
+        # Extract the number with regex
+        match = re.search(r"# skolemized_blank_nodes_in_subject_position: (\d+)", "".join(_first_n_lines(raw_ds)))
+        preprocess_df.loc[(dataset, variant, file_number), "skolemized_subjects"] = int(match.group(1)) if match else 0
+        
         LOG.info(
             f"{raw_ds}: skolemized blank nodes in subject position: 0 in this run. "
             f"Previously skolemized nodes: See comment in {raw_ds}"
@@ -189,8 +192,10 @@ def skolemize_subject_blanks(raw_ds: Path):
     _prepend_comment(raw_ds, f"# skolemized_blank_nodes_in_subject_position: {cnt}")
     LOG.info(f"{raw_ds}: skolemized blank nodes in subject position: {cnt}")
 
+    preprocess_df.loc[(dataset, variant, file_number), "skolemized_subjects"] = cnt
 
-def skolemize_object_blanks(raw_ds: Path):
+
+def skolemize_object_blanks(dataset: str, variant: str, raw_ds: Path, file_number: int, preprocess_df: pd.DataFrame):
     """
     Replace blank nodes in object position with URIs.
     Idempotent: skips if the header comment is already present.
@@ -199,6 +204,9 @@ def skolemize_object_blanks(raw_ds: Path):
     already_done = any(header_marker in l for l in _first_n_lines(raw_ds))
 
     if already_done:
+        match = re.search(r"# skolemized_blank_nodes_in_object_position: (\d+)", "".join(_first_n_lines(raw_ds)))
+        preprocess_df.loc[(dataset, variant, file_number), "skolemized_objects"] = int(match.group(1)) if match else 0
+        
         LOG.info(
             f"{raw_ds}: skolemized blank nodes in object position: 0 in this run. "
             f"Previously skolemized nodes: See comment in {raw_ds}"
@@ -217,8 +225,9 @@ def skolemize_object_blanks(raw_ds: Path):
     _prepend_comment(raw_ds, f"# skolemized_blank_nodes_in_object_position: {cnt}")
     LOG.info(f"{raw_ds}: skolemized blank nodes in object position: {cnt}")
 
+    preprocess_df.loc[(dataset, variant, file_number), "skolemized_objects"] = cnt
 
-def validate_and_comment_invalid_triples(raw_ds: Path):
+def validate_and_comment_invalid_triples(dataset: str, variant: str, raw_ds: Path, file_number: int, preprocess_df: pd.DataFrame):
     """
     Run the Java RDF validator to comment out invalid triples.
     Idempotent: skips if the header comment is already present.
@@ -230,6 +239,9 @@ def validate_and_comment_invalid_triples(raw_ds: Path):
     LOG.info(f"Validating {raw_ds}")
 
     if already_done:
+        match = re.search(r"# invalid_lines_excluded: (\d+)", "".join(_first_n_lines(raw_ds)))
+        preprocess_df.loc[(dataset, variant, file_number), "invalid_triples"] = int(match.group(1)) if match else 0
+
         LOG.info(
             f"{raw_ds}: 0 in this run. Previously excluded lines: see first comment in {raw_ds}"
         )
@@ -250,6 +262,8 @@ def validate_and_comment_invalid_triples(raw_ds: Path):
     _prepend_comment(raw_ds, f"# invalid_lines_excluded: {excluded}")
     LOG.info(f"{raw_ds}: {excluded}")
 
+    preprocess_df.loc[(dataset, variant, file_number), "invalid_triples"] = excluded
+
 
 # ---------------------------------------------------------------------------
 # Phase 1: clean_datasets  
@@ -258,7 +272,9 @@ def validate_and_comment_invalid_triples(raw_ds: Path):
 def clean_datasets():
     LOG.info("Start corrections")
     config = _load_config()
-    snapshot_dir = get_snapshot_dir(config)
+
+    preprocess_df = pd.DataFrame(columns=["dataset", "variant", "file_number", "skolemized_subjects", "skolemized_objects", "invalid_triples"])
+    preprocess_df.set_index(["dataset", "variant", "file_number"], inplace=True)
 
     for dataset in DATASETS:
         versions = get_snapshot_version(config, dataset)
@@ -298,11 +314,13 @@ def clean_datasets():
                     raw_ds = RUN_DIR / "rawdata" / dataset / "alldata.TB.nq"
 
                 # --- Three idempotent cleaning steps ---
-                skolemize_subject_blanks(raw_ds)
-                skolemize_object_blanks(raw_ds)
-                validate_and_comment_invalid_triples(raw_ds)
+                skolemize_subject_blanks(dataset, ds_var, raw_ds, c_int, preprocess_df)
+                skolemize_object_blanks(dataset, ds_var, raw_ds, c_int, preprocess_df)
+                validate_and_comment_invalid_triples(dataset, ds_var, raw_ds, c_int, preprocess_df)
 
-
+    # Save summary of preprocessing steps to CSV
+    preprocess_df.to_csv(PREPROCESS_CSV)
+    LOG.info(f"Saved preprocessing summary to {PREPROCESS_CSV}")
 # ---------------------------------------------------------------------------
 # Phase 2 constants and regex (was parse_SciQA_queries.py top-level)
 # ---------------------------------------------------------------------------

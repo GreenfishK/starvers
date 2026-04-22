@@ -17,11 +17,12 @@ import time
 import requests
 import fnmatch
 from typing import Optional
+from SPARQLWrapper import Wrapper, SPARQLWrapper, POST, DIGEST, GET, JSON
 
 
-from app.services.VersioningService import StarVersService
-from app.services.ManagementService import get_id_by_repo_name
-from app.services.MetricsService import MetricsService
+from app.services.versioning_pipeline import VersioningPipeline
+from app.services.dataset_repository import get_dataset_id_by_repo_name
+from app.services.metrics_service import MetricsService
 from app.models.TrackingTaskModel import TrackingTaskDto
 from app.persistance.graphdb.GraphDatabaseUtils import recreate_repository, get_all_creation_timestamps, create_engine
 from app.LoggingConfig import get_logger, setup_logging
@@ -86,7 +87,7 @@ def convert_timestamp_str_to_iso(timestamp_str: str) -> datetime:
             f"Timestamp contains invalid date/time values: '{timestamp_str}'"
         ) from e
 
-    return dt
+    return dt 
 
 
 def wait_for_graphdb(url: str, timeout: int = 60, interval: int = 3):
@@ -166,7 +167,7 @@ def run_versioning(repo_name: str, file_timestamp_pairs: list[tuple[str, str]], 
     logger.info("Preparation finished.")
 
     logger.info("Starting with building an RDF-star dataset from individual snapshots...")
-    versioning_service = StarVersService(tracking_task, repo_name)
+    versioning_service = VersioningPipeline(tracking_task, repo_name)
     versioning_service.local_file = True 
 
     if versioning_mode == "from_scratch":
@@ -189,6 +190,30 @@ def run_versioning(repo_name: str, file_timestamp_pairs: list[tuple[str, str]], 
             versioning_service.run_versioning(version_timestamp=version_timestamp)
 
     else: # from_version         
+        # Rollback the triplestore to the state of the version_timestamp
+        with open("/code/evaluation/queries/rollback_inserts.sparql", "r") as f:
+            rollback_inserts_sparql_tmpl = f.read()
+            ts=start_timestamp_iso.isoformat()
+            rollback_inserts_sparql = rollback_inserts_sparql_tmpl.format(ts=ts)
+
+        with open("/code/evaluation/queries/rollback_deletes.sparql", "r") as f:
+            rollback_deletes_sparql_tmpl = f.read()
+            ts=start_timestamp_iso.isoformat()
+            rollback_deletes_sparql = rollback_deletes_sparql_tmpl.format(ts=ts)
+
+        # Execute updates
+        logger.info(f"Executing query: {rollback_inserts_sparql}")
+        sparql_engine.setQuery(rollback_inserts_sparql)
+        sparql_engine.setMethod(POST)
+        sparql_engine.setHTTPAuth(DIGEST)
+        sparql_engine.query()
+
+        logger.info(f"Executing query: {rollback_deletes_sparql}")
+        sparql_engine.setQuery(rollback_deletes_sparql)
+        sparql_engine.setMethod(POST)
+        sparql_engine.setHTTPAuth(DIGEST)
+        sparql_engine.query()
+
         # Iterate over all files, starting from the second oldest
         for timestamp_str, zip_file in file_timestamp_pairs[start_idx:]:
             # version snapshot
@@ -220,7 +245,7 @@ def run_snapshot_metrics_computation(metrics_service: MetricsService, dataset_id
     timings_df["timestamp"] = pd.to_datetime(timings_df["timestamp"], format="%Y%m%d-%H%M%S_%f", errors="coerce")
     
     if versioning_mode == "from_version" and start_timestamp_iso:
-        # Delete all snapshot metrics starting from start_timestamp_iso
+        # Delete all snapshot metrics in the database starting from start_timestamp_iso
         logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
         metrics_service.delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso)
     
@@ -308,7 +333,9 @@ if versioning_mode == "from_version":
         csv_text = response.decode('utf-8')
         df_creation_timestamps = pd.read_csv(StringIO(csv_text))
     else:
-        raise ValueError("Unexpected response format from SPARQL query. Should be CSV bytes.")
+        message=f"Unexpected response format from SPARQL query. Should be CSV bytes."
+        logger.error(message)
+        raise ValueError(message)
 
 
     # Convert df_creation_timestamps['valid_from'] to datetime
@@ -320,15 +347,15 @@ if versioning_mode == "from_version":
     if df_creation_timestamps.empty:
         raise ValueError("No valid creation timestamps found in triple store.")
 
-    latest_ts_iso = df_creation_timestamps["valid_from"].max()
+    #latest_ts_iso = df_creation_timestamps["valid_from"].max()
 
     # Compare
-    if start_timestamp_iso <= latest_ts_iso and "v" in functions_to_run:
-        raise ValueError(
-            f"In the 'from_version' mode and the 'v(ersion)' function, the start timestamp needs to be a snapshot timestamp "
-            f"that is newer than the latest timestamp in the triple store.\n"
-            f"Provided: {start_timestamp_iso}, Latest in store: {latest_ts_iso}"
-        )
+    #if start_timestamp_iso <= latest_ts_iso and "v" in functions_to_run:
+    #    raise ValueError(
+    #        f"In the 'from_version' mode and the 'v(ersion)' function, the start timestamp needs to be a snapshot timestamp "
+    #        f"that is newer than the latest timestamp in the triple store.\n"
+    #        f"Provided: {start_timestamp_iso}, Latest in store: {latest_ts_iso}"
+    #    )
     
     if not (df_creation_timestamps["valid_from"] == start_timestamp_iso).any() \
         and ('sm' in functions_to_run or 'dm' in functions_to_run) \
@@ -402,7 +429,7 @@ wait_for_graphdb(f"{Settings().graph_db_url}/rest/repositories")
 #######################################
 with Session(engine) as session:
     # Get id by repo name
-    dataset_id = get_id_by_repo_name(repo_name, session)
+    dataset_id = get_dataset_id_by_repo_name(repo_name, session)
     dataset = session.get(Dataset, dataset_id) 
     if not dataset:
         raise ValueError(f"Dataset with repo name '{repo_name}' not found in the database.")
