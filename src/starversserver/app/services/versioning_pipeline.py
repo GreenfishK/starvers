@@ -44,6 +44,7 @@ class VersioningPipeline:
         self.tracking_task = tracking_task
         self.repository_name = repository_name
         self.LOG = get_logger(__name__)
+        self.local_file = False # Set to True to skip downloading and use a local file instead (for evaluation)
 
         graph_db_get  = Settings().graph_db_url_get_endpoint.replace("{:repo_name}", tracking_task.name)
         graph_db_post = Settings().graph_db_url_post_endpoint.replace("{:repo_name}", tracking_task.name)
@@ -191,16 +192,21 @@ class VersioningPipeline:
     def _download_snapshot(self):
         """Download the remote RDF dump to snapshot_path, retrying once on failure."""
         os.makedirs(self.base_path, exist_ok=True)
-        for attempt in range(2):
-            self.LOG.info(f"[{self.repository_name}] Downloading snapshot (attempt {attempt + 1}).")
-            try:
-                obtain_nt(self.tracking_task.rdf_dataset_url, self.snapshot_path)
-                return
-            except Exception as e:
-                if attempt == 1:
-                    raise
-                self.LOG.warning(f"[{self.repository_name}] Download failed, retrying: {e}")
-
+        
+        if not self.local_file:
+            for attempt in range(2):
+                self.LOG.info(f"[{self.repository_name}] Downloading snapshot (attempt {attempt + 1}).")
+                try:
+                    obtain_nt(self.tracking_task.rdf_dataset_url, self.snapshot_path)
+                    return
+                except Exception as e:
+                    if attempt == 1:
+                        raise
+                    self.LOG.warning(f"[{self.repository_name}] Download failed, retrying: {e}")
+        else:
+            self.LOG.info(f"[{self.repository_name}] Copying local snapshot file {self.base_path}/{self.tracking_task.name}_{get_timestamp(self._version_timestamp)}.raw.nt to {self.snapshot_path}.")
+            shutil.copy2(f"{self.work_dir}/{self.tracking_task.name}_{get_timestamp(self._version_timestamp)}.raw.nt",self.snapshot_path)
+    
     def _preprocess_snapshot(self):
         """Normalise and skolemize the raw N-Triples file."""
         self.LOG.info(f"[{self.repository_name}] Normalising and skolemizing snapshot.")

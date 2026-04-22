@@ -1,0 +1,12 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+delete {{
+    << << ?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.   
+}}
+insert {{
+   << << ?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> "9999-12-31T12:00:00.000"^^xsd:dateTime.   
+
+}}
+where {{
+    << << ?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.
+    filter(?valid_until >= "{ts}"^^xsd:dateTime && ?valid_until < "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime)
+}}

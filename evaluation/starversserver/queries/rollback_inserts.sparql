@@ -1,0 +1,8 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+delete {{
+    << << ?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.   
+}}
+where {{
+    << << ?s ?p ?o>> <https://github.com/GreenfishK/DataCitation/versioning/valid_from> ?valid_from >> <https://github.com/GreenfishK/DataCitation/versioning/valid_until> ?valid_until.
+    filter(?valid_from >= "{ts}"^^xsd:dateTime)
+}}

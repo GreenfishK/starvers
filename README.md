@@ -189,65 +189,7 @@ docker run -d --rm \
 starvers_eval:latest delete --older-than 20260101T000000
 ```
 
----
-
-## Starversserver Evaluation (**work in progress**)
-
-### Pipeline Steps
-
-| # | Step | Docker-Compose Service |
-|---|------|------------------------|
-| 1 | compute | `compute` |
-| 2 | create_plots | `create_plots` |
-
-Steps are run via `starversserver.eval.compose.yml` with runtime variables from
-`starversserver.eval.env` and infrastructure variables from `.env`.
-
-### Run the full pipeline
-
-```bash
-docker run --rm \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(pwd):/workspace \
-  -v /mnt/data/starversserver_eval:/mnt/data/starversserver_eval \
-  -w /workspace \
-  python:3.11-slim \
-  python run_starversserver_eval.py run all
-```
-
-### Run a single step
-
-```bash
-python run_starversserver_eval.py run step compute
-```
-
-### Run from a specific step
-
-```bash
-python run_starversserver_eval.py run from create_plots
-```
-
-### Continue a previously interrupted run
-
-```bash
-python run_starversserver_eval.py continue
-```
-
-### List / delete runs
-
-```bash
-python run_starversserver_eval.py list
-python run_starversserver_eval.py delete --older-than 20260101T000000
-```
-
----
-
-## Monitoring GUIs
-
-Both pipelines have a web-based monitoring GUI backed by a small Flask API that
-reads the `execution.csv` files written by the orchestrators.
-
-### Starvers GUI
+### Starvers Monitoring GUI
 
 Run the gui:
 
@@ -260,17 +202,51 @@ docker run -d --rm \
 starvers_eval:latest gui
 ```
 
-### Starversserver GUI (**work in progress**)
+## Starversserver Evaluation
 
+### Pipeline Steps
+
+| # | Step | Docker-Compose Service |
+|---|------|------------------------|
+| 1 | compute | `compute` |
+| 2 | create_plots | `create_plots` |
+
+
+### Run compute 
+Creates a timestamped graph from all snapshots on our local disk and computes metrics for a specific dataset/repository.
 
 ```bash
-docker build -t starversserver-gui evaluation/starversserver/gui/
-
-docker run -d \
-  --name starversserver-gui \
+docker run --rm -d \
+  --env-file starversserver.env \
+  --name compute
+  -v /mnt/data/starversserver/evaluation:/data/evaluation \
+  -v /mnt/data/starversserver/logs:/data/logs \
+  -v /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import \
   --network starvers_prod_net \
-  -v /mnt/data/starversserver_eval:/mnt/data/starversserver_eval:ro \
-  -p 8081:8081 \
-  starversserver-gui
+  starversserver_eval:latest \
+  /code/evaluation/compute.py "<repo_name>"
 ```
+
+Possible parameters for /code/evaluation/compute.py are
+* "<repo_name>": Runs versioning and metrics computation for the specified repository
+* "<repo_name>", from_scratch, "yyyyMMdd-HHmmss_sss": Runs versioning and metrics computation for the specified repository from a specific timestamp with initial versioning
+* "<repo_name>", from_version, "yyyyMMdd-HHmmss_sss": Continues versioning and metrics computation for the specified repository from a specific timestamp without initial versioning
+* "<repo_name>",  (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "v": Runs only versioning without metrics computation for the specified repository from a specific timestamp
+* "<repo_name>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "dm, sm": Runs only thout metrics computation without versioning for the specified repository, with the possibility of running from scratch or from a specific timestamp
+
+### Run evaluation 
+Creates plots from the timing files
+
+```bash
+docker run --rm -d \
+  --env-file starversserver.env \
+  -v /mnt/data/starversserver/evaluation:/data/evaluation \
+  -v /mnt/data/starversserver/logs:/data/logs \
+  -v /mnt/data/starversserver/output/figures:/data/figures \
+  --network starvers_prod_net \
+  starversserver_eval:latest \
+  /code/evaluation/evaluation.py 
+```
+
+
 
