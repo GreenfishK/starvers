@@ -85,16 +85,38 @@ class DatasetPolicyLock:
 # Functions
 #####################################################################
 # Helpers
-def log(triplestore: str, message: str):
-    log_file = str(LOG_FILES[triplestore])
-    logging.basicConfig(handlers=[logging.FileHandler(filename=log_file, 
-                                                  encoding='utf-8', mode='a+'),
-                              logging.StreamHandler(sys.stdout)],
-                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
-                    datefmt="%F %A %T", 
-                    level=logging.INFO)
-    logging.info(f"{message}")
+_loggers: dict[str, logging.Logger] = {}
 
+def get_ts_logger(triplestore: str) -> logging.Logger:
+    """Return a logger that writes exclusively to the triplestore's log file."""
+    if triplestore in _loggers:
+        return _loggers[triplestore]
+
+    log_file = LOG_FILES[triplestore]
+    logger = logging.getLogger(f"ingest.{triplestore}")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False  # don't bubble up to the root logger
+
+    fmt = logging.Formatter(
+        "%(asctime)s %(name)s:%(levelname)s:%(message)s",
+        datefmt="%F %A %T",
+    )
+
+    # File handler — writes only to this triplestore's log file
+    fh = logging.FileHandler(log_file, encoding="utf-8", mode="a+")
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
+
+    # Console handler — so output still appears in stdout
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(fmt)
+    logger.addHandler(sh)
+
+    _loggers[triplestore] = logger
+    return logger
+
+def log(triplestore: str, message: str):
+    get_ts_logger(triplestore).info(message)
 
 def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
     try:

@@ -216,31 +216,48 @@ def _detail_preprocess(run_dir: Path) -> dict:
     }
 
     # Skolemization per dataset
+    # --- Skolemization per dataset: read from pre-computed CSV ---
+    preprocess_csv = run_dir / "output" / "logs" / "preprocess_data" / "preprocess_summary.csv"
     per_dataset: dict[str, dict] = {}
-    rawdata_dir = run_dir / "rawdata"
-    if rawdata_dir.exists():
-        for dataset_dir in sorted(rawdata_dir.iterdir()):
-            if not dataset_dir.is_dir():
-                continue
-            totals = {"subject": 0, "object": 0, "invalid": 0}
-            for nt_file in dataset_dir.rglob("*.nt"):
-                try:
-                    with open(nt_file, "r", encoding="utf-8", errors="ignore") as f:
-                        for _ in range(6):
-                            line = f.readline()
-                            if not line:
-                                break
-                            for key, pattern in [
-                                ("subject", r"#\s*skolemized_blank_nodes_in_subject_position:\s*(\d+)"),
-                                ("object",  r"#\s*skolemized_blank_nodes_in_object_position:\s*(\d+)"),
-                                ("invalid", r"#\s*invalid_lines_excluded:\s*(\d+)"),
-                            ]:
-                                mm = re.match(pattern, line)
-                                if mm:
-                                    totals[key] += int(mm.group(1))
-                except Exception:
+
+    if preprocess_csv.exists():
+        with open(preprocess_csv, newline="") as f:
+            for row in csv.DictReader(f):
+                dataset = row.get("dataset", "")
+                if not dataset:
                     continue
-            per_dataset[dataset_dir.name] = totals
+                if dataset not in per_dataset:
+                    per_dataset[dataset] = {"subject": 0, "object": 0, "invalid": 0}
+                # Sum across all variants and file numbers for this dataset
+                per_dataset[dataset]["subject"] += int(float(row.get("skolemized_subjects", 0) or 0))
+                per_dataset[dataset]["object"]  += int(float(row.get("skolemized_objects",  0) or 0))
+                per_dataset[dataset]["invalid"] += int(float(row.get("invalid_triples",     0) or 0))
+    else:
+        # Fallback: scan file headers (slow path, only if CSV not yet generated)
+        rawdata_dir = run_dir / "rawdata"
+        if rawdata_dir.exists():
+            for dataset_dir in sorted(rawdata_dir.iterdir()):
+                if not dataset_dir.is_dir():
+                    continue
+                totals = {"subject": 0, "object": 0, "invalid": 0}
+                for nt_file in dataset_dir.rglob("*.nt"):
+                    try:
+                        with open(nt_file, "r", encoding="utf-8", errors="ignore") as f:
+                            for _ in range(6):
+                                line = f.readline()
+                                if not line:
+                                    break
+                                for key, pattern in [
+                                    ("subject", r"#\s*skolemized_blank_nodes_in_subject_position:\s*(\d+)"),
+                                    ("object",  r"#\s*skolemized_blank_nodes_in_object_position:\s*(\d+)"),
+                                    ("invalid", r"#\s*invalid_lines_excluded:\s*(\d+)"),
+                                ]:
+                                    mm = re.match(pattern, line)
+                                    if mm:
+                                        totals[key] += int(mm.group(1))
+                    except Exception:
+                        continue
+                per_dataset[dataset_dir.name] = totals
 
     detail["skolemization_per_dataset"] = [
         {"dataset": ds, **vals} for ds, vals in per_dataset.items()
