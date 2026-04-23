@@ -247,7 +247,7 @@ def run_snapshot_metrics_computation(metrics_service: MetricsService, dataset_id
     if versioning_mode == "from_version" and start_timestamp_iso:
         # Delete all snapshot metrics in the database starting from start_timestamp_iso
         logger.info(f"Deleting snapshot metrics for {repo_name} starting from {start_timestamp_iso}")
-        metrics_service.delete_snapshot_metrics_by_dataset_id_and_ts(repo_name, start_timestamp_iso)
+        metrics_service.delete_snapshots_from(repo_name, start_timestamp_iso)
     
         logger.info(f"Computing metrics for all snapshots starting from version {start_timestamp_iso}.")
         latest_timestamp, _ = file_timestamp_pairs[start_idx-1]
@@ -268,7 +268,7 @@ def run_snapshot_metrics_computation(metrics_service: MetricsService, dataset_id
     
     else: # from_scratch
         # Delete all snapshot metrics
-        metrics_service.delete_snapshot_metrics_by_dataset_id(repo_name)
+        metrics_service.delete_all_snapshots(repo_name)
     
         # Compute metrics for initial snapshot
         logger.info(f"Computing metrics for initial snapshot,")
