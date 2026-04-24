@@ -9,8 +9,8 @@ services:
     ports:
       - 5001:5000
     volumes:
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
+      - /mnt/data/starversserver/evaluation:/data/evaluation
+      - /mnt/data/starversserver/logs:/data/logs
     depends_on:
       db:
         condition: service_started
@@ -36,9 +36,9 @@ services:
       - 8000:8000 # default univcorn
     env_file: "./starversserver.env"
     volumes:
-      - ${data_storage}/evaluation:/data/evaluation
-      - ${data_storage}/logs:/data/logs
-      - ${data_storage}/graphdb-data/graphdb-import:/graphdb-import
+      - /mnt/data/starversserver/evaluation:/data/evaluation
+      - /mnt/data/starversserver/logs:/data/logs
+      - /mnt/data/starversserver/graphdb-data/graphdb-import:/graphdb-import
     depends_on:
       db:
         condition: service_started
@@ -62,7 +62,7 @@ services:
     ports:
       - 5433:5432
     volumes:
-      - ${data_storage}/postgresql/data:/var/lib/postgresql/data
+      - /mnt/data/starversserver/postgresql/data:/var/lib/postgresql/data
     networks:
       - starvers_prod_net
 
@@ -88,7 +88,7 @@ services:
     ports: 
       - 7400:7200
     volumes:
-      - ${data_storage}/graphdb-data:/opt/graphdb/home
+      - /mnt/data/starversserver/graphdb-data:/opt/graphdb/home
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

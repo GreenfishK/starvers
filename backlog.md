@@ -7,10 +7,10 @@ Currently, the docker-compose file starvers.eval.compose.yml uses services that 
 * executing the whole pipeline
 * executing everything from a specific step
 * an interface for the three functionalities above, so that I can select the function I want to execute via a docker command that calls run_starvers_eval.py with specific parameters for the selection of the function.
-* A timestamping for the runs so that every run gets recorded under the (host) directory /mnt/data/starvers_eval/YYYYMMDDThh:mm:ss.sss
-* Functionality that records the start and end time of every execution step in a separate csv file under /mnt/data/starvers_eval/YYYYMMDDThh:mm:ss.sss/execution.csv
+* A timestamping for the runs so that every run gets recorded under the (host) directory /mnt/data_local/starvers_eval/YYYYMMDDThh:mm:ss.sss
+* Functionality that records the start and end time of every execution step in a separate csv file under /mnt/data_local/starvers_eval/YYYYMMDDThh:mm:ss.sss/execution.csv
 * Functionality for the user to continue the last execution, in case it failed or stopped. This is simply judged by the execution.csv table. The idea is that if a step did not finish, it is visible in this table and "continue" means to start from the last unfinished step.
-* A function that lets the user delete previous runs, i.e. the whole directories /mnt/data/starvers_eval/YYYYMMDDThh:mm:ss.sss that are older than the given timestamp
+* A function that lets the user delete previous runs, i.e. the whole directories /mnt/data_local/starvers_eval/YYYYMMDDThh:mm:ss.sss that are older than the given timestamp
 
 The docker-compose file starvers.eval.compose.yml uses infrastructure-level variables from the .env file for volume mounts. This is only something to consider during the execution via docker.
 
