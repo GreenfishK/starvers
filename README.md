@@ -135,6 +135,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 -v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data/starvers_eval/tmp:/tmp \
 starvers_eval:latest run all
 ```
 
@@ -145,6 +146,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 -v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data/starvers_eval/tmp:/tmp \
 starvers_eval:latest run step download
 ```
 
@@ -155,6 +157,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 -v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data/starvers_eval/tmp:/tmp \
 starvers_eval:latest run from construct_datasets
 ```
 
@@ -169,6 +172,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 -v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data/starvers_eval/tmp:/tmp \
 starvers_eval:latest continue
 ```
 

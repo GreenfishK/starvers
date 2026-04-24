@@ -149,8 +149,11 @@ EOF
     rm -rf "$vdir"
     mkdir -p "$vdir/alldata.IC.nt"
 
-    ln -s "$cb_src" "$vdir/alldata.CB.nt"
-    ln -s "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
+    # Copy IC snapshot (single file) and change sets
+    # Used to be a symlink but it adds extrea I/O overhead during ingest, so now
+    # we are copying real files
+    cp "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
+    cp -r "$cb_src" "$vdir/alldata.CB.nt"
 
     echo "$(log_timestamp) ${log_level}:Virtual directory created at $vdir with symlinks." >> $log_file
 
@@ -169,7 +172,7 @@ EOF
     fi
 
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Ostrich" >> $log_file
-    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${dataset_dir_or_file} 1 ${versions}
+    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest interval 100 ${dataset_dir_or_file} 1 ${versions}
             
 }
 

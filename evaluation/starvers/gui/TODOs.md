@@ -197,3 +197,23 @@ Since the query counts are the same for each policy, choose a more compact repre
 The html content should be the following:
 * A table showing a two-level row-header with policy - query_set as indexes.
 * A "total" row outside of the table that shows the formula for the total number of queries, which is: sum(table cell values) * number_of_datasets. The formula should be shown in two rows. the first row is the theoretical formula and the second one with the concrete values, whereas the first value is the sum and the second the number of the datasets.
+
+
+
+## 23.04.2026 16:06
+### General
+instead of having these wrapper containers, e.g. RDF validators, Substeps executed, or DATASETS, use a section header, similarly as in markdown files. these wraper containers ad
+d a long horizontal blue bar that creates extra cognitive burden.
+
+
+### Download
+Below the datasets, also show the downloaded query sets
+
+Remove the outer container "DATASETS". Just one table for datasets and one for query sets
+ Query sets could actually be in the same table as datasets. Add another column "query set" which shows the query set next to the dataset whereas if there are multiple query sets per dataset, such as in bearb_day and bearb_hour, do not repeat the dataset but center it vertically. Also display the number of queries per set in a separate column "Number of Queries", similarly as in construct queries but show only the query sets that actually exist for this dataset
+
+
+### Construct datasets
+The dataset size numbers should be right-aligned, not left aligned
+
+

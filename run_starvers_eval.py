@@ -64,7 +64,7 @@ def _now_ts() -> str:
 def _make_run_dir() -> Path:
     """Create and return a new timestamped run directory."""
     BASE_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H:%M:%S.%f")[:-3]
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H-%M-%S.%f")[:-3]
     d = BASE_DATA_DIR / ts
     d.mkdir(parents=True, exist_ok=True)
     return d
