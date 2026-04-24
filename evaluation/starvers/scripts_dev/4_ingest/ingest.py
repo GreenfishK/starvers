@@ -154,7 +154,7 @@ def count_triples(job: Job):
     engine.setOnlyConneg(True)
     engine.setMethod(GET)
 
-    if job.policy in ["ic_sr_ng", "cb_sr_ng", "ostrich"]:
+    if job.policy in ["ic_sr_ng", "cb_sr_ng", "ostrich", "ostrich_aggchange"]:
         with open(f"{CNT_QUERIES_PATH}/ic_sr_ng.sparql", "r") as cnt_query_file:
             query_string = cnt_query_file.read()
             engine.setQuery(query_string)
@@ -252,7 +252,17 @@ def run_ingestion(job: Job, run: int):
     # Metrics
     raw_size = du_mib(dataset_dir)
     db_size = du_mib(database_dir)
+
+    # Start database
+    proc = subprocess.run([f"{mgmt_script}", "startup", database_dir, policy, dataset], check=True)
+    if proc.returncode != 0:
+        log(job.triplestore, f"startup failed:\n{proc.stderr}")
+        raise subprocess.CalledProcessError(proc.returncode, proc.args, stderr=proc.stderr)
+
     count_triples(job)
+
+    # Shutdown database
+    subprocess.run([f"{mgmt_script}", "shutdown"], check=True)
 
     # Cleanup
     if run != RUNS:

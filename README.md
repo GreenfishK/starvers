@@ -135,6 +135,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 --ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run all
@@ -147,6 +148,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 --ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run step download
@@ -159,6 +161,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 --ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run from construct_datasets
@@ -175,6 +178,7 @@ docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
 --ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest continue

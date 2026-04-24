@@ -21,23 +21,28 @@ fi
 startup() {
     echo "$(log_timestamp) ${log_level}:Updating query timeouts to 30 sec ..." >> $log_file
     export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dhealth.max.query.time.seconds=30"
-	
+
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    nohup /opt/graphdb/dist/bin/graphdb -s &
-    
-    # Wait until server is up
-    # GraphDB doesn't deliver HTTP code 200 for some reason ...
-    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    /opt/graphdb/dist/bin/graphdb -s >> "$log_file" 2>&1 &
+    db_pid=$!  # capture immediately
+    echo "$(log_timestamp) ${log_level}:GraphDB PID is $db_pid" >> $log_file
+
+    timeout=120
+    elapsed=0
     while [[ $(curl -I http://Starvers:7200 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
-        sleep 1s
+        sleep 1
+        elapsed=$((elapsed + 1))
+        if [ $elapsed -ge $timeout ]; then
+            echo "$(log_timestamp) ${log_level}:ERROR — GraphDB did not come up after ${timeout}s" >> $log_file
+            exit 1
+        fi
+        if ! kill -0 $db_pid 2>/dev/null; then
+            echo "$(log_timestamp) ${log_level}:ERROR — GraphDB process $db_pid died" >> $log_file
+            exit 1
+        fi
     done
 
-    # Save process ID
-    echo "$(log_timestamp) ${log_level}: Obtaining GraphDB PID ..."  >> $log_file
-    db_pid=$(pgrep -f "${JAVA_HOME}/bin/java" | head -n 1)
     echo $db_pid > /tmp/graphdb_${policy}_${dataset}.pid
-    echo "$(log_timestamp) ${log_level}: GraphDB PID is: ${db_pid}"  >> $log_file
-    
     echo "$(log_timestamp) ${log_level}:GraphDB server is up" >> $log_file
 }
 
