@@ -153,19 +153,19 @@ def count_triples(job: Job):
     engine.setReturnFormat(JSON)
     engine.setOnlyConneg(True)
     engine.setMethod(GET)
+    engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
 
-    if job.policy in ["ic_sr_ng", "cb_sr_ng", "ostrich", "ostrich_aggchange"]:
+    if job.policy in ["ic_sr_ng", "ostrich", "ostrich_aggchange"]:
         with open(f"{CNT_QUERIES_PATH}/ic_sr_ng.sparql", "r") as cnt_query_file:
             query_string = cnt_query_file.read()
             engine.setQuery(query_string)
             try:
-                result = engine.query()
+                result = engine.query().convert()
                 log(job.triplestore, f"Number of triples: {result}")
-
             except Exception as e:
                 log(job.triplestore, f"ERROR: The following exeception occured while counting triples: {e}")
     else:
-        log(job.triplestore, "Supported policies for counting triples are: ic_sr_ng")
+        log(job.triplestore, "Supported policies for counting triples are: ic_sr_ng, ostrich, and ostrich_aggchange.")
 
 def ensure_empty_dir(path: Path): 
     if path.exists():
