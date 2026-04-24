@@ -86,12 +86,10 @@ RUN git clone --depth 1 --recurse-submodules \
     && make -j"$(nproc)" && make install
 
 # Hose & Pelgrin OSTRICH fork — adds SnapshotCreationStrategy
-#RUN git clone --branch dev --recurse-submodules \
-#    https://github.com/opelgrin/ostrich.git /opt/ostrich-hp \
-#    && cd /opt/ostrich-hp \
-#    && mkdir build && cd build \
-#    && cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-deprecated \
-#    && make -j"$(nproc)"
+RUN git clone --branch dev --recurse-submodules  https://github.com/opelgrin/ostrich.git /opt/ostrich-hp 
+RUN cd /opt/ostrich-hp && mkdir build && cd build 
+RUN cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-deprecated 
+RUN make -j"$(nproc)"
 
 
 #########################################################
@@ -181,10 +179,10 @@ COPY --from=ostrich_build /opt/ostrich/build/ \
                           /opt/ostrich/
 
 # ── H&P OSTRICH binary (strategy-aware ostrich-evaluate) ─────────────────────
-#COPY --from=ostrich_hp_build /opt/ostrich-hp/build/ \
-#                             /opt/ostrich-hp/
-#COPY --from=ostrich_hp_build /usr/local/lib/libkyotocabinet.so* \
-#                             /usr/local/lib/
+COPY --from=ostrich_hp_build /opt/ostrich-hp/build/ \
+                             /opt/ostrich-hp/
+COPY --from=ostrich_hp_build /usr/local/lib/libkyotocabinet.so* \
+                             /usr/local/lib/
 
 # ── Jena Fuseki ──────────────────────────────────────
 COPY --from=fuseki_base  /jena-fuseki       /jena-fuseki

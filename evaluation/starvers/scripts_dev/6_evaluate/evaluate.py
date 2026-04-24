@@ -70,6 +70,7 @@ class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
     OSTRICH = 3
+    OSTRICH_AGGCHANGE = 4
 
 def eval_combi_exists(config, triplestore, dataset, policy):
     return policy in config.get("evaluations", {}).get(triplestore, {}).get(dataset, [])
