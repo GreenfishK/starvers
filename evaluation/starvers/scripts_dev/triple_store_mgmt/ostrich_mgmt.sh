@@ -172,7 +172,7 @@ EOF
     fi
 
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Ostrich" >> $log_file
-    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest never 0 ${dataset_dir_or_file} 1 ${versions}
+    cd ${database_dir} && /opt/ostrich/ostrich-evaluate ingest interval 100 ${dataset_dir_or_file} 1 ${versions}
             
 }
 

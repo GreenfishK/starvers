@@ -86,10 +86,10 @@ RUN git clone --depth 1 --recurse-submodules \
     && make -j"$(nproc)" && make install
 
 # Hose & Pelgrin OSTRICH fork — adds SnapshotCreationStrategy
-RUN git clone --branch dev --recurse-submodules  https://github.com/opelgrin/ostrich.git /opt/ostrich-hp 
+RUN git clone --branch master --recurse-submodules  https://github.com/opelgrin/ostrich.git /opt/ostrich-hp 
 RUN cd /opt/ostrich-hp && mkdir build && cd build 
-RUN cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-deprecated 
-RUN make -j"$(nproc)"
+RUN cd /opt/ostrich-hp/build && cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-deprecated 
+RUN cd /opt/ostrich-hp/build && make -j"$(nproc)"
 
 
 #########################################################
