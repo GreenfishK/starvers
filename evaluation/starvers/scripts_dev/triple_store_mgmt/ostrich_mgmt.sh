@@ -21,22 +21,31 @@ fi
 #######################################################################
 startup() {
     echo "$(log_timestamp) ${log_level}:Start Ostrich node in background..." >> $log_file
-    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js -p 42564 -h 0.0.0.0 -t 480 ostrichFile@${database_dir} & 
+    node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js \
+        -p 42564 -h 0.0.0.0 -t 480 ostrichFile@${database_dir} &
+    db_pid=$!  # capture immediately after backgrounding, before any other command
+    echo "$(log_timestamp) ${log_level}:Node PID is $db_pid" >> $log_file
 
-    # Wait until server is up
-    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    timeout=120
+    elapsed=0
     until curl -s -X POST http://Starvers:42564 \
         -H "Content-Type: application/sparql-query" \
         --data "ASK {}" >/dev/null 2>&1
     do
         sleep 1
+        elapsed=$((elapsed + 1))
+        if [ $elapsed -ge $timeout ]; then
+            echo "$(log_timestamp) ${log_level}:ERROR — endpoint did not come up after ${timeout}s" >> $log_file
+            exit 1
+        fi
+        if ! kill -0 $db_pid 2>/dev/null; then
+            echo "$(log_timestamp) ${log_level}:ERROR — node process $db_pid died" >> $log_file
+            exit 1
+        fi
     done
 
-    # Save process ID
-    db_pid=$!
     echo $db_pid > /tmp/ostrich_${policy}_${dataset}.pid
-
-    echo "$(log_timestamp) ${log_level}:Ostrich node is up" >> $log_file
+    echo "$(log_timestamp) ${log_level}:Ostrich node is up (PID $db_pid)" >> $log_file
 }
 
 shutdown() {

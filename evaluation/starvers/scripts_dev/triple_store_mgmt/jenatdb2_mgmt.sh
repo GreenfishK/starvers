@@ -20,26 +20,33 @@ fi
 startup() {
     echo "$(log_timestamp) ${log_level}:Update query timeouts to 30 sec ..." >> $log_file
     ttl_file="/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl"
-    # Replace existing timeout values
     sed -i 's/\(ja:cxtValue "\)0,0/\130000,30000/' "$ttl_file"
 
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    nohup /jena-fuseki/fuseki-server --config=$ttl_file --port=3030 --tdb2 &
-    
-    # Wait until server is up
-    echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file
+    /jena-fuseki/fuseki-server --config=$ttl_file --port=3030 --tdb2 >> "$log_file" 2>&1 &
+    db_pid=$!  # capture immediately
+    echo "$(log_timestamp) ${log_level}:Fuseki PID is $db_pid" >> $log_file
+
+    timeout=120
+    elapsed=0
     until curl -s -X POST http://Starvers:3030/${policy}_${dataset}/sparql \
         -H "Content-Type: application/sparql-query" \
         --data "ASK {}" >/dev/null 2>&1
     do
         sleep 1
+        elapsed=$((elapsed + 1))
+        if [ $elapsed -ge $timeout ]; then
+            echo "$(log_timestamp) ${log_level}:ERROR — Fuseki did not come up after ${timeout}s" >> $log_file
+            exit 1
+        fi
+        if ! kill -0 $db_pid 2>/dev/null; then
+            echo "$(log_timestamp) ${log_level}:ERROR — Fuseki process $db_pid died" >> $log_file
+            exit 1
+        fi
     done
-    echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
 
-    # Save process ID
-    db_pid=$!
     echo $db_pid > /tmp/jenatdb2_${policy}_${dataset}.pid
-
+    echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
 }
 
 
