@@ -136,6 +136,7 @@ EOF
 
     # H&P fork CLI: ostrich-evaluate ingest <strategy> <param> <patches_dir> <start> <end>
     cd "${database_dir}" \
+        && ulimit -n 1048576 \
         && /opt/ostrich-hp/ostrich-evaluate ingest \
                aggchange 2.0 \
                "${dataset_dir_or_file}" \

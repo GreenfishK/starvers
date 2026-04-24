@@ -134,6 +134,7 @@ in the compose file.
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
+--ulimit nofile=1048576:1048576 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run all
@@ -145,6 +146,7 @@ starvers_eval:latest run all
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
+--ulimit nofile=1048576:1048576 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run step download
@@ -156,6 +158,7 @@ starvers_eval:latest run step download
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
+--ulimit nofile=1048576:1048576 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run from construct_datasets
@@ -171,6 +174,7 @@ or a step failed, resume from the last unfinished step:
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
+--ulimit nofile=1048576:1048576 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest continue
