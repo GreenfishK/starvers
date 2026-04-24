@@ -3,7 +3,7 @@
 # Create/overwrite the output file with headers
 echo "File Name,Invalid Lines,Total Lines,Invalid Lines Ratio (%)" > $HOME/beara_cnt_lines.csv
 
-for file in /mnt/data/starvers_eval/rawdata/beara/alldata.IC.nt/*
+for file in /mnt/data_local/starvers_eval/rawdata/beara/alldata.IC.nt/*
 do
     # Get the number of invalid lines
     invalid_lines=$(head -n 1 $file | grep -oP '# invalid_lines_excluded: \K\d+')

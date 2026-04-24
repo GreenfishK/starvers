@@ -134,8 +134,8 @@ in the compose file.
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
--v /mnt/data/starvers_eval/tmp:/tmp \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run all
 ```
 
@@ -145,8 +145,8 @@ starvers_eval:latest run all
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
--v /mnt/data/starvers_eval/tmp:/tmp \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run step download
 ```
 
@@ -156,23 +156,23 @@ starvers_eval:latest run step download
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
--v /mnt/data/starvers_eval/tmp:/tmp \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run from construct_datasets
 ```
 
 ### Continue a previously interrupted run
 
 The orchestrator records each step's start time, end time, and status in
-`/mnt/data/starvers_eval/<timestamp>/execution.csv`. If a run was interrupted
+`/mnt/data_local/starvers_eval/<timestamp>/execution.csv`. If a run was interrupted
 or a step failed, resume from the last unfinished step:
 
 ```bash
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
--v /mnt/data/starvers_eval/tmp:/tmp \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest continue
 ```
 
@@ -182,7 +182,7 @@ starvers_eval:latest continue
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
 starvers_eval:latest list
 ```
 
@@ -193,7 +193,7 @@ starvers_eval:latest list
 docker run -d --rm \
 --name starvers_eval \
 --env-file .env \
--v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
 starvers_eval:latest delete --older-than 20260101T000000
 ```
 
@@ -206,7 +206,7 @@ docker run -d --rm \
 --name starvers-gui \
 --env-file .env \
 --network starvers_prod_net \
--v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
 starvers_eval:latest gui
 ```
 

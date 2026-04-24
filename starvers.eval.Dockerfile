@@ -1,5 +1,5 @@
 #########################################################
-# Stage 1: ostrich_build
+# Stage 1a: ostrich_build
 # Builds Ostrich (native C++ triple store) and the
 # Comunica SPARQL engine with Node.js bindings.
 #########################################################
@@ -49,6 +49,50 @@ RUN cd /opt/comunica-feature-versioning \
 ENV NODE_PATH=/usr/local/share/.config/yarn/link:/opt/comunica-feature-versioning/node_modules
 
 RUN node -e "require('ostrich-bindings'); console.log('Ostrich bindings OK')"
+
+
+
+# ─── INSERT after Stage 1 (ostrich_build), before Stage 2 (fuseki_base) ─────
+
+#########################################################
+# Stage 1b: ostrich_hp_build
+# Compiles the Hose & Pelgrin OSTRICH fork.
+# Only the ostrich-evaluate binary differs from Stage 1;
+# all other artifacts (ostrich-node, Comunica) are shared.
+#########################################################
+FROM node:14-bullseye AS ostrich_hp_build
+
+RUN apt-get update && apt-get install -y \
+    build-essential cmake \
+    liblzo2-dev liblzma-dev zlib1g-dev \
+    libraptor2-dev libserd-dev \
+    libboost-iostreams-dev \
+    git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Kyoto Cabinet (OSTRICH key-value backend)
+RUN curl -fsSL https://dbmx.net/kyotocabinet/pkg/kyotocabinet-1.2.79.tar.gz \
+    | tar -xz \
+    && cd kyotocabinet-1.2.79 \
+    && ./configure --enable-lzo --enable-lzma \
+    && make -j"$(nproc)" && make install \
+    && cd / && rm -rf kyotocabinet-1.2.79
+
+# HDT-cpp (snapshot encoding backend)
+RUN git clone --depth 1 --recurse-submodules \
+    https://github.com/rdfhdt/hdt-cpp.git /opt/hdt-cpp \
+    && cd /opt/hdt-cpp \
+    && ./autogen.sh && ./configure \
+    && make -j"$(nproc)" && make install
+
+# Hose & Pelgrin OSTRICH fork — adds SnapshotCreationStrategy
+#RUN git clone --branch dev --recurse-submodules \
+#    https://github.com/opelgrin/ostrich.git /opt/ostrich-hp \
+#    && cd /opt/ostrich-hp \
+#    && mkdir build && cd build \
+#    && cmake -DCMAKE_BUILD_TYPE=Release .. -Wno-deprecated \
+#    && make -j"$(nproc)"
+
 
 #########################################################
 # Stage 2: fuseki_base
@@ -135,6 +179,12 @@ COPY --from=ostrich_build /opt/ostrich-node \
                           /opt/ostrich-node
 COPY --from=ostrich_build /opt/ostrich/build/ \
                           /opt/ostrich/
+
+# ── H&P OSTRICH binary (strategy-aware ostrich-evaluate) ─────────────────────
+#COPY --from=ostrich_hp_build /opt/ostrich-hp/build/ \
+#                             /opt/ostrich-hp/
+#COPY --from=ostrich_hp_build /usr/local/lib/libkyotocabinet.so* \
+#                             /usr/local/lib/
 
 # ── Jena Fuseki ──────────────────────────────────────
 COPY --from=fuseki_base  /jena-fuseki       /jena-fuseki

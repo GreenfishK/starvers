@@ -14,7 +14,7 @@ docker run -d --rm \
 --env-file .env \
 --name starvers-gui \
 --network starvers_prod_net \
--v /mnt/data/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
 starvers_eval:latest gui
 ```
 
