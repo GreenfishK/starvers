@@ -197,3 +197,4 @@ EXPOSE 8080
 ENTRYPOINT [ "python", "/starvers_eval/run_starvers_eval.py" ]
 # Expect additional arguments to specify which evaluation to run, e.g.: python run_starvers_eval.py run all
 CMD [ "run", "all" ]
+
