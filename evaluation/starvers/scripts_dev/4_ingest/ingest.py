@@ -33,6 +33,7 @@ LOG_FILES = {
     "ostrich": LOG_DIR / "ingestion_ostrich.txt",
     "graphdb": LOG_DIR / "ingestion_graphdb.txt",
     "jenatdb2": LOG_DIR / "ingestion_jena.txt",
+    "ostrich_aggchange": LOG_DIR / "ingestion_ostrich_aggchange.txt",
 }
 
 DATASETS = os.environ.get("datasets").split(" ")
@@ -44,6 +45,7 @@ LOCK_DIR.mkdir(parents=True, exist_ok=True)
 
 DATASET_DIR_OR_FILE_MAP = {
     "ostrich": "alldata_vdir",
+    "ostrich_aggchange": "alldata_vdir",
     "ic_sr_ng": "alldata.ICNG.trig",
     "cb_sr_ng": "alldata.CBNG.trig",
     "tb_sr_ng": "alldata.TB_computed.nq",

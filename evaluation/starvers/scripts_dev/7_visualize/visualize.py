@@ -73,13 +73,13 @@ def create_plots(triplestore: str, dataset: str):
     ingestion_data['triplestore'] = ingestion_data['triplestore'].str.lower()
 
     # Parameters
-    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs', 'ostrich']
+    policies = ['ic_sr_ng', 'cb_sr_ng', 'tb_sr_ng', 'tb_sr_rs', 'ostrich', "ostrich_aggchange"]
 
     # Figure and axes for query performance and ingestion
     fig = plt.figure()
     gs = fig.add_gridspec(2, 2)   
-    symbol_map = dict(zip(policies, ['s', 'o', 'v', '*', '^']))
-    markerfacecolors = dict(zip(policies, ['none', 'none', 'none', 'black', 'none']))
+    symbol_map = dict(zip(policies, ['s', 'o', 'v', '^', '*']))
+    markerfacecolors = dict(zip(policies, ['none', 'none', 'none',  'none', 'black']))
 
     def plot_performance(query_set: str, ax):
         dataset_df = performance_data[(performance_data['triplestore'] == triplestore) & (performance_data['dataset'] == dataset) & (performance_data['query_set'] == query_set)]
@@ -160,15 +160,15 @@ def create_plots(triplestore: str, dataset: str):
 
     # Add legend
     ic_sr_ng_line = mlines.Line2D([], [], color='black', marker='s', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none', label='ic_sr_ng')
-    cb_sr_ng_line = mlines.Line2D([], [], color='black', marker='o', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='cb_sr_ng')
     tb_sr_ng_line = mlines.Line2D([], [], color='black', marker='v', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='tb_sr_ng')
+    ostrich_line = mlines.Line2D([], [], color='black', marker='-', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='ostrich')
+    ostrich_aggchange_line = mlines.Line2D([], [], color='black', marker='-', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='ostrich_aggchange')
     tb_sr_rs_line = mlines.Line2D([], [], color='black', marker='*', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='black',label='tb_sr_rs')
-    ostrich = mlines.Line2D([], [], color='black', marker='^', linestyle='None', markersize=7, markeredgecolor='black', markerfacecolor='none',label='ostrich')
     
     raw_file_size_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='/', label='Raw File Size')
     db_file_size_path = mpatches.Patch(color='black', label='DB File Size')
 
-    handles1 = [ic_sr_ng_line, cb_sr_ng_line, tb_sr_ng_line, tb_sr_rs_line, ostrich]
+    handles1 = [ic_sr_ng_line, tb_sr_ng_line, ostrich_line, ostrich_aggchange_line, tb_sr_rs_line]
     handles2 = [raw_file_size_patch, db_file_size_path]
     fixed_labels = ['raw_file_size_patch', 'db_file_size_path']
 
@@ -188,7 +188,7 @@ def create_plots_update(triplestore: str, dataset: str):
                             dtype={"triplestore": "category", "dataset": "category", "batch": "category",
                             "cnt_batch_trpls": "int", "chunk_size": "category", "execution_time": "float"})
     
-    triplestores_map = {'GRAPHDB': 'GraphDB', 'JENA': 'Jena', 'OSTRICH': 'Ostrich'}
+    triplestores_map = {'GRAPHDB': 'GraphDB', 'JENA': 'Jena', 'OSTRICH': 'Ostrich', 'OSTRICH_AC': 'Ostrich_AggChange'}
     
     # Figure and axes for update performance
     fig = plt.figure()
