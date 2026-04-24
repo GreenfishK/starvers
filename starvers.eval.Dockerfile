@@ -206,7 +206,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     locales liblzma5 liblzo2-2 zlib1g \
     libraptor2-0 libserd-0-0 libboost-iostreams-dev \
     ca-certificates libstdc++6 libgcc-s1 libatomic1 \ 
-    clang libclang-dev unzip build-essential pkg-config libssl-dev \
+    clang libclang-dev unzip build-essential pkg-config libssl-dev gdb \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
     && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
