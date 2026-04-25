@@ -29,7 +29,7 @@ import shutil
 import subprocess
 import sys
 import time
-from turtle import pd
+import pandas as pd
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -475,7 +475,7 @@ def exclude_queries():
     """
     # Ostrich SPARQL endpoint
     ostrich_engine = SPARQLWrapper(endpoint="http://Starvers:42564/sparql")
-    ostrich_engine.timeout = 30
+    ostrich_engine.timeout = 120
     ostrich_engine.setReturnFormat(JSON)
     ostrich_engine.setOnlyConneg(True)
     ostrich_engine.setMethod(POST)

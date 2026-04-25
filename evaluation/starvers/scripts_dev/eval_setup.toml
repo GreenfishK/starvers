@@ -52,6 +52,14 @@
             ostrich_aggchange = 1
         [datasets.beara.query_sets]
             [datasets.beara.query_sets.high]
+            count_method = "lines"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/s/s-queries-highCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/p/p-queries-highCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/o/o-queries-highCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/sp/sp-queries-highCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/po/po-queries-highCardinality.txt",
+            ]
                 [datasets.beara.query_sets.high.policies]
                     ic_sr_ng = {versions = 58, template = "ic_sr_ng/ts"}
                     cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
@@ -60,6 +68,15 @@
                     ostrich = {versions = 58, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 58, template = "ostrich_aggchange/ts"}
             [datasets.beara.query_sets.low]
+            count_method = "lines"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/s/s-queries-lowCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/p/p-queries-lowCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/o/o-queries-lowCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/sp/sp-queries-lowCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/po/po-queries-lowCardinality.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_A/Queries/so/so-queries-lowCardinality.txt",
+            ]
                 [datasets.beara.query_sets.low.policies]
                     ic_sr_ng = {versions = 58, template = "ic_sr_ng/ts"}
                     cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
@@ -85,6 +102,11 @@
             ostrich_aggchange = 1
         [datasets.bearb_hour.query_sets]
             [datasets.bearb_hour.query_sets.lookup]
+            count_method = "lines"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/p/p.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/po/po.txt",
+            ]
                 [datasets.bearb_hour.query_sets.lookup.policies]
                     ic_sr_ng = {versions = 1299, template = "ic_sr_ng/ts"}
                     cb_sr_ng = {versions = 1299, template = "cb_sr_ng/ts"}
@@ -93,6 +115,10 @@
                     ostrich = {versions = 1299, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 1299, template = "ostrich_aggchange/ts"}
             [datasets.bearb_hour.query_sets.join]
+            count_method = "files"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/joins.zip",
+            ]
                 [datasets.bearb_hour.query_sets.join.policies]
                     ic_sr_ng = {versions = 1299, template = "ic_sr_ng/bgp"}
                     cb_sr_ng = {versions = 1299, template = "cb_sr_ng/bgp"}
@@ -118,14 +144,23 @@
             ostrich_aggchange = 1
         [datasets.bearb_day.query_sets]
             [datasets.bearb_day.query_sets.lookup]
+            count_method = "lines"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/p/p.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/po/po.txt",
+            ]
                 [datasets.bearb_day.query_sets.lookup.policies]
                     ic_sr_ng = {versions = 89, template = "ic_sr_ng/ts"}
                     cb_sr_ng = {versions = 89, template = "cb_sr_ng/ts"}
                     tb_sr_ng = {versions = 89, template = "tb_sr_ng/ts"}
                     tb_sr_rs = {versions = 89, template = "tb_sr_rs/ts"}
-                    ostrich = {versions = 89, template = "ostrich/ts"}   
-                    ostrich_aggchange = {versions = 89, template = "ostrich_aggchange/ts"} 
+                    ostrich = {versions = 89, template = "ostrich/ts"}
+                    ostrich_aggchange = {versions = 89, template = "ostrich_aggchange/ts"}
         [datasets.bearb_day.query_sets.join]
+            count_method = "files"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_B/Queries/joins.zip",
+            ]
                 [datasets.bearb_day.query_sets.join.policies]
                     ic_sr_ng = {versions = 89, template = "ic_sr_ng/bgp"}
                     cb_sr_ng = {versions = 89, template = "cb_sr_ng/bgp"}
@@ -151,6 +186,19 @@
             ostrich_aggchange = 1
         [datasets.bearc.query_sets]
             [datasets.bearc.query_sets.complex]
+            count_method = "files"
+            download_links = [
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q1.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q2.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q3.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q4.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q5.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q6.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q7.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q8.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q9.txt",
+                "https://aic.ai.wu.ac.at/qadlod/bear/BEAR_C/Queries/q10.txt",
+            ]
                 [datasets.bearc.query_sets.complex.policies]
                     ic_sr_ng = {versions = 33, template = "ic_sr_ng/sparql"}
                     cb_sr_ng = {versions = 33, template = "cb_sr_ng/sparql"}
@@ -187,6 +235,10 @@
             ostrich_aggchange = 1
         [datasets.orkg.query_sets]
             [datasets.orkg.query_sets.complex]
+            count_method = "files"
+            download_links = [
+                "https://zenodo.org/records/7744048/files/SciQA-dataset.zip?download=1",
+            ]
                 [datasets.orkg.query_sets.complex.policies]
                     ic_sr_ng = {versions = 34, template = "ic_sr_ng/sparql_full"}
                     cb_sr_ng = {versions = 34, template = "cb_sr_ng/sparql_full"}

@@ -186,11 +186,54 @@ def _detail_download(run_dir: Path) -> dict:
             "download_link": meta.get("download_link_snapshots"),
         })
 
-    query_sets_cfg = config.get("query_sets", {})
-    for qset_name in query_sets_cfg:
-        qset_dir = run_dir / "queries" / "raw_queries" / qset_name
-        count    = _count_txt_files(qset_dir)
-        detail["query_sets"].append({"name": qset_name, "count": count})
+    # Load query set metadata from queries_meta.csv written by download.sh.
+    # Columns: query_set, for_dataset, count, links
+    # links format: "filename; url | filename; url | ..."
+    queries_csv = run_dir / "output" / "logs" / "download" / "queries_meta.csv"
+    if queries_csv.exists():
+        with open(queries_csv, newline="") as f:
+            for row in csv.DictReader(f):
+                qs_name    = row.get("query_set", "").strip()
+                for_ds     = row.get("for_dataset", "").strip()
+                count_raw  = row.get("count", "0").strip()
+                links_raw  = row.get("links", "").strip()
+
+                try:
+                    count = int(count_raw)
+                except ValueError:
+                    count = 0
+
+                # Parse "filename; url | filename; url | ..." into list of dicts
+                links = []
+                if links_raw:
+                    for pair in links_raw.split(" | "):
+                        pair = pair.strip()
+                        if "; " in pair:
+                            fname, url = pair.split("; ", 1)
+                            links.append({"filename": fname.strip(), "url": url.strip()})
+                        elif pair:
+                            links.append({"filename": pair, "url": pair})
+
+                detail["query_sets"].append({
+                    "name":        qs_name,
+                    "for_dataset": for_ds,
+                    "count":       count,
+                    "links":       links,
+                })
+    else:
+        # Fallback: derive from toml config (no counts available yet).
+        # Links live under datasets.<name>.query_sets.<qs>.download_links
+        for ds_name, ds_meta in datasets_cfg.items():
+            for qs_name, qs_meta in ds_meta.get("query_sets", {}).items():
+                detail["query_sets"].append({
+                    "name":        qs_name,
+                    "for_dataset": ds_name,
+                    "count":       None,
+                    "links": [
+                        {"filename": lnk.rstrip("/").split("/")[-1].split("?")[0], "url": lnk}
+                        for lnk in qs_meta.get("download_links", [])
+                    ],
+                })
 
     return detail
 
