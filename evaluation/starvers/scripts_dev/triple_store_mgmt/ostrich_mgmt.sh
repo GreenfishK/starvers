@@ -154,17 +154,20 @@ EOF
     cb_src="${raw_root}/${dataset}/alldata.CB_computed.nt"
     ic_src="${raw_root}/${dataset}/alldata.IC.nt/${first_snapshot}"
 
-    # Create symlinks
+    # Create directory
     rm -rf "$vdir"
     mkdir -p "$vdir/alldata.IC.nt"
 
     # Copy IC snapshot (single file) and change sets
-    # Used to be a symlink but it adds extrea I/O overhead during ingest, so now
-    # we are copying real files
-    cp "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
-    cp -r "$cb_src" "$vdir/alldata.CB.nt"
+    if [[ -d "$cb_src" ]]; then
+        cp "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
+        cp -r "$cb_src" "$vdir/alldata.CB.nt"
+        echo "$(log_timestamp) ${log_level}:Copied IC snapshot and change sets into $vdir." >> $log_file
+    else
+        echo "$(log_timestamp) ${log_level}:Change sets not found at $cb_src — skipping copy." >> $log_file
+    fi
 
-    echo "$(log_timestamp) ${log_level}:Virtual directory created at $vdir with symlinks." >> $log_file
+    echo "$(log_timestamp) ${log_level}:Directory created at $vdir with symlinks." >> $log_file
 
 }
 

@@ -173,12 +173,32 @@ function renderStepInfo(stepName, info) {
         </table>`));
     }
     if (info.query_sets?.length) {
+      const qsRows = info.query_sets.map(q => {
+        const linkItems = (q.links || []).map(l =>
+          `<li><a class="link" href="${escHtml(l.url)}" target="_blank">${escHtml(l.filename)}</a></li>`
+        ).join('');
+        const linksHtml = linkItems
+          ? `<details style="margin-top:4px">
+               <summary style="cursor:pointer;font-size:11px;color:var(--text-faint)">
+                 ${q.links.length} source file${q.links.length !== 1 ? 's' : ''} ↗
+               </summary>
+               <ul style="margin:4px 0 0 12px;padding:0;font-size:11px;list-style:disc">${linkItems}</ul>
+             </details>`
+          : '—';
+        return `
+          <tr>
+            <td><strong>${escHtml(q.name)}</strong></td>
+            <td>${escHtml(q.for_dataset || '—')}</td>
+            <td class="mono">${q.count != null ? fmt(q.count) : '—'}</td>
+            <td>${linksHtml}</td>
+          </tr>`;
+      }).join('');
       sections.push(section('Query Sets Downloaded', `
         <table class="data-table">
-          <thead><tr><th>Query Set</th><th>Queries</th></tr></thead>
-          <tbody>${info.query_sets.map(q =>
-            `<tr><td>${q.name}</td><td>${fmt(q.count)}</td></tr>`).join('')}
-          </tbody>
+          <thead><tr>
+            <th>Query Set</th><th>Dataset</th><th>Queries</th><th>Source Files</th>
+          </tr></thead>
+          <tbody>${qsRows}</tbody>
         </table>`));
     }
   }

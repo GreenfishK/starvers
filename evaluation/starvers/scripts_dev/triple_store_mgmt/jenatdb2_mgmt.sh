@@ -29,9 +29,10 @@ startup() {
 
     timeout=120
     elapsed=0
-    until curl -s -X POST http://Starvers:3030/${policy}_${dataset}/sparql \
+    until curl -s --max-time 5 -X POST http://localhost:3030/${policy}_${dataset}/sparql \
         -H "Content-Type: application/sparql-query" \
-        --data "ASK {}" >/dev/null 2>&1
+        --data "SELECT * WHERE { ?s ?p ?o } LIMIT 1" \
+        >/dev/null 2>&1
     do
         sleep 1
         elapsed=$((elapsed + 1))

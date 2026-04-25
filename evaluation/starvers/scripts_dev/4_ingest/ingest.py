@@ -161,7 +161,8 @@ def count_triples(job: Job):
             engine.setQuery(query_string)
             try:
                 result = engine.query().convert()
-                log(job.triplestore, f"Number of triples: {result}")
+                count = int(result["results"]["bindings"][0]["count"]["value"])
+                log(job.triplestore, f"Number of triples: {count}")
             except Exception as e:
                 log(job.triplestore, f"ERROR: The following exeception occured while counting triples: {e}")
     else:
