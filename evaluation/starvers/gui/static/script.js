@@ -168,7 +168,7 @@ function renderStepInfo(stepName, info) {
         </tr>`).join('');
       sections.push(section('Datasets', `
         <table class="data-table">
-          <thead><tr><th>Dataset</th><th>Versions</th><th>All Snapshots Size</th><th>Source</th></tr></thead>
+          <thead><tr><th>Dataset</th><th>Versions</th><th>Avg Snapshot Size</th><th>Source</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`));
     }
@@ -178,25 +178,24 @@ function renderStepInfo(stepName, info) {
           `<li><a class="link" href="${escHtml(l.url)}" target="_blank">${escHtml(l.filename)}</a></li>`
         ).join('');
         const linksHtml = linkItems
-          ? `<details style="margin-top:4px">
-               <summary style="cursor:pointer;font-size:11px;color:var(--text-faint)">
-                 ${q.links.length} source file${q.links.length !== 1 ? 's' : ''} ↗
-               </summary>
-               <ul style="margin:4px 0 0 12px;padding:0;font-size:11px;list-style:disc">${linkItems}</ul>
-             </details>`
+          ? `<details style="margin-top:4px" onclick="event.stopPropagation()">
+              <summary style="cursor:pointer;font-size:11px;color:var(--text-faint)">
+                ${q.links.length} source file${q.links.length !== 1 ? 's' : ''} ↗
+              </summary>
+              <ul style="margin:4px 0 0 12px;padding:0;font-size:11px;list-style:disc">${linkItems}</ul>
+            </details>`
           : '—';
         return `
           <tr>
             <td><strong>${escHtml(q.name)}</strong></td>
             <td>${escHtml(q.for_dataset || '—')}</td>
-            <td class="mono">${q.count != null ? fmt(q.count) : '—'}</td>
             <td>${linksHtml}</td>
           </tr>`;
       }).join('');
       sections.push(section('Query Sets Downloaded', `
         <table class="data-table">
           <thead><tr>
-            <th>Query Set</th><th>Dataset</th><th>Queries</th><th>Source Files</th>
+            <th>Query Set</th><th>Dataset</th><th>Source Files</th>
           </tr></thead>
           <tbody>${qsRows}</tbody>
         </table>`));
@@ -247,15 +246,40 @@ function renderStepInfo(stepName, info) {
         </table>`));
     }
 
-    if (info.excluded_queries && Object.keys(info.excluded_queries).length) {
-      const total = Object.values(info.excluded_queries).reduce((a, b) => a + b, 0);
-      const rows  = Object.entries(info.excluded_queries).map(([reason, count]) =>
-        `<tr><td>${reason}</td><td>${fmt(count)}</td></tr>`).join('');
-      sections.push(section(`Excluded SciQA Queries (${fmt(total)} total)`, `
-        <table class="data-table">
-          <thead><tr><th>Reason</th><th>Count</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`));
+    if (info.sciqa_query_table?.length) {
+      const total    = info.sciqa_query_table.length;
+      const excluded = info.sciqa_query_table.filter(r => r.excluded).length;
+      const kept     = total - excluded;
+
+      const rows = info.sciqa_query_table.map(r => {
+        const rowCls = r.excluded ? '' : ' class="sciqa-kept"';
+        const flag = v => v
+          ? `<span class="sciqa-flag sciqa-flag--yes">1</span>`
+          : `<span class="sciqa-flag sciqa-flag--no">0</span>`;
+        return `<tr${rowCls}>
+          <td class="mono" style="font-size:11px">${escHtml(r.query)}</td>
+          <td style="text-align:center">${flag(r.invalid_in_graphdb)}</td>
+          <td style="text-align:center">${flag(r.invalid_in_ostrich)}</td>
+          <td style="text-align:center">${flag(r.ask_query)}</td>
+          <td style="text-align:center">${flag(r.malformed_transform)}</td>
+        </tr>`;
+      }).join('');
+
+      sections.push(section(
+        `SciQA Queries — ${fmt(kept)} kept / ${fmt(excluded)} excluded (of ${fmt(total)})`,
+        `<div style="overflow-x:auto;max-height:480px;overflow-y:auto">
+          <table class="data-table">
+            <thead style="position:sticky;top:0"><tr>
+              <th>Query</th>
+              <th>Invalid in GraphDB</th>
+              <th>Invalid in Ostrich</th>
+              <th>ASK query</th>
+              <th>Malformed transform</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`
+      ));
     }
   }
 
@@ -331,77 +355,39 @@ function renderStepInfo(stepName, info) {
     }
   }
 
-// ── construct_queries ────────────────────────────────────────
-if (stepName === 'construct_queries') {
-  const { query_counts, policies, datasets } = info;
+  // ── construct_queries ────────────────────────────────────────
+  if (stepName === 'construct_queries') {
+    const { query_counts, totals_per_dataset, policies, datasets } = info;
+    if (datasets?.length && policies?.length && query_counts) {
+      // Compact matrix: datasets as rows, policies as columns
+      // Since counts are the same per policy, show one column "Queries per policy" + total
+      const firstPolicy = policies[0];
+      const headerCols  = `<th>Dataset</th>${policies.map(p => `<th>${p}</th>`).join('')}<th>Total</th>`;
+      const bodyRows = datasets.map(ds => {
+        const cells = policies.map(p =>
+          `<td class="mono">${fmt(query_counts[ds]?.[p] ?? 0)}</td>`).join('');
+        const total = totals_per_dataset?.[ds] ?? 0;
+        return `<tr><td><strong>${ds}</strong></td>${cells}<td class="mono"><strong>${fmt(total)}</strong></td></tr>`;
+      }).join('');
 
-  if (datasets?.length && policies?.length && query_counts) {
+      // Grand total row
+      const grandTotal = datasets.reduce((sum, ds) => sum + (totals_per_dataset?.[ds] ?? 0), 0);
+      const policyCols = policies.map(p => {
+        const pTotal = datasets.reduce((sum, ds) => sum + (query_counts[ds]?.[p] ?? 0), 0);
+        return `<td class="mono"><strong>${fmt(pTotal)}</strong></td>`;
+      }).join('');
+      const totalRow = `<tr class="total-row"><td><strong>Total</strong></td>${policyCols}<td class="mono"><strong>${fmt(grandTotal)}</strong></td></tr>`;
 
-    // Extract unique query_sets
-    const querySets = [...new Set(
-      Object.keys(query_counts).map(k => k.split(" / ")[2])
-    )].sort();
-
-    // Header: only one value column now
-    const headerCols = `
-      <th>Dataset</th>
-      <th>Query Set</th>
-      <th>Queries</th>
-    `;
-
-    let tableRows = '';
-    let totalSum = 0;
-
-    datasets.forEach(dataset => {
-      querySets.forEach((qs, idx) => {
-
-        // Since values are identical across policies, just take first policy
-        const key = `${policies[0]} / ${dataset} / ${qs}`;
-        const val = query_counts[key] ?? 0;
-
-        totalSum += val;
-
-        // Rowspan for dataset
-        const datasetCell = idx === 0
-          ? `<td rowspan="${querySets.length}"><strong>${dataset}</strong></td>`
-          : '';
-
-        tableRows += `
-          <tr>
-            ${datasetCell}
-            <td>${qs}</td>
-            <td class="mono">${fmt(val)}</td>
-          </tr>`;
-      });
-    });
-
-    // Formula now uses number of policies
-    const numPolicies = policies.length;
-
-    const totalBlock = `
-      <div style="margin-top:10px">
-        <div><strong>Total Queries (formula)</strong></div>
-        <div class="mono">Total = (∑ table cells) × (#policies)</div>
-        <div class="mono">= ${fmt(totalSum)} × ${numPolicies} = <strong>${fmt(totalSum * numPolicies)}</strong></div>
-      </div>
-    `;
-
-    sections.push(`
-      <table class="data-table">
-        <thead><tr>${headerCols}</tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-      ${totalBlock}
-    `);
-
-  } else {
-    sections.push(
-      `<div class="dim" style="font-size:12px">
-         No query files found in final_queries directory.
-       </div>`
-    );
+      sections.push(section('Queries Constructed', `
+        <table class="data-table">
+          <thead><tr>${headerCols}</tr></thead>
+          <tbody>${bodyRows}${totalRow}</tbody>
+        </table>`));
+    } else {
+      sections.push(section('Queries Constructed',
+        `<div class="dim" style="font-size:12px">No query files found in final_queries directory.</div>`));
+    }
   }
-}
 
   // ── evaluate ─────────────────────────────────────────────────
   if (stepName === 'evaluate') {

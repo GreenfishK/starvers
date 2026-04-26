@@ -8,9 +8,9 @@ import psutil
 
 from starvers._helper import versioning_timestamp_format
 
-##########################################################################################
-# Logging 
-##########################################################################################
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
 if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets'):
     os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets')
 with open(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets/construct_datasets.txt', "w") as log_file:
@@ -23,9 +23,10 @@ logging.basicConfig(handlers=[logging.FileHandler(filename=f"{os.environ['RUN_DI
                     level=logging.INFO)
 
 LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/construct_datasets/construct_datasets.txt"
-##########################################################################################
-# Parameters 
-##########################################################################################
+
+# ---------------------------------------------------------------------------
+# Environment / path constants
+# ---------------------------------------------------------------------------
 datasets = os.environ.get("datasets").split(" ")
 skip_change_sets = os.environ.get("skip_change_sets")
 skip_tb_star_ds = os.environ.get("skip_tb_star_ds")
@@ -47,7 +48,9 @@ change_sets_dir = eval_setup['general']['change_sets_dir']
 
 
 
-
+# ---------------------------------------------------------------------------
+# Functions
+# ---------------------------------------------------------------------------
 def construct_change_sets(snapshots_dir: str, change_sets_dir: str, end_vers: int, format: str, basename_length: int):
     """
     end_vers: The last version that should be built. Can only build as many versions as there are snapshots provided
@@ -336,7 +339,9 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
 
 
 
-############################################# Start procedure #############################################
+# ---------------------------------------------------------------------------
+# Execution
+# ---------------------------------------------------------------------------
 logging.info(f"Starting procedure for constructing the different dataset variants for the datasets: {datasets}")
 for dataset in datasets:
     if dataset not in allowed_datasets:

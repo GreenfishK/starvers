@@ -15,19 +15,13 @@ from SPARQLWrapper import SPARQLWrapper, JSON, GET
 import logging
 import sys
 
-#####################################################################
-# Configuration
-#####################################################################
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
 LOG_DIR = Path(f"{os.environ['RUN_DIR']}/output/logs/ingest")
 
 if not LOG_DIR.exists():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
-CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
-CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
-CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR = "/starvers_eval/configs/ingest"
 
 LOG_FILES = {
     "ostrich": LOG_DIR / "ingestion_ostrich.txt",
@@ -36,57 +30,6 @@ LOG_FILES = {
     "ostrich_aggchange": LOG_DIR / "ingestion_ostrich_aggchange.txt",
 }
 
-DATASETS = os.environ.get("datasets").split(" ")
-POLICIES = os.environ.get("policies").split(" ")
-TRIPLE_STORES = os.environ.get("triple_stores").split(" ")
-
-LOCK_DIR = Path("/starvers_eval/locks")
-LOCK_DIR.mkdir(parents=True, exist_ok=True)
-
-DATASET_DIR_OR_FILE_MAP = {
-    "ostrich": "alldata_vdir",
-    "ostrich_aggchange": "alldata_vdir",
-    "ic_sr_ng": "alldata.ICNG.trig",
-    "cb_sr_ng": "alldata.CBNG.trig",
-    "tb_sr_ng": "alldata.TB_computed.nq",
-    "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
-}
-
-RUNS = 10
-
-#####################################################################
-# Classes
-#####################################################################
-# Job definition
-@dataclass(frozen=True)
-class Job:
-    triplestore: str
-    dataset: str
-    policy: str
-
-    @property
-    def lock_key(self) -> Tuple[str, str, str]:
-        return (self.dataset, self.policy, self.triplestore)
-
-
-# Lock manager for dataset-policy combinations
-class DatasetPolicyLock:
-    def __init__(self):
-        self._locks = {}
-        self._global = threading.Lock()
-
-    def acquire(self, key):
-        with self._global:
-            lock = self._locks.setdefault(key, threading.Lock())
-        lock.acquire()
-
-    def release(self, key):
-        self._locks[key].release()
-
-#####################################################################
-# Functions
-#####################################################################
-# Helpers
 _loggers: dict[str, logging.Logger] = {}
 
 def get_ts_logger(triplestore: str) -> logging.Logger:
@@ -119,6 +62,68 @@ def get_ts_logger(triplestore: str) -> logging.Logger:
 
 def log(triplestore: str, message: str):
     get_ts_logger(triplestore).info(message)
+
+# ---------------------------------------------------------------------------
+# Environment / path constants
+# ---------------------------------------------------------------------------
+MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
+CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
+CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
+CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
+CONFIG_DIR = "/starvers_eval/configs/ingest"
+
+DATASETS = os.environ.get("datasets").split(" ")
+POLICIES = os.environ.get("policies").split(" ")
+TRIPLE_STORES = os.environ.get("triple_stores").split(" ")
+
+LOCK_DIR = Path("/starvers_eval/locks")
+LOCK_DIR.mkdir(parents=True, exist_ok=True)
+
+DATASET_DIR_OR_FILE_MAP = {
+    "ostrich": "alldata_vdir",
+    "ostrich_aggchange": "alldata_vdir",
+    "ic_sr_ng": "alldata.ICNG.trig",
+    "cb_sr_ng": "alldata.CBNG.trig",
+    "tb_sr_ng": "alldata.TB_computed.nq",
+    "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
+}
+
+RUNS = 10
+
+# ---------------------------------------------------------------------------
+# Classes
+# ---------------------------------------------------------------------------
+# Job definition
+@dataclass(frozen=True)
+class Job:
+    triplestore: str
+    dataset: str
+    policy: str
+
+    @property
+    def lock_key(self) -> Tuple[str, str, str]:
+        return (self.dataset, self.policy, self.triplestore)
+
+
+# Lock manager for dataset-policy combinations
+class DatasetPolicyLock:
+    def __init__(self):
+        self._locks = {}
+        self._global = threading.Lock()
+
+    def acquire(self, key):
+        with self._global:
+            lock = self._locks.setdefault(key, threading.Lock())
+        lock.acquire()
+
+    def release(self, key):
+        self._locks[key].release()
+
+# ---------------------------------------------------------------------------
+# Functions
+# ---------------------------------------------------------------------------
+# Helpers
+
 
 def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
     try:
@@ -176,9 +181,9 @@ def ensure_empty_dir(path: Path):
 
 
 
-#####################################################################
+# ---------------------------------------------------------------------------
 # Job scheduling
-#####################################################################
+# ---------------------------------------------------------------------------
 # Job queue
 job_queue = queue.Queue()
 lock_manager = DatasetPolicyLock()
@@ -186,17 +191,19 @@ results_lock = threading.Lock()
 
 # Enqueue jobs
 def enqueue_jobs():
-    """
-    Queue one job per triplestore, dataset, policy combination.
-    Each job will internally run `RUNS` times.
-    """
+    count = 0
     for triplestore in TRIPLE_STORES:
         for dataset in DATASETS:
             for policy in POLICIES:
                 if not eval_combi_exists(triplestore, dataset, policy):
+                    log(triplestore, f"SKIP: {triplestore}/{dataset}/{policy} not in evaluations config")
                     continue
                 job_queue.put(Job(triplestore, dataset, policy))
-
+                count += 1
+    log(triplestore, f"Enqueued {count} jobs")
+    if count == 0:
+        print("[ingest] ERROR: No jobs enqueued — check triple_stores/policies/datasets env vars against eval_setup.toml", file=sys.stderr)
+        sys.exit(1)
 
 # Result writer
 def write_result(row):
@@ -205,24 +212,27 @@ def write_result(row):
             f.write(";".join(map(str, row)) + "\n")
 
 
+_worker_exception = None
 # Worker
 def worker(worker_id: int, job_queue: queue.Queue):
-    while True:
-        try:
-            job = job_queue.get(timeout=2)
-        except queue.Empty:
-            return        
-
-        for run in range(1, RUNS + 1):
-            lock_manager.acquire(job.lock_key)
+    global _worker_exception
+    try:
+        while True:
             try:
-                result = run_ingestion(job, run)
-            finally:
-                lock_manager.release(job.lock_key)
-
-            write_result(result)
-
-        job_queue.task_done()
+                job = job_queue.get(timeout=2)
+            except queue.Empty:
+                return
+            for run in range(1, RUNS + 1):
+                lock_manager.acquire(job.lock_key)
+                try:
+                    result = run_ingestion(job, run)
+                finally:
+                    lock_manager.release(job.lock_key)
+                write_result(result)
+            job_queue.task_done()
+    except Exception as e:
+        _worker_exception = e
+        raise  # still prints traceback to stderr
 
 
 # Ingest dispatch
@@ -275,6 +285,9 @@ def run_ingestion(job: Job, run: int):
     return (job.triplestore, policy, dataset, run, ingestion_time, raw_size, db_size)
 
 
+# ---------------------------------------------------------------------------
+# Execution
+# ---------------------------------------------------------------------------
 
 # Start
 def main():
@@ -299,6 +312,10 @@ def main():
 
     for t in threads:
         t.join()
+
+    if _worker_exception is not None:
+        print(f"[ingest] Worker failed: {_worker_exception}", file=sys.stderr)
+        sys.exit(1)   # makes orchestrator record status=failed and stop
 
 
 if __name__ == "__main__":

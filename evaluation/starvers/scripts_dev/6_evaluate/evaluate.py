@@ -22,11 +22,11 @@ import psutil
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 import socket
 
-##########################################################
-# Logging
-##########################################################
-if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets'):
-    os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/construct_datasets')
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
+if not os.path.exists(f'{os.environ["RUN_DIR"]}/output/logs/evaluate'):
+    os.makedirs(f'{os.environ["RUN_DIR"]}/output/logs/evaluate')
 
 LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/evaluate/evaluate.txt"
 logging.basicConfig(
@@ -37,9 +37,9 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-##########################################################
-# Paths & Config
-##########################################################
+# ---------------------------------------------------------------------------
+# Environment / path constants
+# ---------------------------------------------------------------------------
 CONFIG_TMPL_DIR="/starvers_eval/scripts/3_construct_datasets/configs"
 CONFIG_DIR="/starvers_eval/configs/construct_datasets"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
@@ -48,6 +48,9 @@ TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
 databases_dir = f"{os.environ['RUN_DIR']}/databases"
 
+triple_stores =  os.environ.get("triple_stores").split(" ")
+policies =  os.environ.get("policies").split(" ")
+datasets =  os.environ.get("datasets").split(" ")
 
 # For update evaluation
 in_frm = "nt"
@@ -62,10 +65,9 @@ ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos i
 snapshot_dir = config['general']['snapshot_dir']
 change_sets_dir = config['general']['change_sets_dir']
 
-
-##########################################################
-# Helpers
-##########################################################
+# ---------------------------------------------------------------------------
+# Classes and functions
+# ---------------------------------------------------------------------------
 class TripleStore(Enum):
     GRAPHDB = 1
     JENATDB2 = 2
@@ -435,14 +437,10 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
     return df
 
 
-##########################################################
-# MAIN PIPELINE
-##########################################################
+# ---------------------------------------------------------------------------
+# Execution
+# ---------------------------------------------------------------------------
 def main():
-    triple_stores =  os.environ.get("triple_stores").split(" ")
-    policies =  os.environ.get("policies").split(" ")
-    datasets =  os.environ.get("datasets").split(" ")
-
     header = [
         'triplestore', 'dataset', 'policy', 'query_set',
         'snapshot', 'snapshot_ts', 'query',
