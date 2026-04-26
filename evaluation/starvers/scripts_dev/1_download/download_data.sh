@@ -25,6 +25,19 @@ datasets=("${datasets}")
 registered_datasets=$(grep -E '\[datasets\.[A-Za-z_]+\]' /starvers_eval/configs/eval_setup.toml | awk -F "." '{print $2}' | sed 's/.$//')
 echo "$(log_timestamp) ${log_level}: Registered datasets are ${registered_datasets} ..." >> $log_file
 
+# Create directories
+echo "$(log_timestamp) ${log_level}: Creating directories for queries" >> $log_file
+
+downloaded_queries_path=$RUN_DIR/queries/downloaded_queries
+
+mkdir -p ${downloaded_queries_path}/beara/low
+mkdir -p ${downloaded_queries_path}/beara/high
+mkdir -p ${downloaded_queries_path}/bearb/lookup
+mkdir -p ${downloaded_queries_path}/bearb/join
+mkdir -p ${downloaded_queries_path}/bearc/complex
+mkdir -p ${downloaded_queries_path}/orkg/complex
+
+
 ######################################################
 # Helper: read a TOML array from [query_sets.<name>]
 # Returns newline-separated list of URLs
@@ -135,38 +148,26 @@ done
 ######################################################
 # Query sets
 ######################################################
-raw_queries_path=$RUN_DIR/queries/raw_queries
-
-# Create directories
-echo "$(log_timestamp) ${log_level}: Creating directories for queries" >> $log_file
-
-mkdir -p ${raw_queries_path}/beara/low
-mkdir -p ${raw_queries_path}/beara/high
-mkdir -p ${raw_queries_path}/bearb/lookup
-mkdir -p ${raw_queries_path}/bearb/join
-mkdir -p ${raw_queries_path}/bearc/complex
-mkdir -p ${raw_queries_path}/orkg/complex
-
 echo "$(log_timestamp) ${log_level}: Downloading query sets for BEARA, BEARB, BEARC, and ORKG" >> $log_file
 
 # ── BEARA low ────────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -P ${raw_queries_path}/beara/low "$url"
+    wget -t 3 -c -P ${downloaded_queries_path}/beara/low "$url"
 done < <(read_qs_links "beara" "low")
 record_query_set "beara" "low" "beara"
 
 # ── BEARA high ───────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -P ${raw_queries_path}/beara/high "$url"
+    wget -t 3 -c -P ${downloaded_queries_path}/beara/high "$url"
 done < <(read_qs_links "beara" "high")
 record_query_set "beara" "high" "beara"
 
 # ── BEARB lookup — links live under bearb_hour (same URLs as bearb_day) ──────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -P ${raw_queries_path}/bearb/lookup "$url"
+    wget -t 3 -c -P ${downloaded_queries_path}/bearb/lookup "$url"
 done < <(read_qs_links "bearb_hour" "lookup")
 record_query_set "bearb_hour" "lookup" "bearb_hour"
 record_query_set "bearb_day"  "lookup" "bearb_day"
@@ -174,26 +175,26 @@ record_query_set "bearb_day"  "lookup" "bearb_day"
 # ── BEARB join ───────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -P ${raw_queries_path}/bearb/join "$url"
+    wget -t 3 -c -P ${downloaded_queries_path}/bearb/join "$url"
 done < <(read_qs_links "bearb_hour" "join")
-unzip -o ${raw_queries_path}/bearb/join/joins.zip -d ${raw_queries_path}/bearb/join
-rm ${raw_queries_path}/bearb/join/joins.zip
+unzip -o ${downloaded_queries_path}/bearb/join/joins.zip -d ${downloaded_queries_path}/bearb/join
+rm ${downloaded_queries_path}/bearb/join/joins.zip
 record_query_set "bearb_hour" "join" "bearb_hour"
 record_query_set "bearb_day"  "join" "bearb_day"
 
 # ── BEARC complex ────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -P ${raw_queries_path}/bearc/complex "$url"
+    wget -t 3 -c -P ${downloaded_queries_path}/bearc/complex "$url"
 done < <(read_qs_links "bearc" "complex")
 record_query_set "bearc" "complex" "bearc"
 
 # ── ORKG complex (SciQA — counts written by preprocess_data after extraction) ─
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
-    wget -t 3 -c -O ${raw_queries_path}/orkg/complex/SciQA-dataset.zip "$url"
+    wget -t 3 -c -O ${downloaded_queries_path}/orkg/complex/SciQA-dataset.zip "$url"
 done < <(read_qs_links "orkg" "complex")
-unzip -o ${raw_queries_path}/orkg/complex/SciQA-dataset.zip -d ${raw_queries_path}/orkg/complex
+unzip -o ${downloaded_queries_path}/orkg/complex/SciQA-dataset.zip -d ${downloaded_queries_path}/orkg/complex
 record_query_set "orkg" "complex" "orkg"
 
-echo "$(log_timestamp) ${log_level}: Finished downloading query sets and extracted them to ${raw_queries_path}" >> $log_file
+echo "$(log_timestamp) ${log_level}: Finished downloading query sets and extracted them to ${downloaded_queries_path}" >> $log_file

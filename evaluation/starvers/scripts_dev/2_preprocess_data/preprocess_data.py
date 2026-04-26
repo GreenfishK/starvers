@@ -59,7 +59,7 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE         = LOG_DIR / "preprocess_data.txt"
 EXCLUDE_CSV      = LOG_DIR / "excluded_queries.csv"
 PREPROCESS_CSV   = LOG_DIR / "preprocess_summary.csv"
-QUERIES_META_CSV = RUN_DIR / "output" / "logs" / "download" / "queries_meta.csv"
+QUERIES_META_CSV = Path(os.environ["RUN_DIR"]) / "output" / "logs" / "download" / "queries_meta.csv"
 QUERY_COUNTS_CSV = LOG_DIR / "query_counts.csv"
 
 LOG_FILE.write_text("")
@@ -386,6 +386,8 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
+DOWNLOADED_QUERIES_DIR = RUN_DIR / "queries" / "downloaded_queries"
+RAW_QUERIES_DIR = RUN_DIR / "queries" / "raw_queries" 
 BASE_DIR     = RUN_DIR / "queries" / "raw_queries" / "orkg" / "complex"
 SUBDIRS      = ["train", "test", "valid"]
 
@@ -447,9 +449,7 @@ def wrap_aggregations(sparql: str) -> str:
 # Phase 2: startup, extract, exclude, cleanup
 # ---------------------------------------------------------------------------
 
-def startup():
-    """Spin up GraphDB and Ostrich with a dummy ORKG snapshot for query validation."""
-
+def _startup_graphdb():
     LOG.info("Create database environment for GraphDB")
     subprocess.run([GRAPHDB_MGMT_SCRIPT, "create_env", "dummy", "orkg",
                     str(GRAPHDB_DATABASE_DIR), CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
@@ -463,6 +463,7 @@ def startup():
                     "dummy", "orkg"], check=True)
     LOG.info("GraphDB is up")
 
+def _startup_ostrich():
     LOG.info("Create database environment for Ostrich")
     subprocess.run([OSTRICH_MGMT_SCRIPT, "create_env", "dummy", "orkg",
                     str(OSTRICH_DATABASE_DIR), "", ""], check=True)
@@ -477,12 +478,43 @@ def startup():
                     "dummy", "orkg"], check=True)
     LOG.info("Ostrich is up")
 
+def startup():
+    """Spin up GraphDB and Ostrich with a dummy ORKG snapshot for query validation."""
+    _startup_graphdb()
+    _startup_ostrich()
+
+
+def _copy_subdirs(src, dst):
+    """
+    Copies all immediate subdirectories from src to dst.
+    The destination directory 'dst' must already exist.
+    """
+    # Ensure destination exists
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+
+    for entry in os.scandir(src):
+        # Check if the entry is a directory (not a symlink)
+        if entry.is_dir(follow_symlinks=False):
+            # Construct the destination path for this specific subdirectory
+            dest_path = os.path.join(dst, entry.name)
+            
+            # Copy the directory tree. 
+            # dirs_exist_ok=True allows copying into an existing directory (Python 3.8+)
+            shutil.copytree(entry.path, dest_path, dirs_exist_ok=True)
+
 
 def extract_queries():
     """
     Read hand-crafted queries from SciQA JSON files, rewrite SPARQL syntax
     to be compatible with starvers, and write one .txt file per query.
     """
+
+    # Create raw queries DIR and copy queries from downloaded_queriey to raw_queries
+    shutil.rmtree(RAW_QUERIES_DIR, ignore_errors=True)
+    RAW_QUERIES_DIR.mkdir(parents=True, exist_ok=True)
+    _copy_subdirs(DOWNLOADED_QUERIES_DIR, RAW_QUERIES_DIR)
+
     for subdir in SUBDIRS:
         json_path = BASE_DIR / "SciQA-dataset" / subdir / "questions.json"
         if not json_path.exists():
@@ -515,13 +547,14 @@ def extract_queries():
             LOG.info(f"Wrote {out_file}")
 
 
+    
 def exclude_queries():
     """
     Test every extracted query against GraphDB and Ostrich.
     Queries that fail any check are removed from disk and logged to excluded_queries.csv.
     """
     ostrich_engine = SPARQLWrapper(endpoint="http://Starvers:42564/sparql")
-    ostrich_engine.timeout = 30
+    ostrich_engine.timeout = 120
     ostrich_engine.setReturnFormat(JSON)
     ostrich_engine.setOnlyConneg(True)
     ostrich_engine.setMethod(POST)
@@ -552,7 +585,9 @@ def exclude_queries():
             continue
 
         try:
+            LOG.info(f"Executing query {query_file.name} against GraphDB")
             rdf_star_engine.query(sparql, yn_timestamp_query=False)
+            LOG.info(f"Query {query_file.name} successfully executed against GraphDB")
         except Exception as e:
             LOG.info(f"Original query {query_file.name} is invalid in GraphDB and will be excluded: {e}")
             query_results.append([query_file.name, 1, "Invalid Original in GraphDB"])
@@ -563,9 +598,10 @@ def exclude_queries():
             prefixes, versioned_query = split_prefixes_query(sparql)
             modifiers, versioned_query = split_solution_modifiers_query(versioned_query)
             versioned_query = ostrich_template.format(prefixes, 0, versioned_query, modifiers)
-            LOG.info(f"Versioned query for Ostrich execution: {versioned_query}")
+            LOG.info(f"Executing query {query_file.name} against Ostrich: {versioned_query}")
             ostrich_engine.setQuery(versioned_query)
             ostrich_engine.query()
+            LOG.info(f"Query {query_file.name} successfully executed against Ostrich.")
         except Exception as e:
             LOG.info(f"Original query {query_file.name} is invalid in Ostrich and will be excluded: {e}")
             query_results.append([query_file.name, 1, "Invalid Original in Ostrich"])
@@ -573,7 +609,10 @@ def exclude_queries():
             continue
 
         try:
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
             rdf_star_engine.query(sparql, yn_timestamp_query=True)
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against GraphDB")
+
         except Exception as e:
             LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
             query_results.append([query_file.name, 1, "Malformed Starvers transformation"])
@@ -707,7 +746,7 @@ def write_query_counts():
 
 if __name__ == "__main__":
     # Phase 1: clean all raw datasets (parallelised across files)
-    clean_datasets()
+    #clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
     startup()

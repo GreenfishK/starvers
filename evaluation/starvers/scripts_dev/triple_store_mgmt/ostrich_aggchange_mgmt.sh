@@ -37,7 +37,7 @@ startup() {
 
     node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js \
         -p 42564 -h 0.0.0.0 -t 480 \
-        ostrichFile@${database_dir} &
+        ostrichFile@${database_dir} >> "$log_file" 2>&1 &
 
     echo "$(log_timestamp) ${log_level}:Waiting for endpoint..." >> "$log_file"
     until curl -s -X POST http://Starvers:42564 \
