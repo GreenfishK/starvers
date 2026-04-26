@@ -25,7 +25,7 @@ startup() {
 	
     repositoryID=${policy}_${dataset}
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    nohup /root/.cargo/bin/oxigraph serve --location ${database_dir}/${repositoryID} &
+    /root/.cargo/bin/oxigraph serve --location ${database_dir}/${repositoryID} >> "$log_file" 2>&1 &
     
     # Wait until server is up
     echo "$(log_timestamp) ${log_level}:Waiting..." >> $log_file

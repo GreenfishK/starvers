@@ -22,7 +22,7 @@ fi
 startup() {
     echo "$(log_timestamp) ${log_level}:Start Ostrich node in background..." >> $log_file
     node /opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js \
-        -p 42564 -h 0.0.0.0 -t 480 ostrichFile@${database_dir} &
+        -p 42564 -h 0.0.0.0 -t 480 ostrichFile@${database_dir} >> $log_file 2>&1 &
     db_pid=$!  # capture immediately after backgrounding, before any other command
     echo "$(log_timestamp) ${log_level}:Node PID is $db_pid" >> $log_file
 
@@ -158,16 +158,18 @@ EOF
     rm -rf "$vdir"
     mkdir -p "$vdir/alldata.IC.nt"
 
-    # Copy IC snapshot (single file) and change sets
+    # Copy first snapshot (single file) 
+    cp "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
+
+    # Copy change sets if they have been constructed already
     if [[ -d "$cb_src" ]]; then
-        cp "$ic_src" "$vdir/alldata.IC.nt/$first_snapshot"
         cp -r "$cb_src" "$vdir/alldata.CB.nt"
         echo "$(log_timestamp) ${log_level}:Copied IC snapshot and change sets into $vdir." >> $log_file
     else
         echo "$(log_timestamp) ${log_level}:Change sets not found at $cb_src — skipping copy." >> $log_file
     fi
 
-    echo "$(log_timestamp) ${log_level}:Directory created at $vdir with symlinks." >> $log_file
+    echo "$(log_timestamp) ${log_level}:Directory created at $vdir." >> $log_file
 
 }
 

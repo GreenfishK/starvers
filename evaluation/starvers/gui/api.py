@@ -9,6 +9,7 @@ import re
 import subprocess
 from collections import defaultdict
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import tomli
 from flask import Flask, abort, jsonify, render_template
@@ -245,17 +246,36 @@ def _detail_download(run_dir: Path) -> dict:
 def _detail_preprocess(run_dir: Path) -> dict:
     detail: dict = {}
 
-    validator_dir = Path("/starvers_eval/scripts/2_preprocess_data/RDFValidator/target")
+    pom_path = Path("/starvers_eval/scripts/2_preprocess_data/RDFValidator/pom.xml")
+
     rdf4j_ver, jena_ver = None, None
-    if validator_dir.exists():
-        for pom in validator_dir.rglob("*.pom"):
-            name_lower = pom.name.lower()
-            m = re.search(r"-([\d.]+)\.pom$", name_lower)
-            ver = m.group(1) if m else "?"
-            if "rdf4j" in name_lower:
-                rdf4j_ver = ver
-            elif "jena" in name_lower or "apache-jena" in name_lower:
-                jena_ver = ver
+
+    if pom_path.exists():
+        tree = ET.parse(pom_path)
+        root = tree.getroot()
+
+        # Maven uses namespaces → we must handle them
+        ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+
+        # --- RDF4J version ---
+        for dep in root.findall(".//m:dependency", ns):
+            group = dep.find("m:groupId", ns)
+            artifact = dep.find("m:artifactId", ns)
+            version = dep.find("m:version", ns)
+
+            if group is None or artifact is None or version is None:
+                continue
+
+            group_text = group.text or ""
+            artifact_text = artifact.text or ""
+            version_text = version.text or ""
+
+            if "rdf4j" in group_text or "rdf4j" in artifact_text:
+                rdf4j_ver = version_text
+
+            if "jena" in group_text or "jena" in artifact_text:
+                jena_ver = version_text
+
     detail["validators"] = {
         "rdf4j": rdf4j_ver or "not found",
         "jena":  jena_ver  or "not found",
