@@ -108,13 +108,13 @@ for dataset in ${datasets[@]}; do
     tar -xf $RUN_DIR/rawdata/${dataset}/${archive_name_snapshots} -C $RUN_DIR/rawdata/${dataset}/${snapshot_dir}
 
     # Record size of extracted snapshots and save to RUN_DIR/output/logs/downloads/datasets_meta.csv
-    size=$(du -s -L --block-size=1M --apparent-size $RUN_DIR/rawdata/${dataset}/${snapshot_dir} | cut -f1)
-    echo "${dataset},${snapshot_dir},${size}" >> $metadata_file
     if [[ $yn_nested_archives == "true" ]]; then
         cd $RUN_DIR/rawdata/${dataset}/${snapshot_dir}
         for f in *.gz ; do gzip -d < "$f" > $RUN_DIR/rawdata/${dataset}/${snapshot_dir}/"${f%.*}" ; done
         rm *.gz
     fi
+    size=$(du -s -L --block-size=1M --apparent-size $RUN_DIR/rawdata/${dataset}/${snapshot_dir} | cut -f1)
+    echo "${dataset},${snapshot_dir},${size}" >> $metadata_file
     
     # gz
     echo "$(log_timestamp) ${log_level}: Downloading ${dataset} named graphs dataset..." >> $log_file

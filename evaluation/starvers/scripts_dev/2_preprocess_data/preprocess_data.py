@@ -53,7 +53,7 @@ from construct_queries import split_solution_modifiers_query
 # Logging setup
 # ---------------------------------------------------------------------------
 
-LOG_DIR = RUN_DIR / "output" / "logs" / "preprocess_data"
+LOG_DIR = Path(os.environ["RUN_DIR"]) / "output" / "logs" / "preprocess_data"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOG_FILE         = LOG_DIR / "preprocess_data.txt"
