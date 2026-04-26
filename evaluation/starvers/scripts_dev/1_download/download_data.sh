@@ -15,7 +15,7 @@ queries_file=$RUN_DIR/output/logs/download/queries_meta.csv
 > $metadata_file
 > $queries_file
 echo "dataset,snapshot_dir,size" >> $metadata_file
-echo "query_set,for_dataset,count,links" >> $queries_file
+echo "query_set,for_dataset,links" >> $queries_file
 
 # Path variables
 snapshot_dir=`grep -A 2 '[general]' /starvers_eval/configs/eval_setup.toml | awk -F '"' '/snapshot_dir/ {print $2}'`
@@ -60,46 +60,19 @@ EOF
 }
 
 ######################################################
-# Helper: count queries for a downloaded query set
-# Usage: count_queries <dir> <count_method>
-#   count_method = "lines"  → sum non-empty lines across all .txt files
-#   count_method = "files"  → count files in dir (excluding zips)
-######################################################
-count_queries() {
-    local dir=$1
-    local method=$2
-    if [[ "$method" == "lines" ]]; then
-        # Sum non-empty lines across all .txt files
-        find "$dir" -maxdepth 1 -name "*.txt" | xargs -r grep -c "" | \
-            awk -F: '{sum += $NF} END {print sum+0}'
-    else
-        # Count files (non-zip, non-directory)
-        find "$dir" -maxdepth 2 -type f ! -name "*.zip" | wc -l | tr -d ' '
-    fi
-}
-
-######################################################
 # Helper: record a query set row into queries_meta.csv
 # Usage: record_query_set <qs_name> <dir>
 ######################################################
 record_query_set() {
-    local dataset=$1
-    local qs_name=$2
-    local dir=$3
+    local dataset=$1   # actual toml dataset key, e.g. bearb_hour
+    local qs_name=$2   # query set name, e.g. lookup
+    local for_label=$3 # display label written to CSV
 
-    local for_dataset="$dataset"
-    local count_method
-    count_method=$(read_qs_field "$dataset" "$qs_name" "count_method")
-    local count
-    count=$(count_queries "$dir" "$count_method")
-
-    # Links: one row per file in the dir, with filename and original URL
-    # Build "filename; url" pairs, semicolon-separated between pairs, pipe-separated between files
     local links_str=""
     while IFS= read -r url; do
         [[ -z "$url" ]] && continue
         local fname
-        fname=$(basename "$url" | sed 's/?.*$//')    # strip query params
+        fname=$(basename "$url" | sed 's/?.*$//')
         if [[ -n "$links_str" ]]; then
             links_str="${links_str} | ${fname}; ${url}"
         else
@@ -107,8 +80,8 @@ record_query_set() {
         fi
     done < <(read_qs_links "$dataset" "$qs_name")
 
-    echo "${qs_name},${for_dataset},${count},${links_str}" >> $queries_file
-    echo "$(log_timestamp) ${log_level}: Recorded query set ${qs_name}: count=${count}" >> $log_file
+    echo "${qs_name},${for_label},${links_str}" >> $queries_file
+    echo "$(log_timestamp) ${log_level}: Recorded query set ${qs_name} for ${dataset}" >> $log_file
 }
 
 ######################################################
@@ -181,44 +154,46 @@ while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -P ${raw_queries_path}/beara/low "$url"
 done < <(read_qs_links "beara" "low")
-record_query_set "beara" "low" "${raw_queries_path}/beara/low"
+record_query_set "beara" "low" "beara"
 
 # ── BEARA high ───────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -P ${raw_queries_path}/beara/high "$url"
 done < <(read_qs_links "beara" "high")
-record_query_set "beara" "high" "${raw_queries_path}/beara/high"
+record_query_set "beara" "high" "beara"
 
-# ── BEARB lookup ─────────────────────────────────────────────────────────────
+# ── BEARB lookup — links live under bearb_hour (same URLs as bearb_day) ──────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -P ${raw_queries_path}/bearb/lookup "$url"
-done < <(read_qs_links "bearb" "lookup")
-record_query_set "bearb" "lookup" "${raw_queries_path}/bearb/lookup"
+done < <(read_qs_links "bearb_hour" "lookup")
+record_query_set "bearb_hour" "lookup" "bearb_hour"
+record_query_set "bearb_day"  "lookup" "bearb_day"
 
 # ── BEARB join ───────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -P ${raw_queries_path}/bearb/join "$url"
-done < <(read_qs_links "bearb" "join")
+done < <(read_qs_links "bearb_hour" "join")
 unzip -o ${raw_queries_path}/bearb/join/joins.zip -d ${raw_queries_path}/bearb/join
 rm ${raw_queries_path}/bearb/join/joins.zip
-record_query_set "bearb" "join" "${raw_queries_path}/bearb/join"
+record_query_set "bearb_hour" "join" "bearb_hour"
+record_query_set "bearb_day"  "join" "bearb_day"
 
 # ── BEARC complex ────────────────────────────────────────────────────────────
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -P ${raw_queries_path}/bearc/complex "$url"
 done < <(read_qs_links "bearc" "complex")
-record_query_set "bearc" "complex" "${raw_queries_path}/bearc/complex"
+record_query_set "bearc" "complex" "bearc"
 
-# ── ORKG complex ─────────────────────────────────────────────────────────────
+# ── ORKG complex (SciQA — counts written by preprocess_data after extraction) ─
 while IFS= read -r url; do
     [[ -z "$url" ]] && continue
     wget -t 3 -c -O ${raw_queries_path}/orkg/complex/SciQA-dataset.zip "$url"
 done < <(read_qs_links "orkg" "complex")
 unzip -o ${raw_queries_path}/orkg/complex/SciQA-dataset.zip -d ${raw_queries_path}/orkg/complex
-record_query_set "orkg" "complex" "${raw_queries_path}/orkg/complex"
+record_query_set "orkg" "complex" "orkg"
 
 echo "$(log_timestamp) ${log_level}: Finished downloading query sets and extracted them to ${raw_queries_path}" >> $log_file

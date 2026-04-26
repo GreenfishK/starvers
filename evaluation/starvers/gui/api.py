@@ -4,7 +4,6 @@ api.py – Flask backend for the StarVers Evaluation GUI.
 
 import base64
 import csv
-import math
 import os
 import re
 import subprocess
@@ -101,11 +100,28 @@ def _count_txt_files(directory: Path) -> int:
 
 
 def _discovered_datasets(run_dir: Path) -> list[str]:
-    """Return dataset names that actually exist under RUN_DIR/rawdata/."""
     rawdata = run_dir / "rawdata"
     if not rawdata.exists():
         return []
     return [d.name for d in sorted(rawdata.iterdir()) if d.is_dir()]
+
+
+def _load_svg_plots(figures_dir: Path, prefix: str) -> list[dict]:
+    """
+    Return a list of {filename, data} dicts for SVG files whose name starts
+    with the given prefix.  Returns an empty list without raising if the
+    directory or any file is missing — callers must handle the empty case.
+    """
+    if not figures_dir.exists():
+        return []
+    plots = []
+    for svg in sorted(figures_dir.glob(f"{prefix}*.svg")):
+        try:
+            data = base64.b64encode(svg.read_bytes()).decode("ascii")
+            plots.append({"filename": svg.name, "data": data})
+        except Exception:
+            continue
+    return plots
 
 
 # ---------------------------------------------------------------------------
@@ -160,11 +176,8 @@ def _detail_download(run_dir: Path) -> dict:
     config       = _load_config()
     datasets_cfg = config.get("datasets", {})
     detail       = {"datasets": [], "query_sets": []}
+    discovered   = set(_discovered_datasets(run_dir))
 
-    # Only show datasets that actually exist on disk
-    discovered = set(_discovered_datasets(run_dir))
-
-    # Load size info from datasets_meta.csv
     sizes: dict[str, float] = {}
     meta_csv = run_dir / "output" / "logs" / "download" / "datasets_meta.csv"
     if meta_csv.exists():
@@ -187,23 +200,16 @@ def _detail_download(run_dir: Path) -> dict:
         })
 
     # Load query set metadata from queries_meta.csv written by download.sh.
-    # Columns: query_set, for_dataset, count, links
+    # Columns: query_set, for_dataset, links  (count moved to preprocess step)
     # links format: "filename; url | filename; url | ..."
     queries_csv = run_dir / "output" / "logs" / "download" / "queries_meta.csv"
     if queries_csv.exists():
         with open(queries_csv, newline="") as f:
             for row in csv.DictReader(f):
-                qs_name    = row.get("query_set", "").strip()
-                for_ds     = row.get("for_dataset", "").strip()
-                count_raw  = row.get("count", "0").strip()
-                links_raw  = row.get("links", "").strip()
+                qs_name   = row.get("query_set", "").strip()
+                for_ds    = row.get("for_dataset", "").strip()
+                links_raw = row.get("links", "").strip()
 
-                try:
-                    count = int(count_raw)
-                except ValueError:
-                    count = 0
-
-                # Parse "filename; url | filename; url | ..." into list of dicts
                 links = []
                 if links_raw:
                     for pair in links_raw.split(" | "):
@@ -217,18 +223,16 @@ def _detail_download(run_dir: Path) -> dict:
                 detail["query_sets"].append({
                     "name":        qs_name,
                     "for_dataset": for_ds,
-                    "count":       count,
                     "links":       links,
                 })
     else:
-        # Fallback: derive from toml config (no counts available yet).
-        # Links live under datasets.<name>.query_sets.<qs>.download_links
+        # Fallback: derive from toml config.
+        # Links live under datasets.<n>.query_sets.<qs>.download_links
         for ds_name, ds_meta in datasets_cfg.items():
             for qs_name, qs_meta in ds_meta.get("query_sets", {}).items():
                 detail["query_sets"].append({
                     "name":        qs_name,
                     "for_dataset": ds_name,
-                    "count":       None,
                     "links": [
                         {"filename": lnk.rstrip("/").split("/")[-1].split("?")[0], "url": lnk}
                         for lnk in qs_meta.get("download_links", [])
@@ -241,7 +245,6 @@ def _detail_download(run_dir: Path) -> dict:
 def _detail_preprocess(run_dir: Path) -> dict:
     detail: dict = {}
 
-    # Validator versions from POM filenames
     validator_dir = Path("/starvers_eval/scripts/2_preprocess_data/RDFValidator/target")
     rdf4j_ver, jena_ver = None, None
     if validator_dir.exists():
@@ -258,8 +261,6 @@ def _detail_preprocess(run_dir: Path) -> dict:
         "jena":  jena_ver  or "not found",
     }
 
-    # Skolemization per dataset
-    # --- Skolemization per dataset: read from pre-computed CSV ---
     preprocess_csv = run_dir / "output" / "logs" / "preprocess_data" / "preprocess_summary.csv"
     per_dataset: dict[str, dict] = {}
 
@@ -271,12 +272,10 @@ def _detail_preprocess(run_dir: Path) -> dict:
                     continue
                 if dataset not in per_dataset:
                     per_dataset[dataset] = {"subject": 0, "object": 0, "invalid": 0}
-                # Sum across all variants and file numbers for this dataset
                 per_dataset[dataset]["subject"] += int(float(row.get("skolemized_subjects", 0) or 0))
                 per_dataset[dataset]["object"]  += int(float(row.get("skolemized_objects",  0) or 0))
                 per_dataset[dataset]["invalid"] += int(float(row.get("invalid_triples",     0) or 0))
     else:
-        # Fallback: scan file headers (slow path, only if CSV not yet generated)
         rawdata_dir = run_dir / "rawdata"
         if rawdata_dir.exists():
             for dataset_dir in sorted(rawdata_dir.iterdir()):
@@ -306,23 +305,53 @@ def _detail_preprocess(run_dir: Path) -> dict:
         {"dataset": ds, **vals} for ds, vals in per_dataset.items()
     ]
 
-    # Excluded SciQA queries grouped by reason
+    # Build a per-query pivot table from excluded_queries.csv.
+    # Each row in the CSV records one query + one exclusion reason.
+    # We pivot so each query becomes one row with a flag per reason type.
     excl_csv = run_dir / "output" / "logs" / "preprocess_data" / "excluded_queries.csv"
     if excl_csv.exists():
-        counts: dict[str, int] = defaultdict(int)
+        pivot: dict[str, dict] = {}
         with open(excl_csv, newline="") as f:
             for row in csv.DictReader(f):
-                if row.get("yn_excluded", "0") == "1":
-                    counts[row.get("reason", "(no reason)")] += 1
-        detail["excluded_queries"] = dict(counts)
+                name   = row.get("query", "").strip()
+                reason = row.get("reason", "").strip()
+                excl   = int(row.get("yn_excluded", "0") or 0)
+                if not name:
+                    continue
+                if name not in pivot:
+                    pivot[name] = {
+                        "invalid_in_graphdb": 0,
+                        "invalid_in_ostrich":  0,
+                        "ask_query":           0,
+                        "malformed_transform": 0,
+                    }
+                if reason == "Invalid Original in GraphDB":
+                    pivot[name]["invalid_in_graphdb"] = excl
+                elif reason == "Invalid Original in Ostrich":
+                    pivot[name]["invalid_in_ostrich"] = excl
+                elif reason == "ASK":
+                    pivot[name]["ask_query"] = excl
+                elif reason == "Malformed Starvers transformation":
+                    pivot[name]["malformed_transform"] = excl
+
+        detail["sciqa_query_table"] = sorted(
+            [
+                {
+                    "query": name,
+                    "excluded": any(v == 1 for v in flags.values()),
+                    **flags,
+                }
+                for name, flags in pivot.items()
+            ],
+            key=lambda r: r["query"],
+        )
 
     return detail
 
 
 def _detail_construct_datasets(run_dir: Path) -> dict:
-    config    = _load_config()
     discovered = _discovered_datasets(run_dir)
-    variants  = []
+    variants   = []
 
     for dataset in discovered:
         ds_dir = run_dir / "rawdata" / dataset
@@ -340,48 +369,63 @@ def _detail_construct_datasets(run_dir: Path) -> dict:
 
 
 def _detail_ingest(run_dir: Path) -> dict:
-    ingest_csv = run_dir / "output" / "measurements" / "ingestion.csv"
-    if not ingest_csv.exists():
-        return {}
+    """
+    Returns ingestion summary stats plus ingest_ and storage_ SVG plots.
+    Plots are returned as base64-encoded SVG strings.
+    If the figures directory or any plot file does not exist yet (visualize step
+    has not run), the lists are simply empty — no error is raised.
+    """
+    ingest_csv  = run_dir / "output" / "measurements" / "ingestion.csv"
+    figures_dir = run_dir / "output" / "figures"
 
-    groups: dict[tuple, list] = defaultdict(list)
-    with open(ingest_csv, newline="") as f:
-        for row in csv.DictReader(f, delimiter=";"):
-            key = (row.get("triplestore",""), row.get("policy",""), row.get("dataset",""))
-            try:
-                groups[key].append((
-                    float(row.get("ingestion_time", 0)),
-                    float(row.get("db_files_disk_usage_MiB", 0)),
-                    float(row.get("raw_file_size_MiB", 0)),
-                ))
-            except ValueError:
-                continue
-
+    # --- Tabular summary from CSV ---
     summary = []
-    for (triplestore, policy, dataset), values in sorted(groups.items()):
-        summary.append({
-            "triplestore":        triplestore,
-            "policy":             policy,
-            "dataset":            dataset,
-            "avg_ingestion_time": sum(v[0] for v in values) / len(values),
-            "avg_db_size_mib":    sum(v[1] for v in values) / len(values),
-            "avg_raw_size_mib":   sum(v[2] for v in values) / len(values),
-        })
+    if ingest_csv.exists():
+        groups: dict[tuple, list] = defaultdict(list)
+        with open(ingest_csv, newline="") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                key = (row.get("triplestore", ""), row.get("policy", ""), row.get("dataset", ""))
+                try:
+                    groups[key].append((
+                        float(row.get("ingestion_time", 0)),
+                        float(row.get("db_files_disk_usage_MiB", 0)),
+                        float(row.get("raw_file_size_MiB", 0)),
+                    ))
+                except ValueError:
+                    continue
 
-    return {"ingestion_summary": summary}
+        for (triplestore, policy, dataset), values in sorted(groups.items()):
+            summary.append({
+                "triplestore":        triplestore,
+                "policy":             policy,
+                "dataset":            dataset,
+                "avg_ingestion_time": sum(v[0] for v in values) / len(values),
+                "avg_db_size_mib":    sum(v[1] for v in values) / len(values),
+                "avg_raw_size_mib":   sum(v[2] for v in values) / len(values),
+            })
+
+    # --- SVG plots (may be empty if visualize step hasn't run yet) ---
+    ingest_plots  = _load_svg_plots(figures_dir, "ingest_")
+    storage_plots = _load_svg_plots(figures_dir, "storage_")
+
+    return {
+        "ingestion_summary": summary,
+        "ingest_plots":      ingest_plots,
+        "storage_plots":     storage_plots,
+        # Tells the frontend whether plots are expected but not yet available
+        "plots_pending":     not figures_dir.exists() or (not ingest_plots and not storage_plots),
+    }
 
 
 def _detail_construct_queries(run_dir: Path) -> dict:
-    # Load the file with the query counts from
     query_counts_path = run_dir / "output" / "logs" / "construct_queries" / "query_counts.csv"
 
-    # Create a dict with key = "policy / dataset / query_set" and value = count
     query_counts: dict[str, int] = {}
     if query_counts_path.exists():
         with open(query_counts_path, newline="") as f:
             for row in csv.DictReader(f):
-                policy = row.get("policy", "")
-                dataset = row.get("dataset", "")
+                policy    = row.get("policy", "")
+                dataset   = row.get("dataset", "")
                 query_set = row.get("query_set", "")
                 try:
                     count = int(row.get("query_count", 0))
@@ -390,8 +434,7 @@ def _detail_construct_queries(run_dir: Path) -> dict:
                 label = f"{policy} / {dataset} / {query_set}"
                 query_counts[label] = count
 
-    # Total per dataset, calculated from query_counts dict
-    totals = defaultdict(int)
+    totals: dict[str, int] = defaultdict(int)
     for label, count in query_counts.items():
         parts = label.split(" / ")
         if len(parts) == 3:
@@ -401,7 +444,12 @@ def _detail_construct_queries(run_dir: Path) -> dict:
     POLICY_DIRS  = ["ic_sr_ng", "ostrich", "tb_sr_ng", "tb_sr_rs"]
     DATASET_DIRS = ["bearb_day", "bearb_hour", "bearc", "orkg"]
 
-    return {"query_counts": query_counts, "totals_per_dataset": totals, "policies": POLICY_DIRS, "datasets": DATASET_DIRS}
+    return {
+        "query_counts":      query_counts,
+        "totals_per_dataset": dict(totals),
+        "policies":          POLICY_DIRS,
+        "datasets":          DATASET_DIRS,
+    }
 
 
 def _detail_evaluate(run_dir: Path) -> dict:
@@ -430,19 +478,12 @@ def _detail_evaluate(run_dir: Path) -> dict:
 
 
 def _detail_visualize(run_dir: Path) -> dict:
-    """Return base64-encoded PNG plots from the figures directory."""
+    """
+    Return base64-encoded SVG query-performance plots (time_*.svg).
+    Ingest and storage plots are shown in step 4 instead.
+    """
     figures_dir = run_dir / "output" / "figures"
-    if not figures_dir.exists():
-        return {"plots": []}
-
-    plots = []
-    for png in sorted(figures_dir.glob("*.png")):
-        try:
-            data = base64.b64encode(png.read_bytes()).decode("ascii")
-            plots.append({"filename": png.name, "data": data})
-        except Exception:
-            continue
-
+    plots       = _load_svg_plots(figures_dir, "time_")
     return {"plots": plots}
 
 

@@ -10,7 +10,7 @@ import pandas as pd
 import tomli
 
 # ---------------------------------------------------------------------------
-# Logging
+# Logging setup
 # ---------------------------------------------------------------------------
 log_dir = f"{os.environ['RUN_DIR']}/output/logs/visualize"
 os.makedirs(log_dir, exist_ok=True)
@@ -28,7 +28,7 @@ logging.basicConfig(
 )
 
 # ---------------------------------------------------------------------------
-# Paths and global parameters
+# Environment / path constants
 # ---------------------------------------------------------------------------
 WORK_DIR     = "/starvers_eval/"
 CONFIG_PATH  = f"{WORK_DIR}configs/eval_setup.toml"

@@ -731,3 +731,38 @@ main {
   height: auto;
   display: block;
 }
+
+/* ── SciQA query table ───────────────────────────────────────── */
+
+/* Kept queries (not excluded) get a green left border highlight */
+tr.sciqa-kept td {
+  background: var(--green-bg) !important;
+  border-left: 3px solid var(--green);
+}
+tr.sciqa-kept td:first-child {
+  font-weight: 600;
+  color: var(--green);
+}
+
+/* Flag badges: 1 = red (excluded), 0 = grey (not flagged for this reason) */
+.sciqa-flag {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-align: center;
+}
+.sciqa-flag--yes {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.sciqa-flag--no {
+  background: var(--surface2);
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+}
