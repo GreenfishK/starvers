@@ -492,7 +492,7 @@ def _startup_jena():
 
     LOG.info("Start Jena engine.")
     subprocess.run([JENA_MGMT_SCRIPT, "startup", str(JENA_DATABASE_DIR),
-                    "dummy", "orkg"], check=True)
+                    "dummy", "orkg", CONFIG_DIR], check=True)
     LOG.info("Jena is up")
 
 def startup():
@@ -793,7 +793,7 @@ def write_query_counts():
 
 if __name__ == "__main__":
     # Phase 1: clean all raw datasets (parallelised across files)
-    clean_datasets()
+    #clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
     startup()

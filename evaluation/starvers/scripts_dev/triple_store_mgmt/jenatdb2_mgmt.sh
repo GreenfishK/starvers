@@ -19,7 +19,13 @@ fi
 
 startup() {
     echo "$(log_timestamp) ${log_level}:Update query timeouts to 30 sec ..." >> $log_file
-    ttl_file="/starvers_eval/configs/ingest/jenatdb2/${policy}_${dataset}/${policy}_${dataset}.ttl"
+    repositoryID=${policy}_${dataset}
+
+    if [[ -z "$config_dir" ]]; then
+        config_dir="/starvers_eval/configs/ingest"
+    fi    
+    
+    ttl_file="${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl"
     sed -i 's/\(ja:cxtValue "\)0,0/\130000,30000/' "$ttl_file"
 
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
@@ -29,7 +35,7 @@ startup() {
 
     timeout=120
     elapsed=0
-    until curl -s --max-time 5 -X POST http://localhost:3030/${policy}_${dataset}/sparql \
+    until curl -s --max-time 5 -X POST http://localhost:3030/${repositoryID}/sparql \
         -H "Content-Type: application/sparql-query" \
         --data "SELECT * WHERE { ?s ?p ?o } LIMIT 1" \
         >/dev/null 2>&1
@@ -209,14 +215,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 4 ]]; then
-        echo "Usage: $0 startup <database_dir> <policy> <dataset>"
+    if [[ $# -ne 4 && $# -ne 5 ]]; then
+        echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
         exit 1
     fi
 
     database_dir=$2
     policy=$3
     dataset=$4
+    config_dir=${5:-}  
 
     startup
 
@@ -282,7 +289,7 @@ elif [[ ${1:-} == "ingest" ]]; then
 
     ingest
 else
-    echo "Usage: $0 startup <database_dir> <policy> <dataset>"
+    echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"

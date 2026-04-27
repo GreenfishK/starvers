@@ -160,8 +160,8 @@ function renderStepInfo(stepName, info) {
       const rows = info.datasets.map(d => `
         <tr>
           <td><strong>${d.name}</strong></td>
-          <td>${fmt(d.versions)}</td>
-          <td>${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td>
+          <td class="mono">${fmt(d.versions)}</td>
+          <td class="num">${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td>
           <td>${d.download_link
             ? `<a class="link" href="${escHtml(d.download_link)}" target="_blank">↗ link</a>`
             : '—'}</td>
@@ -232,54 +232,89 @@ function renderStepInfo(stepName, info) {
       const rows = info.skolemization_per_dataset.map(d => `
         <tr>
           <td><strong>${d.dataset}</strong></td>
-          <td>${fmt(d.subject)}</td>
-          <td>${fmt(d.object)}</td>
-          <td>${fmt(d.invalid)}</td>
+          <td class="num">${fmt(d.subject)}</td>
+          <td class="num">${fmt(d.object)}</td>
+          <td class="num">${fmt(d.invalid)}</td>
+          <td class="num">${d.invalid_avg != null ? d.invalid_avg.toLocaleString('en-US', {maximumFractionDigits:2}) : '—'}</td>
         </tr>`).join('');
       sections.push(section('Skolemization & Validation per Dataset', `
         <table class="data-table">
           <thead><tr>
             <th>Dataset</th><th>Blank nodes (subject)</th>
-            <th>Blank nodes (object)</th><th>Invalid triples excluded</th>
+            <th>Blank nodes (object)</th><th>Invalid triples (total)</th>
+            <th>Invalid triples (avg / snapshot)</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>`));
     }
 
-    if (info.sciqa_query_table?.length) {
-      const total    = info.sciqa_query_table.length;
+if (info.sciqa_query_table?.length) {
+      const total    = info.sciqa_total ?? info.sciqa_query_table.length;
+      const valid_orig_graphdb = info.sciqa_col_counts?.valid_in_graphdb ?? info.sciqa_query_table.filter(r => r.valid_in_graphdb).length;
+      const valid_orig_jena    = info.sciqa_col_counts?.valid_in_jena ?? info.sciqa_query_table.filter(r => r.valid_in_jena).length;
       const excluded = info.sciqa_query_table.filter(r => r.excluded).length;
       const kept     = total - excluded;
+      const cc       = info.sciqa_col_counts || {};
+
+      const flag = v => v
+        ? `<span class="sciqa-flag sciqa-flag--yes">✕</span>`
+        : `<span class="sciqa-flag sciqa-flag--no">—</span>`;
 
       const rows = info.sciqa_query_table.map(r => {
-        const rowCls = r.excluded ? '' : ' class="sciqa-kept"';
-        const flag = v => v
-          ? `<span class="sciqa-flag sciqa-flag--yes">1</span>`
-          : `<span class="sciqa-flag sciqa-flag--no">0</span>`;
-        return `<tr${rowCls}>
-          <td class="mono" style="font-size:11px">${escHtml(r.query)}</td>
-          <td style="text-align:center">${flag(r.invalid_in_graphdb)}</td>
-          <td style="text-align:center">${flag(r.invalid_in_ostrich)}</td>
-          <td style="text-align:center">${flag(r.ask_query)}</td>
-          <td style="text-align:center">${flag(r.malformed_transform)}</td>
+        const rowCls = r.excluded ? ' style="color:var(--red)"' : ' class="sciqa-kept"';
+        return `<tr>
+          <td class="mono" style="font-size:11px"${rowCls}>${escHtml(r.query)}</td>
+          <td style="text-align:center">${flag(r.valid_in_graphdb)}</td>
+          <td style="text-align:center">${flag(r.valid_trans_in_graphdb)}</td>
+          <td style="text-align:center">${flag(r.valid_in_jena)}</td>
+          <td style="text-align:center">${flag(r.valid_trans_in_jena)}</td>
+          <td style="text-align:center">${flag(r.valid_in_ostrich)}</td>
+
         </tr>`;
       }).join('');
 
+      const hdr = (label, key, query_count) =>
+        `<th style="text-align:center">${label}<br><span style="font-weight:400;font-size:10px">(${cc[key]??0}/${query_count})</span></th>`;
+
+      
       sections.push(section(
-        `SciQA Queries — ${fmt(kept)} kept / ${fmt(excluded)} excluded (of ${fmt(total)})`,
+        `SciQA Queries (SELECT only) — ${fmt(kept)} kept / ${fmt(excluded)} excluded of ${fmt(total)}`,
         `<div style="overflow-x:auto;max-height:480px;overflow-y:auto">
           <table class="data-table">
-            <thead style="position:sticky;top:0"><tr>
-              <th>Query</th>
-              <th>Invalid in GraphDB</th>
-              <th>Invalid in Ostrich</th>
-              <th>ASK query</th>
-              <th>Malformed transform</th>
-            </tr></thead>
+            <thead style="position:sticky;top:0">
+              <tr>
+                <th colspan="1" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">Query</th>
+                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">GraphDB</th>
+                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">Jena TDB2</th>
+                <th colspan="1" style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.3)">Ostrich</th>
+              </tr>
+              <tr>
+                <th></th>
+                ${hdr('Valid Original', 'valid_in_graphdb', total)}
+                ${hdr('Valid timestamped query', 'valid_trans_in_graphdb', valid_orig_graphdb)}
+                ${hdr('Valid Original', 'valid_in_jena', total)}
+                ${hdr('Valid timestamped query', 'valid_trans_in_jena', valid_orig_jena)}
+                ${hdr('Valid Original', 'valid_in_ostrich', total)}
+              </tr>
+            </thead>
             <tbody>${rows}</tbody>
           </table>
         </div>`
       ));
+    }
+
+    if (info.query_counts?.length) {
+      const qcRows = info.query_counts.map(q => `
+        <tr>
+          <td><strong>${escHtml(q.query_set)}</strong></td>
+          <td>${escHtml(q.for_dataset)}</td>
+          <td class="num">${fmt(q.count)}</td>
+        </tr>`).join('');
+      sections.push(section('Query Counts', `
+        <table class="data-table">
+          <thead><tr><th>Query Set</th><th>Dataset</th><th>Queries</th></tr></thead>
+          <tbody>${qcRows}</tbody>
+        </table>`));
     }
   }
 
@@ -294,8 +329,8 @@ function renderStepInfo(stepName, info) {
       });
 
       const variantHtml = Object.entries(byVariant).map(([variant, data]) => {
-        const dsRows = data.datasets.map(d =>
-          `<tr><td>${d.dataset}</td><td>${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
+      const dsRows = data.datasets.map(d =>
+          `<tr><td>${d.dataset}</td><td class="num">${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
         ).join('');
         return `
           <div class="variant-section">

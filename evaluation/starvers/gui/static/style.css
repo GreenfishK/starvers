@@ -1,37 +1,58 @@
 /* ── TU Wien Light Theme Variables ──────────────────────────── */
 :root {
-  /* TU Wien official palette */
-  --tuw-blue:      #0057A0;
-  --tuw-blue-dark: #003f74;
-  --tuw-blue-mid:  #1a6eb5;
-  --tuw-blue-light:#e8f1f9;
-  --tuw-blue-pale: #f0f6fc;
+  /* Allowed palette */
+  --c-blue:        #006699;
+  --c-blue-mid:    #5485AB;
+  --c-blue-light:  #72ADD5;
+  --c-blue-pale:   #A6D5EC;
+  --c-blue-wash:   #DFF2FD;
+  --c-teal:        #007E71;
+  --c-teal-light:  #6AAAA5;
+  --c-teal-wash:   #E9F1F0;
+  --c-pink:        #BA4682;
+  --c-pink-light:  #CD81A8;
+  --c-pink-wash:   #F5E5EF;
+  --c-orange:      #E18922;
+  --c-orange-light:#EEB473;
+  --c-orange-wash: #FDEFE1;
+  --c-grey-dark:   #646363;
+  --c-grey-mid:    #9D9D9C;
+  --c-grey-light:  #D0D0D0;
+  --c-grey-wash:   #EDEDED;
+  --c-black:       #000000;
 
-  /* Semantic roles */
-  --bg:        #f5f7fa;
+  /* Semantic roles mapped to allowed colours */
+  --bg:        #f7f8fa;
   --surface:   #ffffff;
-  --surface2:  #f0f4f8;
-  --surface3:  #e4eaf2;
-  --border:    #ccd6e0;
-  --border-strong: #b0bfcc;
-  --accent:    var(--tuw-blue);
-  --accent-hover: var(--tuw-blue-dark);
+  --surface2:  var(--c-grey-wash);
+  --surface3:  var(--c-grey-light);
+  --border:    var(--c-grey-light);
+  --border-strong: var(--c-grey-mid);
+  --accent:    var(--c-blue);
+  --accent-hover: #004d73;
 
-  --text:      #1a2332;
-  --text-dim:  #4a5568;
-  --text-faint:#8a9bb0;
+  --text:      var(--c-black);
+  --text-dim:  var(--c-grey-dark);
+  --text-faint:var(--c-grey-mid);
 
-  --green:     #1a7a3f;
-  --green-bg:  #edfaf3;
-  --green-border: #a3d9b8;
-  --red:       #c0392b;
-  --red-bg:    #fdf2f1;
-  --red-border:#f0b8b3;
-  --yellow:    #b7791f;
-  --yellow-bg: #fef9ed;
-  --blue-chip: #1a5fa8;
-  --blue-bg:   #eaf2fb;
-  --blue-border:#a3c4e8;
+  --green:        var(--c-teal);
+  --green-bg:     var(--c-teal-wash);
+  --green-border: var(--c-teal-light);
+  --red:          #b83232;
+  --red-bg:       #fdf1f1;
+  --red-border:   #e8b4b4;
+  --yellow:       var(--c-orange);
+  --yellow-bg:    var(--c-orange-wash);
+  --blue-chip:    var(--c-blue-mid);
+  --blue-bg:      var(--c-blue-wash);
+  --blue-border:  var(--c-blue-pale);
+
+  /* Keep these for compatibility */
+  --tuw-blue:      var(--c-blue);
+  --tuw-blue-dark: #004d73;
+  --tuw-blue-mid:  var(--c-blue-mid);
+  --tuw-blue-light:var(--c-blue-wash);
+  --tuw-blue-pale: #eef7fb;
 
   --font-mono: 'JetBrains Mono', monospace;
   --font-disp: 'Syne', sans-serif;
@@ -40,8 +61,8 @@
   --radius-lg: 10px;
   --sidebar-w: 290px;
   --header-h:  56px;
-  --shadow-sm: 0 1px 3px rgba(0,87,160,0.08), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow:    0 2px 8px rgba(0,87,160,0.10), 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 3px rgba(0,102,153,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow:    0 2px 8px rgba(0,102,153,0.09), 0 1px 3px rgba(0,0,0,0.05);
 }
 
 /* ── Reset ───────────────────────────────────────────────────── */
@@ -427,14 +448,15 @@ main {
 .detail-section:last-child { margin-bottom: 0; }
 
 .detail-section-title {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--surface);
-  background: var(--tuw-blue);
-  padding: 7px 14px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--c-black);
+  background: transparent;
+  padding: 10px 14px 6px;
   font-weight: 700;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
+  border-bottom: 2px solid var(--c-blue);
 }
 
 .detail-section-body {
@@ -668,6 +690,8 @@ main {
   letter-spacing: 0.03em;
   text-transform: none;
   font-size: 12px;
+  background: var(--c-blue);
+  color: #fff;
 }
 
 /* ── Total row in query table ────────────────────────────────── */
@@ -766,3 +790,6 @@ tr.sciqa-kept td:first-child {
   color: var(--text-faint);
   border: 1px solid var(--border);
 }
+
+/* ── Right-align size/number cells ──────────────────────────── */
+.data-table td.num { text-align: right; font-family: var(--font-mono); }
