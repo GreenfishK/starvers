@@ -265,7 +265,7 @@ def run_ingestion(job: Job, run: int):
     db_size = du_mib(database_dir)
 
     # Start database
-    proc = subprocess.run([f"{mgmt_script}", "startup", database_dir, policy, dataset], check=True)
+    proc = subprocess.run([f"{mgmt_script}", "startup", str(database_dir), policy, dataset], check=True)
     if proc.returncode != 0:
         log(job.triplestore, f"startup failed:\n{proc.stderr}")
         raise subprocess.CalledProcessError(proc.returncode, proc.args, stderr=proc.stderr)

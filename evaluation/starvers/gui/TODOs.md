@@ -217,3 +217,51 @@ Remove the outer container "DATASETS". Just one table for datasets and one for q
 The dataset size numbers should be right-aligned, not left aligned
 
 
+## 27.04.2026 16:06
+### General
+Modern design, with color usage only where necessary. The following colors are allowed:
+#006699
+#646363
+#5485AB
+#007E71
+#BA4682
+#E18922
+#000000
+#9D9D9C
+#72ADD5
+#6AAAA5
+#CD81A8
+#EEB473
+#D0D0D0
+#A6D5EC
+#A2C6C2
+#DFAFCA
+#F5D0A8
+#EDEDED
+#DFF2FD
+#E9F1F0
+#F5E5EF
+#FDEFE1
+
+Section headers like RDF validators, Skolemization, and so on should not be filled with a blue color but rather follow a modern markdown-style.
+
+
+
+### Download
+Remove the outer container "DATASETS". Just one table for datasets and one for query sets
+
+### Preprocess data
+"invalid triples excluded" should be split into two columns, one showing how many got excluded in total and one showing the average number per version/snapshot.
+
+the invalid/excluded lines in the sciqa queries section should be red.
+
+The malformed transformed should not stand as an independent column but it is actually coupled with "invalid in graphdb" and "invalid in jena". only for the rows where graphdb is valid or jena is valid, malformed transformed makes sense and should be shown because the invalid queries will trivially also be invalid when transformed. so invalid in graphdb and malformed transformed should be somehow groupd and also invalid in jena and malformed transformed should be grouped.
+
+Note: previously, there was no invalid in jena but I added it as additional information because there is no reason not to also check jena.
+
+Add the number of invalid queries per triple store/column in the header. e.g. Invalid in GraphDB (30/100)
+
+Remove the ask queries column. only show and count SELECT queries
+
+### Construct datasets
+The dataset size numbers should be right-aligned, not left aligned
