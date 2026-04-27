@@ -296,10 +296,12 @@ def _detail_preprocess(run_dir: Path) -> dict:
                     continue
                 
                 if dataset not in per_dataset:
-                    per_dataset[dataset] = {"subject": 0, "object": 0, "invalid": 0}
+                    per_dataset[dataset] = {"subject": 0, "object": 0, "invalid": 0, "file_count": 0}
                 per_dataset[dataset]["subject"] += int(float(row.get("skolemized_subjects", 0) or 0))
                 per_dataset[dataset]["object"]  += int(float(row.get("skolemized_objects",  0) or 0))
                 per_dataset[dataset]["invalid"] += int(float(row.get("invalid_triples",     0) or 0))
+                per_dataset[dataset]["file_count"] += 1
+
     else:
         rawdata_dir = run_dir / "rawdata"
         if rawdata_dir.exists():
@@ -327,7 +329,14 @@ def _detail_preprocess(run_dir: Path) -> dict:
                 per_dataset[dataset_dir.name] = totals
 
     detail["skolemization_per_dataset"] = [
-        {"dataset": ds, **vals} for ds, vals in per_dataset.items()
+        {
+            "dataset":     ds,
+            "subject":     vals["subject"],
+            "object":      vals["object"],
+            "invalid":     vals["invalid"],
+            "invalid_avg": round(vals["invalid"] / vals["file_count"], 2) if vals.get("file_count") else 0,
+        }
+        for ds, vals in per_dataset.items()
     ]
 
     # Build a per-query pivot table from excluded_queries.csv.
@@ -336,6 +345,7 @@ def _detail_preprocess(run_dir: Path) -> dict:
     excl_csv = run_dir / "output" / "logs" / "preprocess_data" / "excluded_queries.csv"
     if excl_csv.exists():
         pivot: dict[str, dict] = {}
+        all_rows = []
         with open(excl_csv, newline="") as f:
             for row in csv.DictReader(f):
                 name   = row.get("query", "").strip()
@@ -343,26 +353,42 @@ def _detail_preprocess(run_dir: Path) -> dict:
                 excl   = int(row.get("yn_excluded", "0") or 0)
                 if not name:
                     continue
+                # Only SELECT queries — skip ASK
+                if reason == "ASK":
+                    continue
+                all_rows.append((name, reason, excl))
                 if name not in pivot:
                     pivot[name] = {
-                        "invalid_in_graphdb": 0,
-                        "invalid_in_ostrich":  0,
-                        "ask_query":           0,
-                        "malformed_transform": 0,
+                        "invalid_in_graphdb":    0,
+                        "malformed_graphdb":     0,
+                        "invalid_in_jena":       0,
+                        "malformed_jena":        0,
+                        "invalid_in_ostrich":    0,
                     }
                 if reason == "Invalid Original in GraphDB":
                     pivot[name]["invalid_in_graphdb"] = excl
+                elif reason == "Invalid Original in Jena TDB2":
+                    pivot[name]["invalid_in_jena"] = excl
+                elif reason == "Malformed Starvers transformation (GraphDB)":
+                    pivot[name]["malformed_graphdb"] = excl
+                elif reason == "Malformed Starvers transformation (Jena)":
+                    pivot[name]["malformed_jena"] = excl
                 elif reason == "Invalid Original in Ostrich":
                     pivot[name]["invalid_in_ostrich"] = excl
-                elif reason == "ASK":
-                    pivot[name]["ask_query"] = excl
-                elif reason == "Malformed Starvers transformation":
-                    pivot[name]["malformed_transform"] = excl
+
+        total_queries = len(pivot)
+        counts_by_col = {
+            "valid_in_graphdb": total_queries - sum(1 for f in pivot.values() if f["invalid_in_graphdb"]),
+            "valid_trans_in_graphdb": total_queries - sum(1 for f in pivot.values() if f["invalid_in_graphdb"]) - sum(1 for f in pivot.values() if f["malformed_graphdb"] and not f["invalid_in_graphdb"]),
+            "valid_in_jena":   total_queries - sum(1 for f in pivot.values() if f["invalid_in_jena"]),
+            "valid_trans_in_jena": total_queries - sum(1 for f in pivot.values() if f["invalid_in_jena"]) -  sum(1 for f in pivot.values() if f["malformed_jena"] and not f["invalid_in_jena"]),
+            "valid_in_ostrich": total_queries - sum(1 for f in pivot.values() if f["invalid_in_ostrich"]),
+        }
 
         detail["sciqa_query_table"] = sorted(
             [
                 {
-                    "query": name,
+                    "query":    name,
                     "excluded": any(v == 1 for v in flags.values()),
                     **flags,
                 }
@@ -370,6 +396,8 @@ def _detail_preprocess(run_dir: Path) -> dict:
             ],
             key=lambda r: r["query"],
         )
+        detail["sciqa_col_counts"]  = counts_by_col
+        detail["sciqa_total"]       = total_queries
 
     return detail
 
