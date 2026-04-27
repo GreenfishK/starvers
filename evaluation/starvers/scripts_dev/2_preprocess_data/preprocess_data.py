@@ -95,6 +95,8 @@ CONFIG_DIR      = "/starvers_eval/configs/preprocess_data"
 
 GRAPHDB_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
 OSTRICH_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"
+JENA_MGMT_SCRIPT    = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh"
+
 RDF_VALIDATOR_JAR   = str(SCRIPT_DIR / "2_preprocess_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar")
 
 DATASET_VARIANTS = ["ic", "BEAR_ng"]
@@ -393,6 +395,7 @@ SUBDIRS      = ["train", "test", "valid"]
 
 GRAPHDB_DATABASE_DIR = RUN_DIR / "databases" / "preprocess_data" / "graphdb" / "dummy_orkg"
 OSTRICH_DATABASE_DIR = RUN_DIR / "databases" / "preprocess_data" / "ostrich" / "dummy_orkg"
+JENA_DATABASE_DIR    = RUN_DIR / "databases" / "preprocess_data" / "jenatdb2" / "dummy_orkg"
 
 SELECT_ALIAS_RE = re.compile(
     r"""
@@ -478,10 +481,25 @@ def _startup_ostrich():
                     "dummy", "orkg"], check=True)
     LOG.info("Ostrich is up")
 
+def _startup_jena():
+    LOG.info("Create database environment for Jena.")
+    subprocess.run([JENA_MGMT_SCRIPT, "create_env", "dummy", "orkg",
+                    str(JENA_DATABASE_DIR), CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
+
+    LOG.info("Ingest the first ORKG snapshot.")
+    subprocess.run([JENA_MGMT_SCRIPT, "ingest_empty", str(JENA_DATABASE_DIR),
+                    "dummy", "orkg", CONFIG_DIR], check=True)
+
+    LOG.info("Start Jena engine.")
+    subprocess.run([JENA_MGMT_SCRIPT, "startup", str(JENA_DATABASE_DIR),
+                    "dummy", "orkg"], check=True)
+    LOG.info("Jena is up")
+
 def startup():
     """Spin up GraphDB and Ostrich with a dummy ORKG snapshot for query validation."""
     _startup_graphdb()
     _startup_ostrich()
+    _startup_jena()
 
 
 def _copy_subdirs(src, dst):
@@ -560,9 +578,15 @@ def exclude_queries():
     ostrich_engine.setMethod(POST)
     ostrich_engine.addCustomHttpHeader("Accept", "application/sparql-results+json")
 
-    rdf_star_engine = TripleStoreEngine(
+    graphdb_starvers_engine = TripleStoreEngine(
         "http://Starvers:7200/repositories/dummy_orkg",
         "http://Starvers:7200/repositories/dummy_orkg/statements",
+        skip_connection_test=True,
+    )
+
+    jena_starvers_engine = TripleStoreEngine(
+        "http://Starvers:3030/dummy_orkg/sparql",
+        "http://Starvers:3030/dummy_orkg/update",
         skip_connection_test=True,
     )
 
@@ -577,6 +601,7 @@ def exclude_queries():
             continue
 
         sparql = query_file.read_text(encoding="utf-8")
+        flag_for_deletion = False
 
         if ASK_REGEX.search(sparql):
             LOG.info(f"Query {query_file.name} is an ASK query and will be excluded")
@@ -584,16 +609,45 @@ def exclude_queries():
             query_file.unlink()
             continue
 
+        # GraphDB block
         try:
             LOG.info(f"Executing query {query_file.name} against GraphDB")
-            rdf_star_engine.query(sparql, yn_timestamp_query=False)
+            graphdb_starvers_engine.query(sparql, yn_timestamp_query=False)
             LOG.info(f"Query {query_file.name} successfully executed against GraphDB")
         except Exception as e:
             LOG.info(f"Original query {query_file.name} is invalid in GraphDB and will be excluded: {e}")
             query_results.append([query_file.name, 1, "Invalid Original in GraphDB"])
-            query_file.unlink()
-            continue
+            flag_for_deletion = True
 
+        try:
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
+            graphdb_starvers_engine.query(sparql, yn_timestamp_query=True)
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against GraphDB")
+        except Exception as e:
+            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (GraphDB)"])
+            flag_for_deletion = True  
+
+        # Jena block
+        try:
+            LOG.info(f"Executing query {query_file.name} against Jena TDB2")
+            jena_starvers_engine.query(sparql, yn_timestamp_query=False)
+            LOG.info(f"Query {query_file.name} successfully executed against Jena TDB2")
+        except Exception as e:
+            LOG.info(f"Original query {query_file.name} is invalid in Jena TDB2 and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Invalid Original in Jena TDB2"])
+            flag_for_deletion = True
+
+        try:
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
+            jena_starvers_engine.query(sparql, yn_timestamp_query=True)
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against Jena TDB2")
+        except Exception as e:
+            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (Jena)"])
+            flag_for_deletion = True
+
+        # Ostrich block    
         try:
             prefixes, versioned_query = split_prefixes_query(sparql)
             modifiers, versioned_query = split_solution_modifiers_query(versioned_query)
@@ -605,21 +659,14 @@ def exclude_queries():
         except Exception as e:
             LOG.info(f"Original query {query_file.name} is invalid in Ostrich and will be excluded: {e}")
             query_results.append([query_file.name, 1, "Invalid Original in Ostrich"])
+            flag_for_deletion = True
+
+
+        if flag_for_deletion:
             query_file.unlink()
-            continue
-
-        try:
-            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
-            rdf_star_engine.query(sparql, yn_timestamp_query=True)
-            LOG.info(f"Timestamped query {query_file.name} successfully executed against GraphDB")
-
-        except Exception as e:
-            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-            query_results.append([query_file.name, 1, "Malformed Starvers transformation"])
-            query_file.unlink()
-            continue
-
-        query_results.append([query_file.name, 0, ""])
+            LOG.info(f"Deleted query file {query_file.name} due to validation failure.")
+        else:
+            query_results.append([query_file.name, 0, ""])
 
     excluded = [r[0] for r in query_results if r[1] == 1]
     LOG.info(f"Excluded the following {len(excluded)} queries: {excluded}")
@@ -746,7 +793,7 @@ def write_query_counts():
 
 if __name__ == "__main__":
     # Phase 1: clean all raw datasets (parallelised across files)
-    #clean_datasets()
+    clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
     startup()

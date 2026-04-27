@@ -288,8 +288,13 @@ def _detail_preprocess(run_dir: Path) -> dict:
         with open(preprocess_csv, newline="") as f:
             for row in csv.DictReader(f):
                 dataset = row.get("dataset", "")
+                variant = row.get("variant", "")
+
+                if variant != "ic":
+                    continue
                 if not dataset:
                     continue
+                
                 if dataset not in per_dataset:
                     per_dataset[dataset] = {"subject": 0, "object": 0, "invalid": 0}
                 per_dataset[dataset]["subject"] += int(float(row.get("skolemized_subjects", 0) or 0))
