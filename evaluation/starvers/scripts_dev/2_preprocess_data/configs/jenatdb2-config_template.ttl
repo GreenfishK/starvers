@@ -39,7 +39,7 @@ ja:RDFDatasetZero  rdfs:subClassOf  ja:RDFDataset .
 
 :tdb_dataset_readwrite
         rdf:type       tdb2:DatasetTDB2 ;
-        tdb2:location  f"{os.environ['RUN_DIR']bases/preprocess_data/jenatdb2/{{repositoryID}}" .
+        tdb2:location  "{{RUN_DIR}}/databases/preprocess_data/jenatdb2/{{repositoryID}}" .
 
 tdb2:GraphTDB  rdfs:subClassOf  ja:Model .
 

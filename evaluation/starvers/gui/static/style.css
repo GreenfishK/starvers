@@ -522,6 +522,7 @@ main {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   vertical-align: top;
+  text-align: left;
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--tuw-blue-pale); }
@@ -791,5 +792,3 @@ tr.sciqa-kept td:first-child {
   border: 1px solid var(--border);
 }
 
-/* ── Right-align size/number cells ──────────────────────────── */
-.data-table td.num { text-align: right; font-family: var(--font-mono); }

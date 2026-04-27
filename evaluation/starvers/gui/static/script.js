@@ -161,7 +161,7 @@ function renderStepInfo(stepName, info) {
         <tr>
           <td><strong>${d.name}</strong></td>
           <td class="mono">${fmt(d.versions)}</td>
-          <td class="num">${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td>
+          <td >${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td>
           <td>${d.download_link
             ? `<a class="link" href="${escHtml(d.download_link)}" target="_blank">↗ link</a>`
             : '—'}</td>
@@ -232,10 +232,10 @@ function renderStepInfo(stepName, info) {
       const rows = info.skolemization_per_dataset.map(d => `
         <tr>
           <td><strong>${d.dataset}</strong></td>
-          <td class="num">${fmt(d.subject)}</td>
-          <td class="num">${fmt(d.object)}</td>
-          <td class="num">${fmt(d.invalid)}</td>
-          <td class="num">${d.invalid_avg != null ? d.invalid_avg.toLocaleString('en-US', {maximumFractionDigits:2}) : '—'}</td>
+          <td >${fmt(d.subject)}</td>
+          <td >${fmt(d.object)}</td>
+          <td >${fmt(d.invalid)}</td>
+          <td >${d.invalid_avg != null ? d.invalid_avg.toLocaleString('en-US', {maximumFractionDigits:2}) : '—'}</td>
         </tr>`).join('');
       sections.push(section('Skolemization & Validation per Dataset', `
         <table class="data-table">
@@ -308,7 +308,7 @@ if (info.sciqa_query_table?.length) {
         <tr>
           <td><strong>${escHtml(q.query_set)}</strong></td>
           <td>${escHtml(q.for_dataset)}</td>
-          <td class="num">${fmt(q.count)}</td>
+          <td >${fmt(q.count)}</td>
         </tr>`).join('');
       sections.push(section('Query Counts', `
         <table class="data-table">
@@ -330,7 +330,7 @@ if (info.sciqa_query_table?.length) {
 
       const variantHtml = Object.entries(byVariant).map(([variant, data]) => {
       const dsRows = data.datasets.map(d =>
-          `<tr><td>${d.dataset}</td><td class="num">${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
+          `<tr><td>${d.dataset}</td><td >${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
         ).join('');
         return `
           <div class="variant-section">
