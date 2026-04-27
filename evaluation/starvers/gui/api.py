@@ -44,17 +44,19 @@ VERSIONING_APPROACH = {
         "<< << s p o >> vers:valid_from creation_timestamp >> vers:valid_until expiration_timestamp ."
     ),
     "alldata.ICNG.trig": (
-        "GRAPH <http://starvers_eval/ic/v0> { triples }\n"
-        "GRAPH <http://starvers_eval/ic/v1> { triples }"
+        "GRAPH <http://starvers_eval/ic/v0> { triples from v0 }\n"
+        "GRAPH <http://starvers_eval/ic/v1> { triples from v1 }\n"
+        "...\n"
+        "GRAPH <http://starvers_eval/ic/<last_version> { triples from <last_snapshot> }\n"
     ),
-    "first IC + change sets": (
+    "Base variant: first IC + change sets": (
         "No versioning at RDF-level. Ingested as independent copies (IC) "
-        "and change sets (CB), versioned internally by Ostrich."
+        "and change sets (CB) into Ostrich and versioned internally by Ostrich."
     ),
 }
 
 VARIANT_FILES = [
-    ("alldata.CB_computed.nt",            "first IC + change sets",           True),
+    ("alldata_vdir",            "Base variant: first IC + change sets",           True),
     ("alldata.TB_computed.nq",            "alldata.TB_computed.nq",           False),
     ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl", False),
     ("alldata.ICNG.trig",                 "alldata.ICNG.trig",                False),

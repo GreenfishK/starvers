@@ -171,8 +171,10 @@ create_env() {
     mkdir -p /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
+    echo "$(log_timestamp) ${log_level}:RUN_DIR=${RUN_DIR}" >> $log_file
     cp ${config_tmpl_dir}/jenatdb2-config_template.ttl ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
     sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
+    sed -i "s|{{RUN_DIR}}|${RUN_DIR}|g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
 }
 
 ingest() {
