@@ -5,9 +5,11 @@ import plotly.graph_objects as go
 import networkx as nx
 from typing import List, Dict, Any, Optional, Tuple
 
-# starvers and starversServer imports
+# Triple Store API
 from app.utils.starvers.starvers import TripleStoreEngine
+# Dataset Metadata manager
 from app.services.dataset_repository import get_dataset_metadata_by_repo_name, get_snapshot_stats
+# Database manager
 from app.persistance.Database import get_session
 from app.enums.TimeAggregationEnum import TimeAggregation
 from app.AppConfig import Settings

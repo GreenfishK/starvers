@@ -169,13 +169,13 @@ def get_onto_hierarchy():
 def run_query():
     config = configparser.ConfigParser()
     config.read("/code/app/gui/configs/RDF2Repo_mappings.ini")
-    repo_map = dict(config["repositories"])
+
     selected_label = request.form.get("repo")
-    
-    repo = repo_map.get(selected_label)
     timestamp_str = request.form.get("timestamp")
     query_text = request.form.get("sparql")
 
+    repo_map = dict(config["repositories"])
+    repo = repo_map.get(selected_label)
     try:
         controller = GuiContr(repo_name=repo)
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None

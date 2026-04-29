@@ -10,10 +10,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
-
 from delayedqueue import DelayedQueue
-
+# Logging
 from app.LoggingConfig import get_logger
+# Services
 from app.services.polling_task import PollingTask
 
 LOG = get_logger(__name__)
