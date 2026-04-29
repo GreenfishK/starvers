@@ -22,15 +22,20 @@ from typing import Optional
 from app.utils.starvers.starvers import TripleStoreEngine
 from app.AppConfig import Settings
 from app.LoggingConfig import get_logger
+# Models
 from app.models.DeltaEventModel import DeltaEvent
 from app.models.TrackingTaskModel import TrackingTaskDto
+# Services
 from app.services.delta_calculator import SparqlDeltaCalculator, IterativeDeltaCalculator
+# Helpers
 from app.utils.HelperService import get_timestamp, obtain_nt, normalize_and_skolemize
+# Persistence
 from app.persistance.graphdb.GraphDatabaseUtils import (
     get_count_triples_template,
     import_serverfile,
     poll_import_status,
 )
+# Exceptions
 from app.exceptions.VersioningFailedException import VersioningFailedException
 
 
