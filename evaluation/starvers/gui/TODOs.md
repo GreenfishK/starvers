@@ -265,3 +265,18 @@ Remove the ask queries column. only show and count SELECT queries
 
 ### Construct datasets
 The dataset size numbers should be right-aligned, not left aligned
+
+
+## 04.05.2026 09:23
+### Ingest
+A bar chart with horizontal bars. 
+Two columns
+    * first column (right from labels) column for DB size of the "triple store / policy / dataset" combination
+    * second column (right from first column) for ingest time
+          * sorted by the ingest time (avg)
+          * one color per triple store
+          * labels on y axis: triple store / policy / dataset
+          * logarithmic y-axis
+                * 1s, 10s, 1m40s, 16.66m, 2.77h 
+x-axis represents the db size (first column) and the  ingest time (second column) with the horizotanl bars
+y-axis are the triple store / policy / dataset combinations
