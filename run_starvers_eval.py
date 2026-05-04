@@ -174,10 +174,9 @@ def execute_steps(steps_to_run: list[dict], run_dir: Path) -> None:
         start = _now_ts()
         rows = _update_row(rows, step, start_time=start, end_time="", status="running")
         _write_csv(run_dir, rows)
-
         rc = _run_step(step, run_dir)
-
         end = _now_ts()
+
         status = "success" if rc == 0 else "failed"
         rows = _update_row(rows, step, start_time=start, end_time=end, status=status)
         _write_csv(run_dir, rows)

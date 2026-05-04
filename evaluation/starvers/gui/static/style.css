@@ -565,56 +565,7 @@ main {
   margin-bottom: 5px;
 }
 
-/* Bar chart */
-.bar-chart { display: flex; flex-direction: column; gap: 7px; }
-.bar-row {
-  display: grid;
-  grid-template-columns: 180px 1fr 70px;
-  align-items: center;
-  gap: 10px;
-}
-.bar-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-align: right;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: var(--font-mono);
-}
-.bar-wrap {
-  background: var(--surface3);
-  border-radius: 3px;
-  height: 10px;
-  overflow: hidden;
-}
-.bar-fill {
-  height: 100%;
-  background: var(--tuw-blue);
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-.bar-val {
-  font-size: 11px;
-  color: var(--text-dim);
-  text-align: right;
-  font-family: var(--font-mono);
-}
 
-/* Ingest grouped table */
-.ingest-group { margin-bottom: 12px; }
-.ingest-group:last-child { margin-bottom: 0; }
-.ingest-group-title {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--tuw-blue-dark);
-  padding: 5px 0;
-  border-bottom: 2px solid var(--tuw-blue-light);
-  margin-bottom: 6px;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
 
 /* LaTeX interpreted table */
 .latex-table-wrap { overflow-x: auto; }
@@ -725,10 +676,6 @@ main {
   line-height: 1;
 }
 
-/* ── Ingest bar chart 4-column layout ───────────────────────── */
-.bar-row {
-  grid-template-columns: 200px 1fr 80px 80px;
-}
 
 /* ── Plot grid ───────────────────────────────────────────────── */
 .plots-grid {

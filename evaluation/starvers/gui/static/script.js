@@ -352,43 +352,192 @@ if (info.sciqa_query_table?.length) {
   // ── ingest ───────────────────────────────────────────────────
   if (stepName === 'ingest') {
     if (info.ingestion_summary?.length) {
-      // Group by triplestore for grouped bar chart + table
-      const byTs = {};
-      info.ingestion_summary.forEach(r => {
-        if (!byTs[r.triplestore]) byTs[r.triplestore] = [];
-        byTs[r.triplestore].push(r);
-      });
-
-      const maxTime = Math.max(...info.ingestion_summary.map(r => r.avg_ingestion_time || 0)) || 1;
-
-      const groupHtml = Object.entries(byTs).map(([ts, rows]) => {
-        const bars = rows.map(r => {
-          const pct = Math.round((r.avg_ingestion_time / maxTime) * 100);
-          return `
-            <div class="bar-row">
-              <span class="bar-label" title="${r.policy} / ${r.dataset}">${r.policy} / ${r.dataset}</span>
-              <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
-              <span class="bar-val">${r.avg_ingestion_time.toFixed(2)}s</span>
-              <span class="bar-val" style="color:var(--text-faint)">${fmtMb(r.avg_db_size_mib)}</span>
-            </div>`;
-        }).join('');
-        return `
-          <div class="ingest-group">
-            <div class="ingest-group-title">${ts}</div>
-            <div class="bar-chart" style="margin-bottom:4px">
-              <div class="bar-row" style="font-size:10px;color:var(--text-faint)">
-                <span class="bar-label">Policy / Dataset</span>
-                <span></span>
-                <span class="bar-val">Ingest Time</span>
-                <span class="bar-val">DB Size</span>
-              </div>
-              ${bars}
-            </div>
-          </div>`;
-      }).join('');
-      sections.push(section('Ingestion Results — avg over 10 runs', groupHtml));
+      sections.push(section('Ingestion Results — avg over 10 runs',
+        renderIngestChart(info.ingestion_summary)));
     }
   }
+
+  // ── Ingest dual-panel SVG chart ───────────────────────────────
+function renderIngestChart(rows) {
+  // Sort by avg ingest time ascending
+  const sorted = [...rows].sort((a, b) => a.avg_ingestion_time - b.avg_ingestion_time);
+
+  // One colour per triple store (using allowed palette)
+  const TS_COLORS = {
+    graphdb:          '#006699',
+    jenatdb2:         '#007E71',
+    ostrich:          '#E18922',
+    ostrich_aggchange:'#BA4682',
+  };
+  const COLOR_FALLBACKS = ['#5485AB','#6AAAA5','#EEB473','#CD81A8','#72ADD5'];
+  const tsColorMap = {};
+  let fallbackIdx = 0;
+  sorted.forEach(r => {
+    if (!tsColorMap[r.triplestore]) {
+      tsColorMap[r.triplestore] = TS_COLORS[r.triplestore]
+        || COLOR_FALLBACKS[fallbackIdx++ % COLOR_FALLBACKS.length];
+    }
+  });
+
+  // Layout constants
+  const labelW   = 220;   // y-axis label width
+  const panelW   = 260;   // width of each panel (DB size + ingest time)
+  const gap      = 32;    // gap between panels
+  const padTop   = 36;    // top padding for x-axis ticks
+  const padBot   = 20;
+  const barH     = 16;
+  const barGap   = 10;
+  const rowH     = barH + barGap;
+  const n        = sorted.length;
+  const chartH   = padTop + n * rowH + padBot;
+  const totalW   = labelW + panelW + gap + panelW + 16;
+
+  // Log scale helpers for time (seconds)
+  // Ticks: 1s, 10s, 100s (1m40s), 1000s (16.66m), 10000s (2.77h)
+  const timeTicks  = [1, 10, 100, 1000, 10000];
+  const timeLabels = ['1s', '10s', '1m 40s', '16.6m', '2.77h'];
+  const maxTime    = Math.max(...sorted.map(r => r.avg_ingestion_time), 1);
+  const maxTimeLog = Math.log10(Math.max(maxTime, 1));
+  // Extend upper tick to cover data
+  const timeUpperLog = Math.ceil(maxTimeLog);
+  const timeUpper    = Math.pow(10, timeUpperLog);
+
+  // Linear scale for DB size (MiB) — log would compress small values oddly
+  const maxDb  = Math.max(...sorted.map(r => r.avg_db_size_mib), 1);
+  // Round up to a nice number
+  const dbUpper = Math.ceil(maxDb / 100) * 100 || 100;
+
+  function timeX(sec) {
+    const v = Math.max(sec, 0.1);
+    return (Math.log10(v) / Math.log10(timeUpper)) * panelW;
+  }
+  function dbX(mib) {
+    return (mib / dbUpper) * panelW;
+  }
+  function rowY(i) {
+    return padTop + i * rowH;
+  }
+
+  // X-axis ticks for time panel
+  const timeTickSvg = timeTicks
+    .filter(t => t <= timeUpper * 1.05)
+    .map((t, i) => {
+      const x = timeX(t);
+      return `
+        <line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + n * rowH}"
+              stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="${x}" y="${padTop - 10}" text-anchor="middle"
+              font-size="9" fill="#9D9D9C" font-family="JetBrains Mono, monospace">${timeLabels[i] ?? ''}</text>`;
+    }).join('');
+
+  // X-axis ticks for DB size panel (4 linear ticks)
+  const dbTickCount = 4;
+  const dbTickSvg = Array.from({length: dbTickCount + 1}, (_, i) => {
+    const val = (dbUpper / dbTickCount) * i;
+    const x   = dbX(val);
+    const lbl = val >= 1000 ? (val/1024).toFixed(1)+'GiB' : Math.round(val)+'MiB';
+    return `
+      <line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + n * rowH}"
+            stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="${x}" y="${padTop - 10}" text-anchor="middle"
+            font-size="9" fill="#9D9D9C" font-family="JetBrains Mono, monospace">${lbl}</text>`;
+  }).join('');
+
+  // Bars
+  const labelsSvg = sorted.map((r, i) => {
+    const y   = rowY(i) + barH / 2 + 4;
+    const lbl = `${r.triplestore} / ${r.policy} / ${r.dataset}`;
+    return `<text x="${labelW - 8}" y="${y}" text-anchor="end"
+      font-size="10" fill="#646363" font-family="JetBrains Mono, monospace"
+      title="${escHtml(lbl)}">${escHtml(lbl.length > 36 ? lbl.slice(0,35)+'…' : lbl)}</text>`;
+  }).join('');
+
+  const dbBarsSvg = sorted.map((r, i) => {
+    const y   = rowY(i);
+    const w   = Math.max(dbX(r.avg_db_size_mib), 2);
+    const col = tsColorMap[r.triplestore];
+    return `
+      <rect x="0" y="${y}" width="${w}" height="${barH}"
+            fill="${col}" rx="2" opacity="0.85"/>
+      <text x="${w + 4}" y="${y + barH - 3}" font-size="9"
+            fill="#646363" font-family="JetBrains Mono, monospace">
+        ${r.avg_db_size_mib < 1 ? r.avg_db_size_mib.toFixed(2) : Math.round(r.avg_db_size_mib)}MiB
+      </text>`;
+  }).join('');
+
+  const timeBarsSvg = sorted.map((r, i) => {
+    const y   = rowY(i);
+    const w   = Math.max(timeX(r.avg_ingestion_time), 2);
+    const col = tsColorMap[r.triplestore];
+    const lbl = r.avg_ingestion_time >= 3600
+      ? (r.avg_ingestion_time/3600).toFixed(2)+'h'
+      : r.avg_ingestion_time >= 60
+        ? (r.avg_ingestion_time/60).toFixed(1)+'m'
+        : r.avg_ingestion_time.toFixed(1)+'s';
+    return `
+      <rect x="0" y="${y}" width="${w}" height="${barH}"
+            fill="${col}" rx="2" opacity="0.85"/>
+      <text x="${w + 4}" y="${y + barH - 3}" font-size="9"
+            fill="#646363" font-family="JetBrains Mono, monospace">${lbl}</text>`;
+  }).join('');
+
+  // Legend
+  const legendItems = Object.entries(tsColorMap).map(([ts, col]) =>
+    `<g>
+      <rect width="10" height="10" rx="2" fill="${col}" opacity="0.85"/>
+      <text x="14" y="9" font-size="10" fill="#646363"
+            font-family="Inter, sans-serif">${escHtml(ts)}</text>
+     </g>`
+  );
+  const legendSpacing = 110;
+  const legendSvg = legendItems.map((item, i) =>
+    `<g transform="translate(${i * legendSpacing}, 0)">${item}</g>`
+  ).join('');
+  const legendH = 20;
+  const legendW = legendItems.length * legendSpacing;
+
+  // Panel headers
+  const dbPanelX   = labelW;
+  const timePanelX = labelW + panelW + gap;
+
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg"
+       width="${totalW}" height="${chartH + legendH + 16}"
+       style="font-family:Inter,sans-serif;overflow:visible">
+
+    <!-- Legend -->
+    <g transform="translate(${labelW}, 4)">${legendSvg}</g>
+
+    <!-- Panel headers -->
+    <text x="${labelW + panelW/2}" y="${legendH + 14}"
+          text-anchor="middle" font-size="11" font-weight="600" fill="#006699">
+      DB Size
+    </text>
+    <text x="${timePanelX + panelW/2}" y="${legendH + 14}"
+          text-anchor="middle" font-size="11" font-weight="600" fill="#006699">
+      Ingest Time (log)
+    </text>
+
+    <g transform="translate(0, ${legendH + 16})">
+      <!-- Y-axis labels -->
+      <g transform="translate(0, 0)">${labelsSvg}</g>
+
+      <!-- DB size panel -->
+      <g transform="translate(${dbPanelX}, 0)">
+        ${dbTickSvg}
+        ${dbBarsSvg}
+      </g>
+
+      <!-- Ingest time panel -->
+      <g transform="translate(${timePanelX}, 0)">
+        ${timeTickSvg}
+        ${timeBarsSvg}
+      </g>
+    </g>
+  </svg>`;
+
+  return `<div style="overflow-x:auto">${svg}</div>`;
+}
 
   // ── construct_queries ────────────────────────────────────────
   if (stepName === 'construct_queries') {
