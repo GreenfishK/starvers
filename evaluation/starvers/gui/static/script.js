@@ -359,184 +359,226 @@ if (info.sciqa_query_table?.length) {
 
   // ── Ingest dual-panel SVG chart ───────────────────────────────
 function renderIngestChart(rows) {
-  // Sort by avg ingest time ascending
-  const sorted = [...rows].sort((a, b) => a.avg_ingestion_time - b.avg_ingestion_time);
-
-  // One colour per triple store (using allowed palette)
+  // One colour per triple store — maximally distinct hues
   const TS_COLORS = {
-    graphdb:          '#006699',
-    jenatdb2:         '#007E71',
-    ostrich:          '#E18922',
-    ostrich_aggchange:'#BA4682',
+    graphdb:           '#006699',   // blue
+    jenatdb2:          '#E18922',   // orange
+    ostrich:           '#BA4682',   // magenta
+    ostrich_aggchange: '#007E71',   // teal
   };
-  const COLOR_FALLBACKS = ['#5485AB','#6AAAA5','#EEB473','#CD81A8','#72ADD5'];
+  const COLOR_FALLBACKS = ['#000000','#646363','#5485AB','#6AAAA5','#EEB473'];
   const tsColorMap = {};
   let fallbackIdx = 0;
-  sorted.forEach(r => {
-    if (!tsColorMap[r.triplestore]) {
+  rows.forEach(r => {
+    if (!tsColorMap[r.triplestore])
       tsColorMap[r.triplestore] = TS_COLORS[r.triplestore]
         || COLOR_FALLBACKS[fallbackIdx++ % COLOR_FALLBACKS.length];
-    }
   });
 
-  // Layout constants
-  const labelW   = 220;   // y-axis label width
-  const panelW   = 260;   // width of each panel (DB size + ingest time)
-  const gap      = 32;    // gap between panels
-  const padTop   = 36;    // top padding for x-axis ticks
-  const padBot   = 20;
-  const barH     = 16;
-  const barGap   = 10;
-  const rowH     = barH + barGap;
-  const n        = sorted.length;
-  const chartH   = padTop + n * rowH + padBot;
-  const totalW   = labelW + panelW + gap + panelW + 16;
+  // Group rows by dataset
+  const byDataset = {};
+  rows.forEach(r => {
+    if (!byDataset[r.dataset]) byDataset[r.dataset] = [];
+    byDataset[r.dataset].push(r);
+  });
+  const datasets = Object.keys(byDataset).sort();
 
-  // Log scale helpers for time (seconds)
-  // Ticks: 1s, 10s, 100s (1m40s), 1000s (16.66m), 10000s (2.77h)
-  const timeTicks  = [1, 10, 100, 1000, 10000];
-  const timeLabels = ['1s', '10s', '1m 40s', '16.6m', '2.77h'];
-  const maxTime    = Math.max(...sorted.map(r => r.avg_ingestion_time), 1);
-  const maxTimeLog = Math.log10(Math.max(maxTime, 1));
-  // Extend upper tick to cover data
-  const timeUpperLog = Math.ceil(maxTimeLog);
-  const timeUpper    = Math.pow(10, timeUpperLog);
+  // Layout per mini-chart
+  const labelW  = 160;
+  const panelW  = 200;
+  const gap     = 48;
+  const padTop  = 32;
+  const padBot  = 12;
+  const barH    = 14;
+  const barGap  = 8;
+  const rowH    = barH + barGap;
+  const chartW  = labelW + panelW + gap + panelW + 24;
 
-  // Linear scale for DB size (MiB) — log would compress small values oddly
-  const maxDb  = Math.max(...sorted.map(r => r.avg_db_size_mib), 1);
-  // Round up to a nice number
-  const dbUpper = Math.ceil(maxDb / 100) * 100 || 100;
+  // Log scale for time — fixed domain 0.1s … 10000s
+  const timeUpper = 100000;
+  const timeTicks  = [1, 10, 100, 1000, 10000, 100000];
+  const timeLabels = ['1s', '10s', '1m40s', '16.6m', '2.77h', '1.16d'];
 
   function timeX(sec) {
-    const v = Math.max(sec, 0.1);
-    return (Math.log10(v) / Math.log10(timeUpper)) * panelW;
-  }
-  function dbX(mib) {
-    return (mib / dbUpper) * panelW;
-  }
-  function rowY(i) {
-    return padTop + i * rowH;
+    return (Math.log10(Math.max(sec, 0.1)) / Math.log10(timeUpper)) * panelW;
   }
 
-  // X-axis ticks for time panel
-  const timeTickSvg = timeTicks
-    .filter(t => t <= timeUpper * 1.05)
-    .map((t, i) => {
+  function buildChart(dataset) {
+    const dataRows = [...byDataset[dataset]]
+      .sort((a, b) => a.avg_ingestion_time - b.avg_ingestion_time);
+    const n      = dataRows.length;
+    const chartH = padTop + n * rowH + padBot;
+
+    // DB size scale — linear, rounded up to nice value
+    const maxDb   = Math.max(...dataRows.map(r => r.avg_db_size_mib), 1);
+    const dbUpper = Math.ceil(maxDb / 100) * 100 || 100;
+    function dbX(mib) { return (mib / dbUpper) * panelW; }
+
+    function rowY(i) { return padTop + i * rowH; }
+
+    // X-axis ticks — time (log)
+    const timeTickSvg = timeTicks.map((t, i) => {
       const x = timeX(t);
       return `
-        <line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + n * rowH}"
-              stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,3"/>
-        <text x="${x}" y="${padTop - 10}" text-anchor="middle"
-              font-size="9" fill="#9D9D9C" font-family="JetBrains Mono, monospace">${timeLabels[i] ?? ''}</text>`;
+        <line x1="${x}" y1="${padTop - 5}" x2="${x}" y2="${padTop + n * rowH}"
+              stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="${x}" y="${padTop - 8}" text-anchor="middle"
+              font-size="8" fill="#9D9D9C" font-family="JetBrains Mono,monospace">
+          ${timeLabels[i]}
+        </text>`;
     }).join('');
 
-  // X-axis ticks for DB size panel (4 linear ticks)
-  const dbTickCount = 4;
-  const dbTickSvg = Array.from({length: dbTickCount + 1}, (_, i) => {
-    const val = (dbUpper / dbTickCount) * i;
-    const x   = dbX(val);
-    const lbl = val >= 1000 ? (val/1024).toFixed(1)+'GiB' : Math.round(val)+'MiB';
-    return `
-      <line x1="${x}" y1="${padTop - 6}" x2="${x}" y2="${padTop + n * rowH}"
-            stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,3"/>
-      <text x="${x}" y="${padTop - 10}" text-anchor="middle"
-            font-size="9" fill="#9D9D9C" font-family="JetBrains Mono, monospace">${lbl}</text>`;
-  }).join('');
+    // X-axis ticks — DB size (linear, 4 steps)
+    const dbTickSvg = [0, 1, 2, 3, 4].map(i => {
+      const val = (dbUpper / 4) * i;
+      const x   = dbX(val);
+      const gib = val / 1024;
+      const lbl = val === 0 ? '0'
+        : gib < 0.1  ? Math.round(val) + 'M'
+        : gib < 10   ? gib.toFixed(1) + 'G'
+        : gib.toFixed(0) + 'G';
+      return `
+        <line x1="${x}" y1="${padTop - 5}" x2="${x}" y2="${padTop + n * rowH}"
+              stroke="#D0D0D0" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="${x}" y="${padTop - 8}" text-anchor="middle"
+              font-size="8" fill="#9D9D9C" font-family="JetBrains Mono,monospace">
+          ${lbl}
+        </text>`;
+    }).join('');
 
-  // Bars
-  const labelsSvg = sorted.map((r, i) => {
-    const y   = rowY(i) + barH / 2 + 4;
-    const lbl = `${r.triplestore} / ${r.policy} / ${r.dataset}`;
-    return `<text x="${labelW - 8}" y="${y}" text-anchor="end"
-      font-size="10" fill="#646363" font-family="JetBrains Mono, monospace"
-      title="${escHtml(lbl)}">${escHtml(lbl.length > 36 ? lbl.slice(0,35)+'…' : lbl)}</text>`;
-  }).join('');
+    // Y-axis labels: triplestore / policy
+    const labelsSvg = dataRows.map((r, i) => {
+      const y   = rowY(i) + barH / 2 + 4;
+      const lbl = `${r.triplestore} / ${r.policy}`;
+      const short = lbl.length > 28 ? lbl.slice(0, 27) + '…' : lbl;
+      return `<text x="${labelW - 6}" y="${y}" text-anchor="end"
+        font-size="9" fill="#646363"
+        font-family="JetBrains Mono,monospace">${escHtml(short)}</text>`;
+    }).join('');
 
-  const dbBarsSvg = sorted.map((r, i) => {
-    const y   = rowY(i);
-    const w   = Math.max(dbX(r.avg_db_size_mib), 2);
-    const col = tsColorMap[r.triplestore];
-    return `
-      <rect x="0" y="${y}" width="${w}" height="${barH}"
-            fill="${col}" rx="2" opacity="0.85"/>
-      <text x="${w + 4}" y="${y + barH - 3}" font-size="9"
-            fill="#646363" font-family="JetBrains Mono, monospace">
-        ${r.avg_db_size_mib < 1 ? r.avg_db_size_mib.toFixed(2) : Math.round(r.avg_db_size_mib)}MiB
-      </text>`;
-  }).join('');
+    // DB size bars
+    const dbBarsSvg = dataRows.map((r, i) => {
+      const y   = rowY(i);
+      const w   = Math.max(dbX(r.avg_db_size_mib), 2);
+      const col = tsColorMap[r.triplestore];
+      const gib = r.avg_db_size_mib / 1024;
+      const lbl = gib < 0.01
+        ? r.avg_db_size_mib.toFixed(0) + 'MiB'
+        : gib < 10 ? gib.toFixed(2) + 'GiB'
+        : gib.toFixed(1) + 'GiB';
+      return `
+        <rect x="0" y="${y}" width="${w}" height="${barH}"
+              fill="${col}" rx="2" opacity="0.85"/>
+        <text x="${w + 3}" y="${y + barH - 2}" font-size="8"
+              fill="#646363" font-family="JetBrains Mono,monospace">${lbl}</text>`;
+    }).join('');
 
-  const timeBarsSvg = sorted.map((r, i) => {
-    const y   = rowY(i);
-    const w   = Math.max(timeX(r.avg_ingestion_time), 2);
-    const col = tsColorMap[r.triplestore];
-    const lbl = r.avg_ingestion_time >= 3600
-      ? (r.avg_ingestion_time/3600).toFixed(2)+'h'
-      : r.avg_ingestion_time >= 60
-        ? (r.avg_ingestion_time/60).toFixed(1)+'m'
-        : r.avg_ingestion_time.toFixed(1)+'s';
-    return `
-      <rect x="0" y="${y}" width="${w}" height="${barH}"
-            fill="${col}" rx="2" opacity="0.85"/>
-      <text x="${w + 4}" y="${y + barH - 3}" font-size="9"
-            fill="#646363" font-family="JetBrains Mono, monospace">${lbl}</text>`;
-  }).join('');
+    // Ingest time bars
+    const timeBarsSvg = dataRows.map((r, i) => {
+      const y   = rowY(i);
+      const w   = Math.max(timeX(r.avg_ingestion_time), 2);
+      const col = tsColorMap[r.triplestore];
+      const t   = r.avg_ingestion_time;
+      const lbl = t >= 3600 ? (t/3600).toFixed(2)+'h'
+        : t >= 60 ? (t/60).toFixed(1)+'m'
+        : t.toFixed(1)+'s';
+      return `
+        <rect x="0" y="${y}" width="${w}" height="${barH}"
+              fill="${col}" rx="2" opacity="0.85"/>
+        <text x="${w + 3}" y="${y + barH - 2}" font-size="8"
+              fill="#646363" font-family="JetBrains Mono,monospace">${lbl}</text>`;
+    }).join('');
 
-  // Legend
+    const timePanelX = labelW + panelW + gap;
+    const sepX       = labelW + panelW + gap / 2;
+
+    return { svg: `
+      <text x="${chartW / 2}" y="13" text-anchor="middle"
+            font-size="12" font-weight="700" fill="#006699"
+            font-family="Inter,sans-serif">${escHtml(dataset)}</text>
+
+      <!-- DB Size panel header -->
+      <text x="${labelW + panelW/2}" y="26" text-anchor="middle"
+            font-size="10" font-weight="600" fill="#646363"
+            font-family="Inter,sans-serif">DB Size</text>
+
+      <!-- Ingest Time panel header -->
+      <text x="${timePanelX + panelW/2}" y="26" text-anchor="middle"
+            font-size="10" font-weight="600" fill="#646363"
+            font-family="Inter,sans-serif">Ingest Time (log)</text>
+
+      <!-- Column separator -->
+      <line x1="${sepX}" y1="16" x2="${sepX}" y2="${padTop + n * rowH + 16}"
+            stroke="#D0D0D0" stroke-width="1.5"/>
+
+      <g transform="translate(0, 16)">
+        <g>${labelsSvg}</g>
+        <g transform="translate(${labelW}, 0)">
+          ${dbTickSvg}${dbBarsSvg}
+        </g>
+        <g transform="translate(${timePanelX}, 0)">
+          ${timeTickSvg}${timeBarsSvg}
+        </g>
+      </g>`,
+      height: chartH + 16
+    };
+  }
+
+  // Legend (shared across all charts)
   const legendItems = Object.entries(tsColorMap).map(([ts, col]) =>
     `<g>
       <rect width="10" height="10" rx="2" fill="${col}" opacity="0.85"/>
       <text x="14" y="9" font-size="10" fill="#646363"
-            font-family="Inter, sans-serif">${escHtml(ts)}</text>
-     </g>`
+            font-family="Inter,sans-serif">${escHtml(ts)}</text>
+    </g>`
   );
-  const legendSpacing = 110;
+  const legendSpacing = 130;
   const legendSvg = legendItems.map((item, i) =>
     `<g transform="translate(${i * legendSpacing}, 0)">${item}</g>`
   ).join('');
-  const legendH = 20;
   const legendW = legendItems.length * legendSpacing;
+  const legendH = 20;
 
-  // Panel headers
-  const dbPanelX   = labelW;
-  const timePanelX = labelW + panelW + gap;
+  // Build all four charts, then arrange in 2×2 grid
+  const charts = datasets.map(ds => buildChart(ds));
+  const colW   = chartW + 32;
+  const rows2  = Math.ceil(datasets.length / 2);
+  const rowHeights = [];
+  for (let row = 0; row < rows2; row++) {
+    const left  = charts[row * 2];
+    const right = charts[row * 2 + 1];
+    rowHeights.push(Math.max(left?.height ?? 0, right?.height ?? 0) + 24);
+  }
+  const totalH = legendH + 12 + rowHeights.reduce((a, b) => a + b, 0);
+  const totalW = colW * 2 + 16;
 
-  const svg = `
+  let chartCells = '';
+  let yOff = legendH + 12;
+  for (let row = 0; row < rows2; row++) {
+    const rh = rowHeights[row];
+    [0, 1].forEach(col => {
+      const idx = row * 2 + col;
+      if (idx >= datasets.length) return;
+      const xOff = col * colW;
+      chartCells += `
+        <g transform="translate(${xOff}, ${yOff})">
+          <rect width="${chartW}" height="${charts[idx].height}"
+                rx="6" fill="#ffffff" stroke="#D0D0D0" stroke-width="1"/>
+          <g transform="translate(8, 8)">${charts[idx].svg}</g>
+        </g>`;
+    });
+    yOff += rh;
+  }
+
+  const fullSvg = `
   <svg xmlns="http://www.w3.org/2000/svg"
-       width="${totalW}" height="${chartH + legendH + 16}"
-       style="font-family:Inter,sans-serif;overflow:visible">
-
-    <!-- Legend -->
-    <g transform="translate(${labelW}, 4)">${legendSvg}</g>
-
-    <!-- Panel headers -->
-    <text x="${labelW + panelW/2}" y="${legendH + 14}"
-          text-anchor="middle" font-size="11" font-weight="600" fill="#006699">
-      DB Size
-    </text>
-    <text x="${timePanelX + panelW/2}" y="${legendH + 14}"
-          text-anchor="middle" font-size="11" font-weight="600" fill="#006699">
-      Ingest Time (log)
-    </text>
-
-    <g transform="translate(0, ${legendH + 16})">
-      <!-- Y-axis labels -->
-      <g transform="translate(0, 0)">${labelsSvg}</g>
-
-      <!-- DB size panel -->
-      <g transform="translate(${dbPanelX}, 0)">
-        ${dbTickSvg}
-        ${dbBarsSvg}
-      </g>
-
-      <!-- Ingest time panel -->
-      <g transform="translate(${timePanelX}, 0)">
-        ${timeTickSvg}
-        ${timeBarsSvg}
-      </g>
-    </g>
+       width="${totalW}" height="${totalH}"
+       style="overflow:visible;font-family:Inter,sans-serif">
+    <g transform="translate(0, 0)">${legendSvg}</g>
+    ${chartCells}
   </svg>`;
 
-  return `<div style="overflow-x:auto">${svg}</div>`;
+  return `<div style="overflow-x:auto">${fullSvg}</div>`;
 }
 
   // ── construct_queries ────────────────────────────────────────

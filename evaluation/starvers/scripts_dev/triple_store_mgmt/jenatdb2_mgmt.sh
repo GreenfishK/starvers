@@ -21,10 +21,7 @@ startup() {
     echo "$(log_timestamp) ${log_level}:Update query timeouts to 30 sec ..." >> $log_file
     repositoryID=${policy}_${dataset}
 
-    if [[ -z "$config_dir" ]]; then
-        config_dir="/starvers_eval/configs/ingest"
-    fi    
-    
+    # config file must exist at this point
     ttl_file="${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl"
     sed -i 's/\(ja:cxtValue "\)0,0/\130000,30000/' "$ttl_file"
 

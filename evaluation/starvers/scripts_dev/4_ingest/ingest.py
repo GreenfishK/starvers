@@ -70,7 +70,7 @@ MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR = "/starvers_eval/configs/ingest"
+CONFIG_DIR = "/starvers_eval/data/configs/ingest"
 
 DATASETS = os.environ.get("datasets").split(" ")
 POLICIES = os.environ.get("policies").split(" ")
