@@ -12,7 +12,7 @@ from itertools import product
 import tomli
 import pandas as pd
 from SPARQLWrapper import Wrapper, SPARQLWrapper, JSON, POST
-from SPARQLWrapper.SPARQLExceptions import EndPointInternalError
+from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, QueryBadFormed
 from itertools import product, takewhile
 from functools import partial
 from urllib.error import HTTPError
@@ -159,7 +159,11 @@ def parse_results(result) -> list:
 
     return [header] + values
 
-
+def print_mem_file_tail(mem_file, lines=20):
+    with open(mem_file, "r") as f:
+        all_lines = f.readlines()
+        for line in all_lines[-lines:]:
+            logging.info(line)
 ##########################################################
 # Evaluation functions
 ##########################################################
@@ -240,46 +244,72 @@ def run_queries(config, header, triple_store, policy, dataset):
                 exec_time = -1
                 yn_timeout = 0
 
-                try:
-                    executor = ThreadPoolExecutor(max_workers=1)
-                    result = {}
-                    def run(eng=engine):
-                        result['start'] = time.time()
-                        result['response'] = eng.query().convert()
-                        result['end'] = time.time()
+                executor = ThreadPoolExecutor(max_workers=1)
 
-                    future = executor.submit(run)
-                    
-                    try:
-                        future.result(timeout=30)
-                        response = result['response']
-                        exec_time = result['end'] - result['start']
-                    except FuturesTimeout:
-                        yn_timeout = 1
-                        response = None
-                        logging.error(f"Timeout error for version {version} and query {file_name}")
-                    finally:
-                        executor.shutdown(wait=False)
-                        # If result was never populated, it must have timed out or failed
-                        if 'response' not in result and yn_timeout == 0:
-                            yn_timeout = 1
-                            logging.error(f"Thread hung without timeout for version {version} and query {file_name}")
+                result = {}
+                def run(eng=engine):
+                    result['start'] = time.time()
+                    result['response'] = eng.query().convert()
+                    result['end'] = time.time()
+                try:
+                    future = executor.submit(run) 
+                    future.result(timeout=30)
+                    response = result['response']
+                    exec_time = result['end'] - result['start']
+
+                except FuturesTimeout as e:
+                    yn_timeout = 1
+                    response = None
+                    logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+
+                except EndPointInternalError as e:
+                    yn_timeout = 0
+                    response = None
+                    logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
+
+                except ConnectionResetError as e:
+                    yn_timeout = 0
+                    response = 0
+                    logging.error(f"Connection reset, probably due to memory overflow: {e}")
+                    # Check whats written in MEM_FILE
+                    print_mem_file_tail(MEM_FILE, lines=20)
+
+                except TimeoutError as e:
+                    yn_timeout = 1
+                    response = None
+                    logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+                    # Check whats written in MEM_FILE
+                    print_mem_file_tail(MEM_FILE, lines=20)
+
+                except QueryBadFormed as e:
+                    yn_timeout = 0
+                    response = "badly formed query"
+                    logging.error(f"Query bad formed for version {version} and query {file_name}: {e}")
+                    logging.info(f"Continuing to next query...")
 
                 except Exception as e:
                     yn_timeout = 0
                     response = None
+                    logging.error(f"Other error for version {version} and query {file_name}: {e}")
+                    logging.info(f"Error instance type: {type(e)}")
 
-                    if isinstance(e, EndPointInternalError) or isinstance(e, HTTPError) or isinstance(e, socket.timeout):
-                        logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
-                    else:
-                        logging.error(f"Other error for version {version} and query {file_name}: {e}")
+                finally:
+                    executor.shutdown(wait=False, cancel_futures=True)
 
-                    logging.info("Shutdown due to error and restart before next query.")
-                    subprocess.run([mgmt_script, "shutdown"], check=True)
+                    if version%200 == 0:
+                        logging.info(f"Processed {version} versions.")
+                        logging.info(f"Memory in usage: {psutil.virtual_memory().percent}%")
 
-                    logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
-                    subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
-                
+                    if (response is None and yn_timeout == 0) \
+                        or psutil.virtual_memory().percent >= 85:
+
+                        logging.info("Restart database. Virtual memory in usage: " + str(psutil.virtual_memory().percent) + "%")
+
+                        logging.info("Shutdown")
+                        subprocess.run([mgmt_script, "shutdown"], check=True)
+
+                        logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
+                        subprocess.run([mgmt_script, "startup", db_dir, policy, dataset, CONFIG_DIR], check=True)
 
                 rows.append([
                     triple_store, dataset, policy,
@@ -357,7 +387,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Startup GraphDB engine")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -398,7 +428,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
         if mem_in_usage > 85:
             # Reboot to free up main memory
             subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
+            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))

@@ -527,8 +527,17 @@ main {
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--tuw-blue-pale); }
 
+/* ── Variants grid (responsive 2x2) ─────────────────────────── */
+.variants-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 /* Variant section */
 .variant-section {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 280px; /* prevents it from getting too narrow */
   margin-bottom: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);

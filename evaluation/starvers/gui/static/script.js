@@ -328,23 +328,28 @@ if (info.sciqa_query_table?.length) {
         byVariant[v.variant].datasets.push({ dataset: v.dataset, size_mb: v.size_mb });
       });
 
-      const variantHtml = Object.entries(byVariant).map(([variant, data]) => {
-      const dsRows = data.datasets.map(d =>
-          `<tr><td>${d.dataset}</td><td >${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
-        ).join('');
-        return `
-          <div class="variant-section">
-            <div class="variant-title">${variant}</div>
-            <div class="variant-body">
-              <table class="data-table" style="margin-bottom:12px">
-                <thead><tr><th>Dataset</th><th>Size</th></tr></thead>
-                <tbody>${dsRows}</tbody>
-              </table>
-              <div class="variant-approach-label">RDF Versioning Approach</div>
-              <div class="variant-approach">${escHtml(data.approach || '—')}</div>
-            </div>
-          </div>`;
-      }).join('');
+      const variantHtml = `
+        <div class="variants-grid">
+          ${Object.entries(byVariant).map(([variant, data]) => {
+            const dsRows = data.datasets.map(d =>
+              `<tr><td>${d.dataset}</td><td>${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td></tr>`
+            ).join('');
+
+            return `
+              <div class="variant-section">
+                <div class="variant-title">${variant}</div>
+                <div class="variant-body">
+                  <table class="data-table" style="margin-bottom:12px">
+                    <thead><tr><th>Dataset</th><th>Size</th></tr></thead>
+                    <tbody>${dsRows}</tbody>
+                  </table>
+                  <div class="variant-approach-label">RDF Versioning Approach</div>
+                  <div class="variant-approach">${escHtml(data.approach || '—')}</div>
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
+      `;
       sections.push(section('Dataset Variants', variantHtml));
     }
   }

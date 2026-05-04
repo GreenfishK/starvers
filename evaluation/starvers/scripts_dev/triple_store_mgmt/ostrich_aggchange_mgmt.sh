@@ -170,10 +170,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${1:-} == "startup" ]]; then
-    [[ $# -ne 4 ]] && { echo "Usage: $0 startup <database_dir> <policy> <dataset>"; exit 1; }
+    [[ $# -ne 4 && $# -ne 5 ]] && { echo "Usage: $0 startup <database_dir> <policy> <dataset>"; exit 1; }
     database_dir=$2; 
     policy=$3; 
     dataset=$4
+
+    # not needed
+    config_dir=$5
 
     startup
 
