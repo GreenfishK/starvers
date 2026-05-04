@@ -160,13 +160,13 @@ create_env() {
     repositoryID=${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
-    rm -rf ${database_dir}/${repositoryID}
+    rm -rf ${database_dir}
     rm -rf ${config_dir}/jenatdb2/${repositoryID}
     rm -rf /run/configuration
     rm -rf /tmp/*
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
-    mkdir -p ${database_dir}/${repositoryID}
+    mkdir -p ${database_dir}
     mkdir -p ${config_dir}/jenatdb2/${repositoryID}
     mkdir -p /run/configuration
 
