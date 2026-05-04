@@ -171,7 +171,10 @@ done
 
 if [[ ${1:-} == "startup" ]]; then
     [[ $# -ne 4 ]] && { echo "Usage: $0 startup <database_dir> <policy> <dataset>"; exit 1; }
-    database_dir=$2; policy=$3; dataset=$4
+    database_dir=$2; 
+    policy=$3; 
+    dataset=$4
+
     startup
 
 elif [[ ${1:-} == "shutdown" ]]; then
@@ -179,22 +182,41 @@ elif [[ ${1:-} == "shutdown" ]]; then
 
 elif [[ ${1:-} == "create_env" ]]; then
     [[ $# -ne 6 ]] && { echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"; exit 1; }
-    policy=$2; dataset=$3; database_dir=$4; config_tmpl_dir=$5; config_dir=$6
+    policy=$2; 
+    dataset=$3; 
+    database_dir=$4; 
+    config_tmpl_dir=$5; 
+    config_dir=$6
+
     create_env
 
 elif [[ ${1:-} == "dump_repo" ]]; then
     [[ $# -ne 5 ]] && { echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"; exit 1; }
-    database_dir=$2; policy=$3; dataset=$4; output_file=$5
+    database_dir=$2; 
+    policy=$3; 
+    dataset=$4; 
+    output_file=$5
+
     dump_repo
 
 elif [[ ${1:-} == "ingest_empty" ]]; then
     [[ $# -ne 5 ]] && { echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"; exit 1; }
-    database_dir=$2; policy=$3; dataset=$4; config_dir=$5
+    database_dir=$2; 
+    policy=$3; 
+    dataset=$4; 
+    config_dir=$5
+
     ingest_empty
 
 elif [[ ${1:-} == "ingest" ]]; then
     [[ $# -lt 6 || $# -gt 7 ]] && { echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir> [versions]"; exit 1; }
-    database_dir=$2; dataset_dir_or_file=$3; policy=$4; dataset=$5; config_dir=$6; versions=${7:-}
+    database_dir=$2; 
+    dataset_dir_or_file=$3; 
+    policy=$4; 
+    dataset=$5; 
+    config_dir=$6; 
+    versions=${7:-}
+    
     ingest
 
 else

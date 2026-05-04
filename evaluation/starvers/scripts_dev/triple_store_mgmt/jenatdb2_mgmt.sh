@@ -214,15 +214,17 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 4 && $# -ne 5 ]]; then
-        echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
+    if [[ $# -ne 5 ]]; then
+        echo "Usage: $0 startup <database_dir> <policy> <dataset> <config_dir>"
         exit 1
     fi
 
     database_dir=$2
     policy=$3
     dataset=$4
-    config_dir=${5:-}  
+
+    # additional param only for jena
+    config_dir=$5  
 
     startup
 
@@ -288,7 +290,7 @@ elif [[ ${1:-} == "ingest" ]]; then
 
     ingest
 else
-    echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
+    echo "Usage: $0 startup <database_dir> <policy> <dataset> <config_dir>"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
