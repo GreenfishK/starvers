@@ -40,9 +40,9 @@ logging.basicConfig(
 # ---------------------------------------------------------------------------
 # Environment / path constants
 # ---------------------------------------------------------------------------
-CONFIG_TMPL_DIR="/starvers_eval/scripts/3_construct_datasets/configs"
-CONFIG_DIR="/starvers_eval/configs/construct_datasets"
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
+CONFIG_TMPL_DIR="/starvers_eval/scripts/4_ingest/configs"
+CONFIG_DIR="/starvers_eval/data/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
 TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
