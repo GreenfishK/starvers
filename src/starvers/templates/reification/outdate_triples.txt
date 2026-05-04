@@ -1,0 +1,17 @@
+# prefixes
+{0}
+
+delete {{
+    ?b rdf:reifies <<?s ?p ?o>> ; vers:valid_from ?valid_from ; vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .
+}}
+insert {{
+    _:b rdf:reifies <<?s ?p ?o>> ; vers:valid_from ?valid_from ; vers:valid_until ?newVersion . # outdate
+}}
+where {{
+    values (?s ?p ?o) {{
+    	{1}
+	}}
+    # versioning
+    ?b rdf:reifies <<?s ?p ?o>> ; vers:valid_from ?valid_from ; vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .
+    BIND(xsd:dateTime({2}) AS ?newVersion).
+}}

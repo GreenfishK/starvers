@@ -21,6 +21,8 @@ setup(
 
     packages=['starvers'],
     package_dir={'':'src'},
-    package_data={'starvers': ['templates/*.txt',
-                               'templates/test_connection/*.txt']}
+    package_data={'starvers': ['templates/decorator/*.txt',
+                               'templates/reification/*.txt',
+                               'templates/decorator/test_connection/*.txt',
+                               'templates/reification/test_connection/*.txt']},
 )

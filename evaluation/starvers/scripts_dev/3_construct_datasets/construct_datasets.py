@@ -30,6 +30,7 @@ LOG_FILE = f"{os.environ['RUN_DIR']}/output/logs/construct_datasets/construct_da
 datasets = os.environ.get("datasets").split(" ")
 skip_change_sets = os.environ.get("skip_change_sets")
 skip_tb_star_ds = os.environ.get("skip_tb_star_ds")
+skip_tb_reif_ds = os.environ.get("skip_tb_reif_ds")
 skip_icng_ds = os.environ.get("skip_icng_ds")
 skip_tb_ds = os.environ.get("skip_tb_ds")
 
@@ -159,6 +160,111 @@ def construct_tb_star_ds(source_ic0: str, source_cs: str, destination: str,
     logging.info("Removing database files.")
     shutil.rmtree("/starvers_eval/databases/construct_datasets/", ignore_errors=True)
     shutil.rmtree("/run/configuration", ignore_errors=True)
+
+def construct_tb_reif_ds(source_ic0: str, source_cs: str, destination: str,
+                         last_version: int, init_timestamp: datetime):
+    init_timestamp_str = f'"{versioning_timestamp_format(init_timestamp)}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+    aet = '"9999-12-31T00:00:00.000+02:00"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+
+    # Read initial snapshot
+    logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
+    ic0_raw = open(source_ic0, "r").read().splitlines()
+    ic0_list = list(filter(None, ic0_raw))
+    ic0_list_clean = list(filter(lambda x: not x.startswith("# "), ic0_list))
+    ic0_list_timestamped = [f"_:b rdf:reifies << {triple[:-1].strip()}>> ; <https://github.com/GreenfishK/DataCitation/versioning/valid_from> {init_timestamp_str}; <https://github.com/GreenfishK/DataCitation/versioning/valid_until> {aet} .\n" for triple in ic0_list_clean]
+
+    # Write timestamped snapshot
+    logging.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0)) 
+    with open(destination, "w") as rdf_star_dataset:
+        rdf_star_dataset.writelines(["@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n"])
+        rdf_star_dataset.writelines(ic0_list_timestamped)
+
+    # Map versions to files in chronological orders
+    change_sets = {}
+    for filename in sorted(os.listdir(source_cs)):
+        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
+            continue
+        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
+        change_sets[filename] = version
+
+    # Apply changesets to RDF-star dataset
+    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
+        vers_ts = init_timestamp + timedelta(seconds=version)
+        vers_ts_str = f'"{versioning_timestamp_format(vers_ts)}"^^<http://www.w3.org/2001/XMLSchema#dateTime>'
+        mem_in_usage = psutil.virtual_memory().percent
+        logging.info(f"Memory in usage: {mem_in_usage}%")
+
+        if filename.startswith("data-added"):
+            logging.info("Read positive changeset {0} into memory.".format(filename))
+            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
+            added_triples_list = list(filter(None, added_triples_raw))
+            added_triples_list_timestamped = [f"_:b rdf:reifies << {triple[:-1].strip()}>> ; <https://github.com/GreenfishK/DataCitation/versioning/valid_from> {vers_ts_str}; <https://github.com/GreenfishK/DataCitation/versioning/valid_until> {aet} .\n" for triple in added_triples_list]
+            cnt_trpls = len(added_triples_raw)
+
+            logging.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
+            with open(destination, "a") as rdf_star_dataset:
+                rdf_star_dataset.writelines(added_triples_list_timestamped)
+        
+        if filename.startswith("data-deleted"):
+            logging.info(f"Read negative changeset {filename} into memory.")
+            deleted_triples_raw = open(os.path.join(source_cs, filename), "r").read().splitlines()
+            deleted_triples_list = list(filter(None, deleted_triples_raw))
+            deleted_triples_set = set(t[:-1].strip() for t in deleted_triples_list)
+
+            # Count triples to be invalidated
+            cnt_trpls = len(deleted_triples_list)
+            logging.info(f"Invalidate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")
+
+            # Update aet timestamps for matching triples in the negative delta set
+            logging.info(f"Updating aet timestamps for matching triples in the negative delta set {filename}.")
+            
+            valid_until = "<https://github.com/GreenfishK/DataCitation/versioning/valid_until>"
+            valid_until_escaped = re.escape(valid_until)
+            
+            tmp_out = f"{data_dir}/alldata.TB_star_reif.tmp"
+            total_replacements = 0
+            with open(destination, "r") as rdf_star_graph, open(tmp_out, "w") as fout:
+                for line in rdf_star_graph:
+                    timestamped_triple = line.strip()
+                    fact_triple = timestamped_triple.split(">> ; <https://github.com/GreenfishK/DataCitation/versioning/valid_from>")[0][19:] 
+
+                    if fact_triple in deleted_triples_set:
+                        parts = timestamped_triple.split(valid_until)
+                        left, _ = parts
+                        left_escaped = re.escape(left)
+
+                        pattern = re.compile(rf'^({left_escaped}{valid_until_escaped}\s+)([^ ]+)(\s+\.)')
+
+                        def replace_valid_until(match):
+                            return f"{match.group(1)}{vers_ts_str}{match.group(3)}"
+
+                        # apply replacement to the CURRENT line
+                        line = pattern.sub(replace_valid_until, line)
+                        total_replacements += 1
+
+                    fout.write(line)
+
+            logging.info(f"Writing updated RDF-star dataset to {destination}.")
+            os.replace(tmp_out, destination)
+            
+            logging.info(f"Invalidated {total_replacements} triples in the RDF-star dataset which match the triples in {filename}.")
+        
+    # Iterate through all blank nodes and add a numerical suffix
+    tmp_out = f"{data_dir}/alldata.TB_star_reif.tmp"
+    with open(destination, "r") as rdf_star_graph, open(tmp_out, "w") as fout:
+        for i, line in enumerate(rdf_star_graph):
+            timestamped_triple = line.strip()
+
+            # replace _:b with _:b{i}
+            if timestamped_triple.startswith("_:b"):
+                timestamped_triple = timestamped_triple.replace("_:b ", f"_:b{i} ", 1)
+
+            fout.write(timestamped_triple + "\n")
+    
+    logging.info(f"Writing updated RDF-star dataset with unique blank nodes to {destination}.")
+    os.replace(tmp_out, destination)
+
+    logging.info(f"Finished creating the TB dataset variant with reification")
 
 def construct_icng_ds(source: str, destination: str, last_version: int, basename_length: int):
     """
@@ -326,11 +432,19 @@ for dataset in datasets:
                             last_version=total_versions,
                             init_timestamp=init_version_timestamp)    
     
+    if not skip_tb_reif_ds == "True":
+        construct_tb_reif_ds(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+                            source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}",
+                            destination=f"{data_dir}/alldata.TB_star_reif.ttl",
+                            last_version=total_versions,
+                            init_timestamp=init_version_timestamp)
+    
     if not skip_icng_ds == "True":
         construct_icng_ds(source=f"{data_dir}/{snapshot_dir}/",
                         destination=f"{data_dir}/alldata.ICNG.trig",
                         last_version=total_versions,
                         basename_length=ic_basename_lengths[dataset])
+
 
     if not skip_tb_ds == "True":
         construct_TB(source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",

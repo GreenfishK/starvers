@@ -4,16 +4,16 @@
 
 [evaluations]
     [evaluations.graphdb]
-        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
 
     [evaluations.jenatdb2]
-        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
-        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs"]
+        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
 
     [evaluations.ostrich]
         bearb_day   = ["ostrich"]
@@ -48,6 +48,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
         [datasets.beara.query_sets]
@@ -65,6 +66,7 @@
                     cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
                     tb_sr_ng = {versions = 58, template = "tb_sr_ng/ts"}
                     tb_sr_rs = {versions = 58, template = "tb_sr_rs/ts"}
+                    tb_sr_re = {versions = 58, template = "tb_sr_re/ts"}
                     ostrich = {versions = 58, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 58, template = "ostrich_aggchange/ts"}
             [datasets.beara.query_sets.low]
@@ -82,6 +84,7 @@
                     cb_sr_ng = {versions = 58, template = "cb_sr_ng/ts"}
                     tb_sr_ng = {versions = 58, template = "tb_sr_ng/ts"}
                     tb_sr_rs = {versions = 58, template = "tb_sr_rs/ts"}
+                    tb_sr_re = {versions = 58, template = "tb_sr_re/ts"}
                     ostrich = {versions = 58, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 58, template = "ostrich_aggchange/ts"}
     [datasets.bearb_hour]
@@ -98,6 +101,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
         [datasets.bearb_hour.query_sets]
@@ -112,6 +116,7 @@
                     cb_sr_ng = {versions = 1299, template = "cb_sr_ng/ts"}
                     tb_sr_ng = {versions = 1299, template = "tb_sr_ng/ts"}
                     tb_sr_rs = {versions = 1299, template = "tb_sr_rs/ts"}
+                    tb_sr_re = {versions = 1299, template = "tb_sr_re/ts"}
                     ostrich = {versions = 1299, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 1299, template = "ostrich_aggchange/ts"}
             [datasets.bearb_hour.query_sets.join]
@@ -124,6 +129,7 @@
                     cb_sr_ng = {versions = 1299, template = "cb_sr_ng/bgp"}
                     tb_sr_ng = {versions = 1299, template = "tb_sr_ng/bgp"}
                     tb_sr_rs = {versions = 1299, template = "tb_sr_rs/bgp"}
+                    tb_sr_re = {versions = 1299, template = "tb_sr_re/bgp"}
                     ostrich = {versions = 1299, template = "ostrich/bgp"}
                     ostrich_aggchange = {versions = 1299, template = "ostrich_aggchange/bgp"}
     [datasets.bearb_day]
@@ -140,6 +146,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
         [datasets.bearb_day.query_sets]
@@ -154,6 +161,7 @@
                     cb_sr_ng = {versions = 89, template = "cb_sr_ng/ts"}
                     tb_sr_ng = {versions = 89, template = "tb_sr_ng/ts"}
                     tb_sr_rs = {versions = 89, template = "tb_sr_rs/ts"}
+                    tb_sr_re = {versions = 89, template = "tb_sr_re/ts"}
                     ostrich = {versions = 89, template = "ostrich/ts"}
                     ostrich_aggchange = {versions = 89, template = "ostrich_aggchange/ts"}
         [datasets.bearb_day.query_sets.join]
@@ -166,6 +174,7 @@
                     cb_sr_ng = {versions = 89, template = "cb_sr_ng/bgp"}
                     tb_sr_ng = {versions = 89, template = "tb_sr_ng/bgp"}
                     tb_sr_rs = {versions = 89, template = "tb_sr_rs/bgp"}
+                    tb_sr_re = {versions = 89, template = "tb_sr_re/bgp"}
                     ostrich = {versions = 89, template = "ostrich/bgp"}
                     ostrich_aggchange = {versions = 89, template = "ostrich_aggchange/bgp"}
     [datasets.bearc]
@@ -182,6 +191,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
         [datasets.bearc.query_sets]
@@ -204,6 +214,7 @@
                     cb_sr_ng = {versions = 33, template = "cb_sr_ng/sparql"}
                     tb_sr_ng = {versions = 33, template = "tb_sr_ng/sparql"}
                     tb_sr_rs = {versions = 33, template = "tb_sr_rs/sparql"}
+                    tb_sr_re = {versions = 33, template = "tb_sr_re/sparql"}
                     ostrich = {versions = 33, template = "ostrich/sparql"}
                     ostrich_aggchange = {versions = 33, template = "ostrich_aggchange/sparql"}
     [datasets.beart]
@@ -215,6 +226,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
     [datasets.orkg]
@@ -231,6 +243,7 @@
             cb_sr_ng = 1
             tb_sr_ng = 1
             tb_sr_rs = 1
+            tb_sr_re = 1
             ostrich = 1
             ostrich_aggchange = 1
         [datasets.orkg.query_sets]
@@ -244,5 +257,6 @@
                     cb_sr_ng = {versions = 34, template = "cb_sr_ng/sparql_full"}
                     tb_sr_ng = {versions = 34, template = "tb_sr_ng/sparql_full"}
                     tb_sr_rs = {versions = 34, template = "tb_sr_rs/sparql_full"}
+                    tb_sr_re = {versions = 34, template = "tb_sr_re/sparql_full"}
                     ostrich = {versions = 34, template = "ostrich/sparql_full"}
                     ostrich_aggchange = {versions = 34, template = "ostrich_aggchange/sparql_full"}

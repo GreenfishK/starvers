@@ -1,0 +1,6 @@
+{0}
+select * where {{
+    _:b rdf:reifies <<?s ?p ?o>> .
+    _:b vers:valid_from ?valid_from_date .
+    _:b vers:valid_until ?valid_until_date .
+}}

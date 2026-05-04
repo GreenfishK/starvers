@@ -116,17 +116,19 @@ class VersioningPipeline:
             self._preprocess_snapshot()
             t_prepare_iterative = time.time_ns() - t_prepare_start
 
+            # --- Delta calculation: SPARQL method ---
+            # TODO: should be moved to self._sparql_calculatorcalculate_delta()
             # Load into a temporary graph (needed by the SPARQL method)
             t_load_start = time.time_ns()
             self._load_into_graphdb(graph_name=self.tracking_task.name_temp())
             t_prepare_sparql = t_prepare_iterative + (time.time_ns() - t_load_start)
 
-            # --- Delta calculation: SPARQL method ---
             t_delta_sparql_start = time.time_ns()
             insertions_sparql, deletions_sparql = self._sparql_calculator.calculate_delta(version_timestamp)
             t_delta_sparql = time.time_ns() - t_delta_sparql_start
             self.LOG.info(f"[{self.repository_name}] SPARQL delta: +{len(insertions_sparql)} / -{len(deletions_sparql)}")
 
+            # TODO: should be moved to self._sparql_calculatorcalculate_delta()
             t_cleanup_start = time.time_ns()
             self._sparql_calculator.clean_up()
             t_cleanup_sparql = time.time_ns() - t_cleanup_start

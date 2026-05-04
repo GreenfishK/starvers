@@ -191,6 +191,16 @@ def main():
                                             measure_file.write("{0},{1},{2},{3},{4},{5}\n".format(policy, dataset, 
                                                 query_set_name, str(query_set_version), output_query_file_name, rewriting_time))
                                         output_file.write(timestamped_output_query[0])
+                                    elif policy in ["tb_sr_re"]:
+                                        start = time.time()
+                                        timestamped_output_query = timestamp_query(output_query, vers_ts, mode="reification")
+                                        end = time.time()
+                                        rewriting_time = end - start
+                                        
+                                        with open(query_rewriting_measurements_path, 'a') as measure_file:
+                                            measure_file.write("{0},{1},{2},{3},{4},{5}\n".format(policy, dataset, 
+                                                query_set_name, str(query_set_version), output_query_file_name, rewriting_time))
+                                        output_file.write(timestamped_output_query[0])
                                     else:
                                         output_file.write(output_query) 
                     # Only for tb_sr_rs policy

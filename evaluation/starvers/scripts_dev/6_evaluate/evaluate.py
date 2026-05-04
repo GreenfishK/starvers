@@ -12,7 +12,7 @@ from itertools import product
 import tomli
 import pandas as pd
 from SPARQLWrapper import Wrapper, SPARQLWrapper, JSON, POST
-from SPARQLWrapper.SPARQLExceptions import EndPointInternalError
+from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, QueryBadFormed
 from itertools import product, takewhile
 from functools import partial
 from urllib.error import HTTPError
@@ -42,7 +42,7 @@ logging.basicConfig(
 # ---------------------------------------------------------------------------
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CONFIG_TMPL_DIR="/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR=f"{os.environ['RUN_DIR']}/configs/ingest"
+CONFIG_DIR: str=f"{os.environ['RUN_DIR']}/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
 TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
@@ -159,6 +159,14 @@ def parse_results(result) -> list:
 
     return [header] + values
 
+def print_mem_file_tail(mem_file, lines=20):
+    with open(mem_file, "r") as f:
+        all_lines = f.readlines()
+        logging.info(f"--------------- Memory tail start --------------- ")
+        logging.info(f"{all_lines[0]}")
+        for line in all_lines[-lines:]:
+            logging.info({line})
+        logging.info(f"--------------- Memory tail end --------------- ")
 
 ##########################################################
 # Evaluation functions
@@ -176,6 +184,7 @@ def run_queries(config, header, triple_store, policy, dataset):
     first_qs = next(iter(dataset_cfg['query_sets']))
     versions = dataset_cfg['query_sets'][first_qs]['policies'][policy]['versions']
 
+    all_rows = []
 
     for query_set in query_sets:
         rows = []
@@ -215,12 +224,13 @@ def run_queries(config, header, triple_store, policy, dataset):
         try_counter = 0
         for try_counter in range(5):
             try:
-                engine.query()
+                result = engine.query().convert()
             except Exception as e:
                 logging.error(f"Dry run failed with error: {e}")
                 logging.info("Retrying dry run after waiting for 5 seconds...")
                 try_counter += 1
                 time.sleep(5)
+        logging.info("Dry run query result:\n " + str(result))
 
         logging.info("Running queries")
         socket.setdefaulttimeout(30)
@@ -240,46 +250,63 @@ def run_queries(config, header, triple_store, policy, dataset):
                 exec_time = -1
                 yn_timeout = 0
 
-                try:
-                    executor = ThreadPoolExecutor(max_workers=1)
-                    result = {}
-                    def run(eng=engine):
-                        result['start'] = time.time()
-                        result['response'] = eng.query().convert()
-                        result['end'] = time.time()
+                executor = ThreadPoolExecutor(max_workers=1)
 
-                    future = executor.submit(run)
-                    
-                    try:
-                        future.result(timeout=30)
-                        response = result['response']
-                        exec_time = result['end'] - result['start']
-                    except FuturesTimeout:
-                        yn_timeout = 1
-                        response = None
-                        logging.error(f"Timeout error for version {version} and query {file_name}")
-                    finally:
-                        executor.shutdown(wait=False)
-                        # If result was never populated, it must have timed out or failed
-                        if 'response' not in result and yn_timeout == 0:
-                            yn_timeout = 1
-                            logging.error(f"Thread hung without timeout for version {version} and query {file_name}")
+                result = {}
+                def run(eng=engine):
+                    result['start'] = time.time()
+                    result['response'] = eng.query().convert()
+                    result['end'] = time.time()
+
+                try:
+                    future = executor.submit(run) 
+                    future.result(timeout=30)
+                    response = result['response']
+                    exec_time = result['end'] - result['start']
+
+                except FuturesTimeout as e:
+                    yn_timeout = 1
+                    response = None
+                    logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+                    # Check whats written in MEM_FILE
+                    print_mem_file_tail(MEM_FILE, lines=20)
+
+                except EndPointInternalError as e:
+                    yn_timeout = 0
+                    response = None
+                    logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
+
+                except ConnectionResetError as e:
+                    yn_timeout = 0
+                    response = None
+                    logging.error(f"Connection reset, probably due to memory overflow: {e}")
+                    # Check whats written in MEM_FILE
+                    print_mem_file_tail(MEM_FILE, lines=20)
+
+                except QueryBadFormed as e:
+                    yn_timeout = 0
+                    response = "badly formed query"
+                    logging.error(f"Query badly formed for version {version} and query {file_name}: {e}")
 
                 except Exception as e:
                     yn_timeout = 0
                     response = None
+                    logging.error(f"Other error for version {version} and query {file_name}: {e}")
+                    logging.info(f"Error instance type: {type(e)}")
 
-                    if isinstance(e, EndPointInternalError) or isinstance(e, HTTPError) or isinstance(e, socket.timeout):
-                        logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
-                    else:
-                        logging.error(f"Other error for version {version} and query {file_name}: {e}")
+                finally:
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    
+                    if (response is None and yn_timeout == 0) \
+                        or psutil.virtual_memory().percent >= 85:
 
-                    logging.info("Shutdown due to error and restart before next query.")
-                    subprocess.run([mgmt_script, "shutdown"], check=True)
+                        logging.info("Restart database. Virtual memory in usage: " + str(psutil.virtual_memory().percent) + "%")
 
-                    logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
-                    subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
-                
+                        logging.info("Shutdown")
+                        subprocess.run([mgmt_script, "shutdown"], check=True)
+
+                        logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
+                        subprocess.run([mgmt_script, "startup", db_dir, policy, dataset, CONFIG_DIR], check=True)
 
                 rows.append([
                     triple_store, dataset, policy,
@@ -295,11 +322,7 @@ def run_queries(config, header, triple_store, policy, dataset):
                     write = csv.writer(file, delimiter=";")
                     write.writerows(parse_results(response))
 
-        
-        logging.info(f"Writing results to {TIME_FILE}")
-        df = pd.DataFrame(rows, columns=header)
-        df.to_csv(TIME_FILE, sep=";", index=False, mode='a', header=False)
-        del df
+        all_rows.extend(rows)
 
         logging.info("Shutdown")
         subprocess.run([mgmt_script, "shutdown"], check=True)
@@ -307,6 +330,7 @@ def run_queries(config, header, triple_store, policy, dataset):
         logging.info("Stopping memory tracker")
         tracker.join(timeout=1)
 
+    return all_rows
 
 def measure_updates(dataset:str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     # HTTPError
@@ -357,7 +381,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Startup GraphDB engine")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
+    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     logging.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -398,7 +422,7 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
         if mem_in_usage > 85:
             # Reboot to free up main memory
             subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset}"))
+            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
         
         if filename.startswith("data-added"):
             logging.info("Read positive changeset {0} into memory.".format(filename))
@@ -436,6 +460,49 @@ def insert_ic0_and_cbs(triple_store: TripleStore, chunk_size: int, dataset: str,
     return df
 
 
+def load_or_init_time_df(header):
+    if os.path.exists(TIME_FILE) and os.path.getsize(TIME_FILE) > 0:
+        logging.info(f"Loading existing measurement file {TIME_FILE}")
+        df = pd.read_csv(TIME_FILE, sep=";")
+        # Ensure all expected columns exist (e.g. if header changed between runs)
+        for col in header:
+            if col not in df.columns:
+                df[col] = None
+        df = df[header]
+    else:
+        logging.info(f"No existing measurement file found, creating new one at {TIME_FILE}")
+        df = pd.DataFrame(columns=header)
+    return df
+
+
+def upsert_rows(df, new_rows, header, key_cols=('triplestore', 'dataset', 'policy')):
+    """
+    Insert/update rows in df based on key_cols.
+    Rows whose key_cols combination already exists are replaced;
+    otherwise they are appended.
+    """
+    if not new_rows:
+        return df
+
+    new_df = pd.DataFrame(new_rows, columns=header)
+
+    if df.empty:
+        return new_df
+
+    # Build a mask of existing rows whose key matches any new row's key
+    key_tuples_new = set(
+        tuple(row[col] for col in key_cols) for _, row in new_df.iterrows()
+    )
+
+    def row_key(row):
+        return tuple(row[col] for col in key_cols)
+
+    mask_to_drop = df.apply(lambda row: row_key(row) in key_tuples_new, axis=1)
+    df = df[~mask_to_drop]
+
+    df = pd.concat([df, new_df], ignore_index=True)
+    return df
+
 # ---------------------------------------------------------------------------
 # Execution
 # ---------------------------------------------------------------------------
@@ -446,10 +513,9 @@ def main():
         'execution_time', 'snapshot_creation_time', 'yn_timeout'
     ]
 
-    # Write header once
-    pd.DataFrame(columns=header).to_csv(
-        TIME_FILE, sep=";", index=False, mode='w', header=True
-    )
+    # Load existing measurements (if any) instead of overwriting
+    time_df = load_or_init_time_df(header)
+
     combinations = product(triple_stores, policies, datasets)
 
     # Create memory file
@@ -460,21 +526,26 @@ def main():
     for triple_store, policy, dataset in combinations:
 
         if not eval_combi_exists(config, triple_store, dataset, policy):
-            logging.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped") 
+            logging.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped")
             continue
 
-        run_queries(config, header, triple_store, policy, dataset)
+        new_rows = run_queries(config, header, triple_store, policy, dataset)
+        time_df = upsert_rows(time_df, new_rows, header)
+
+        # Write back after each combination so progress isn't lost on crash
+        logging.info(f"Writing results to {TIME_FILE}")
+        time_df.to_csv(TIME_FILE, sep=";", index=False, mode='w', header=True)
 
     # Update evaluation
-    for dataset in datasets:
-        data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
-        total_versions = dataset_versions[dataset]
+#    for dataset in datasets:
+#        data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
+#        total_versions = dataset_versions[dataset]
 
-        #measure_updates(dataset=dataset, 
-        #        source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-        #        source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
-        #        last_version=total_versions, 
-        #        init_timestamp=init_version_timestamp)
+#        measure_updates(dataset=dataset, 
+#                source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+#                source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
+#                last_version=total_versions, 
+#                init_timestamp=init_version_timestamp)
 
 if __name__ == "__main__":
     main()

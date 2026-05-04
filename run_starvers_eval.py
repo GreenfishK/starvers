@@ -16,6 +16,7 @@ Usage:
   python run_starvers_eval.py run all
   python run_starvers_eval.py run step <step_number_or_name>
   python run_starvers_eval.py run from <step_number_or_name>
+  python run_starvers_eval.py run until <step_number_or_name>
   python run_starvers_eval.py continue
   python run_starvers_eval.py delete --older-than <YYYYMMDDThhmmss>
   python run_starvers_eval.py list
@@ -222,6 +223,16 @@ def cmd_run(args) -> None:
         idx = STEPS.index(step)
         execute_steps(STEPS[idx:], run_dir)
 
+    elif args.subcommand == "until":
+        run_dir = _make_run_dir()
+        print(f"[starvers_eval] Run directory: {run_dir}")
+        
+        # Rum all steps up to and including the specified one, then stop
+        step = _resolve_step(args.step_id)
+        idx = STEPS.index(step)
+
+        execute_steps(STEPS[:idx+1], run_dir)
+
     elif args.subcommand == "step_at":
         run_dir = BASE_DATA_DIR / args.timestamp
         if not run_dir.exists():
@@ -323,7 +334,8 @@ def build_parser() -> argparse.ArgumentParser:
     step_p.add_argument("step_id", help="Step number (1-7) or name")
     from_p = run_sub.add_parser("from", help="Run from a specific step onwards")
     from_p.add_argument("step_id", help="Step number (1-7) or name")
-
+    until_p = run_sub.add_parser("until", help="Run steps until a specific step")
+    until_p.add_argument("step_id", help="Step number (1-7) or name")
     # add argument after step <step_id> at <timestamp> to run a step for a specific run
     after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
     after_p.add_argument("step_id", help="Step number (1-7) or name")

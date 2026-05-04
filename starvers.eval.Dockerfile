@@ -109,9 +109,9 @@ COPY --from=eclipse-temurin:17.0.16_8-jdk /opt/java     /opt/java/java17
 FROM scratch AS graphdb_base
 
 COPY --from=ontotext/graphdb:10.5.0         /opt/graphdb  /opt/graphdb
-COPY --from=eclipse-temurin:11.0.21_9-jdk   /opt/java     /opt/java/java11
+COPY --from=eclipse-temurin:11              /opt/java     /opt/java/java11
 
-
+# eclipse-temurin:11.0.21_9-jdk 
 #########################################################
 # Stage 4: oxigraph_build
 # Compiles oxigraph-cli from source using Cargo/Rust.
@@ -234,7 +234,7 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JVM_ARGS='-Xms10g -Xmx80g'
+ENV JVM_ARGS='-Xms10g -Xmx70g'
 ENV ADMIN_PASSWORD=starvers
 
 # ── Expose ports ────────────────────────────────────── 

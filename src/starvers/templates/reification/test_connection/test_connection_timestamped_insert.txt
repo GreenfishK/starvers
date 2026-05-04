@@ -1,0 +1,11 @@
+PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
+{0}
+insert
+{{
+_:b rdf:reifies << <http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil' >> .
+_:b vers:valid_from ?newVersion .
+_:b vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime.
+}}
+where {{
+    BIND(xsd:dateTime(NOW()) AS ?newVersion).
+}}

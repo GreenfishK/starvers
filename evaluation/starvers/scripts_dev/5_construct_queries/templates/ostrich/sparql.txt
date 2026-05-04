@@ -1,7 +1,9 @@
 {0}
 
 SELECT * {{ 
-    GRAPH <version:{1}>
-    {2} 
-    {3}
+    GRAPH <version:{1}> {{
+        select * where 
+        {2} 
+        {3}
+    }}
 }}

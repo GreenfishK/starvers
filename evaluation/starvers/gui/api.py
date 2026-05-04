@@ -10,10 +10,14 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import logging
+import sys
+import platform, subprocess, shutil
 
 import tomli
 from flask import Flask, abort, jsonify, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 _here = Path(__file__).parent
 
@@ -24,30 +28,39 @@ app = Flask(
 )
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
+logging.basicConfig(handlers=[logging.StreamHandler(sys.stdout)],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
+
 DATA_DIR    = Path(os.environ.get("DATA_DIR", "/starvers_eval/data"))
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
 PORT        = int(os.environ.get("PORT", 8080))
 
-ALL_STEPS = [
-    "download", "preprocess_data", "construct_datasets",
-    "ingest", "construct_queries", "evaluate", "visualize",
-]
 
 VERSIONING_APPROACH = {
-    "alldata.TB_computed.nq": (
-        "ex:s1 ex:p1 ex:o1 :v21_22_23_25 .\n"
+    "alldata.TB_computed.nq (BEAR approach)": (
+        ":s :p :o :v21_22_23_25 .\n"
         ":v21_22_23_25 owl:versionInfo \"21\" :versions .\n"
         ":v21_22_23_25 owl:versionInfo \"22\" :versions .\n"
-        ":v21_22_23_25 owl:versionInfo \"23\" :versions ."
+        ":v21_22_23_25 owl:versionInfo \"23\" :versions .\n"
+        ":v21_22_23_25 owl:versionInfo \"25\" :versions ."
+
     ),
-    "alldata.TB_star_hierarchical.ttl": (
-        "<< << s p o >> vers:valid_from creation_timestamp >> vers:valid_until expiration_timestamp ."
+    "alldata.TB_star_hierarchical.ttl (RDF-star decorator model)": (
+        "<< << :s :p :o >> :valid_from '2025-01-05T01:56:30' >> :valid_until '2025-01-30T02:33:11' .\n"
+        "<< << :s :p :o >> :valid_from '2025-03-04T12:31:05' >> :valid_until '9999-12-31T23:59:59' ."
     ),
-    "alldata.ICNG.trig": (
-        "GRAPH <http://starvers_eval/ic/v0> { triples from v0 }\n"
-        "GRAPH <http://starvers_eval/ic/v1> { triples from v1 }\n"
-        "...\n"
-        "GRAPH <http://starvers_eval/ic/<last_version> { triples from <last_snapshot> }\n"
+    "alldata.TB_star_reif.ttl (RDF-star reification model)": (
+        "_:b1 rdf:reifies << :s :p :o >> ; :valid_from '2025-01-05T01:56:30' ; :valid_until '2025-01-30T02:33:11' .\n"
+        "_:b2 rdf:reifies << :s :p :o >> ; :valid_from '2025-03-04T12:31:05' ; :valid_until '9999-12-31T23:59:59' ."
+    ),
+    "alldata.ICNG.trig (snapshot-based approach, each snapshot in a named graph)": (
+        "GRAPH <http://starvers_eval/ic/v21> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v22> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v23> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v24> { }\n"
+        "GRAPH <http://starvers_eval/ic/v25> { :s :p :o . }\n"
     ),
     "Base variant: first IC + change sets": (
         "No versioning at RDF-level. Ingested as independent copies (IC) "
@@ -57,15 +70,123 @@ VERSIONING_APPROACH = {
 
 VARIANT_FILES = [
     ("alldata_vdir",            "Base variant: first IC + change sets",           True),
-    ("alldata.TB_computed.nq",            "alldata.TB_computed.nq",           False),
-    ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl", False),
-    ("alldata.ICNG.trig",                 "alldata.ICNG.trig",                False),
+    ("alldata.TB_computed.nq",            "alldata.TB_computed.nq (BEAR approach)",           False),
+    ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl (RDF-star decorator model)", False),
+    ("alldata.TB_star_reif.ttl",          "alldata.TB_star_reif.ttl (RDF-star reification model)", False),
+    ("alldata.ICNG.trig",                 "alldata.ICNG.trig (snapshot-based approach, each snapshot in a named graph)",                False),
 ]
+
+DATASET_DESCRIPTIONS = {
+    "bearb_day": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Compiled from DBpedia Live changesets over three months, containing the 100 most volatile "
+        "resources with their updates and real-world triple pattern queries from user logs. "
+        "Every snapshot represents one day."
+    ),
+    "bearb_hour": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Compiled from DBpedia Live changesets over three months, containing the 100 most volatile "
+        "resources with their updates and real-world triple pattern queries from user logs. "
+        "Every snapshot represents one hour."
+    ),
+    "bearc": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Uses the Open Data Portal Watch project to capture dataset descriptions of the European "
+        "Open Data portal over 32 weeks."
+    ),
+    "orkg": (
+        "Compiled over 34 weeks by downloading one snapshot each week via ORKG's data access API."
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+def _get_hardware_info() -> dict:
+    # ── CPU ──────────────────────────────────────────────────
+    cpu = platform.processor() or "Unknown"
+    try:
+        out = subprocess.check_output(["lscpu"], text=True, stderr=subprocess.DEVNULL)
+        for line in out.splitlines():
+            if line.startswith("Model name"):
+                cpu = line.split(":", 1)[1].strip()
+                break
+    except Exception:
+        pass
+
+    # ── File System ──────────────────────────────────────────
+    # Inside Docker, df returns "overlay". Instead, find what the
+    # host mounted at "/" really is by inspecting /proc/mounts.
+    # We skip overlay/tmpfs/proc/sysfs entries and take the first
+    # real block-device-backed mount that covers "/".
+    fs_type = "Unknown"
+    try:
+        with open("/proc/mounts") as f:
+            mounts = f.readlines()
+        # Prefer the mount whose mountpoint is "/" with a real fstype
+        skip = {"overlay", "tmpfs", "proc", "sysfs", "devtmpfs",
+                "devpts", "cgroup", "cgroup2", "mqueue", "hugetlbfs",
+                "pstore", "securityfs", "debugfs", "fusectl"}
+        for line in mounts:
+            parts = line.split()
+            if len(parts) >= 3 and parts[1] == "/" and parts[2] not in skip:
+                fs_type = parts[2]
+                break
+        # Fallback: first non-overlay/tmpfs real mount
+        if fs_type == "Unknown":
+            for line in mounts:
+                parts = line.split()
+                if len(parts) >= 3 and parts[2] not in skip and parts[0].startswith("/dev"):
+                    fs_type = parts[2]
+                    break
+    except Exception:
+        pass
+
+    # ── Hard disk name + type ────────────────────────────────
+    disk_name = "Unknown"
+    disk_type = "Unknown"
+    try:
+        out = subprocess.check_output(
+            ["lsblk", "-d", "-o", "NAME,ROTA,MODEL", "--noheadings"],
+            text=True, stderr=subprocess.DEVNULL
+        )
+        for line in out.splitlines():
+            parts = line.split(None, 2)
+            if len(parts) >= 2:
+                disk_name = parts[2].strip() if len(parts) == 3 else parts[0].strip()
+                disk_type = "HDD" if parts[1].strip() == "1" else "SSD"
+                break
+    except Exception:
+        pass
+
+    # ── RAM ─────────────────────────────────────────────────
+    #ram_size = "Unknown"
+    #try:
+    #    with open("/proc/meminfo") as f:
+    #        for line in f:
+    #            if line.startswith("MemTotal"):
+    #                kb = int(line.split()[1])
+    #                gb = kb / 1024 / 1024
+    #                # Round to nearest sensible value
+    #                ram_size = f"{round(gb)} GB"
+    #                break
+    #except Exception:
+    #    pass
+
+    #ram_type  = hw_override.get("ram_type", "Unknown")
+    #ram_speed = hw_override.get("ram_speed", "Unknown")
+
+    # Apply overrides
+    #disk_name = hw_override.get("disk_name") or disk_name
+    #disk_type = hw_override.get("disk_type") or disk_type
+    #ram_size  = hw_override.get("ram_size")  or ram_size
+
+    return {
+        "CPU":            cpu,
+        #"RAM":            f"{ram_size}" + (f" {ram_type}" if ram_type != "Unknown" else "") + (f" @ {ram_speed}" if ram_speed != "Unknown" else ""),
+        "File System":    fs_type,
+        "Hard Disk Name": disk_name,
+        "Hard Disk Type": disk_type,
+    }
+
 
 def _read_run(run_dir: Path) -> dict:
     csv_path = run_dir / "execution.csv"
@@ -110,22 +231,17 @@ def _discovered_datasets(run_dir: Path) -> list[str]:
 
 
 def _load_svg_plots(figures_dir: Path, prefix: str) -> list[dict]:
-    """
-    Return a list of {filename, data} dicts for SVG files whose name starts
-    with the given prefix.  Returns an empty list without raising if the
-    directory or any file is missing — callers must handle the empty case.
-    """
     if not figures_dir.exists():
         return []
     plots = []
     for svg in sorted(figures_dir.glob(f"{prefix}*.svg")):
         try:
-            data = base64.b64encode(svg.read_bytes()).decode("ascii")
+            # Embed raw SVG text — no base64 needed, renders inline directly
+            data = svg.read_text(encoding="utf-8")
             plots.append({"filename": svg.name, "data": data})
         except Exception:
             continue
     return plots
-
 
 # ---------------------------------------------------------------------------
 # Run list and run detail
@@ -178,7 +294,7 @@ def get_step_detail(ts: str, step_name: str):
 def _detail_download(run_dir: Path) -> dict:
     config       = _load_config()
     datasets_cfg = config.get("datasets", {})
-    detail       = {"datasets": [], "query_sets": []}
+    detail       = {"datasets": []}
     discovered   = set(_discovered_datasets(run_dir))
 
     sizes: dict[str, float] = {}
@@ -192,26 +308,15 @@ def _detail_download(run_dir: Path) -> dict:
                 except ValueError:
                     pass
 
-    for name, meta in datasets_cfg.items():
-        if name not in discovered:
-            continue
-        detail["datasets"].append({
-            "name":          name,
-            "versions":      meta.get("snapshot_versions", "?"),
-            "size_mb":       sizes.get(name),
-            "download_link": meta.get("download_link_snapshots"),
-        })
-
-    # Load query set metadata from queries_meta.csv written by download.sh.
-    # Columns: query_set, for_dataset, links  (count moved to preprocess step)
-    # links format: "filename; url | filename; url | ..."
+    # Parse query sets, keyed by for_dataset
+    query_sets_by_dataset: dict[str, list] = {}
     queries_csv = run_dir / "output" / "logs" / "download" / "queries_meta.csv"
     if queries_csv.exists():
-        with open(queries_csv, newline="") as f:
+        with open(queries_csv, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 qs_name   = row.get("query_set", "").strip()
                 for_ds    = row.get("for_dataset", "").strip()
-                links_raw = row.get("links", "").strip()
+                links_raw = row.get("links", "").strip().strip("\r")
 
                 links = []
                 if links_raw:
@@ -223,25 +328,36 @@ def _detail_download(run_dir: Path) -> dict:
                         elif pair:
                             links.append({"filename": pair, "url": pair})
 
-                detail["query_sets"].append({
-                    "name":        qs_name,
-                    "for_dataset": for_ds,
-                    "links":       links,
+                query_sets_by_dataset.setdefault(for_ds, []).append({
+                    "name":  qs_name,
+                    "links": links,
                 })
+
     else:
-        # Fallback: derive from toml config.
-        # Links live under datasets.<n>.query_sets.<qs>.download_links
+        # Fallback from toml
         for ds_name, ds_meta in datasets_cfg.items():
             for qs_name, qs_meta in ds_meta.get("query_sets", {}).items():
-                detail["query_sets"].append({
-                    "name":        qs_name,
-                    "for_dataset": ds_name,
+                query_sets_by_dataset.setdefault(ds_name, []).append({
+                    "name": qs_name,
                     "links": [
                         {"filename": lnk.rstrip("/").split("/")[-1].split("?")[0], "url": lnk}
                         for lnk in qs_meta.get("download_links", [])
                     ],
                 })
 
+    for name, meta in datasets_cfg.items():
+        if name not in discovered:
+            continue
+        detail["datasets"].append({
+            "name":          name,
+            "description":   DATASET_DESCRIPTIONS.get(name, ""),
+            "versions":      meta.get("snapshot_versions", "?"),
+            "size_mb":       sizes.get(name),
+            "download_link": meta.get("download_link_snapshots"),
+            "query_sets":    query_sets_by_dataset.get(name, []),
+        })
+
+    
     return detail
 
 
@@ -430,10 +546,9 @@ def _detail_ingest(run_dir: Path) -> dict:
     If the figures directory or any plot file does not exist yet (visualize step
     has not run), the lists are simply empty — no error is raised.
     """
-    ingest_csv  = run_dir / "output" / "measurements" / "ingestion.csv"
-    figures_dir = run_dir / "output" / "figures"
+    ingest_csv = run_dir / "output" / "measurements" / "ingestion.csv"
 
-    # --- Tabular summary from CSV ---
+    # Tabular summary from CSV 
     summary = []
     if ingest_csv.exists():
         groups: dict[tuple, list] = defaultdict(list)
@@ -459,17 +574,8 @@ def _detail_ingest(run_dir: Path) -> dict:
                 "avg_raw_size_mib":   sum(v[2] for v in values) / len(values),
             })
 
-    # --- SVG plots (may be empty if visualize step hasn't run yet) ---
-    ingest_plots  = _load_svg_plots(figures_dir, "ingest_")
-    storage_plots = _load_svg_plots(figures_dir, "storage_")
 
-    return {
-        "ingestion_summary": summary,
-        "ingest_plots":      ingest_plots,
-        "storage_plots":     storage_plots,
-        # Tells the frontend whether plots are expected but not yet available
-        "plots_pending":     not figures_dir.exists() or (not ingest_plots and not storage_plots),
-    }
+    return {"ingestion_summary": summary}
 
 
 def _detail_construct_queries(run_dir: Path) -> dict:
@@ -521,37 +627,160 @@ def _detail_construct_queries(run_dir: Path) -> dict:
 def _detail_evaluate(run_dir: Path) -> dict:
     config   = _load_config()
     eval_cfg = config.get("evaluations", {})
-    rows     = []
+    time_csv  = run_dir / "output" / "measurements" / "time.csv"
 
-    for triplestore, datasets in eval_cfg.items():
-        if not isinstance(datasets, dict):
+    # Build the ordered list of (triple_store, policy, dataset) combinations
+    # exactly as main() iterates them — product(triple_stores, policies, datasets)
+    # filtered by eval_combi_exists
+    combinations = []
+    for triplestore, datasets_cfg in eval_cfg.items():
+        if not isinstance(datasets_cfg, dict):
             continue
-        for dataset, policies in datasets.items():
+        for dataset, policies in datasets_cfg.items():
             if not isinstance(policies, list):
                 continue
-            total_queries = sum(
-                _count_txt_files(run_dir / "queries" / "final_queries" / p / dataset)
-                for p in policies
-            )
-            rows.append({
-                "triplestore":  triplestore,
-                "dataset":      dataset,
-                "policies":     policies,
-                "query_count":  total_queries,
-            })
+            for policy in policies:
+                total_queries = _count_txt_files(
+                    run_dir / "queries" / "final_queries" / policy / dataset
+                )
+                combinations.append({
+                    "triplestore":   triplestore,
+                    "policy":        policy,
+                    "dataset":       dataset,
+                    "query_count":   total_queries,
+                })
 
-    return {"evaluations": rows}
+    # Sample rows from time.csv
+    time_header = []
+    time_samples = []
+    time_total_rows = 0
+    if time_csv.exists():
+        with open(time_csv, newline="") as f:
+            reader = csv.reader(f, delimiter=";")
+            for i, row in enumerate(reader):
+                if i == 0:
+                    time_header = row
+                elif i <= 5:
+                    time_samples.append(row)
+                else:
+                    time_total_rows += 1
+        time_total_rows += len(time_samples)
+
+    hardware_info = _get_hardware_info()
+
+    return {
+        "combinations":   combinations,
+        "time_header":    time_header,
+        "time_samples":   time_samples,
+        "time_total_rows": time_total_rows,
+        "hardware":   hardware_info,
+    }
 
 
 def _detail_visualize(run_dir: Path) -> dict:
     """
-    Return base64-encoded SVG query-performance plots (time_*.svg).
-    Ingest and storage plots are shown in step 4 instead.
+    Build per-dataset/query-set time series data for the GUI to plot.
+    Mirrors create_latex_tables(): merges time.csv with query_rewriting_times.csv,
+    clips timeouts to 30s, and adds rewriting_time for tb_sr_rs.
     """
-    figures_dir = run_dir / "output" / "figures"
-    plots       = _load_svg_plots(figures_dir, "time_")
-    return {"plots": plots}
+    time_csv  = run_dir / "output" / "measurements" / "time.csv"
+    rewrite_csv = run_dir / "output" / "measurements" / "query_rewriting_times.csv"
 
+    if not time_csv.exists():
+        return {"plot_data": [], "error": "time.csv not found"}
+
+    rows = []
+    with open(time_csv, newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            try:
+                exec_time = float(row.get("execution_time", -1) or -1)
+                yn_timeout = int(float(row.get("yn_timeout", 0) or 0))
+                rewrite_time = 0.0
+
+                # Clip: treat timeouts and values >=30 as 30s
+                if exec_time >= 30 or yn_timeout:
+                    exec_time_clean = 30.0
+                    yn_timeout = 1
+                elif exec_time < 0:
+                    exec_time_clean = -1.0
+                else:
+                    exec_time_clean = exec_time
+
+                rows.append({
+                    "triplestore":  row.get("triplestore", "").strip(),
+                    "dataset":      row.get("dataset", "").strip(),
+                    "policy":       row.get("policy", "").strip(),
+                    "query_set":    row.get("query_set", "").strip(),
+                    "snapshot":     row.get("snapshot", "").strip(),
+                    "query":        row.get("query", "").strip(),
+                    "exec_time":    exec_time_clean,
+                    "yn_timeout":   yn_timeout,
+                    "rewrite_time": 0.0,
+                })
+            except (ValueError, TypeError):
+                continue
+
+    # Merge rewriting times for tb_sr_rs
+    rewrite_map: dict[tuple, float] = {}
+    if rewrite_csv.exists():
+        with open(rewrite_csv, newline="") as f:
+            for row in csv.DictReader(f, delimiter=","):
+                try:
+                    key = (
+                        row.get("dataset", "").strip(),
+                        row.get("policy", "").strip(),
+                        row.get("query_set", "").strip(),
+                        row.get("snapshot", "").strip(),
+                        row.get("query", "").strip(),
+                    )
+                    rewrite_map[key] = float(row.get("rewriting_time", 0) or 0)
+                except (ValueError, TypeError):
+                    continue
+
+    for r in rows:
+        key = (r["dataset"], r["policy"], r["query_set"], r["snapshot"], r["query"])
+        rt = rewrite_map.get(key, 0.0)
+        r["rewrite_time"] = rt
+        if r["exec_time"] >= 0:
+            r["total_time"] = min(r["exec_time"] + rt, 30.0)
+        else:
+            r["total_time"] = r["exec_time"]
+
+    # Aggregate: mean total_time per (triplestore, policy, dataset, query_set, snapshot)
+    # snapshot is the version number (integer)
+    from collections import defaultdict
+    agg: dict[tuple, list] = defaultdict(list)
+    for r in rows:
+        if r["total_time"] < 0:
+            continue
+        key = (r["triplestore"], r["policy"], r["dataset"], r["query_set"], r["snapshot"])
+        agg[key].append(r["total_time"])
+
+    # Build plot_data: list of series, each with metadata and (version, avg_time) points
+    series_map: dict[tuple, dict] = {}
+    for (ts, policy, dataset, query_set, snapshot), times in agg.items():
+        series_key = (ts, policy, dataset, query_set)
+        if series_key not in series_map:
+            series_map[series_key] = {
+                "triplestore": ts,
+                "policy":      policy,
+                "dataset":     dataset,
+                "query_set":   query_set,
+                "points":      {},
+            }
+        try:
+            version = int(snapshot)
+        except (ValueError, TypeError):
+            version = snapshot
+        series_map[series_key]["points"][version] = sum(times) / len(times)
+
+    # Convert points dict to sorted list of [version, avg_time]
+    plot_series = []
+    for s in series_map.values():
+        s["points"] = sorted(s["points"].items())
+        plot_series.append(s)
+
+    return {"plot_data": plot_series}
 
 # ---------------------------------------------------------------------------
 # Serve GUI

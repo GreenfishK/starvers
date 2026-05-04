@@ -1,15 +1,11 @@
 from dataclasses import dataclass
-from fileinput import filename
 from typing import Tuple
 import threading
 import queue
 import os
 import subprocess
-import shlex
 import time
 from pathlib import Path
-import datetime
-import shutil
 import tomli
 from SPARQLWrapper import SPARQLWrapper, JSON, GET
 import logging
@@ -86,9 +82,10 @@ DATASET_DIR_OR_FILE_MAP = {
     "cb_sr_ng": "alldata.CBNG.trig",
     "tb_sr_ng": "alldata.TB_computed.nq",
     "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
+    "tb_sr_re": "alldata.TB_star_reif.ttl"
 }
 
-RUNS = 10
+RUNS = 1
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -205,11 +202,64 @@ def enqueue_jobs():
         print("[ingest] ERROR: No jobs enqueued — check triple_stores/policies/datasets env vars against eval_setup.toml", file=sys.stderr)
         sys.exit(1)
 
-# Result writer
-def write_result(row):
+HEADER = "triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB"
+KEY_COLS = ("triplestore", "policy", "dataset")
+
+
+def load_or_init_measurements() -> list[dict]:
+    """
+    Return the existing rows as a list of dicts, or an empty list if the file
+    does not exist / is empty.
+    """
+    path = Path(MEASUREMENTS_FILE)
+    if not path.exists() or path.stat().st_size == 0:
+        return []
+    rows = []
+    with open(path, newline="") as f:
+        col_names = HEADER.split(";")
+        for line in f:
+            line = line.rstrip("\n")
+            if not line or line == HEADER:
+                continue
+            values = line.split(";")
+            rows.append(dict(zip(col_names, values)))
+    return rows
+
+
+def save_measurements(rows: list[dict]):
+    """Write the full list of rows back to MEASUREMENTS_FILE."""
+    with open(MEASUREMENTS_FILE, "w") as f:
+        f.write(HEADER + "\n")
+        col_names = HEADER.split(";")
+        for row in rows:
+            f.write(";".join(str(row.get(c, "")) for c in col_names) + "\n")
+
+
+def upsert_result(existing: list[dict], new_row: tuple) -> list[dict]:
+    """
+    Insert or replace a row in *existing* using (triplestore, policy, dataset)
+    as the primary key.  Returns the updated list.
+    """
+    col_names = HEADER.split(";")
+    new_dict  = dict(zip(col_names, map(str, new_row)))
+    new_key   = tuple(new_dict[k] for k in KEY_COLS)
+
+    # Drop any existing row(s) with the same key
+    updated = [r for r in existing if tuple(r[k] for k in KEY_COLS) != new_key]
+    updated.append(new_dict)
+    return updated
+
+
+# Module-level in-memory store — workers append here; main() flushes to disk
+_results: list[dict] = []
+
+
+def write_result(row: tuple):
+    """Thread-safe upsert + immediate flush to disk."""
+    global _results
     with results_lock:
-        with open(MEASUREMENTS_FILE, "a") as f:
-            f.write(";".join(map(str, row)) + "\n")
+        _results = upsert_result(_results, row)
+        save_measurements(_results)
 
 
 _worker_exception = None
@@ -265,10 +315,7 @@ def run_ingestion(job: Job, run: int):
     db_size = du_mib(database_dir)
 
     # Start database
-    proc = subprocess.run([f"{mgmt_script}", "startup", str(database_dir), policy, dataset], check=True)
-    if proc.returncode != 0:
-        log(job.triplestore, f"startup failed:\n{proc.stderr}")
-        raise subprocess.CalledProcessError(proc.returncode, proc.args, stderr=proc.stderr)
+    subprocess.run([f"{mgmt_script}", "startup", str(database_dir), policy, dataset, CONFIG_DIR], check=True)
 
     count_triples(job)
 
@@ -291,20 +338,16 @@ def run_ingestion(job: Job, run: int):
 
 # Start
 def main():
-    # Write header
-    with open(MEASUREMENTS_FILE, "w") as f:
-        f.write("triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB\n")
+    global _results
+
+    # Load whatever is already on disk (may be empty on first run)
+    _results = load_or_init_measurements()
 
     enqueue_jobs()
 
-    # Parallel execution changes the runtimes for the evaluated RDF stores unproportionally. 
-    # While Jena needs the same amount of time to ingest data, GraphDB takes twice as much 
-    # while running in parallel to Jena.
-    # That is why we currently limit ourselves to a serial ingest.
-    num_workers =  1
+    num_workers = 1
     threads = []
 
-    # Run ingestion
     for i in range(num_workers):
         t = threading.Thread(target=worker, args=(i, job_queue), daemon=True)
         t.start()
@@ -315,7 +358,7 @@ def main():
 
     if _worker_exception is not None:
         print(f"[ingest] Worker failed: {_worker_exception}", file=sys.stderr)
-        sys.exit(1)   # makes orchestrator record status=failed and stop
+        sys.exit(1)
 
 
 if __name__ == "__main__":

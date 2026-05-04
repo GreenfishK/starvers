@@ -1,0 +1,14 @@
+# Prefixes
+{0}
+
+# Insert statement
+insert {{
+    _:b rdf:reifies <<?s ?p ?o>> ; vers:valid_from ?newVersion ; vers:valid_until "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime .
+}}
+where {{
+    values (?s ?p ?o) {{
+        # block of triples
+        {1}
+    }}
+    BIND(xsd:dateTime({2}) AS ?newVersion)
+}}

@@ -106,11 +106,23 @@ Result set:
 
 # Evaluation 
 
-Starvers (timestamped-based versioning) and Starversserver (RDF dataset tracker and automatic versioning system) are evaluated separately using two different Dockerfiles, as shown below.
+Starvers (timestamped-based versioning method) and Starversserver (RDF dataset tracker and automatic versioning system) are evaluated separately using two different Dockerfiles, as shown below.
 
 ---
 
 ## Starvers Evaluation
+Starvers is evaluated using an automated pipeline that has three main input parameters:
+* triple stores
+* dataset
+* versioning policy
+
+The docker container needs first to be built using the command
+```bash
+docker build -t starvers_eval:latest -f starvers.eval.Dockerfile .
+```
+**!important!**: The directory /mnt/data_local/starvers_eval needs to have at least 350GB. All data from the run are automatically written to this directory.
+
+Then, the whole pipeline can be executed using the command in Section [Run the full pipeline](#run-the-full-pipeline).
 
 ### Pipeline Steps
 
@@ -124,11 +136,9 @@ Starvers (timestamped-based versioning) and Starversserver (RDF dataset tracker 
 | 6 | evaluate | `evaluate` |
 | 7 | visualize | `visualize` |
 
-Each step is a `docker compose run --rm <service>` call using `starvers.eval.compose.yml`.
-Infrastructure-level variables (volume paths, etc.) are read from the `.env` file as defined
-in the compose file.
+Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file.
 
-### Run the full pipeline
+### Run the full pipeline 
 
 ```bash
 docker run -d --rm \
@@ -142,7 +152,6 @@ starvers_eval:latest run all
 ```
 
 ### Run a single step
-
 ```bash
 docker run -d --rm \
 --name starvers_eval \
@@ -152,6 +161,20 @@ docker run -d --rm \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v /mnt/data_local/starvers_eval/tmp:/tmp \
 starvers_eval:latest run step download
+```
+
+
+### Run the pipeline until a certain step
+
+```bash
+docker run -d --rm \
+--name starvers_eval \
+--env-file .env \
+--ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v /mnt/data_local/starvers_eval/tmp:/tmp \
+starvers_eval:latest run until download
 ```
 
 ### Run from a specific step
@@ -218,6 +241,31 @@ docker run -d --rm \
 starvers_eval:latest gui
 ```
 
+### Debugging
+For developing, bind the gui scripts
+
+```bash
+docker run -d --rm \
+--name starvers-gui \
+--env-file .env \
+--network starvers_prod_net \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v ./evaluation/starvers/gui:/starvers_eval/gui \
+starvers_eval:latest gui
+```
+
+Start GraphDB with specific storage location
+```bash
+docker run -d \
+--name graphdb-debug \
+-e GDB_JAVA_OPTS='-Xms10g -Xmx70g -Dgraphdb.dist=/opt/graphdb/dist -Dgraphdb.home.work=/tmp/graphdb/work -Dgraphdb.home.data=/opt/graphdb/data -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import -Dgraphdb.workbench.cors.enable=true -Denable-context-index=true -Dentity-pool-implementation=transactional -Dhealth.max.query.time.seconds=30 -Dgraphdb.append.request.id.headers=true -Dreuse.vars.in.subselects=true' \
+-e JVM_ARGS='-Xms10g -Xmx70g' \
+--network starvers_prod_net \
+-p 7205:7200 \
+-v /mnt/data_local/starvers_eval/20260426T15-22-09.348/databases/graphdb/tb_sr_ng_orkg:/opt/graphdb/data \
+ontotext/graphdb:10.5.0
+```
+
 ## Starversserver Evaluation
 
 ### Pipeline Steps
@@ -263,6 +311,3 @@ docker run --rm -d \
   starversserver_eval:latest \
   /code/evaluation/evaluation.py 
 ```
-
-
-

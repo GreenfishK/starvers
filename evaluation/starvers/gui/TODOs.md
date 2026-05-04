@@ -46,6 +46,7 @@ starvers_eval:latest gui
 * How many queries got excluded from the SciQA dataset for which reason
     * Source of information: csv file at ${RUN_DIR}output/logs/preprocess_data/excluded_queries.csv. count the total number of rows in the csv file minus the header grouped by the "reason" column
 
+
 ## Construct Datasets
 * Which dataset variants are constructed: 
     * first IC + change sets (in the directory alldata.CB_computed.nt)
@@ -285,3 +286,83 @@ Four plots in a 2x2 grid - one per dataset with the following content per plot:
     : e.g. magenta, orange, blue
     The MiB labels next to each bar should be converted to GiB
     there should be a clearar separation between the two columns of db size and ingest time
+
+
+## 05.05.2026 14:44
+### Evaluate
+The evaluate should display the following aspects/views:
+* The evaluation algorithm: How are the queries executed against the triple stores, in which order. It is basically this part:
+    for triple_store, policy, dataset in combinations:
+
+        if not eval_combi_exists(config, triple_store, dataset, policy):
+            logging.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped") 
+            continue
+
+        run_queries(config, header, triple_store, policy, dataset)
+This should be shown as an algorithm in this section
+
+There should not be focus on technical details, e.g. how the PIDs are checked, the dry run, and how the main memory is tracked to restart the stores and what different exceptions are caught, these details should be abstracted.
+
+The timeout should be mentioned and the fact that the engine is started and where in the process it is started and shut down regularly
+
+* What is recorded: The header of time.csv should be shown with a few sample rows. 
+
+## 07.05.2026 09:39
+### General
+The general structure of the steps needs to be changed. They should not be collapsable and expandable anymore. Instead, they should always be shown like sections. Each step is a section heading and below is the content. So the whole content of the run is always visible.
+
+The status of processing of a step should be shown next to the section header, similarly to like it is now. If a step has the status "running", a placeholder for the content should be in place.
+
+### Visualize
+The plots from run_dir/outputs/figures should not be shown anymore. Instead, the plots should be created in the gui layer from the TIME_CSV and the QUERY_REWRITING_TIME_CSV files. For the policy tb_sr_rs the times should be added up, i.e. these files should be joined like in the visualize.py - create_latex_tables() function. The plots should have the following information and arrangement
+
+* One plot per dataset with one subplot per query set. 
+* One line per triple store - versioning policy combination
+* The versioning policies should be represented by different line colors
+* The triple stores should be reresented by different lines (e.g. full line, dashed line, ...)
+* the x-axis should have the versions
+* The y-axis should have the query time
+* The y-axis should be a log scale
+
+## 16.05.2026
+### Visualize
+Change the visualization so that the plots are reorganized
+* per dataset section i want:
+    * a grouping of plots per query set
+
+* in each group i want
+    * a line chart per triple store. this means that the triple stores are not in one plot anymore but each triple store has its own plot
+    * each line is, as before the measurement for a policy
+
+* the colors should stay the same
+* the lines should all be straight lines, no dashed or dotted lines
+
+* the legends must be updated accordingly
+
+the plot groups should wrap into the next line if the browser window shrinks horizontally. the plots within the groups should also wrap into the next line if the browser gets even narrower, like on a mobile phone. on the mobile phone i want, in fact, all plots vertically stacked. so the groups become vertical framings
+
+## 16.06.2026
+### Preprocess
+I want a function that renders a sankey diagram with three stages to depict the valid and invalid queries in the triple stores: 
+
+The input is the output from the _detail_preprocess function in api.py
+
+The function to be implemented is:
+function renderQueryFlowDiagram(queryTable, colCounts) {
+
+}
+it should return a html div with the content.
+
+This function receives the following parameter values:
+step2Body += renderQueryFlowDiagram(info.sciqa_query_table, info.sciqa_col_counts || {});
+
+The Sankey diagram has three stages, the are arranged vertically. The flow between the stages is therefore downwards
+
+Stage 1: original queries. each box represents one query and is labeled with the query label. From each box a stream per triple store flows into the 2nd stage. Each stream is colored where one color represents one triple store. in total, there should be no more colors then triple stores. per box, we always have as many streams as there are triple stores and as many colors as there are triple stores. There should be an aggregate info about how many queries are valid in each triple store. This info should be positioned right from the area between stage 1 and stage 2, so it should no be lying on to of the flow but nex to it, i.e. outside of the diagram, but vertically positioned between stage 1 and stage 2, but horizontally next to the diagram 
+
+Stage 2: Stage two has two partitions -- one for valid and one for invalid queries. The partitions are not disjoint. A query box can be contained in both partitions. Such is the case when a query is valid in one triple store but not in the others. So there is a flow from stage 1 into both partitions of stage 2. The flow continues only from the first partition of stage 1 into stage 3. Again, there should be an info of how many timestamped queries are valid in each of the two stores, again positioned next to the diagram but horizontally between stage 2 and stage 3 
+
+Stage 3: It again shows 2 partitions - one for valid timestamped queries and one for invalid timestamped queries.
+
+Stage independent: 
+* upon hovevering over a box, the flow should be highlighted give me the full function

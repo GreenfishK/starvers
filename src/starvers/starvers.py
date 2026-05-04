@@ -22,7 +22,9 @@ from rdflib.paths import SequencePath, Path, NegatedPath, AlternativePath, InvPa
 
 logger = logging.getLogger(__name__)
 
-def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) -> Union[str, str]:
+
+
+def timestamp_query(query: str, version_timestamp: Optional[datetime] = None, mode: str = "decorator") -> Union[str, str]:
     """
     Binds a q_handler timestamp to the variable ?TimeOfExecution and wraps it around the query. Also extends
     the query with a code snippet that ensures that a snapshot of the data as of q_handler
@@ -33,6 +35,16 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     :param version_timestamp:
     :return: A query string extended with the given timestamp
     """
+
+    # Setting templates dir
+    if mode == "decorator":
+        _templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/decorator"
+    elif mode == "reification":
+        _templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification"
+    else:
+        raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator' or 'reification'.".format(mode))
+
+
     logger.info("Creating timestamped query ...")
     prefixes, query = split_prefixes_query(query)
     query_vers = prefixes + "\n" + query
@@ -167,7 +179,7 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
     triple_stmts_cnt = 0
     for bgp_identifier, triples in bgp_triples.items():
         
-        template_path = os.path.join(os.path.dirname(__file__), "templates/versioning_query_extensions.txt")
+        template_path = os.path.join(_templates_dir, "versioning_query_extensions.txt")
         ver_block_template = \
             open(template_path, "r").read()
 
@@ -177,19 +189,27 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None) ->
             logger.debug(triple_stmts_cnt)
             templ = ver_block_template
             triple_n3 = triple[0].n3() + " " + triple[1].n3() + " " + triple[2].n3()
-            ver_block += templ.format(triple_n3,
+            if mode == "decorator":
+                ver_block += templ.format(triple_n3,
                                         "?valid_from_{0}".format(str(triple_stmts_cnt)),
                                         "?valid_until_{0}".format(str(triple_stmts_cnt)),
                                         bgp_identifier)
+            elif mode == "reification":
+                ver_block += templ.format(triple_n3,
+                        "?valid_from_{0}".format(str(triple_stmts_cnt)),
+                        "?valid_until_{0}".format(str(triple_stmts_cnt)),
+                        bgp_identifier,
+                        str(triple_stmts_cnt))
 
-        # 
+        # Replace dummy triple with versioned triple
         dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
                         + rdflib.term.Literal('__{0}dummy_predicate__'.format(bgp_identifier)).n3() + " "\
                         + rdflib.term.Literal('__{0}dummy_object__'.format(bgp_identifier)).n3() + "."
         ver_block += 'bind("{0}"^^xsd:dateTime as ?ts{1})'.format(timestamp, bgp_identifier)
         query_vers_out = query_vers_out.replace(dummy_triple, ver_block)
 
-    query_vers_out = add_versioning_prefixes("") + "\n" + query_vers_out
+    # Add prefixes
+    query_vers_out = add_versioning_prefixes("", mode) + "\n" + query_vers_out
     
     return query_vers_out, timestamp
 
@@ -206,7 +226,7 @@ class TripleStoreEngine:
             self.pw = pw
 
     def __init__(self, query_endpoint: str, update_endpoint: str, credentials: Optional[Credentials] = None,
-                 skip_connection_test: bool=False, timeout: Optional[int] = None):
+                 skip_connection_test: bool=False, timeout: Optional[int] = None, mode: str = "decorator"):
         """
         During initialization a few queries are executed against the RDF-star store to test connection but also whether
         the RDF-star store in fact supports the 'star' extension. During the execution a side effect may occur and
@@ -224,7 +244,16 @@ class TripleStoreEngine:
         """
 
         self.credentials = credentials
-        self._template_location = os.path.join(os.path.dirname(__file__), "templates")
+
+        self.mode = mode
+
+        # Setting templates dir
+        if mode == "decorator":
+            self._templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/decorator"
+        elif mode == "reification":
+            self._templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification"
+        else:
+            raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator' or 'reification'.".format(mode))
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -255,15 +284,15 @@ class TripleStoreEngine:
         if not skip_connection_test:
             # Test connection. Execute one read and one write statement
             try:
-                self.sparql_get.setQuery(open(self._template_location +
+                self.sparql_get.setQuery(open(self._templates_dir +
                                               "/test_connection/test_connection_select.txt", "r").read())
 
-                insert_statement = open(self._template_location +
+                insert_statement = open(self._templates_dir +
                                         "/test_connection/test_connection_insert.txt", "r").read()
                 self.sparql_post.setQuery(insert_statement)
                 self.sparql_post.query()
 
-                delete_statement = open(self._template_location +
+                delete_statement = open(self._templates_dir +
                                         "/test_connection/test_connection_delete.txt", "r").read()
                 self.sparql_post.setQuery(delete_statement)
                 self.sparql_post.query()
@@ -273,21 +302,21 @@ class TripleStoreEngine:
                                              "Check whether your RDF-star store is running.")
 
             try:
-                test_prefixes = add_versioning_prefixes("")
-                template = open(self._template_location +
-                                "/test_connection/test_connection_nested_select.txt", "r").read()
+                test_prefixes = add_versioning_prefixes("", mode)
+                template = open(self._templates_dir +
+                                "/test_connection/test_connection_timestamped_select.txt", "r").read()
                 select_statement = template.format(test_prefixes)
                 self.sparql_get.setQuery(select_statement)
                 self.sparql_get.query()
 
-                template = open(self._template_location +
-                                "/test_connection/test_connection_nested_insert.txt", "r").read()
+                template = open(self._templates_dir +
+                                "/test_connection/test_connection_timestamped_insert.txt", "r").read()
                 insert_statement = template.format(test_prefixes)
                 self.sparql_post.setQuery(insert_statement)
                 self.sparql_post.query()
 
-                template = open(self._template_location +
-                                "/test_connection/test_connection_nested_delete.txt", "r").read()
+                template = open(self._templates_dir +
+                                "/test_connection/test_connection_timestamped_delete.txt", "r").read()
                 delete_statement = template.format(test_prefixes)
                 self.sparql_post.setQuery(delete_statement)
                 self.sparql_post.query()
@@ -302,67 +331,6 @@ class TripleStoreEngine:
             logger.info("Connection test has been skipped")
 
 
-    def _delete_triples(self, triples: Union[list[str], list[list[str]]], prefixes: Optional[dict[str, str]] = None):
-        """
-        Deletes the triples and its version annotations from the history. Should be used with care
-        as it is most of times not intended to delete triples but to outdate them. This way they will
-        still appear in the history and will not appear when querying more recent versions.
-
-        :param triples: Triples in n3 syntax to be deleted
-        :param prefixes: Prefixes used in triples.
-        :return:
-        """
-
-        statement = open(self._template_location + "/_delete_triples.txt", "r").read()
-
-        if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
-        else:
-            sparql_prefixes = add_versioning_prefixes("")
-
-        # single triple [s, p, o] 
-        if len(triples) == 3 and all(isinstance(x, str) for x in triples):
-            trpls = [triples]
-        # list of triples [[s, p, o], ...]
-        elif all(isinstance(t, list) for t in triples):
-            trpls = triples
-        else:
-            raise WrongInputFormatException(
-                "Provide either a single triple [s,p,o] or a list of triples [[s,p,o], ...]."
-            )
-
-        for triple in trpls:
-            if isinstance(triple, list) and len(triple) == 3:
-                s = triple[0]
-                p = triple[1]
-                o = triple[2]
-
-                delete_statement = statement.format(sparql_prefixes, s, p, o)
-                self.sparql_post.setQuery(delete_statement)
-                self.sparql_post.query()
-                logger.info("Triple {0} successfully deleted: ".format(triple))
-            else:
-                e = "Please provide either a list of lists with three elements - subject, predicate and object or a " \
-                    "single list with aforementioned three elements in n3 syntax. "
-                logger.error(e)
-                raise WrongInputFormatException(e)
-
-    def _reset_all_versions(self):
-        """
-        Delete all triples with vers:valid_from and vers:valid_until as predicate. 
-        Should not be used in a normal situation but rather if something went wrong the the timestamps need to be reset.
-
-        :return:
-        """
-
-        template = open(self._template_location + "/_reset_all_versions.txt", "r").read()
-        delete_statement = template.format(add_versioning_prefixes(""))
-        self.sparql_post.setQuery(delete_statement)
-        self.sparql_post.query()
-
-        logger.info("All annotations have been removed.")
-
-
     def version_all_triples(self, initial_timestamp: Optional[datetime] = None):
         """
         Versions all triples by wrapping every triple in the dataset with the execution timestamp as valid_from date 
@@ -373,14 +341,14 @@ class TripleStoreEngine:
         :return:
         """
 
-        final_prefixes = add_versioning_prefixes("")
+        final_prefixes = add_versioning_prefixes("", self.mode)
 
         if initial_timestamp:
             version_timestamp = versioning_timestamp_format(initial_timestamp)
         else:
             version_timestamp = versioning_timestamp_format(datetime.now().astimezone())
 
-        temp = open(self._template_location + "/version_all_triples.txt", "r").read()
+        temp = open(self._templates_dir + "/version_all_triples.txt", "r").read()
         update_statement = temp.format(final_prefixes, version_timestamp)
 
         self.sparql_post.setQuery(update_statement)
@@ -421,7 +389,7 @@ class TripleStoreEngine:
         logger.info("Retrieving results ...")
         try:
             result = self.sparql_get_with_post.query()
-            logging.info("Query executed successfully!")
+            logger.info("Query executed successfully!")
         except TimeoutError as e:
             logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
             raise e
@@ -449,7 +417,7 @@ class TripleStoreEngine:
         :param timestamp: The version timestamp for which a snapshot of the data as of :timestamp should be retrieved.
         """
 
-        snapshot_construct_query = open(self._template_location + "/timestamped_construct_query.txt", "r").read()
+        snapshot_construct_query = open(self._templates_dir + "/snapshot_construct_query.txt", "r").read()
         if timestamp:
             snapshot_construct_query = snapshot_construct_query.format('"' + versioning_timestamp_format(timestamp) + '"')
         else:
@@ -509,12 +477,12 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes, self.mode)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("", self.mode)
 
         logger.info("Creating insert statement.")
-        statement = open(self._template_location + "/insert_triples.txt", "r").read()
+        statement = open(self._templates_dir + "/insert_triples.txt", "r").read()
 
         if isinstance(triples, list):
             logger.info("Creating insert statement: Build insert block.")
@@ -572,12 +540,12 @@ class TripleStoreEngine:
             raise WrongInputFormatException("Both lists old_triples and new_triples must have the same dimensions.")
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes, self.mode)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("", self.mode)
 
         logger.info("Create update statement")
-        template = open(self._template_location + "/update_triples.txt", "r").read()
+        template = open(self._templates_dir + "/update_triples.txt", "r").read()
 
         update_block: list[str] = []
         for old_triple, new_triple in zip(old_triples, new_triples):
@@ -628,12 +596,12 @@ class TripleStoreEngine:
             return
 
         if prefixes:
-            sparql_prefixes = add_versioning_prefixes(prefixes)
+            sparql_prefixes = add_versioning_prefixes(prefixes, self.mode)
         else:
-            sparql_prefixes = add_versioning_prefixes("")
+            sparql_prefixes = add_versioning_prefixes("", self.mode)
 
         logger.info("Creating outdate statement.")
-        statement = open(self._template_location + "/outdate_triples.txt", "r").read()
+        statement = open(self._templates_dir + "/outdate_triples.txt", "r").read()
 
         if isinstance(triples, list):
             logger.info("Creating outdate statement:Build outdate block.")

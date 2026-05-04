@@ -1,9 +1,9 @@
 from .exceptions import ReservedPrefixError
 import re
-from typing import Union
+from typing import Literal, Union
 
 
-def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
+def add_versioning_prefixes(prefixes: Union[dict[str, str], str], mode: str = "decorator") -> str:
     """
     Extends the given prefixes by 
         vers: <https://github.com/GreenfishK/DataCitation/versioning/
@@ -21,7 +21,9 @@ def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
     error_message = 'The prefix "citing" is reserved. Please choose another one.'
     prefix_vers = 'PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>'
     prefix_xsd = 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>'
+    prefix_rdf = 'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>'
 
+    vers_prfx: Literal[''] = ""
     if isinstance(prefixes, dict):
         sparql_prefixes = ""
         for key, value in prefixes.items():
@@ -29,20 +31,26 @@ def add_versioning_prefixes(prefixes: Union[dict[str, str], str]) -> str:
 
         if "vers" in prefixes:
             raise ReservedPrefixError(error_message)
-        if "xsd" in prefixes:
-            vers_prfx = prefix_vers + "\n"
         else:
-            vers_prfx = prefix_vers + "\n" + prefix_xsd + "\n"
+            vers_prfx = prefix_vers + "\n"
+        if not "xsd" in prefixes:
+            vers_prfx += prefix_xsd + "\n"
+        if mode == "reification" and "rdf" not in prefixes:
+            vers_prfx += prefix_rdf + "\n"
+
         return sparql_prefixes + "\n" + vers_prfx
 
     else:
         sparql_prefixes = prefixes
         if prefixes.find("vers:") > -1:
             raise ReservedPrefixError(error_message)
-        if prefixes.find("xsd:") > -1:
-            vers_prfx = prefix_vers + "\n"
         else:
-            vers_prfx = prefix_vers + "\n" + prefix_xsd + "\n"
+            vers_prfx += prefix_vers + "\n"
+        if prefixes.find("xsd:") == -1:
+            vers_prfx += prefix_xsd + "\n"
+        if mode == "reification" and prefixes.find("rdf:") == -1:
+            vers_prfx += prefix_rdf + "\n"
+
         return sparql_prefixes + "\n" + vers_prfx
 
 

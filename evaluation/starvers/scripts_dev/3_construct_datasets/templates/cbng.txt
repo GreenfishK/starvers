@@ -1,6 +1,0 @@
-GRAPH <http://starvers_eval/v{0}/added> {{
-    {1}
-}}
-GRAPH <http://starvers_eval/v{0}/deleted> {{
-    {2}
-}}
