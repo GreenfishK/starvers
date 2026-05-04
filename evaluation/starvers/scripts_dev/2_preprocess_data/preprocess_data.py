@@ -91,7 +91,7 @@ RUN_DIR         = Path(os.environ["RUN_DIR"])
 SCRIPT_DIR      = Path("/starvers_eval/scripts")
 CONFIG_PATH     = Path("/starvers_eval/configs/eval_setup.toml")
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/2_preprocess_data/configs"
-CONFIG_DIR      = "/starvers_eval/data/configs/preprocess_data"
+CONFIG_DIR      = f"{os.environ['RUN_DIR']}/configs/preprocess_data"
 
 GRAPHDB_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
 OSTRICH_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"

@@ -475,35 +475,46 @@ def _detail_ingest(run_dir: Path) -> dict:
 def _detail_construct_queries(run_dir: Path) -> dict:
     query_counts_path = run_dir / "output" / "logs" / "construct_queries" / "query_counts.csv"
 
-    query_counts: dict[str, int] = {}
+    # nested: counts[policy][dataset] = total across all query sets
+    counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    policies_found: set[str] = set()
+    datasets_found: set[str] = set()
+
     if query_counts_path.exists():
         with open(query_counts_path, newline="") as f:
             for row in csv.DictReader(f):
-                policy    = row.get("policy", "")
-                dataset   = row.get("dataset", "")
-                query_set = row.get("query_set", "")
+                policy  = row.get("policy", "").strip()
+                dataset = row.get("dataset", "").strip()
                 try:
                     count = int(row.get("query_count", 0))
                 except ValueError:
                     count = 0
-                label = f"{policy} / {dataset} / {query_set}"
-                query_counts[label] = count
+                counts[policy][dataset] += count
+                policies_found.add(policy)
+                datasets_found.add(dataset)
 
-    totals: dict[str, int] = defaultdict(int)
-    for label, count in query_counts.items():
-        parts = label.split(" / ")
-        if len(parts) == 3:
-            _, dataset, _ = parts
-            totals[dataset] += count
+    # Preserve a sensible display order; fall back to sorted if not all present
+    POLICY_ORDER  = ["ic_sr_ng", "ostrich", "ostrich_aggchange", "tb_sr_ng", "tb_sr_rs"]
+    DATASET_ORDER = ["bearb_day", "bearb_hour", "bearc", "orkg"]
 
-    POLICY_DIRS  = ["ic_sr_ng", "ostrich", "tb_sr_ng", "tb_sr_rs"]
-    DATASET_DIRS = ["bearb_day", "bearb_hour", "bearc", "orkg"]
+    policies = [p for p in POLICY_ORDER if p in policies_found] + \
+               sorted(policies_found - set(POLICY_ORDER))
+    datasets = [d for d in DATASET_ORDER if d in datasets_found] + \
+               sorted(datasets_found - set(DATASET_ORDER))
+
+    # Serialise defaultdicts to plain dicts for JSON
+    query_counts = {p: dict(ds_map) for p, ds_map in counts.items()}
+
+    totals_per_dataset = {
+        ds: sum(query_counts[p].get(ds, 0) for p in policies)
+        for ds in datasets
+    }
 
     return {
-        "query_counts":      query_counts,
-        "totals_per_dataset": dict(totals),
-        "policies":          POLICY_DIRS,
-        "datasets":          DATASET_DIRS,
+        "query_counts":       query_counts,
+        "totals_per_dataset": totals_per_dataset,
+        "policies":           policies,
+        "datasets":           datasets,
     }
 
 

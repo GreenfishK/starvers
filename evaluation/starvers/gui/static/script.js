@@ -591,7 +591,7 @@ function renderIngestChart(rows) {
       const headerCols  = `<th>Dataset</th>${policies.map(p => `<th>${p}</th>`).join('')}<th>Total</th>`;
       const bodyRows = datasets.map(ds => {
         const cells = policies.map(p =>
-          `<td class="mono">${fmt(query_counts[ds]?.[p] ?? 0)}</td>`).join('');
+          `<td class="mono">${fmt(query_counts[p]?.[ds] ?? 0)}</td>`).join('');
         const total = totals_per_dataset?.[ds] ?? 0;
         return `<tr><td><strong>${ds}</strong></td>${cells}<td class="mono"><strong>${fmt(total)}</strong></td></tr>`;
       }).join('');
@@ -599,7 +599,7 @@ function renderIngestChart(rows) {
       // Grand total row
       const grandTotal = datasets.reduce((sum, ds) => sum + (totals_per_dataset?.[ds] ?? 0), 0);
       const policyCols = policies.map(p => {
-        const pTotal = datasets.reduce((sum, ds) => sum + (query_counts[ds]?.[p] ?? 0), 0);
+        const pTotal = datasets.reduce((sum, ds) => sum + (query_counts[p]?.[ds] ?? 0), 0);
         return `<td class="mono"><strong>${fmt(pTotal)}</strong></td>`;
       }).join('');
       const totalRow = `<tr class="total-row"><td><strong>Total</strong></td>${policyCols}<td class="mono"><strong>${fmt(grandTotal)}</strong></td></tr>`;

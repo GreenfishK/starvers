@@ -42,7 +42,7 @@ logging.basicConfig(
 # ---------------------------------------------------------------------------
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CONFIG_TMPL_DIR="/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR="/starvers_eval/data/configs/ingest"
+CONFIG_DIR=f"{os.environ['RUN_DIR']}/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
 TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
@@ -185,7 +185,7 @@ def run_queries(config, header, triple_store, policy, dataset):
         db_dir = f"{databases_dir}/{triple_store}/{policy}_{dataset}"
 
         logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
-        subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
+        subprocess.run([mgmt_script, "startup", db_dir, policy, dataset, CONFIG_DIR], check=True)
 
         # Wait for PID
         pid_file = f"/tmp/{triple_store}_{policy}_{dataset}.pid"
