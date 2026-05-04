@@ -265,22 +265,21 @@ def run_queries(config, header, triple_store, policy, dataset):
                             yn_timeout = 1
                             logging.error(f"Thread hung without timeout for version {version} and query {file_name}")
 
-                except EndPointInternalError as e:
+                except Exception as e:
                     yn_timeout = 0
                     response = None
-                    logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
 
-                    logging.info("Shutdown")
+                    if isinstance(e, EndPointInternalError) or isinstance(e, HTTPError) or isinstance(e, socket.timeout):
+                        logging.error(f"The triple store crashed for version {version} and query {file_name}. \n {e}")
+                    else:
+                        logging.error(f"Other error for version {version} and query {file_name}: {e}")
+
+                    logging.info("Shutdown due to error and restart before next query.")
                     subprocess.run([mgmt_script, "shutdown"], check=True)
 
                     logging.info(f"Startup {triple_store} {policy} {dataset} for query set evaluation: {query_set}")
                     subprocess.run([mgmt_script, "startup", db_dir, policy, dataset], check=True)
                 
-                except Exception as e:
-                    yn_timeout = 0
-                    response = None
-                    logging.error(f"Other error for version {version} and query {file_name}: {e}")
-
 
                 rows.append([
                     triple_store, dataset, policy,
