@@ -88,7 +88,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_rs": "alldata.TB_star_hierarchical.ttl",
 }
 
-RUNS = 10
+RUNS = 1
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -265,10 +265,7 @@ def run_ingestion(job: Job, run: int):
     db_size = du_mib(database_dir)
 
     # Start database
-    proc = subprocess.run([f"{mgmt_script}", "startup", str(database_dir), policy, dataset], check=True)
-    if proc.returncode != 0:
-        log(job.triplestore, f"startup failed:\n{proc.stderr}")
-        raise subprocess.CalledProcessError(proc.returncode, proc.args, stderr=proc.stderr)
+    subprocess.run([f"{mgmt_script}", "startup", str(database_dir), policy, dataset, CONFIG_DIR], check=True)
 
     count_triples(job)
 

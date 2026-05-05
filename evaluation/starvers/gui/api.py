@@ -521,26 +521,51 @@ def _detail_construct_queries(run_dir: Path) -> dict:
 def _detail_evaluate(run_dir: Path) -> dict:
     config   = _load_config()
     eval_cfg = config.get("evaluations", {})
-    rows     = []
 
-    for triplestore, datasets in eval_cfg.items():
-        if not isinstance(datasets, dict):
+    # Build the ordered list of (triple_store, policy, dataset) combinations
+    # exactly as main() iterates them — product(triple_stores, policies, datasets)
+    # filtered by eval_combi_exists
+    combinations = []
+    for triplestore, datasets_cfg in eval_cfg.items():
+        if not isinstance(datasets_cfg, dict):
             continue
-        for dataset, policies in datasets.items():
+        for dataset, policies in datasets_cfg.items():
             if not isinstance(policies, list):
                 continue
-            total_queries = sum(
-                _count_txt_files(run_dir / "queries" / "final_queries" / p / dataset)
-                for p in policies
-            )
-            rows.append({
-                "triplestore":  triplestore,
-                "dataset":      dataset,
-                "policies":     policies,
-                "query_count":  total_queries,
-            })
+            for policy in policies:
+                total_queries = _count_txt_files(
+                    run_dir / "queries" / "final_queries" / policy / dataset
+                )
+                combinations.append({
+                    "triplestore":   triplestore,
+                    "policy":        policy,
+                    "dataset":       dataset,
+                    "query_count":   total_queries,
+                })
 
-    return {"evaluations": rows}
+    # Sample rows from time.csv
+    time_csv = run_dir / "output" / "measurements" / "time.csv"
+    time_header = []
+    time_samples = []
+    time_total_rows = 0
+    if time_csv.exists():
+        with open(time_csv, newline="") as f:
+            reader = csv.reader(f, delimiter=";")
+            for i, row in enumerate(reader):
+                if i == 0:
+                    time_header = row
+                elif i <= 5:
+                    time_samples.append(row)
+                else:
+                    time_total_rows += 1
+        time_total_rows += len(time_samples)
+
+    return {
+        "combinations":   combinations,
+        "time_header":    time_header,
+        "time_samples":   time_samples,
+        "time_total_rows": time_total_rows,
+    }
 
 
 def _detail_visualize(run_dir: Path) -> dict:

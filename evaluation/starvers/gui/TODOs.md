@@ -285,3 +285,23 @@ Four plots in a 2x2 grid - one per dataset with the following content per plot:
     : e.g. magenta, orange, blue
     The MiB labels next to each bar should be converted to GiB
     there should be a clearar separation between the two columns of db size and ingest time
+
+
+## 05.05.2026 14:44
+### Evaluate
+The evaluate should display the following aspects/views:
+* The evaluation algorithm: How are the queries executed against the triple stores, in which order. It is basically this part:
+    for triple_store, policy, dataset in combinations:
+
+        if not eval_combi_exists(config, triple_store, dataset, policy):
+            logging.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped") 
+            continue
+
+        run_queries(config, header, triple_store, policy, dataset)
+This should be shown as an algorithm in this section
+
+There should not be focus on technical details, e.g. how the PIDs are checked, the dry run, and how the main memory is tracked to restart the stores and what different exceptions are caught, these details should be abstracted.
+
+The timeout should be mentioned and the fact that the engine is started and where in the process it is started and shut down regularly
+
+* What is recorded: The header of time.csv should be shown with a few sample rows. 

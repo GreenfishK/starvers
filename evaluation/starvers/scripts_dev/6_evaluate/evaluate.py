@@ -42,7 +42,7 @@ logging.basicConfig(
 # ---------------------------------------------------------------------------
 CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CONFIG_TMPL_DIR="/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR=f"{os.environ['RUN_DIR']}/configs/ingest"
+CONFIG_DIR: str=f"{os.environ['RUN_DIR']}/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
 TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
@@ -219,7 +219,8 @@ def run_queries(config, header, triple_store, policy, dataset):
         try_counter = 0
         for try_counter in range(5):
             try:
-                engine.query()
+                result = engine.query().convert()
+                logging.info("Dry run query result:\n " + str(result))
             except Exception as e:
                 logging.error(f"Dry run failed with error: {e}")
                 logging.info("Retrying dry run after waiting for 5 seconds...")

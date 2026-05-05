@@ -260,15 +260,19 @@ if (info.sciqa_query_table?.length) {
         ? `<span class="sciqa-flag sciqa-flag--yes">✕</span>`
         : `<span class="sciqa-flag sciqa-flag--no">—</span>`;
 
+      console.log('SciQA query table:', info.sciqa_query_table);
+      console.log('SciQA column counts:', info.sciqa_col_counts);
+      console.log('SciQA totals:', { total, valid_orig_graphdb, valid_orig_jena, excluded, kept });
+
       const rows = info.sciqa_query_table.map(r => {
         const rowCls = r.excluded ? ' style="color:var(--red)"' : ' class="sciqa-kept"';
-        return `<tr>
+        return `<tr stlye="background-color:${r.excluded ? 'transparent' : '#007E71'}">
           <td class="mono" style="font-size:11px"${rowCls}>${escHtml(r.query)}</td>
-          <td style="text-align:center">${flag(r.valid_in_graphdb)}</td>
-          <td style="text-align:center">${flag(r.valid_trans_in_graphdb)}</td>
-          <td style="text-align:center">${flag(r.valid_in_jena)}</td>
-          <td style="text-align:center">${flag(r.valid_trans_in_jena)}</td>
-          <td style="text-align:center">${flag(r.valid_in_ostrich)}</td>
+          <td style="text-align:center">${flag(r.invalid_in_graphdb)}</td>
+          <td style="text-align:center">${flag(r.malformed_graphdb)}</td>
+          <td style="text-align:center">${flag(r.invalid_in_jena)}</td>
+          <td style="text-align:center">${flag(r.malformed_jena)}</td>
+          <td style="text-align:center">${flag(r.invalid_in_ostrich)}</td>
 
         </tr>`;
       }).join('');
@@ -622,29 +626,140 @@ function renderIngestChart(rows) {
 
   // ── evaluate ─────────────────────────────────────────────────
   if (stepName === 'evaluate') {
-    if (info.evaluations?.length) {
+
+    // ── 1. Evaluation algorithm ──────────────────────────────
+    const algoHtml = `
+      <div style="font-family:var(--font-mono);font-size:11px;line-height:1.9;color:var(--text-dim)">
+        <div><span style="color:var(--c-blue);font-weight:700">for</span>
+          &nbsp;(triple_store, policy, dataset)
+          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
+          &nbsp;combinations:</div>
+
+        <div style="padding-left:24px">
+          <span style="color:var(--c-grey-mid)">// skip if combination not registered in eval_setup.toml</span>
+        </div>
+        <div style="padding-left:24px">
+          <span style="color:var(--c-blue);font-weight:700">if not</span>
+          &nbsp;eval_combi_exists(triple_store, dataset, policy):&nbsp;
+          <span style="color:var(--c-blue);font-weight:700">continue</span>
+        </div>
+
+        <div style="padding-left:24px;margin-top:6px">
+          <span style="color:var(--c-teal);font-weight:600">startup</span>(triple_store, policy, dataset)
+          &nbsp;<span style="color:var(--c-grey-mid)">// start the triple store process</span>
+        </div>
+
+        <div style="padding-left:24px;margin-top:6px">
+          <span style="color:var(--c-blue);font-weight:700">for</span>
+          &nbsp;query_set
+          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
+          &nbsp;query_sets(policy, dataset):</div>
+        <div style="padding-left:48px">
+          <span style="color:var(--c-blue);font-weight:700">for</span>
+          &nbsp;version
+          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
+          &nbsp;versions:</div>
+        <div style="padding-left:72px">
+          <span style="color:var(--c-blue);font-weight:700">for</span>
+          &nbsp;query
+          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
+          &nbsp;queries(version):</div>
+
+        <div style="padding-left:96px;margin-top:4px">
+          response, exec_time
+          &nbsp;<span style="color:var(--c-blue);font-weight:700">=</span>
+          &nbsp;<span style="color:var(--c-teal);font-weight:600">execute</span
+          >(query,
+          &nbsp;<span style="color:var(--c-orange);font-weight:600">timeout=30s</span>)
+        </div>
+        <div style="padding-left:96px">
+          <span style="color:var(--c-teal);font-weight:600">record</span
+          >(triple_store, dataset, policy, query_set, version, exec_time, yn_timeout)
+        </div>
+        <div style="padding-left:96px">
+          <span style="color:var(--c-teal);font-weight:600">save_result_set</span
+          >(response &rarr; result_sets/…)
+        </div>
+
+        <div style="padding-left:96px;margin-top:4px;color:var(--c-grey-mid)">
+          // on crash or memory pressure (&gt;85%): restart triple store, continue
+        </div>
+
+        <div style="padding-left:24px;margin-top:6px">
+          <span style="color:var(--c-teal);font-weight:600">write_results</span
+          >(rows &rarr; time.csv)
+        </div>
+        <div style="padding-left:24px">
+          <span style="color:var(--c-teal);font-weight:600">shutdown</span>(triple_store)
+          &nbsp;<span style="color:var(--c-grey-mid)">// shut down after each query set</span>
+        </div>
+      </div>`;
+
+    sections.push(section('Evaluation Algorithm', algoHtml));
+
+    // ── 2. Evaluation matrix ─────────────────────────────────
+    if (info.combinations?.length) {
       const byTs = {};
-      info.evaluations.forEach(e => {
-        if (!byTs[e.triplestore]) byTs[e.triplestore] = [];
-        byTs[e.triplestore].push(e);
+      info.combinations.forEach(c => {
+        if (!byTs[c.triplestore]) byTs[c.triplestore] = [];
+        byTs[c.triplestore].push(c);
       });
-      const groupHtml = Object.entries(byTs).map(([ts, rows]) => {
+
+      const matrixHtml = Object.entries(byTs).map(([ts, rows]) => {
         const tableRows = rows.map(r => `
           <tr>
-            <td>${r.dataset}</td>
-            <td>${(r.policies || []).map(p => `<span class="tag" style="font-size:10px">${p}</span>`).join(' ')}</td>
+            <td>${escHtml(r.dataset)}</td>
+            <td><span class="tag" style="font-size:10px">${escHtml(r.policy)}</span></td>
             <td class="mono">${fmt(r.query_count)}</td>
           </tr>`).join('');
         return `
-          <div class="ingest-group">
-            <div class="ingest-group-title">${ts}</div>
+          <div style="margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--c-blue);
+                        text-transform:uppercase;letter-spacing:0.05em;
+                        padding:4px 0 6px;border-bottom:2px solid var(--c-blue-wash);
+                        margin-bottom:6px;font-family:var(--font-mono)">
+              ${escHtml(ts)}
+            </div>
             <table class="data-table">
-              <thead><tr><th>Dataset</th><th>Policies</th><th>Queries</th></tr></thead>
+              <thead><tr><th>Dataset</th><th>Policy</th><th>Queries</th></tr></thead>
               <tbody>${tableRows}</tbody>
             </table>
           </div>`;
       }).join('');
-      sections.push(section('Evaluation Matrix', groupHtml));
+
+      sections.push(section('Evaluation Matrix', matrixHtml));
+    }
+
+    // ── 3. Recorded measurements ─────────────────────────────
+    if (info.time_header?.length) {
+      const thCells = info.time_header.map(h =>
+        `<th>${escHtml(h)}</th>`).join('');
+
+      const sampleRows = (info.time_samples || []).map(row => {
+        const cells = row.map((v, i) => {
+          // Format exec_time column (index 7) to 4 decimal places
+          if (i === 7 && v !== '' && !isNaN(Number(v))) {
+            return `<td class="mono">${Number(v).toFixed(4)}</td>`;
+          }
+          return `<td class="mono">${escHtml(String(v ?? ''))}</td>`;
+        }).join('');
+        return `<tr>${cells}</tr>`;
+      }).join('');
+
+      const totalNote = info.time_total_rows > 0
+        ? `<div style="font-size:11px;color:var(--text-faint);padding:8px 12px">
+             Showing 5 of ${fmt(info.time_total_rows)} rows
+           </div>`
+        : '';
+
+      sections.push(section('Recorded Measurements (time.csv)', `
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr>${thCells}</tr></thead>
+            <tbody>${sampleRows}</tbody>
+          </table>
+        </div>
+        ${totalNote}`));
     }
   }
 
