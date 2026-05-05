@@ -154,90 +154,121 @@ function renderStepInfo(stepName, info) {
 
   const sections = [];
 
-  // ── download ────────────────────────────────────────────────
+// ── download ────────────────────────────────────────────────
   if (stepName === 'download') {
+    
     if (info.datasets?.length) {
-      const rows = info.datasets.map(d => `
-        <tr>
-          <td><strong>${d.name}</strong></td>
-          <td class="mono">${fmt(d.versions)}</td>
-          <td >${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</td>
-          <td>${d.download_link
-            ? `<a class="link" href="${escHtml(d.download_link)}" target="_blank">↗ link</a>`
-            : '—'}</td>
-        </tr>`).join('');
-      sections.push(section('Datasets', `
-        <table class="data-table">
-          <thead><tr><th>Dataset</th><th>Versions</th><th>All Snapshots Size</th><th>Source</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`));
-    }
-    if (info.query_sets?.length) {
-      const qsRows = info.query_sets.map(q => {
-        const linkItems = (q.links || []).map(l =>
-          `<li><a class="link" href="${escHtml(l.url)}" target="_blank">${escHtml(l.filename)}</a></li>`
-        ).join('');
-        const linksHtml = linkItems
-          ? `<details style="margin-top:4px" onclick="event.stopPropagation()">
-              <summary style="cursor:pointer;font-size:11px;color:var(--text-faint)">
-                ${q.links.length} source file${q.links.length !== 1 ? 's' : ''} ↗
-              </summary>
-              <ul style="margin:4px 0 0 12px;padding:0;font-size:11px;list-style:disc">${linkItems}</ul>
-            </details>`
-          : '—';
+      const cards = info.datasets.map(d => {
+        // Query sets for this dataset
+        const qsHtml = (d.query_sets || []).map(qs => {
+          const linkItems = (qs.links || []).map(l =>
+            `<a class="link" href="${escHtml(l.url)}" target="_blank"
+                style="display:inline-block;margin-right:8px;font-size:11px">
+               ↗ ${escHtml(l.filename)}
+             </a>`
+          ).join('');
+          return `
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+              <span style="font-size:11px;font-weight:600;color:var(--text-dim);
+                           min-width:60px;font-family:var(--font-mono)">
+                ${escHtml(qs.name)}
+              </span>
+              <span style="font-size:11px;color:var(--text-faint)">${linkItems || '—'}</span>
+            </div>`;
+        }).join('');
+
         return `
-          <tr>
-            <td><strong>${escHtml(q.name)}</strong></td>
-            <td>${escHtml(q.for_dataset || '—')}</td>
-            <td>${linksHtml}</td>
-          </tr>`;
+          <div style="
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:var(--radius-lg);
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+          ">
+            <!-- Dataset title bar -->
+            <div style="
+              background:var(--c-blue);
+              color:#fff;
+              padding:10px 14px;
+              font-family:var(--font-mono);
+              font-size:13px;
+              font-weight:700;
+              letter-spacing:0.04em;
+            ">${escHtml(d.name)}</div>
+
+            <!-- Body -->
+            <div style="padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:12px">
+
+              <!-- Description -->
+              <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin:0">
+                ${escHtml(d.description || '')}
+              </p>
+
+              <!-- Key facts -->
+              <div class="kv-grid" style="grid-template-columns:auto 1fr">
+                <span class="kv-key">Versions</span>
+                <span class="kv-val">${fmt(d.versions)}</span>
+                <span class="kv-key">All Snapshots Size</span>
+                <span class="kv-val">${d.size_mb != null ? fmtMb(d.size_mb) : '—'}</span>
+                <span class="kv-key">Source</span>
+                <span class="kv-val">${d.download_link
+                  ? `<a class="link" href="${escHtml(d.download_link)}" target="_blank">↗ link</a>`
+                  : '—'}</span>
+              </div>
+
+              <!-- Query sets -->
+              ${qsHtml ? `
+                <div>
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;
+                              color:var(--c-blue);font-weight:700;margin-bottom:4px;
+                              font-family:var(--font-mono)">Query Sets</div>
+                  ${qsHtml}
+                </div>` : ''}
+            </div>
+          </div>`;
       }).join('');
-      sections.push(section('Query Sets Downloaded', `
-        <table class="data-table">
-          <thead><tr>
-            <th>Query Set</th><th>Dataset</th><th>Source Files</th>
-          </tr></thead>
-          <tbody>${qsRows}</tbody>
-        </table>`));
+
+      sections.push(section('Datasets', `
+        <div style="
+          display:grid;
+          grid-template-columns:repeat(2, 1fr);
+          gap:16px;
+        ">${cards}</div>`));
     }
   }
 
-  // ── preprocess_data ──────────────────────────────────────────
+// ── preprocess ────────────────────────────────────────────────
   if (stepName === 'preprocess_data') {
-    // Substeps as horizontal flow
-    const substeps = [
-      'skolemize_subject_blanks',
-      'skolemize_object_blanks',
-      'validate_and_comment_invalid_triples',
-      'extract_queries',
-      'exclude_queries',
-    ];
-    const flowHtml = substeps.map((s, i) =>
-      `<div class="flow-step">${s.replace(/_/g, ' ')}</div>${i < substeps.length - 1 ? '<div class="flow-arrow">→</div>' : ''}`
-    ).join('');
-    sections.push(section('Substeps Executed', `<div class="flow-container">${flowHtml}</div>`));
+
+    // ── Step 1: Skolemization and Dataset Validation ─────────
+    let step1Body = '';
 
     if (info.validators) {
-      sections.push(section('RDF Validators', `
-        <table class="data-table">
-          <thead><tr><th>Parser</th><th>Version</th></tr></thead>
-          <tbody>
-            <tr><td>rdf4j</td><td class="mono">${info.validators.rdf4j || '—'}</td></tr>
-            <tr><td>Apache Jena</td><td class="mono">${info.validators.jena || '—'}</td></tr>
-          </tbody>
-        </table>`));
+      step1Body += `
+        <div style="display:flex;gap:24px;margin-bottom:14px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;">Parsers:</span>
+          <span style="font-size:12px;color:var(--text-dim)">
+            <span style="font-weight:600;color:var(--text)">RDF4J</span>
+            &nbsp;<span class="mono" style="color:var(--c-blue)">${escHtml(info.validators.rdf4j || '—')}</span>
+          </span>
+          <span style="font-size:12px;color:var(--text-dim)">
+            <span style="font-weight:600;color:var(--text)">Apache Jena</span>
+            &nbsp;<span class="mono" style="color:var(--c-blue)">${escHtml(info.validators.jena || '—')}</span>
+          </span>
+        </div>`;
     }
 
     if (info.skolemization_per_dataset?.length) {
       const rows = info.skolemization_per_dataset.map(d => `
         <tr>
           <td><strong>${d.dataset}</strong></td>
-          <td >${fmt(d.subject)}</td>
-          <td >${fmt(d.object)}</td>
-          <td >${fmt(d.invalid)}</td>
-          <td >${d.invalid_avg != null ? d.invalid_avg.toLocaleString('en-US', {maximumFractionDigits:2}) : '—'}</td>
+          <td>${fmt(d.subject)}</td>
+          <td>${fmt(d.object)}</td>
+          <td>${fmt(d.invalid)}</td>
+          <td>${d.invalid_avg != null ? d.invalid_avg.toLocaleString('en-US', {maximumFractionDigits:2}) : '—'}</td>
         </tr>`).join('');
-      sections.push(section('Skolemization & Validation per Dataset', `
+      step1Body += `
         <table class="data-table">
           <thead><tr>
             <th>Dataset</th><th>Blank nodes (subject)</th>
@@ -245,66 +276,65 @@ function renderStepInfo(stepName, info) {
             <th>Invalid triples (avg / snapshot)</th>
           </tr></thead>
           <tbody>${rows}</tbody>
-        </table>`));
+        </table>`;
     }
 
-if (info.sciqa_query_table?.length) {
-      const total    = info.sciqa_total ?? info.sciqa_query_table.length;
+    if (step1Body) {
+      sections.push(section('Step 1: Skolemization and Dataset Validation', step1Body));
+    }
+
+    // ── Step 2: Query Parsing and Validation ─────────────────
+    let step2Body = '';
+
+    if (info.sciqa_query_table?.length) {
+      const total              = info.sciqa_total ?? info.sciqa_query_table.length;
       const valid_orig_graphdb = info.sciqa_col_counts?.valid_in_graphdb ?? info.sciqa_query_table.filter(r => r.valid_in_graphdb).length;
-      const valid_orig_jena    = info.sciqa_col_counts?.valid_in_jena ?? info.sciqa_query_table.filter(r => r.valid_in_jena).length;
-      const excluded = info.sciqa_query_table.filter(r => r.excluded).length;
-      const kept     = total - excluded;
-      const cc       = info.sciqa_col_counts || {};
+      const valid_orig_jena    = info.sciqa_col_counts?.valid_in_jena    ?? info.sciqa_query_table.filter(r => r.valid_in_jena).length;
+      const excluded           = info.sciqa_query_table.filter(r => r.excluded).length;
+      const kept               = total - excluded;
+      const cc                 = info.sciqa_col_counts || {};
 
       const flag = v => v
         ? `<span class="sciqa-flag sciqa-flag--yes">✕</span>`
-        : `<span class="sciqa-flag sciqa-flag--no">—</span>`;
-
-      console.log('SciQA query table:', info.sciqa_query_table);
-      console.log('SciQA column counts:', info.sciqa_col_counts);
-      console.log('SciQA totals:', { total, valid_orig_graphdb, valid_orig_jena, excluded, kept });
+        : `<span class="sciqa-flag sciqa-flag--no">✓</span>`;
 
       const rows = info.sciqa_query_table.map(r => {
-        const rowCls = r.excluded ? ' style="color:var(--red)"' : ' class="sciqa-kept"';
-        return `<tr stlye="background-color:${r.excluded ? 'transparent' : '#007E71'}">
-          <td class="mono" style="font-size:11px"${rowCls}>${escHtml(r.query)}</td>
-          <td style="text-align:center">${flag(r.invalid_in_graphdb)}</td>
-          <td style="text-align:center">${flag(r.malformed_graphdb)}</td>
-          <td style="text-align:center">${flag(r.invalid_in_jena)}</td>
-          <td style="text-align:center">${flag(r.malformed_jena)}</td>
-          <td style="text-align:center">${flag(r.invalid_in_ostrich)}</td>
-
+        const rowClass = r.excluded ? 'sciqa-excluded' : 'sciqa-kept';
+        return `<tr class="${rowClass}">
+          <td class="mono sciqa-query">${escHtml(r.query)}</td>
+          <td>${flag(r.invalid_in_graphdb)}</td>
+          <td>${flag(r.malformed_graphdb)}</td>
+          <td>${flag(r.invalid_in_jena)}</td>
+          <td>${flag(r.malformed_jena)}</td>
+          <td>${flag(r.invalid_in_ostrich)}</td>
         </tr>`;
       }).join('');
 
       const hdr = (label, key, query_count) =>
         `<th style="text-align:center">${label}<br><span style="font-weight:400;font-size:10px">(${cc[key]??0}/${query_count})</span></th>`;
 
-      
-      sections.push(section(
-        `SciQA Queries (SELECT only) — ${fmt(kept)} kept / ${fmt(excluded)} excluded of ${fmt(total)}`,
-        `<div style="overflow-x:auto;max-height:480px;overflow-y:auto">
+      step2Body += `
+        <div style="overflow-x:auto;max-height:480px;overflow-y:auto">
           <table class="data-table">
             <thead style="position:sticky;top:0">
               <tr>
-                <th colspan="1" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">Query</th>
-                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">GraphDB</th>
-                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3); border-bottom:1px solid rgba(255,255,255,0.3)">Jena TDB2</th>
+                <th colspan="1" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3);border-bottom:1px solid rgba(255,255,255,0.3)">Query</th>
+                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3);border-bottom:1px solid rgba(255,255,255,0.3)">GraphDB</th>
+                <th colspan="2" style="text-align:center;border-right:1px solid rgba(255,255,255,0.3);border-bottom:1px solid rgba(255,255,255,0.3)">Jena TDB2</th>
                 <th colspan="1" style="text-align:center;border-bottom:1px solid rgba(255,255,255,0.3)">Ostrich</th>
               </tr>
               <tr>
                 <th></th>
-                ${hdr('Valid Original', 'valid_in_graphdb', total)}
-                ${hdr('Valid timestamped query', 'valid_trans_in_graphdb', valid_orig_graphdb)}
-                ${hdr('Valid Original', 'valid_in_jena', total)}
-                ${hdr('Valid timestamped query', 'valid_trans_in_jena', valid_orig_jena)}
-                ${hdr('Valid Original', 'valid_in_ostrich', total)}
+                ${hdr('Valid Original',        'valid_in_graphdb',       total)}
+                ${hdr('Valid timestamped query','valid_trans_in_graphdb', valid_orig_graphdb)}
+                ${hdr('Valid Original',        'valid_in_jena',          total)}
+                ${hdr('Valid timestamped query','valid_trans_in_jena',    valid_orig_jena)}
+                ${hdr('Valid Original',        'valid_in_ostrich',       total)}
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
-        </div>`
-      ));
+        </div>`;
     }
 
     if (info.query_counts?.length) {
@@ -312,13 +342,19 @@ if (info.sciqa_query_table?.length) {
         <tr>
           <td><strong>${escHtml(q.query_set)}</strong></td>
           <td>${escHtml(q.for_dataset)}</td>
-          <td >${fmt(q.count)}</td>
+          <td>${fmt(q.count)}</td>
         </tr>`).join('');
-      sections.push(section('Query Counts', `
-        <table class="data-table">
-          <thead><tr><th>Query Set</th><th>Dataset</th><th>Queries</th></tr></thead>
-          <tbody>${qcRows}</tbody>
-        </table>`));
+      step2Body += `
+        <div style="margin-top:16px">
+          <table class="data-table">
+            <thead><tr><th>Query Set</th><th>Dataset</th><th>Queries</th></tr></thead>
+            <tbody>${qcRows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    if (step2Body) {
+      sections.push(section('Step 2: Query Parsing and Validation', step2Body));
     }
   }
 
@@ -768,8 +804,8 @@ function renderIngestChart(rows) {
     if (info.plots?.length) {
       const plotsHtml = info.plots.map(p => `
         <div class="plot-card">
-          <div class="plot-title">${escHtml(p.filename.replace(/\.png$/, '').replace(/_/g, ' '))}</div>
-          <img class="plot-img" src="data:image/png;base64,${p.data}" alt="${escHtml(p.filename)}" />
+          <div class="plot-title">${escHtml(p.filename.replace(/\.svg$/, '').replace(/_/g, ' '))}</div>
+          <div class="plot-img">${p.data}</div>
         </div>`).join('');
       sections.push(section(`Result Plots (${info.plots.length})`, `<div class="plots-grid">${plotsHtml}</div>`));
     } else {

@@ -507,7 +507,7 @@ main {
   font-size: 12px;
 }
 .data-table th {
-  text-align: left;
+  text-align: center;
   padding: 8px 12px;
   background: var(--tuw-blue);
   color: #fff;
@@ -522,7 +522,7 @@ main {
   border-bottom: 1px solid var(--border);
   color: var(--text);
   vertical-align: top;
-  text-align: left;
+  text-align: center;
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: var(--tuw-blue-pale); }
@@ -712,17 +712,25 @@ main {
   height: auto;
   display: block;
 }
-
+.plot-img svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 /* ── SciQA query table ───────────────────────────────────────── */
 
 /* Kept queries (not excluded) get a green left border highlight */
-tr.sciqa-kept td {
-  background: var(--green-bg) !important;
-  border-left: 3px solid var(--green);
+.sciqa-kept {
+  background-color: #fff;
 }
-tr.sciqa-kept td:first-child {
-  font-weight: 600;
-  color: var(--green);
+
+.sciqa-excluded {
+  background-color: #BA4682;
+
+}
+
+.sciqa-query {
+  font-size: 11px;
 }
 
 /* Flag badges: 1 = red (excluded), 0 = grey (not flagged for this reason) */
@@ -732,7 +740,7 @@ tr.sciqa-kept td:first-child {
   height: 20px;
   line-height: 20px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 24px;
   font-family: var(--font-mono);
   font-weight: 700;
   text-align: center;

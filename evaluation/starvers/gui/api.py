@@ -10,10 +10,13 @@ import subprocess
 from collections import defaultdict
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import logging
+import sys
 
 import tomli
 from flask import Flask, abort, jsonify, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 _here = Path(__file__).parent
 
@@ -23,6 +26,11 @@ app = Flask(
     static_folder=str(_here / 'static'),
 )
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
+
+logging.basicConfig(handlers=[logging.StreamHandler(sys.stdout)],
+                    format="%(asctime)s %(name)s:%(levelname)s:%(message)s", 
+                    datefmt="%F %A %T", 
+                    level=logging.INFO)
 
 DATA_DIR    = Path(os.environ.get("DATA_DIR", "/starvers_eval/data"))
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
@@ -61,6 +69,26 @@ VARIANT_FILES = [
     ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl", False),
     ("alldata.ICNG.trig",                 "alldata.ICNG.trig",                False),
 ]
+
+DATASET_DESCRIPTIONS = {
+    "bearb_day": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Compiled from DBpedia Live changesets over three months, containing the 100 most volatile "
+        "resources with their updates and real-world triple pattern queries from user logs. "
+        "Every snapshot represents one day."
+    ),
+    "bearb_hour": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Compiled from DBpedia Live changesets over three months, containing the 100 most volatile "
+        "resources with their updates and real-world triple pattern queries from user logs. "
+        "Every snapshot represents one hour."
+    ),
+    "bearc": (
+        "Original description from the BEAR webpage (https://aic.ai.wu.ac.at/qadlod/bear.html): Uses the Open Data Portal Watch project to capture dataset descriptions of the European "
+        "Open Data portal over 32 weeks."
+    ),
+    "orkg": (
+        "Compiled over 34 weeks by downloading one snapshot each week via ORKG's data access API."
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -110,22 +138,17 @@ def _discovered_datasets(run_dir: Path) -> list[str]:
 
 
 def _load_svg_plots(figures_dir: Path, prefix: str) -> list[dict]:
-    """
-    Return a list of {filename, data} dicts for SVG files whose name starts
-    with the given prefix.  Returns an empty list without raising if the
-    directory or any file is missing — callers must handle the empty case.
-    """
     if not figures_dir.exists():
         return []
     plots = []
     for svg in sorted(figures_dir.glob(f"{prefix}*.svg")):
         try:
-            data = base64.b64encode(svg.read_bytes()).decode("ascii")
+            # Embed raw SVG text — no base64 needed, renders inline directly
+            data = svg.read_text(encoding="utf-8")
             plots.append({"filename": svg.name, "data": data})
         except Exception:
             continue
     return plots
-
 
 # ---------------------------------------------------------------------------
 # Run list and run detail
@@ -178,7 +201,7 @@ def get_step_detail(ts: str, step_name: str):
 def _detail_download(run_dir: Path) -> dict:
     config       = _load_config()
     datasets_cfg = config.get("datasets", {})
-    detail       = {"datasets": [], "query_sets": []}
+    detail       = {"datasets": []}
     discovered   = set(_discovered_datasets(run_dir))
 
     sizes: dict[str, float] = {}
@@ -192,26 +215,15 @@ def _detail_download(run_dir: Path) -> dict:
                 except ValueError:
                     pass
 
-    for name, meta in datasets_cfg.items():
-        if name not in discovered:
-            continue
-        detail["datasets"].append({
-            "name":          name,
-            "versions":      meta.get("snapshot_versions", "?"),
-            "size_mb":       sizes.get(name),
-            "download_link": meta.get("download_link_snapshots"),
-        })
-
-    # Load query set metadata from queries_meta.csv written by download.sh.
-    # Columns: query_set, for_dataset, links  (count moved to preprocess step)
-    # links format: "filename; url | filename; url | ..."
+    # Parse query sets, keyed by for_dataset
+    query_sets_by_dataset: dict[str, list] = {}
     queries_csv = run_dir / "output" / "logs" / "download" / "queries_meta.csv"
     if queries_csv.exists():
-        with open(queries_csv, newline="") as f:
+        with open(queries_csv, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 qs_name   = row.get("query_set", "").strip()
                 for_ds    = row.get("for_dataset", "").strip()
-                links_raw = row.get("links", "").strip()
+                links_raw = row.get("links", "").strip().strip("\r")
 
                 links = []
                 if links_raw:
@@ -223,25 +235,36 @@ def _detail_download(run_dir: Path) -> dict:
                         elif pair:
                             links.append({"filename": pair, "url": pair})
 
-                detail["query_sets"].append({
-                    "name":        qs_name,
-                    "for_dataset": for_ds,
-                    "links":       links,
+                query_sets_by_dataset.setdefault(for_ds, []).append({
+                    "name":  qs_name,
+                    "links": links,
                 })
+
     else:
-        # Fallback: derive from toml config.
-        # Links live under datasets.<n>.query_sets.<qs>.download_links
+        # Fallback from toml
         for ds_name, ds_meta in datasets_cfg.items():
             for qs_name, qs_meta in ds_meta.get("query_sets", {}).items():
-                detail["query_sets"].append({
-                    "name":        qs_name,
-                    "for_dataset": ds_name,
+                query_sets_by_dataset.setdefault(ds_name, []).append({
+                    "name": qs_name,
                     "links": [
                         {"filename": lnk.rstrip("/").split("/")[-1].split("?")[0], "url": lnk}
                         for lnk in qs_meta.get("download_links", [])
                     ],
                 })
 
+    for name, meta in datasets_cfg.items():
+        if name not in discovered:
+            continue
+        detail["datasets"].append({
+            "name":          name,
+            "description":   DATASET_DESCRIPTIONS.get(name, ""),
+            "versions":      meta.get("snapshot_versions", "?"),
+            "size_mb":       sizes.get(name),
+            "download_link": meta.get("download_link_snapshots"),
+            "query_sets":    query_sets_by_dataset.get(name, []),
+        })
+
+    
     return detail
 
 

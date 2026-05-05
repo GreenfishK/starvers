@@ -218,6 +218,18 @@ docker run -d --rm \
 starvers_eval:latest gui
 ```
 
+For developing, bind the gui scripts
+
+```bash
+docker run -d --rm \
+--name starvers-gui \
+--env-file .env \
+--network starvers_prod_net \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+-v ./evaluation/starvers/gui:/starvers_eval/gui \
+starvers_eval:latest gui
+```
+
 ## Starversserver Evaluation
 
 ### Pipeline Steps
