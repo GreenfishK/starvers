@@ -35,7 +35,7 @@ CONFIG_PATH  = f"{WORK_DIR}configs/eval_setup.toml"
 RESULTS_TMPL = f"{WORK_DIR}scripts/7_visualize/templates/latex_table_results_tmpl.tex"
 
 RUN_DIR          = os.environ["RUN_DIR"]
-measurements_in  = f"{RUN_DIR}/output/measurements/"
+measurements_in  = f"{RUN_DIR}/output/measurements"
 figures_out      = f"{RUN_DIR}/output/figures"
 tables_out       = f"{RUN_DIR}/output/tables"
 
@@ -63,15 +63,8 @@ def _policy_color_map(policies: list[str]) -> dict[str, str]:
 
 def _load_performance_data() -> pd.DataFrame:
     """Load and pre-process the query execution time CSV."""
-    time_files = [
-        f for f in os.listdir(measurements_in)
-        if f.startswith("time_") and f.endswith(".csv")
-    ]
-    if not time_files:
-        logging.warning("No time_*.csv file found in %s", measurements_in)
-        return pd.DataFrame()
 
-    path = measurements_in + sorted(time_files)[-1]   # use the latest
+    path = f"{measurements_in}/time.csv" 
     logging.info("Loading performance data from %s", path)
 
     df = pd.read_csv(
@@ -88,7 +81,7 @@ def _load_performance_data() -> pd.DataFrame:
 
 
 def _load_ingestion_data() -> pd.DataFrame:
-    path = measurements_in + "ingestion.csv"
+    path = f"{measurements_in}/ingestion.csv"
     if not os.path.exists(path):
         logging.warning("ingestion.csv not found in %s", measurements_in)
         return pd.DataFrame()
@@ -351,11 +344,7 @@ def create_latex_tables():
     # =========================
     # Load data
     # =========================
-    time_files = [f for f in os.listdir(measurements_in) if f.startswith("time_") and f.endswith(".csv")]
-    if not time_files:
-        logging.warning("No time_*.csv found — skipping LaTeX table generation.")
-        return
-    time_path = measurements_in + sorted(time_files)[-1]
+    time_path = f"{measurements_in}/time.csv"
 
     queries_data = pd.read_csv(
         time_path,
@@ -375,7 +364,7 @@ def create_latex_tables():
         parse_dates=["snapshot_ts"],
     )
 
-    query_build_time_data = pd.read_csv(measurements_in + "query_rewriting_times.csv", delimiter=",", decimal=".",
+    query_build_time_data = pd.read_csv(f"{measurements_in}/query_rewriting_times.csv", delimiter=",", decimal=".",
         dtype={
             "dataset": "category",
             "policy": "category",
@@ -394,7 +383,7 @@ def create_latex_tables():
     )
     queries_data["execution_time_total"] = (queries_data["execution_time_clean"] + queries_data["rewriting_time"]).clip(upper=30)
     
-    ingestion_data = pd.read_csv(measurements_in + "ingestion.csv", delimiter=";", decimal=".")
+    ingestion_data = pd.read_csv(f"{measurements_in}/ingestion.csv", delimiter=";", decimal=".")
     ingestion_data["triplestore"] = ingestion_data["triplestore"].str.lower()
 
     with open(RESULTS_TMPL, "r") as f:

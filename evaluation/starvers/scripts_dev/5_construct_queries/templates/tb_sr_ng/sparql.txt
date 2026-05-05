@@ -4,7 +4,9 @@ SELECT * {{
     GRAPH <http://example.org/versions> {{
         ?graph <http://www.w3.org/2002/07/owl#versionInfo> {1}
     }}
-    GRAPH ?graph 
-    {2} 
-    {3}
+    GRAPH ?graph  {{
+        select * where 
+        {2} 
+        {3}
+    }}
 }}

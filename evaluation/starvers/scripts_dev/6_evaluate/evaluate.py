@@ -295,11 +295,7 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 finally:
                     executor.shutdown(wait=False, cancel_futures=True)
-
-                    if version%200 == 0:
-                        logging.info(f"Processed {version} versions.")
-                        logging.info(f"Memory in usage: {psutil.virtual_memory().percent}%")
-
+                    
                     if (response is None and yn_timeout == 0) \
                         or psutil.virtual_memory().percent >= 85:
 
