@@ -220,12 +220,12 @@ def run_queries(config, header, triple_store, policy, dataset):
         for try_counter in range(5):
             try:
                 result = engine.query().convert()
-                logging.info("Dry run query result:\n " + str(result))
             except Exception as e:
                 logging.error(f"Dry run failed with error: {e}")
                 logging.info("Retrying dry run after waiting for 5 seconds...")
                 try_counter += 1
                 time.sleep(5)
+        logging.info("Dry run query result:\n " + str(result))
 
         logging.info("Running queries")
         socket.setdefaulttimeout(30)
