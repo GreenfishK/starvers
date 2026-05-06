@@ -106,11 +106,23 @@ Result set:
 
 # Evaluation 
 
-Starvers (timestamped-based versioning) and Starversserver (RDF dataset tracker and automatic versioning system) are evaluated separately using two different Dockerfiles, as shown below.
+Starvers (timestamped-based versioning method) and Starversserver (RDF dataset tracker and automatic versioning system) are evaluated separately using two different Dockerfiles, as shown below.
 
 ---
 
 ## Starvers Evaluation
+Starvers is evaluated using an automated pipeline that has three main input parameters:
+* triple stores
+* dataset
+* versioning policy
+
+The docker container needs first to be built using the command
+```bash
+docker build -t starvers_eval:gui -f starvers.eval.Dockerfile .
+```
+**!important!**: The directory /mnt/data_local/starvers_eval needs to have at least 350GB. All data from the run are automatically written to this directory.
+
+Then, the whole pipeline can be executed using the command in Section [Run the full pipeline](#run-the-full-pipeline).
 
 ### Pipeline Steps
 
@@ -124,11 +136,9 @@ Starvers (timestamped-based versioning) and Starversserver (RDF dataset tracker 
 | 6 | evaluate | `evaluate` |
 | 7 | visualize | `visualize` |
 
-Each step is a `docker compose run --rm <service>` call using `starvers.eval.compose.yml`.
-Infrastructure-level variables (volume paths, etc.) are read from the `.env` file as defined
-in the compose file.
+Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file.
 
-### Run the full pipeline
+### Run the full pipeline 
 
 ```bash
 docker run -d --rm \
@@ -275,6 +285,3 @@ docker run --rm -d \
   starversserver_eval:latest \
   /code/evaluation/evaluation.py 
 ```
-
-
-
