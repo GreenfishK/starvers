@@ -357,35 +357,43 @@ main {
 #stepsGrid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 24px;
 }
 
-.step-card {
+.step-section {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-.step-card.clickable { cursor: pointer; }
-.step-card.clickable:hover {
-  border-color: var(--tuw-blue);
-  box-shadow: var(--shadow);
-}
-.step-card.open {
-  border-color: var(--tuw-blue);
-  box-shadow: 0 0 0 2px rgba(0,87,160,0.12), var(--shadow);
 }
 
-.step-card-header {
+.step-description {
+  font-size: 12px;
+  background-color: rgb(247, 248, 250);
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 13px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.step-section-header {
   display: grid;
-  grid-template-columns: 32px 1fr auto auto auto;
+  grid-template-columns: 32px 1fr auto auto;
   align-items: center;
   gap: 12px;
-  padding: 13px 16px;
+  padding-left: 0;
+  padding-right: 16px;
+  padding-top: 13px;
+  padding-bottom: 13px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  background-color: rgb(247, 248, 250);
+
 }
 
+.step-section-body {
+  padding: 20px 20px 24px;
+  background: rgb(247, 248, 250);
+}
 .step-num {
   font-size: 11px;
   color: var(--text-faint);
@@ -414,35 +422,13 @@ main {
   white-space: nowrap;
 }
 
-.step-chevron {
-  font-size: 13px;
-  color: var(--text-faint);
-  transition: transform 0.2s;
-  font-weight: bold;
-}
-.step-card.open .step-chevron { transform: rotate(90deg); color: var(--tuw-blue); }
-
-/* ── Step detail body ────────────────────────────────────────── */
-.step-detail {
-  border-top: 1px solid var(--border);
-  padding: 20px 20px 24px;
-  display: none;
-  animation: slideDown 0.18s ease;
-  background: var(--tuw-blue-pale);
-}
-.step-card.open .step-detail { display: block; }
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 /* ── Detail sections ─────────────────────────────────────────── */
 .detail-section {
   margin-bottom: 20px;
-  background: var(--surface);
+  /*background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius); */
   overflow: hidden;
 }
 .detail-section:last-child { margin-bottom: 0; }
@@ -687,36 +673,123 @@ main {
 
 
 /* ── Plot grid ───────────────────────────────────────────────── */
-.plots-grid {
+/* ── Time-series plot layout (visualize step) ────────────────── */
+
+.tsplot-legend {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.tsplot-legend-heading {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.tsplot-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tsplot-legend-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tsplot-legend-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Dataset panel */
+.tsplot-dataset-panel {
+  margin-bottom: 28px;
+}
+.tsplot-dataset-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--c-blue);
+  padding: 6px 0 8px;
+  border-bottom: 2px solid var(--c-blue-wash);
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+}
+
+/* Query-set groups row — wraps when window narrows */
+.tsplot-qs-wrap {
+  display: flex;
+  flex-wrap: wrap;
   gap: 20px;
 }
-.plot-card {
+
+/* One query-set group card */
+.tsplot-qs-group {
+  flex: 1 1 320px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface);
 }
-.plot-title {
-  padding: 8px 14px;
-  font-size: 12px;
-  font-weight: 600;
+.tsplot-qs-label {
+  padding: 7px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
   color: var(--tuw-blue-dark);
-  background: var(--surface2);
+  background: var(--tuw-blue-pale);
   border-bottom: 1px solid var(--border);
-  text-transform: capitalize;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
-.plot-img {
-  width: 100%;
-  height: auto;
+
+/* Row of per-triplestore plots inside a group — also wraps */
+.tsplot-plots-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+}
+.tsplot-card {
+  flex: 1 1 280px;
+  min-width: 0;
+  overflow-x: auto;
+}
+.tsplot-card svg {
   display: block;
-}
-.plot-img svg {
-  width: 100%;
+  max-width: 100%;
   height: auto;
-  display: block;
 }
+
+/* Mobile: everything stacks vertically */
+@media (max-width: 600px) {
+  .tsplot-qs-wrap {
+    flex-direction: column;
+  }
+  .tsplot-qs-group {
+    flex: 1 1 100%;
+  }
+  .tsplot-plots-row {
+    flex-direction: column;
+  }
+  .tsplot-card {
+    flex: 1 1 100%;
+  }
+}
+
+
 /* ── SciQA query table ───────────────────────────────────────── */
 
 /* Kept queries (not excluded) get a green left border highlight */

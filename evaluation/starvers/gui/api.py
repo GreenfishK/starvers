@@ -36,10 +36,6 @@ DATA_DIR    = Path(os.environ.get("DATA_DIR", "/starvers_eval/data"))
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
 PORT        = int(os.environ.get("PORT", 8080))
 
-ALL_STEPS = [
-    "download", "preprocess_data", "construct_datasets",
-    "ingest", "construct_queries", "evaluate", "visualize",
-]
 
 VERSIONING_APPROACH = {
     "alldata.TB_computed.nq": (
@@ -453,10 +449,9 @@ def _detail_ingest(run_dir: Path) -> dict:
     If the figures directory or any plot file does not exist yet (visualize step
     has not run), the lists are simply empty — no error is raised.
     """
-    ingest_csv  = run_dir / "output" / "measurements" / "ingestion.csv"
-    figures_dir = run_dir / "output" / "figures"
+    ingest_csv = run_dir / "output" / "measurements" / "ingestion.csv"
 
-    # --- Tabular summary from CSV ---
+    # Tabular summary from CSV 
     summary = []
     if ingest_csv.exists():
         groups: dict[tuple, list] = defaultdict(list)
@@ -482,17 +477,8 @@ def _detail_ingest(run_dir: Path) -> dict:
                 "avg_raw_size_mib":   sum(v[2] for v in values) / len(values),
             })
 
-    # --- SVG plots (may be empty if visualize step hasn't run yet) ---
-    ingest_plots  = _load_svg_plots(figures_dir, "ingest_")
-    storage_plots = _load_svg_plots(figures_dir, "storage_")
 
-    return {
-        "ingestion_summary": summary,
-        "ingest_plots":      ingest_plots,
-        "storage_plots":     storage_plots,
-        # Tells the frontend whether plots are expected but not yet available
-        "plots_pending":     not figures_dir.exists() or (not ingest_plots and not storage_plots),
-    }
+    return {"ingestion_summary": summary}
 
 
 def _detail_construct_queries(run_dir: Path) -> dict:
@@ -544,6 +530,7 @@ def _detail_construct_queries(run_dir: Path) -> dict:
 def _detail_evaluate(run_dir: Path) -> dict:
     config   = _load_config()
     eval_cfg = config.get("evaluations", {})
+    time_csv  = run_dir / "output" / "measurements" / "time.csv"
 
     # Build the ordered list of (triple_store, policy, dataset) combinations
     # exactly as main() iterates them — product(triple_stores, policies, datasets)
@@ -567,7 +554,6 @@ def _detail_evaluate(run_dir: Path) -> dict:
                 })
 
     # Sample rows from time.csv
-    time_csv = run_dir / "output" / "measurements" / "time.csv"
     time_header = []
     time_samples = []
     time_total_rows = 0
@@ -593,13 +579,108 @@ def _detail_evaluate(run_dir: Path) -> dict:
 
 def _detail_visualize(run_dir: Path) -> dict:
     """
-    Return base64-encoded SVG query-performance plots (time_*.svg).
-    Ingest and storage plots are shown in step 4 instead.
+    Build per-dataset/query-set time series data for the GUI to plot.
+    Mirrors create_latex_tables(): merges time.csv with query_rewriting_times.csv,
+    clips timeouts to 30s, and adds rewriting_time for tb_sr_rs.
     """
-    figures_dir = run_dir / "output" / "figures"
-    plots       = _load_svg_plots(figures_dir, "time_")
-    return {"plots": plots}
+    time_csv  = run_dir / "output" / "measurements" / "time.csv"
+    rewrite_csv = run_dir / "output" / "measurements" / "query_rewriting_times.csv"
 
+    if not time_csv.exists():
+        return {"plot_data": [], "error": "time.csv not found"}
+
+    rows = []
+    with open(time_csv, newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            try:
+                exec_time = float(row.get("execution_time", -1) or -1)
+                yn_timeout = int(float(row.get("yn_timeout", 0) or 0))
+                rewrite_time = 0.0
+
+                # Clip: treat timeouts and values >=30 as 30s
+                if exec_time >= 30 or yn_timeout:
+                    exec_time_clean = 30.0
+                    yn_timeout = 1
+                elif exec_time < 0:
+                    exec_time_clean = -1.0
+                else:
+                    exec_time_clean = exec_time
+
+                rows.append({
+                    "triplestore":  row.get("triplestore", "").strip(),
+                    "dataset":      row.get("dataset", "").strip(),
+                    "policy":       row.get("policy", "").strip(),
+                    "query_set":    row.get("query_set", "").strip(),
+                    "snapshot":     row.get("snapshot", "").strip(),
+                    "query":        row.get("query", "").strip(),
+                    "exec_time":    exec_time_clean,
+                    "yn_timeout":   yn_timeout,
+                    "rewrite_time": 0.0,
+                })
+            except (ValueError, TypeError):
+                continue
+
+    # Merge rewriting times for tb_sr_rs
+    rewrite_map: dict[tuple, float] = {}
+    if rewrite_csv.exists():
+        with open(rewrite_csv, newline="") as f:
+            for row in csv.DictReader(f, delimiter=","):
+                try:
+                    key = (
+                        row.get("dataset", "").strip(),
+                        row.get("policy", "").strip(),
+                        row.get("query_set", "").strip(),
+                        row.get("snapshot", "").strip(),
+                        row.get("query", "").strip(),
+                    )
+                    rewrite_map[key] = float(row.get("rewriting_time", 0) or 0)
+                except (ValueError, TypeError):
+                    continue
+
+    for r in rows:
+        key = (r["dataset"], r["policy"], r["query_set"], r["snapshot"], r["query"])
+        rt = rewrite_map.get(key, 0.0)
+        r["rewrite_time"] = rt
+        if r["exec_time"] >= 0:
+            r["total_time"] = min(r["exec_time"] + rt, 30.0)
+        else:
+            r["total_time"] = r["exec_time"]
+
+    # Aggregate: mean total_time per (triplestore, policy, dataset, query_set, snapshot)
+    # snapshot is the version number (integer)
+    from collections import defaultdict
+    agg: dict[tuple, list] = defaultdict(list)
+    for r in rows:
+        if r["total_time"] < 0:
+            continue
+        key = (r["triplestore"], r["policy"], r["dataset"], r["query_set"], r["snapshot"])
+        agg[key].append(r["total_time"])
+
+    # Build plot_data: list of series, each with metadata and (version, avg_time) points
+    series_map: dict[tuple, dict] = {}
+    for (ts, policy, dataset, query_set, snapshot), times in agg.items():
+        series_key = (ts, policy, dataset, query_set)
+        if series_key not in series_map:
+            series_map[series_key] = {
+                "triplestore": ts,
+                "policy":      policy,
+                "dataset":     dataset,
+                "query_set":   query_set,
+                "points":      {},
+            }
+        try:
+            version = int(snapshot)
+        except (ValueError, TypeError):
+            version = snapshot
+        series_map[series_key]["points"][version] = sum(times) / len(times)
+
+    # Convert points dict to sorted list of [version, avg_time]
+    plot_series = []
+    for s in series_map.values():
+        s["points"] = sorted(s["points"].items())
+        plot_series.append(s)
+
+    return {"plot_data": plot_series}
 
 # ---------------------------------------------------------------------------
 # Serve GUI

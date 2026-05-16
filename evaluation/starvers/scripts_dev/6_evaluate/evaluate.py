@@ -162,8 +162,12 @@ def parse_results(result) -> list:
 def print_mem_file_tail(mem_file, lines=20):
     with open(mem_file, "r") as f:
         all_lines = f.readlines()
+        logging.info(f"Printing memory tail: ")
+        logging.info(f"{all_lines[0]}")
         for line in all_lines[-lines:]:
-            logging.info(line)
+            logging.info({line})
+        logging.info(f"Finished printing memory tail.")
+
 ##########################################################
 # Evaluation functions
 ##########################################################
@@ -252,6 +256,7 @@ def run_queries(config, header, triple_store, policy, dataset):
                     result['start'] = time.time()
                     result['response'] = eng.query().convert()
                     result['end'] = time.time()
+
                 try:
                     future = executor.submit(run) 
                     future.result(timeout=30)
@@ -262,6 +267,8 @@ def run_queries(config, header, triple_store, policy, dataset):
                     yn_timeout = 1
                     response = None
                     logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+                    # Check whats written in MEM_FILE
+                    print_mem_file_tail(MEM_FILE, lines=20)
 
                 except EndPointInternalError as e:
                     yn_timeout = 0
@@ -270,23 +277,15 @@ def run_queries(config, header, triple_store, policy, dataset):
 
                 except ConnectionResetError as e:
                     yn_timeout = 0
-                    response = 0
-                    logging.error(f"Connection reset, probably due to memory overflow: {e}")
-                    # Check whats written in MEM_FILE
-                    print_mem_file_tail(MEM_FILE, lines=20)
-
-                except TimeoutError as e:
-                    yn_timeout = 1
                     response = None
-                    logging.error(f"Timeout error for version {version} and query {file_name}: {e}")
+                    logging.error(f"Connection reset, probably due to memory overflow: {e}")
                     # Check whats written in MEM_FILE
                     print_mem_file_tail(MEM_FILE, lines=20)
 
                 except QueryBadFormed as e:
                     yn_timeout = 0
                     response = "badly formed query"
-                    logging.error(f"Query bad formed for version {version} and query {file_name}: {e}")
-                    logging.info(f"Continuing to next query...")
+                    logging.error(f"Query badly formed for version {version} and query {file_name}: {e}")
 
                 except Exception as e:
                     yn_timeout = 0
@@ -493,15 +492,15 @@ def main():
         run_queries(config, header, triple_store, policy, dataset)
 
     # Update evaluation
-    for dataset in datasets:
-        data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
-        total_versions = dataset_versions[dataset]
+#    for dataset in datasets:
+#        data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
+#        total_versions = dataset_versions[dataset]
 
-        #measure_updates(dataset=dataset, 
-        #        source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-        #        source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
-        #        last_version=total_versions, 
-        #        init_timestamp=init_version_timestamp)
+#        measure_updates(dataset=dataset, 
+#                source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
+#                source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
+#                last_version=total_versions, 
+#                init_timestamp=init_version_timestamp)
 
 if __name__ == "__main__":
     main()

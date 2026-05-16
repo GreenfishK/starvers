@@ -9,6 +9,16 @@ const ALL_STEPS = [
   'ingest', 'construct_queries', 'evaluate', 'visualize',
 ];
 
+const step_descriptions = {
+  download: 'The datasets and query sets are fetched from the provided URLs and the number of snapshots (versions) and total snapshot size are computed from the source files and displayed below.',
+  preprocess_data: 'The snapshot files of the datasets and the query sets are preprocessed in different ways. The dataset triples are skolemized and validated for RDF compliance using two different RDF validators. The queries of the SciQA dataset are parsed and validated by querying them against the three evaluated triple stores. The queries are also transformed into the timestamped-based representation and also executed against the triple stores. If a query is invalid in at least one of the triple stores in either original or timestamped form, it is excluded from the evaluation.',
+  construct_datasets: 'Four different dataset variants are constructed from the snapshot files. Three of them use a certain RDF-based versioning approach and the fourth one is a simple collection of the first snapshots and the consecutive deltas/change sets, which are ingested and internally versioned by the Ostrich store.',
+  ingest: 'Each dataset variant that applys versioning on RDF level is ingested into the two evaluated RDF-star triple stores, whereas the first snapshot and changesets variant is ingested into the Ostrich store. The total ingestion time is measured for 10 runs and averaged. The size of the ingested data is also measured and displayed below.',
+  construct_queries: 'Each dataset variant has their own query form. A query is constructed from a query template for each dataset, dataset variant (versioning policy), and version. The table below shows how many queries are generated and executed in the next step.',
+  evaluate: 'The evaluation loop for the query execution is shown below.',
+  visualize: 'For each dataset and query set a line is plotted showing the query execution time over the versions for each dataset variant (versioning policy) and triple store combination.'
+};
+
 // ── State ─────────────────────────────────────────────────────
 let runs        = [];
 let activeRunTs = null;
@@ -100,52 +110,85 @@ function renderDetail(run) {
     <div class="run-meta-label">Execution start date</div>
     <span class="run-meta-ts">${formatTs(run.ts)}</span>
     <span class="run-meta-badge ${overallStatus}">${overallStatus}</span>
-    <span class="badge" style="background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);margin-left:auto">${completed}/${total} steps</span>
+    <span class="badge" style="background:var(--surface2);color:var(--text-dim);
+          border:1px solid var(--border);margin-left:auto">${completed}/${total} steps</span>
   `;
 
   const stepMap = {};
   (run.steps || []).forEach(s => { stepMap[s.step_name] = s; });
 
+  // Render all steps immediately as always-visible sections
   stepsGridEl.innerHTML = ALL_STEPS.map((name, i) => {
-    const s        = stepMap[name] || { step_number: i+1, step_name: name, status: 'pending', start_time: '', end_time: '' };
-    const duration = calcDuration(s.start_time, s.end_time);
+    const s = stepMap[name] || {
+      step_number: i + 1, step_name: name,
+      status: 'pending', start_time: '', end_time: '',
+    };
+    const duration  = calcDuration(s.start_time, s.end_time);
     const hasDetail = s.status === 'success' || s.status === 'failed';
-    return `
-      <div class="step-card${hasDetail ? ' clickable' : ''}" data-step="${name}" id="step-${name}">
-        <div class="step-card-header">
-          <span class="step-num">${i+1}</span>
-          <span class="step-name">${name.replace(/_/g, ' ')}</span>
-          <span class="chip ${s.status}">${s.status}</span>
-          <span class="step-duration">${duration}</span>
-          ${hasDetail ? '<span class="step-chevron">›</span>' : '<span></span>'}
-        </div>
-        <div class="step-detail" id="detail-${name}">
+
+    const headerHtml = `
+      <div class="step-section-header">
+        <span class="step-num">${i + 1}</span>
+        <span class="step-name">${name.replace(/_/g, ' ')}</span>
+        <span class="chip ${s.status}">${s.status}</span>
+        <span class="step-duration">${duration}</span>
+      </div>`;
+
+    const stepDescriptionHTML = `
+      <div class="step-description">
+        ${step_descriptions?.[name] || 'No description available.'}
+      </div>
+    `;
+
+    let bodyHtml;
+    if (s.status === 'running') {
+      bodyHtml = `
+        <div class="step-section-body">
+          <div class="loading"><div class="spinner"></div>Step is currently running…</div>
+        </div>`;
+    } else if (!hasDetail) {
+      bodyHtml = `
+        <div class="step-section-body">
+          <div class="dim" style="font-size:12px">
+            ${s.status === 'pending' ? 'Step has not run yet.' : 'No detail data available.'}
+          </div>
+        </div>`;
+    } else {
+      // Content placeholder — will be filled after fetch
+      bodyHtml = `
+        <div class="step-section-body" id="body-${name}">
           <div class="loading"><div class="spinner"></div>Loading details…</div>
-        </div>
+        </div>`;
+    }
+
+    return `
+      <div class="step-section" id="step-${name}">
+        ${headerHtml}
+        ${stepDescriptionHTML}
+        ${bodyHtml}
       </div>`;
   }).join('');
 
-  stepsGridEl.querySelectorAll('.step-card.clickable').forEach(card => {
-    card.addEventListener('click', () => toggleStep(card, run));
+  // Fetch detail for all completed/failed steps in parallel
+  ALL_STEPS.forEach((name) => {
+    const s = stepMap[name];
+    if (!s || (s.status !== 'success' && s.status !== 'failed')) return;
+    loadStepDetail(run.ts, name);
   });
 }
 
-async function toggleStep(card, run) {
-  const name     = card.dataset.step;
-  const detailEl = document.getElementById(`detail-${name}`);
-  const isOpen   = card.classList.contains('open');
-  stepsGridEl.querySelectorAll('.step-card.open').forEach(c => c.classList.remove('open'));
-  if (isOpen) return;
-  card.classList.add('open');
-  detailEl.innerHTML = `<div class="loading"><div class="spinner"></div>Loading details…</div>`;
+async function loadStepDetail(ts, name) {
+  const bodyEl = document.getElementById(`body-${name}`);
+  if (!bodyEl) return;
   try {
-    const res  = await fetch(`${API_BASE}/step-detail/${encodeURIComponent(run.ts)}/${name}`);
+    const res  = await fetch(`${API_BASE}/step-detail/${encodeURIComponent(ts)}/${name}`);
     const info = await res.json();
-    detailEl.innerHTML = renderStepInfo(name, info);
+    bodyEl.innerHTML = renderStepInfo(name, info);
   } catch (e) {
-    detailEl.innerHTML = `<div class="error-msg">Could not load step details: ${e.message}</div>`;
+    bodyEl.innerHTML = `<div class="error-msg">Could not load step details: ${e.message}</div>`;
   }
 }
+
 
 // ── Step detail renderers ─────────────────────────────────────
 function renderStepInfo(stepName, info) {
@@ -733,38 +776,7 @@ function renderIngestChart(rows) {
 
     sections.push(section('Evaluation Algorithm', algoHtml));
 
-    // ── 2. Evaluation matrix ─────────────────────────────────
-    if (info.combinations?.length) {
-      const byTs = {};
-      info.combinations.forEach(c => {
-        if (!byTs[c.triplestore]) byTs[c.triplestore] = [];
-        byTs[c.triplestore].push(c);
-      });
-
-      const matrixHtml = Object.entries(byTs).map(([ts, rows]) => {
-        const tableRows = rows.map(r => `
-          <tr>
-            <td>${escHtml(r.dataset)}</td>
-            <td><span class="tag" style="font-size:10px">${escHtml(r.policy)}</span></td>
-            <td class="mono">${fmt(r.query_count)}</td>
-          </tr>`).join('');
-        return `
-          <div style="margin-bottom:16px">
-            <div style="font-size:11px;font-weight:700;color:var(--c-blue);
-                        text-transform:uppercase;letter-spacing:0.05em;
-                        padding:4px 0 6px;border-bottom:2px solid var(--c-blue-wash);
-                        margin-bottom:6px;font-family:var(--font-mono)">
-              ${escHtml(ts)}
-            </div>
-            <table class="data-table">
-              <thead><tr><th>Dataset</th><th>Policy</th><th>Queries</th></tr></thead>
-              <tbody>${tableRows}</tbody>
-            </table>
-          </div>`;
-      }).join('');
-
-      sections.push(section('Evaluation Matrix', matrixHtml));
-    }
+    
 
     // ── 3. Recorded measurements ─────────────────────────────
     if (info.time_header?.length) {
@@ -788,7 +800,7 @@ function renderIngestChart(rows) {
            </div>`
         : '';
 
-      sections.push(section('Recorded Measurements (time.csv)', `
+      sections.push(section('Examples of Recorded Measurements (time.csv)', `
         <div style="overflow-x:auto">
           <table class="data-table">
             <thead><tr>${thCells}</tr></thead>
@@ -801,15 +813,12 @@ function renderIngestChart(rows) {
 
   // ── visualize ────────────────────────────────────────────────
   if (stepName === 'visualize') {
-    if (info.plots?.length) {
-      const plotsHtml = info.plots.map(p => `
-        <div class="plot-card">
-          <div class="plot-title">${escHtml(p.filename.replace(/\.svg$/, '').replace(/_/g, ' '))}</div>
-          <div class="plot-img">${p.data}</div>
-        </div>`).join('');
-      sections.push(section(`Result Plots (${info.plots.length})`, `<div class="plots-grid">${plotsHtml}</div>`));
+    
+    if (!info.plot_data?.length) {
+      sections.push(section('Query Performance Plots',
+        `<div class="dim" style="font-size:12px">No measurement data found. Run the evaluate step first.</div>`));
     } else {
-      sections.push(section('Visualize', `<div class="dim" style="font-size:12px">No plot files found. Run the visualize step to generate plots.</div>`));
+      sections.push(section('Query Performance Plots', renderTimePlots(info.plot_data)));
     }
   }
 
@@ -818,7 +827,192 @@ function renderIngestChart(rows) {
     : `<div class="dim" style="font-size:12px;padding:4px 0">Details will appear here once the step completes.</div>`;
 }
 
-// ── HTML helpers ──────────────────────────────────────────────
+// ── Query performance plots ───────────────────────────────────
+function renderTimePlots(plotData) {
+  // Colours per policy — unchanged from before
+  const POLICY_COLORS = {
+    ic_sr_ng:          '#006699',
+    cb_sr_ng:          '#007E71',
+    tb_sr_ng:          '#E18922',
+    tb_sr_rs:          '#BA4682',
+    ostrich:           '#5485AB',
+    ostrich_aggchange: '#000000',
+  };
+  const COLOR_FALLBACKS = ['#646363','#6AAAA5','#EEB473','#CD81A8'];
+ 
+  // Collect unique policies and triple stores for the legend
+  const policySet     = new Set(plotData.map(s => s.policy));
+  const tsSet         = new Set(plotData.map(s => s.triplestore));
+  const policyList    = [...policySet].sort();
+  const tsList        = [...tsSet].sort();
+ 
+  const policyColorMap = {};
+  let ci = 0;
+  policyList.forEach(p => {
+    policyColorMap[p] = POLICY_COLORS[p] !== undefined
+      ? POLICY_COLORS[p]
+      : COLOR_FALLBACKS[ci++ % COLOR_FALLBACKS.length];
+  });
+ 
+  // ── Legend (policy → solid colour swatch) ───────────────────
+  const legendItems = policyList.map(p => {
+    const color = policyColorMap[p];
+    return `
+      <div class="tsplot-legend-item">
+        <span class="tsplot-legend-swatch" style="background:${color}"></span>
+        <span class="tsplot-legend-label">${escHtml(p)}</span>
+      </div>`;
+  }).join('');
+ 
+  const legendHtml = `
+    <div class="tsplot-legend">
+      <span class="tsplot-legend-heading">Policy (line colour):</span>
+      ${legendItems}
+    </div>`;
+ 
+  // ── Group data: dataset → query_set → triplestore → series[] ─
+  // series = { policy, points: [[version, avg_time], …] }
+  const byDataset = {};
+  plotData.forEach(s => {
+    if (!byDataset[s.dataset])                              byDataset[s.dataset] = {};
+    if (!byDataset[s.dataset][s.query_set])                 byDataset[s.dataset][s.query_set] = {};
+    if (!byDataset[s.dataset][s.query_set][s.triplestore])  byDataset[s.dataset][s.query_set][s.triplestore] = [];
+    byDataset[s.dataset][s.query_set][s.triplestore].push(s);
+  });
+ 
+  const datasets = Object.keys(byDataset).sort();
+ 
+  // ── SVG chart constants ──────────────────────────────────────
+  const W     = 300;
+  const H     = 190;
+  const padL  = 48;
+  const padR  = 10;
+  const padT  = 22;
+  const padB  = 32;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+ 
+  // Log-scale Y: 0.001s … 30s
+  const Y_MIN_LOG = Math.log10(0.001);
+  const Y_MAX_LOG = Math.log10(30);
+  function yScale(val) {
+    if (val <= 0) return padT + plotH;
+    const logV = Math.log10(Math.max(val, 0.001));
+    const frac = (logV - Y_MIN_LOG) / (Y_MAX_LOG - Y_MIN_LOG);
+    return padT + plotH - frac * plotH;
+  }
+  const yTicks      = [0.001, 0.01, 0.1, 1, 10, 30];
+  const yTickLabels = ['1ms', '10ms', '100ms', '1s', '10s', '30s'];
+ 
+  // Build one SVG for a given triplestore within a dataset/query_set
+  function buildPlot(seriesList, tsName) {
+    const allVersions = [...new Set(
+      seriesList.flatMap(s => s.points.map(p => p[0]))
+    )].sort((a, b) => Number(a) - Number(b));
+ 
+    const xMin   = allVersions[0]  ?? 0;
+    const xMax   = allVersions[allVersions.length - 1] ?? 1;
+    const xRange = xMax - xMin || 1;
+    function xScale(v) { return padL + ((v - xMin) / xRange) * plotW; }
+ 
+    // Y grid + tick labels
+    const yGridSvg = yTicks.map((t, i) => {
+      const y = yScale(t);
+      return `
+        <line x1="${padL}" y1="${y}" x2="${padL + plotW}" y2="${y}"
+              stroke="#EDEDED" stroke-width="1"/>
+        <text x="${padL - 4}" y="${y + 4}" text-anchor="end"
+              font-size="7" fill="#9D9D9C" font-family="JetBrains Mono,monospace">
+          ${yTickLabels[i]}
+        </text>`;
+    }).join('');
+ 
+    // X ticks (up to 6)
+    const xTickCount = Math.min(6, allVersions.length);
+    const step = Math.max(1, Math.floor(allVersions.length / xTickCount));
+    const xTickSvg = allVersions.filter((_, i) => i % step === 0).map(v => {
+      const x = xScale(Number(v));
+      return `
+        <line x1="${x}" y1="${padT}" x2="${x}" y2="${padT + plotH}"
+              stroke="#EDEDED" stroke-width="1"/>
+        <text x="${x}" y="${padT + plotH + 10}" text-anchor="middle"
+              font-size="7" fill="#9D9D9C" font-family="JetBrains Mono,monospace">${v}</text>`;
+    }).join('');
+ 
+    // One solid line per policy (series)
+    const linesSvg = seriesList.map(s => {
+      const color = policyColorMap[s.policy] || '#666';
+      const pts   = s.points.filter(p => p[1] > 0);
+      if (pts.length < 2) return '';
+      const d = pts.map((p, i) => {
+        const x = xScale(Number(p[0]));
+        const y = yScale(p[1]);
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      return `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>`;
+    }).join('');
+ 
+    // Title: triple store name
+    const titleShort = tsName.length > 22 ? tsName.slice(0, 21) + '…' : tsName;
+ 
+    return `
+      <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg"
+           style="font-family:Inter,sans-serif;overflow:visible;display:block">
+        <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}"
+              fill="#fafafa" stroke="#D0D0D0" stroke-width="0.5"/>
+        ${yGridSvg}
+        ${xTickSvg}
+        <!-- Axis labels -->
+        <text x="${padL + plotW / 2}" y="${H - 2}" text-anchor="middle"
+              font-size="8" fill="#646363">Version</text>
+        <text transform="rotate(-90,10,${padT + plotH / 2})"
+              x="10" y="${padT + plotH / 2}" text-anchor="middle"
+              font-size="8" fill="#646363">Query time (s)</text>
+        ${linesSvg}
+        <!-- Triple store label at top -->
+        <text x="${padL + plotW / 2}" y="${padT - 4}" text-anchor="middle"
+              font-size="9" font-weight="700" fill="#006699"
+              font-family="Inter,sans-serif">${escHtml(titleShort)}</text>
+      </svg>`;
+  }
+ 
+  // ── Assemble all dataset panels ──────────────────────────────
+  const datasetPanels = datasets.map(ds => {
+    const querySets = Object.keys(byDataset[ds]).sort();
+ 
+    const qsGroups = querySets.map(qs => {
+      const tsMap    = byDataset[ds][qs];
+      const tsNames  = Object.keys(tsMap).sort();
+ 
+      const plotCards = tsNames.map(ts => {
+        const seriesList = tsMap[ts];
+        const svgHtml    = buildPlot(seriesList, ts);
+        return `<div class="tsplot-card">${svgHtml}</div>`;
+      }).join('');
+ 
+      return `
+        <div class="tsplot-qs-group">
+          <div class="tsplot-qs-label">${escHtml(qs)}</div>
+          <div class="tsplot-plots-row">
+            ${plotCards}
+          </div>
+        </div>`;
+    }).join('');
+ 
+    return `
+      <div class="tsplot-dataset-panel">
+        <div class="tsplot-dataset-heading">${escHtml(ds)}</div>
+        <div class="tsplot-qs-wrap">
+          ${qsGroups}
+        </div>
+      </div>`;
+  }).join('');
+ 
+  return legendHtml + datasetPanels;
+}
+
+
 function section(title, body) {
   return `<div class="detail-section">
     <div class="detail-section-title">${title}</div>

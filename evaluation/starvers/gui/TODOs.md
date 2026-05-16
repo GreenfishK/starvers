@@ -305,3 +305,37 @@ There should not be focus on technical details, e.g. how the PIDs are checked, t
 The timeout should be mentioned and the fact that the engine is started and where in the process it is started and shut down regularly
 
 * What is recorded: The header of time.csv should be shown with a few sample rows. 
+
+## 07.05.2026 09:39
+### General
+The general structure of the steps needs to be changed. They should not be collapsable and expandable anymore. Instead, they should always be shown like sections. Each step is a section heading and below is the content. So the whole content of the run is always visible.
+
+The status of processing of a step should be shown next to the section header, similarly to like it is now. If a step has the status "running", a placeholder for the content should be in place.
+
+### Visualize
+The plots from run_dir/outputs/figures should not be shown anymore. Instead, the plots should be created in the gui layer from the TIME_CSV and the QUERY_REWRITING_TIME_CSV files. For the policy tb_sr_rs the times should be added up, i.e. these files should be joined like in the visualize.py - create_latex_tables() function. The plots should have the following information and arrangement
+
+* One plot per dataset with one subplot per query set. 
+* One line per triple store - versioning policy combination
+* The versioning policies should be represented by different line colors
+* The triple stores should be reresented by different lines (e.g. full line, dashed line, ...)
+* the x-axis should have the versions
+* The y-axis should have the query time
+* The y-axis should be a log scale
+
+## 16.05.2026
+### Visualize
+Change the visualization so that the plots are reorganized
+* per dataset section i want:
+    * a grouping of plots per query set
+
+* in each group i want
+    * a line chart per triple store. this means that the triple stores are not in one plot anymore but each triple store has its own plot
+    * each line is, as before the measurement for a policy
+
+* the colors should stay the same
+* the lines should all be straight lines, no dashed or dotted lines
+
+* the legends must be updated accordingly
+
+the plot groups should wrap into the next line if the browser window shrinks horizontally. the plots within the groups should also wrap into the next line if the browser gets even narrower, like on a mobile phone. on the mobile phone i want, in fact, all plots vertically stacked. so the groups become vertical framings
