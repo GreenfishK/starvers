@@ -42,7 +42,9 @@ VERSIONING_APPROACH = {
         "ex:s1 ex:p1 ex:o1 :v21_22_23_25 .\n"
         ":v21_22_23_25 owl:versionInfo \"21\" :versions .\n"
         ":v21_22_23_25 owl:versionInfo \"22\" :versions .\n"
-        ":v21_22_23_25 owl:versionInfo \"23\" :versions ."
+        ":v21_22_23_25 owl:versionInfo \"23\" :versions .\n"
+        ":v21_22_23_25 owl:versionInfo \"25\" :versions ."
+
     ),
     "alldata.TB_star_hierarchical.ttl": (
         "<< << s p o >> vers:valid_from creation_timestamp >> vers:valid_until expiration_timestamp ."

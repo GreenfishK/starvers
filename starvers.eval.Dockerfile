@@ -234,7 +234,7 @@ ENV GDB_JAVA_OPTS='\
 -Dgraphdb.append.request.id.headers=true \
 -Dreuse.vars.in.subselects=true'
 ENV FUSEKI_HOME=/jena-fuseki
-ENV JVM_ARGS='-Xms10g -Xmx80g'
+ENV JVM_ARGS='-Xms10g -Xmx70g'
 ENV ADMIN_PASSWORD=starvers
 
 # ── Expose ports ────────────────────────────────────── 

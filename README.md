@@ -228,6 +228,7 @@ docker run -d --rm \
 starvers_eval:latest gui
 ```
 
+### Debugging
 For developing, bind the gui scripts
 
 ```bash
@@ -238,6 +239,18 @@ docker run -d --rm \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
 -v ./evaluation/starvers/gui:/starvers_eval/gui \
 starvers_eval:latest gui
+```
+
+Start GraphDB with specific storage location
+```bash
+docker run -d \
+--name graphdb-debug \
+-e GDB_JAVA_OPTS='-Xms10g -Xmx70g -Dgraphdb.dist=/opt/graphdb/dist -Dgraphdb.home.work=/tmp/graphdb/work -Dgraphdb.home.data=/opt/graphdb/data -Dgraphdb.workbench.importDirectory=/opt/graphdb/home/graphdb-import -Dgraphdb.workbench.cors.enable=true -Denable-context-index=true -Dentity-pool-implementation=transactional -Dhealth.max.query.time.seconds=30 -Dgraphdb.append.request.id.headers=true -Dreuse.vars.in.subselects=true' \
+-e JVM_ARGS='-Xms10g -Xmx70g' \
+--network starvers_prod_net \
+-p 7205:7200 \
+-v /mnt/data_local/starvers_eval/20260426T15-22-09.348/databases/graphdb/tb_sr_ng_orkg:/opt/graphdb/data \
+ontotext/graphdb:10.5.0
 ```
 
 ## Starversserver Evaluation

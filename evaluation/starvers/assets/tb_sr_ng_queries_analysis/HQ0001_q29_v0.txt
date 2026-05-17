@@ -1,0 +1,82 @@
+# Query - tb_sr_ng - ORKG/complex - 0 - HQ0001_q29_v0.txt
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX orkgr: <http://orkg.org/orkg/resource/>
+PREFIX orkgc: <http://orkg.org/orkg/class/>
+PREFIX orkgp: <http://orkg.org/orkg/predicate/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT * { 
+    GRAPH <http://example.org/versions> {
+        ?graph <http://www.w3.org/2002/07/owl#versionInfo> 0
+    }
+    GRAPH ?graph {
+        SELECT ?datatype WHERE {
+            orkgr:R8364 orkgp:compareContribution ?cont.
+            ?paper orkgp:P31 ?cont;
+                    rdfs:label ?title.
+            ?cont  orkgp:P7046 ?sys.
+            ?sys orkgp:P7055 ?datatype.
+            FILTER(REGEX(STR(?title), "Open Research Knowledge Graph"))
+        }
+    }
+}
+
+# Results
+
+## GraphDB - tb_sr_ng_orkg/complex/0/HQ0001_q29_v0.csv
+Expected result:
+
+
+Observation: 
+* The query returns every named graph in which the result is valid. 
+* The result looks invalid, as there 
+are multiple overlapping versions in the URIs of the different graphs.
+* The result set points to a contradiction, since a resource cannot be invalid and valid in a specific version 
+at the same time. E.g. 
+http://example.org/v0_1_2;Free text suggests that it was only valid in versions 0, 1, and 2, whereas 
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10 suggests that it was valid between versions 0 and 10.
+
+TODO: Check in which versions the binding (?datatype, "free text") is actually valid
+
+Observations from the dataset alldata.TB_computed.nq:
+"free text" as a resource can exist multiple times because of different subjects and predicates, suggesting that 
+there is no contradiction.
+
+TODO: Start the graphdb server for ORKG TB_SR_NG and execute the query above, to check the results.
+
+
+graph;datatype
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28_29_30_31_32_33;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14;Free text
+http://example.org/v0_1_2;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28_29;Free text
+http://example.org/v0_1_2_3;Free text
+http://example.org/v0_1_2_3_4;Free text
+http://example.org/v0_1_2_3_4_5;Free text
+http://example.org/v0_1_2_3_4_5_6_7;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28_29_30_31;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16;Free text
+http://example.org/v0_1_2_3_4_5_6;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28_29_30;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28_29_30_31_32;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20;Free text
+http://example.org/v0;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18_19_20_21_22_23_24_25_26_27_28;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13_14_15_16_17_18;Free text
+http://example.org/v0_1_2_3_4_5_6_7_8_9_10_11_12_13;Free text
