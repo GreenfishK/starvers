@@ -46,17 +46,23 @@ class GuiContr:
         timestamped_query = ""
         try:
             result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
-            
-            logger.info(f"Result set contains {len(result_set_df)} records.")
-            timestamped_query = self.__starvers_engine.timestamped_query
-            timestamped_query = timestamped_query.lstrip()
         except TimeoutError as e:
             # Does only catch timeout from the http request, not the database query itself, 
             # which can have a different timeout.
-            raise Exception(f"Timeout of {self.__starvers_engine.timeout} seconds exceeded: {e}")
+            raise Exception(f"Timeout of {self.__starvers_engine.timeout} seconds exceeded: {e}")    
+        except Exception as e:
+            logger.error(f"An error occurred during query execution: {str(e)}")
+            raise Exception(f"An error occurred during query execution: {str(e)}")
 
-        return result_set_df, timestamped_query
+        logger.info(f"Result set contains {len(result_set_df)} records.")
 
+        full_df = result_set_df.copy()
+        truncated = False
+        if len(result_set_df) > 200:
+            result_set_df = result_set_df.head(200)
+            truncated = True
+
+        return result_set_df, full_df, timestamped_query, truncated
 
     def build_timeseries(self, time_aggr: TimeAggregation = TimeAggregation.DAY, active_time_aggr: int = 1) -> tuple[str, str, Any, go.Layout]:
         repo_name = self.repo_name

@@ -421,7 +421,7 @@ class TripleStoreEngine:
         logger.info("Retrieving results ...")
         try:
             result = self.sparql_get_with_post.query()
-            logging.info("Query executed successfully!")
+            logger.info("Query executed successfully!")
         except TimeoutError as e:
             logger.error(f"A timeout error occurred during query execution. The timeout was {self.timeout}: {e}")
             raise e

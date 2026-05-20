@@ -179,10 +179,10 @@ def run_query():
     try:
         controller = GuiContr(repo_name=repo)
         timestamp = datetime.fromisoformat(timestamp_str) if timestamp_str else None
-        df, timesamped_query = controller.query(query_text, timestamp=timestamp)
+        df, full_df, timesamped_query, truncated = controller.query(query_text, timestamp=timestamp)
 
         global last_result_df
-        last_result_df = df if not df.empty else pd.DataFrame()
+        last_result_df = full_df if not full_df.empty else pd.DataFrame()
 
         # Convert IRI to link
         def iri_to_link(val):
@@ -195,7 +195,11 @@ def run_query():
         df = df.applymap(iri_to_link)
         result_set = df.to_html(classes="table table-striped", index=False, escape=False)
 
-        return jsonify({"result_set": result_set, "timestamped_query": timesamped_query})
+        return jsonify({
+            "result_set": result_set,
+            "timestamped_query": timesamped_query,
+            "truncated": truncated          # ← add this
+        })
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -17,7 +17,7 @@ services:
       rdfstore:
         condition: service_started
     env_file: "./starversserver.env"
-    mem_limit: 1g
+    mem_limit: 20g
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

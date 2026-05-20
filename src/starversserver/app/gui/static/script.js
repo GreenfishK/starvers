@@ -167,19 +167,23 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
         if (data.error) {
             resultTable.innerHTML = `<div id="queryExecutionError" class="notification is-danger"><strong>Error:</strong> ${data.error}</div>`;
         } else {
-            resultTable.innerHTML = data.result_set;
+            let warningHtml = "";
+            if (data.truncated) {
+                warningHtml = `
+                    <div class="notification is-warning mb-2">
+                        <strong>Notice:</strong> Only the first 200 rows are shown.
+                        The full result set is available via CSV download.
+                    </div>`;
+            }
+            resultTable.innerHTML = warningHtml + data.result_set;
             console.log("Result successfully retrieved.");
 
-            // Check if the download button already exists
-            if (!downloadButton) {
-                console.log("Adding download button.");
+            if (!document.getElementById("download-btn")) {
                 const downloadLink = document.createElement("a");
                 downloadLink.href = "/download";
                 downloadLink.innerHTML = `<button id="download-btn" class="button is-success mt-3">Download CSV</button>`;
                 resultTable.parentElement.appendChild(downloadLink);
-
             }
-        
         }
         resultTable.style.display = "block";
 
