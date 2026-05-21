@@ -707,73 +707,16 @@ function renderIngestChart(rows) {
   if (stepName === 'evaluate') {
 
     // ── 1. Evaluation algorithm ──────────────────────────────
+    // center horizontally with max width 50% so it doesn't dominate the section, but can still be legible
+
     const algoHtml = `
-      <div style="font-family:var(--font-mono);font-size:11px;line-height:1.9;color:var(--text-dim)">
-        <div><span style="color:var(--c-blue);font-weight:700">for</span>
-          &nbsp;(triple_store, policy, dataset)
-          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
-          &nbsp;combinations:</div>
-
-        <div style="padding-left:24px">
-          <span style="color:var(--c-grey-mid)">// skip if combination not registered in eval_setup.toml</span>
-        </div>
-        <div style="padding-left:24px">
-          <span style="color:var(--c-blue);font-weight:700">if not</span>
-          &nbsp;eval_combi_exists(triple_store, dataset, policy):&nbsp;
-          <span style="color:var(--c-blue);font-weight:700">continue</span>
-        </div>
-
-        <div style="padding-left:24px;margin-top:6px">
-          <span style="color:var(--c-teal);font-weight:600">startup</span>(triple_store, policy, dataset)
-          &nbsp;<span style="color:var(--c-grey-mid)">// start the triple store process</span>
-        </div>
-
-        <div style="padding-left:24px;margin-top:6px">
-          <span style="color:var(--c-blue);font-weight:700">for</span>
-          &nbsp;query_set
-          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
-          &nbsp;query_sets(policy, dataset):</div>
-        <div style="padding-left:48px">
-          <span style="color:var(--c-blue);font-weight:700">for</span>
-          &nbsp;version
-          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
-          &nbsp;versions:</div>
-        <div style="padding-left:72px">
-          <span style="color:var(--c-blue);font-weight:700">for</span>
-          &nbsp;query
-          &nbsp;<span style="color:var(--c-blue);font-weight:700">in</span>
-          &nbsp;queries(version):</div>
-
-        <div style="padding-left:96px;margin-top:4px">
-          response, exec_time
-          &nbsp;<span style="color:var(--c-blue);font-weight:700">=</span>
-          &nbsp;<span style="color:var(--c-teal);font-weight:600">execute</span
-          >(query,
-          &nbsp;<span style="color:var(--c-orange);font-weight:600">timeout=30s</span>)
-        </div>
-        <div style="padding-left:96px">
-          <span style="color:var(--c-teal);font-weight:600">record</span
-          >(triple_store, dataset, policy, query_set, version, exec_time, yn_timeout)
-        </div>
-        <div style="padding-left:96px">
-          <span style="color:var(--c-teal);font-weight:600">save_result_set</span
-          >(response &rarr; result_sets/…)
-        </div>
-
-        <div style="padding-left:96px;margin-top:4px;color:var(--c-grey-mid)">
-          // on crash or memory pressure (&gt;85%): restart triple store, continue
-        </div>
-
-        <div style="padding-left:24px;margin-top:6px">
-          <span style="color:var(--c-teal);font-weight:600">write_results</span
-          >(rows &rarr; time.csv)
-        </div>
-        <div style="padding-left:24px">
-          <span style="color:var(--c-teal);font-weight:600">shutdown</span>(triple_store)
-          &nbsp;<span style="color:var(--c-grey-mid)">// shut down after each query set</span>
-        </div>
-      </div>`;
-
+    <div style="display:flex;justify-content:center;">
+      <img
+        src="/evaluation/starvers/static/images/evaluation_loop.svg"
+        alt="Evaluation loop activity diagram"
+        style="max-width:25%;height:auto;display:flex"
+      >
+    </div>`;
     sections.push(section('Evaluation Algorithm', algoHtml));
 
     

@@ -1,0 +1,132 @@
+<svg width="100%" viewBox="0 0 680 1100" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>UML Activity Diagram – Benchmark Evaluation Loop</title>
+  <desc>Activity diagram showing triple store evaluation: nested loops over combinations, query sets, versions, and queries, with timeout/crash handling and shutdown steps.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+
+  <!-- ── START ── -->
+  <circle cx="340" cy="76" r="10" fill="#2c2c2a"/>
+  <line x1="340" y1="86" x2="340" y2="108" stroke="#555451" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ── eval_combi_exists? ── -->
+  <polygon points="340,112 440,136 340,160 240,136" fill="#eceae3" stroke="#888680" stroke-width="0.8"/>
+  <text x="420" y="95" text-anchor="middle" dominant-baseline="central" fill="#2c2c2a" font-size="12" font-family="sans-serif">triple_store, policy, dataset</text>
+
+  <text x="340" y="134" text-anchor="middle" dominant-baseline="central" fill="#2c2c2a" font-size="12" font-family="sans-serif">eval_combi_exists?</text>
+  <line x1="440" y1="136" x2="590" y2="136" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+  <text x="510" y="128" text-anchor="middle" fill="#555451" font-size="12" font-family="sans-serif">no → skip</text>
+  <path d="M590 136 L618 136 L618 76 L350 76" fill="none" stroke="#555451" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="340" y1="160" x2="340" y2="186" stroke="#555451" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="356" y="177" fill="#555451" font-size="12" font-family="sans-serif">yes</text>
+
+  <!-- ── startup ── -->
+  <rect x="220" y="186" width="240" height="44" rx="8" fill="#fcddd7" stroke="#d85a30" stroke-width="0.8"/>
+  <text x="340" y="208" text-anchor="middle" dominant-baseline="central" fill="#4a1b0c" font-size="13" font-weight="600" font-family="sans-serif">startup(triple_store, policy, dataset)</text>
+  <line x1="340" y1="230" x2="340" y2="254" stroke="#4a1b0c" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── for query_set ── -->
+  <rect x="210" y="254" width="260" height="44" rx="8" fill="#dddcf8" stroke="#7f77dd" stroke-width="0.8"/>
+  <text x="340" y="270" text-anchor="middle" dominant-baseline="central" fill="#26215c" font-size="13" font-weight="600" font-family="sans-serif">for query_set in</text>
+  <text x="340" y="287" text-anchor="middle" dominant-baseline="central" fill="#534ab7" font-size="12" font-family="sans-serif">query_sets(policy, dataset)</text>
+  <line x1="340" y1="298" x2="340" y2="322" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── for version ── -->
+  <rect x="220" y="322" width="240" height="44" rx="8" fill="#dddcf8" stroke="#7f77dd" stroke-width="0.8"/>
+  <text x="340" y="344" text-anchor="middle" dominant-baseline="central" fill="#26215c" font-size="13" font-weight="600" font-family="sans-serif">for version in versions</text>
+  <line x1="340" y1="366" x2="340" y2="390" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── for query ── -->
+  <rect x="220" y="390" width="240" height="44" rx="8" fill="#dddcf8" stroke="#7f77dd" stroke-width="0.8"/>
+  <text x="340" y="406" text-anchor="middle" dominant-baseline="central" fill="#26215c" font-size="13" font-weight="600" font-family="sans-serif">for query in</text>
+  <text x="340" y="423" text-anchor="middle" dominant-baseline="central" fill="#534ab7" font-size="12" font-family="sans-serif">queries(version)</text>
+  <line x1="340" y1="434" x2="340" y2="458" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── execute ── -->
+  <rect x="205" y="458" width="270" height="56" rx="8" fill="#cde4f8" stroke="#378add" stroke-width="0.8"/>
+  <text x="340" y="478" text-anchor="middle" dominant-baseline="central" fill="#042c53" font-size="13" font-weight="600" font-family="sans-serif">execute(query, timeout=30s)</text>
+  <text x="340" y="497" text-anchor="middle" dominant-baseline="central" fill="#185fa5" font-size="12" font-family="sans-serif">→ response, exec_time</text>
+  <line x1="340" y1="514" x2="340" y2="538" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── crash / mem? ── -->
+  <polygon points="340,542 440,562 340,582 240,562" fill="#eceae3" stroke="#888680" stroke-width="0.8"/>
+  <text x="340" y="560" text-anchor="middle" dominant-baseline="central" fill="#2c2c2a" font-size="12" font-family="sans-serif">crash / mem &gt;85%?</text>
+  <line x1="440" y1="562" x2="558" y2="562" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+  <text x="497" y="554" fill="#555451" font-size="12" font-family="sans-serif">yes</text>
+  <rect x="558" y="543" width="96" height="38" rx="8" fill="#fcddd7" stroke="#d85a30" stroke-width="0.8"/>
+  <text x="606" y="562" text-anchor="middle" dominant-baseline="central" fill="#4a1b0c" font-size="13" font-weight="600" font-family="sans-serif">restart</text>
+  <path d="M606 543 L606 487 L475 487" fill="none" stroke="#555451" stroke-width="1" marker-end="url(#arrow)"/>
+  <line x1="340" y1="582" x2="340" y2="604" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+  <text x="357" y="597" fill="#555451" font-size="12" font-family="sans-serif">no</text>
+
+  <!-- ── record ── -->
+  <rect x="175" y="604" width="330" height="56" rx="8" fill="#cde4f8" stroke="#378add" stroke-width="0.8"/>
+  <text x="340" y="622" text-anchor="middle" dominant-baseline="central" fill="#042c53" font-size="13" font-weight="600" font-family="sans-serif">record execution measurements</text>
+  <text x="340" y="641" text-anchor="middle" dominant-baseline="central" fill="#185fa5" font-size="12" font-family="sans-serif">query_set, version, exec_time, yn_timeout, ...</text>
+  <line x1="340" y1="660" x2="340" y2="682" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── save_result_set ── -->
+  <rect x="185" y="682" width="310" height="44" rx="8" fill="#fdefd4" stroke="#ba7517" stroke-width="0.8"/>
+  <text x="340" y="700" text-anchor="middle" dominant-baseline="central" fill="#412402" font-size="13" font-weight="600" font-family="sans-serif">save result set</text>
+  <text x="340" y="717" text-anchor="middle" dominant-baseline="central" fill="#854f0b" font-size="12" font-family="sans-serif">→ result_sets/…</text>
+
+  <!-- ── Back-edges (dashed, clearly distinct from solid loop windows) ── -->
+
+  <!-- Back-edge: queries loop — exits save_result_set bottom, goes left to x=100, up to execute mid -->
+  <path d="M340 740 L102 740 L100 486 L205 486" fill="none" stroke="#888680" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="104" y="500" text-anchor="start" fill="#555451" font-size="11" font-family="sans-serif">next query</text>
+
+  <!-- Back-edge: versions loop — from x=100 at y=440 left to x=78, up to for-version top -->
+  <path d="M340 755 L78 755 L78 344 L220 344" fill="none" stroke="#888680" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="82" y="360" text-anchor="start" fill="#555451" font-size="11" font-family="sans-serif">next version</text>
+
+  <!-- Back-edge: query_set loop — from x=78 at y=300 left to x=58, up to for-query_set top -->
+  <path d="M340 770 L58 770 L58 276 L210 276" fill="none" stroke="#888680" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="62" y="292" text-anchor="start" fill="#555451" font-size="11" font-family="sans-serif">next q_set</text>
+
+  <!-- ── write_results ── -->
+  <line x1="340" y1="726" x2="340" y2="784" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+  <rect x="215" y="784" width="250" height="44" rx="8" fill="#fdefd4" stroke="#ba7517" stroke-width="0.8"/>
+  <text x="340" y="804" text-anchor="middle" dominant-baseline="central" fill="#412402" font-size="13" font-weight="600" font-family="sans-serif">write_results(rows → time.csv)</text>
+  <text x="340" y="820" text-anchor="middle" dominant-baseline="central" fill="#854f0b" font-size="12" font-family="sans-serif">after all query sets</text>
+  <line x1="340" y1="828" x2="340" y2="852" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- ── shutdown ── -->
+  <rect x="220" y="852" width="240" height="44" rx="8" fill="#fcddd7" stroke="#d85a30" stroke-width="0.8"/>
+  <text x="340" y="872" text-anchor="middle" dominant-baseline="central" fill="#4a1b0c" font-size="13" font-weight="600" font-family="sans-serif">shutdown(triple_store)</text>
+  <text x="340" y="889" text-anchor="middle" dominant-baseline="central" fill="#993c1d" font-size="12" font-family="sans-serif">after each query set</text>
+
+  <!-- Back-edge: combinations loop — far left at x=34, well outside all loop windows -->
+  <path d="M340 896 L340 930 L34 930 L34 76 L330 76" fill="none" stroke="#888680" stroke-width="1" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="38" y="90" text-anchor="start" fill="#555451" font-size="11" font-family="sans-serif">next</text>
+  <text x="38" y="105" text-anchor="start" fill="#555451" font-size="11" font-family="sans-serif">combination</text>
+
+  <!-- ── END ── -->
+  <line x1="340" y1="896" x2="340" y2="956" stroke="#555451" stroke-width="1" marker-end="url(#arrow)" fill="none"/>
+  <text x="356" y="928" fill="#555451" font-size="12" font-family="sans-serif">all done</text>
+  <circle cx="340" cy="970" r="10" fill="none" stroke="#2c2c2a" stroke-width="2.5"/>
+  <circle cx="340" cy="970" r="6" fill="#2c2c2a"/>
+
+  <!-- ── Legend ── -->
+  <rect x="44" y="996" width="592" height="80" rx="8" fill="#edece6" stroke="#b0aea6" stroke-width="0.5"/>
+  <text x="64" y="1014" fill="#555451" font-size="12" font-family="sans-serif">Legend</text>
+
+  <line x1="144" y1="1029" x2="206" y2="1029" stroke="#888680" stroke-width="1" stroke-dasharray="5 3"/>
+  <text x="52" y="1033" fill="#2c2c2a" font-size="12" font-family="sans-serif">loop back-edge</text>
+
+  <rect x="224" y="1022" width="14" height="14" rx="3" fill="#cde4f8" stroke="#378add" stroke-width="0.8"/>
+  <text x="244" y="1033" fill="#2c2c2a" font-size="12" font-family="sans-serif">execution</text>
+
+  <rect x="310" y="1022" width="14" height="14" rx="3" fill="#dddcf8" stroke="#7f77dd" stroke-width="0.8"/>
+  <text x="330" y="1033" fill="#2c2c2a" font-size="12" font-family="sans-serif">loop control</text>
+
+  <rect x="414" y="1022" width="14" height="14" rx="3" fill="#fcddd7" stroke="#d85a30" stroke-width="0.8"/>
+  <text x="434" y="1033" fill="#2c2c2a" font-size="12" font-family="sans-serif">startup / shutdown</text>
+
+  <rect x="554" y="1022" width="14" height="14" rx="3" fill="#fdefd4" stroke="#ba7517" stroke-width="0.8"/>
+  <text x="574" y="1033" fill="#2c2c2a" font-size="12" font-family="sans-serif">disk I/O</text>
+
+</svg>
