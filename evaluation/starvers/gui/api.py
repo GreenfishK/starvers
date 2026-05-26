@@ -12,6 +12,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 import logging
 import sys
+import platform, subprocess, shutil
 
 import tomli
 from flask import Flask, abort, jsonify, render_template
@@ -38,22 +39,24 @@ PORT        = int(os.environ.get("PORT", 8080))
 
 
 VERSIONING_APPROACH = {
-    "alldata.TB_computed.nq": (
-        "ex:s1 ex:p1 ex:o1 :v21_22_23_25 .\n"
+    "alldata.TB_computed.nq (BEAR approach)": (
+        ":s :p :o :v21_22_23_25 .\n"
         ":v21_22_23_25 owl:versionInfo \"21\" :versions .\n"
         ":v21_22_23_25 owl:versionInfo \"22\" :versions .\n"
         ":v21_22_23_25 owl:versionInfo \"23\" :versions .\n"
         ":v21_22_23_25 owl:versionInfo \"25\" :versions ."
 
     ),
-    "alldata.TB_star_hierarchical.ttl": (
-        "<< << s p o >> vers:valid_from creation_timestamp >> vers:valid_until expiration_timestamp ."
+    "alldata.TB_star_hierarchical.ttl (RDF-star decorator model)": (
+        "<< << :s :p :o >> :valid_from '2025-01-05T01:56:30' >> :valid_until '2025-01-30T02:33:11' .\n"
+        "<< << :s :p :o >> :valid_from '2025-03-04T12:31:05' >> :valid_until '9999-12-31T23:59:59' ."
     ),
-    "alldata.ICNG.trig": (
-        "GRAPH <http://starvers_eval/ic/v0> { triples from v0 }\n"
-        "GRAPH <http://starvers_eval/ic/v1> { triples from v1 }\n"
-        "...\n"
-        "GRAPH <http://starvers_eval/ic/<last_version> { triples from <last_snapshot> }\n"
+    "alldata.ICNG.trig (snapshot-based approach, each snapshot in a named graph)": (
+        "GRAPH <http://starvers_eval/ic/v21> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v22> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v23> { :s :p :o . }\n"
+        "GRAPH <http://starvers_eval/ic/v24> { }\n"
+        "GRAPH <http://starvers_eval/ic/v25> { :s :p :o . }\n"
     ),
     "Base variant: first IC + change sets": (
         "No versioning at RDF-level. Ingested as independent copies (IC) "
@@ -63,9 +66,9 @@ VERSIONING_APPROACH = {
 
 VARIANT_FILES = [
     ("alldata_vdir",            "Base variant: first IC + change sets",           True),
-    ("alldata.TB_computed.nq",            "alldata.TB_computed.nq",           False),
-    ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl", False),
-    ("alldata.ICNG.trig",                 "alldata.ICNG.trig",                False),
+    ("alldata.TB_computed.nq",            "alldata.TB_computed.nq (BEAR approach)",           False),
+    ("alldata.TB_star_hierarchical.ttl",  "alldata.TB_star_hierarchical.ttl (RDF-star decorator model)", False),
+    ("alldata.ICNG.trig",                 "alldata.ICNG.trig (snapshot-based approach, each snapshot in a named graph)",                False),
 ]
 
 DATASET_DESCRIPTIONS = {
@@ -92,6 +95,93 @@ DATASET_DESCRIPTIONS = {
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+def _get_hardware_info() -> dict:
+    # ── CPU ──────────────────────────────────────────────────
+    cpu = platform.processor() or "Unknown"
+    try:
+        out = subprocess.check_output(["lscpu"], text=True, stderr=subprocess.DEVNULL)
+        for line in out.splitlines():
+            if line.startswith("Model name"):
+                cpu = line.split(":", 1)[1].strip()
+                break
+    except Exception:
+        pass
+
+    # ── File System ──────────────────────────────────────────
+    # Inside Docker, df returns "overlay". Instead, find what the
+    # host mounted at "/" really is by inspecting /proc/mounts.
+    # We skip overlay/tmpfs/proc/sysfs entries and take the first
+    # real block-device-backed mount that covers "/".
+    fs_type = "Unknown"
+    try:
+        with open("/proc/mounts") as f:
+            mounts = f.readlines()
+        # Prefer the mount whose mountpoint is "/" with a real fstype
+        skip = {"overlay", "tmpfs", "proc", "sysfs", "devtmpfs",
+                "devpts", "cgroup", "cgroup2", "mqueue", "hugetlbfs",
+                "pstore", "securityfs", "debugfs", "fusectl"}
+        for line in mounts:
+            parts = line.split()
+            if len(parts) >= 3 and parts[1] == "/" and parts[2] not in skip:
+                fs_type = parts[2]
+                break
+        # Fallback: first non-overlay/tmpfs real mount
+        if fs_type == "Unknown":
+            for line in mounts:
+                parts = line.split()
+                if len(parts) >= 3 and parts[2] not in skip and parts[0].startswith("/dev"):
+                    fs_type = parts[2]
+                    break
+    except Exception:
+        pass
+
+    # ── Hard disk name + type ────────────────────────────────
+    disk_name = "Unknown"
+    disk_type = "Unknown"
+    try:
+        out = subprocess.check_output(
+            ["lsblk", "-d", "-o", "NAME,ROTA,MODEL", "--noheadings"],
+            text=True, stderr=subprocess.DEVNULL
+        )
+        for line in out.splitlines():
+            parts = line.split(None, 2)
+            if len(parts) >= 2:
+                disk_name = parts[2].strip() if len(parts) == 3 else parts[0].strip()
+                disk_type = "HDD" if parts[1].strip() == "1" else "SSD"
+                break
+    except Exception:
+        pass
+
+    # ── RAM ─────────────────────────────────────────────────
+    #ram_size = "Unknown"
+    #try:
+    #    with open("/proc/meminfo") as f:
+    #        for line in f:
+    #            if line.startswith("MemTotal"):
+    #                kb = int(line.split()[1])
+    #                gb = kb / 1024 / 1024
+    #                # Round to nearest sensible value
+    #                ram_size = f"{round(gb)} GB"
+    #                break
+    #except Exception:
+    #    pass
+
+    #ram_type  = hw_override.get("ram_type", "Unknown")
+    #ram_speed = hw_override.get("ram_speed", "Unknown")
+
+    # Apply overrides
+    #disk_name = hw_override.get("disk_name") or disk_name
+    #disk_type = hw_override.get("disk_type") or disk_type
+    #ram_size  = hw_override.get("ram_size")  or ram_size
+
+    return {
+        "CPU":            cpu,
+        #"RAM":            f"{ram_size}" + (f" {ram_type}" if ram_type != "Unknown" else "") + (f" @ {ram_speed}" if ram_speed != "Unknown" else ""),
+        "File System":    fs_type,
+        "Hard Disk Name": disk_name,
+        "Hard Disk Type": disk_type,
+    }
+
 
 def _read_run(run_dir: Path) -> dict:
     csv_path = run_dir / "execution.csv"
@@ -571,11 +661,14 @@ def _detail_evaluate(run_dir: Path) -> dict:
                     time_total_rows += 1
         time_total_rows += len(time_samples)
 
+    hardware_info = _get_hardware_info()
+
     return {
         "combinations":   combinations,
         "time_header":    time_header,
         "time_samples":   time_samples,
         "time_total_rows": time_total_rows,
+        "hardware":   hardware_info,
     }
 
 

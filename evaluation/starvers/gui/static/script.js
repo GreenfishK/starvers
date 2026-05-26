@@ -13,7 +13,7 @@ const step_descriptions = {
   download: 'The datasets and query sets are fetched from the provided URLs and the number of snapshots (versions) and total snapshot size are computed from the source files and displayed below.',
   preprocess_data: 'The snapshot files of the datasets and the query sets are preprocessed in different ways. The dataset triples are skolemized and validated for RDF compliance using two different RDF validators. The queries of the SciQA dataset are parsed and validated by querying them against the three evaluated triple stores. The queries are also transformed into the timestamped-based representation and also executed against the triple stores. If a query is invalid in at least one of the triple stores in either original or timestamped form, it is excluded from the evaluation.',
   construct_datasets: 'Four different dataset variants are constructed from the snapshot files. Three of them use a certain RDF-based versioning approach and the fourth one is a simple collection of the first snapshots and the consecutive deltas/change sets, which are ingested and internally versioned by the Ostrich store.',
-  ingest: 'Each dataset variant that applys versioning on RDF level is ingested into the two evaluated RDF-star triple stores, whereas the first snapshot and changesets variant is ingested into the Ostrich store. The total ingestion time is measured for 10 runs and averaged. The size of the ingested data is also measured and displayed below.',
+  ingest: 'Each dataset variant that applys versioning on RDF level is ingested into the two evaluated RDF-star triple stores, whereas the first snapshot and changesets variant is ingested into the Ostrich store. The total ingestion time is measured for one run only. The size of the ingested data is also measured and displayed below.',
   construct_queries: 'Each dataset variant has their own query form. A query is constructed from a query template for each dataset, dataset variant (versioning policy), and version. The table below shows how many queries are generated and executed in the next step.',
   evaluate: 'The evaluation loop for the query execution is shown below.',
   visualize: 'For each dataset and query set a line is plotted showing the query execution time over the versions for each dataset variant (versioning policy) and triple store combination.'
@@ -397,7 +397,7 @@ function renderStepInfo(stepName, info) {
     }
 
     if (step2Body) {
-      sections.push(section('Step 2: Query Parsing and Validation', step2Body));
+      sections.push(section('Step 2: Query Parsing and Validation (ORKG queries)', step2Body));
     }
   }
 
@@ -426,7 +426,8 @@ function renderStepInfo(stepName, info) {
                     <thead><tr><th>Dataset</th><th>Size</th></tr></thead>
                     <tbody>${dsRows}</tbody>
                   </table>
-                  <div class="variant-approach-label">RDF Versioning Approach</div>
+                  <div class="variant-approach-label">Versioning Model</div>
+                  <div>Case: A triple with two validation periods .</div>
                   <div class="variant-approach">${escHtml(data.approach || '—')}</div>
                 </div>
               </div>`;
@@ -712,9 +713,9 @@ function renderIngestChart(rows) {
     const algoHtml = `
     <div style="display:flex;justify-content:center;">
       <img
-        src="/evaluation/starvers/static/images/evaluation_loop.svg"
+        src="/evaluation/starvers/static/images/evaluation_loop_horizontal.svg"
         alt="Evaluation loop activity diagram"
-        style="max-width:25%;height:auto;display:flex"
+        style="max-width:100%;height:auto;display:flex"
       >
     </div>`;
     sections.push(section('Evaluation Algorithm', algoHtml));
@@ -723,12 +724,26 @@ function renderIngestChart(rows) {
 
     // ── 3. Recorded measurements ─────────────────────────────
     if (info.time_header?.length) {
+      // ── Section 1: Hardware Infos ──────────────────────────────
+      const hw = info.hardware || {};
+      const hwRows = Object.entries(hw).map(([k, v]) => `
+        <tr>
+          <td class="kv-key" style="padding:7px 12px;white-space:nowrap">${escHtml(k)}</td>
+          <td class="kv-val mono" style="padding:7px 12px">${escHtml(String(v))}</td>
+        </tr>`).join('');
+
+      sections.push(section('Hardware Infos', `
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody>${hwRows}</tbody>
+        </table>`));
+
+      // ── Section 2: Recorded Measurements ──────────────────────
       const thCells = info.time_header.map(h =>
         `<th>${escHtml(h)}</th>`).join('');
 
       const sampleRows = (info.time_samples || []).map(row => {
         const cells = row.map((v, i) => {
-          // Format exec_time column (index 7) to 4 decimal places
           if (i === 7 && v !== '' && !isNaN(Number(v))) {
             return `<td class="mono">${Number(v).toFixed(4)}</td>`;
           }
@@ -739,11 +754,11 @@ function renderIngestChart(rows) {
 
       const totalNote = info.time_total_rows > 0
         ? `<div style="font-size:11px;color:var(--text-faint);padding:8px 12px">
-             Showing 5 of ${fmt(info.time_total_rows)} rows
-           </div>`
+            Showing 5 of ${fmt(info.time_total_rows)} rows
+          </div>`
         : '';
 
-      sections.push(section('Examples of Recorded Measurements (time.csv)', `
+      sections.push(section('Recorded Measurements', `
         <div style="overflow-x:auto">
           <table class="data-table">
             <thead><tr>${thCells}</tr></thead>
