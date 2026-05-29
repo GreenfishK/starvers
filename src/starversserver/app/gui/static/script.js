@@ -155,6 +155,7 @@ function executeQuery(e, sparqlForm, timestampedEditor) {
     .then(res => res.json())
     .then(data => {
         // show timestamped query
+        console.log("Timestamped query received:", data.timestamped_query);
         timestampedEditor.setValue(data.timestamped_query || "");
 
         clearInterval(timerInterval);

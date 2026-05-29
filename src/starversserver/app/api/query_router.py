@@ -15,8 +15,8 @@ from flask import send_file
 
 from fastapi import APIRouter, Body, Query
 
-from starvers.starvers import TripleStoreEngine
-from starversserver.app.AppConfig import Settings
+from app.utils.starvers.starvers import TripleStoreEngine
+from app.AppConfig import Settings
 
 tag = "query"
 

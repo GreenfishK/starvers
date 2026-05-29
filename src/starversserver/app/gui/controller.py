@@ -46,6 +46,7 @@ class GuiContr:
         timestamped_query = ""
         try:
             result_set_df = self.__starvers_engine.query(query, timestamp, query_as_timestamped)
+            timestamped_query = self.__starvers_engine.timestamped_query
         except TimeoutError as e:
             # Does only catch timeout from the http request, not the database query itself, 
             # which can have a different timeout.
@@ -132,8 +133,6 @@ class GuiContr:
             ins = insertions.iloc[i]
             dels = deletions.iloc[i]
             net = ins - dels
-
-            logger.info(f"Insertions: {ins}; Deletions: {dels}; Net: {net}")
 
             if net > 0:
                 ins_y.append(net)
