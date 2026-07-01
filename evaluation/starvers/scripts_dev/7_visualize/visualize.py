@@ -8,30 +8,27 @@ import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 import tomli
+from pathlib import Path
+from scripts.logging_setup import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
-log_dir = f"{os.environ['RUN_DIR']}/output/logs/visualize"
-os.makedirs(log_dir, exist_ok=True)
-with open(f"{log_dir}/visualize.txt", "w"):
-    pass
+BASE_LOG_DIR, LOG = setup_logging("visualize")
 
-logging.basicConfig(
-    handlers=[
-        logging.FileHandler(f"{log_dir}/visualize.txt", encoding="utf-8", mode="a+"),
-        logging.StreamHandler(),
-    ],
-    format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
-    datefmt="%F %A %T",
-    level=logging.INFO,
-)
+# ---------------------------------------------------------------------------
+# Static eval parameters
+# ---------------------------------------------------------------------------
+CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
+def _load_config() -> dict:
+    with open(CONFIG_PATH, "rb") as f:
+        return tomli.load(f)
+static_eval_params = _load_config()
 
 # ---------------------------------------------------------------------------
 # Environment / path constants
 # ---------------------------------------------------------------------------
 WORK_DIR     = "/starvers_eval/"
-CONFIG_PATH  = f"{WORK_DIR}configs/eval_setup.toml"
 RESULTS_TMPL = f"{WORK_DIR}scripts/7_visualize/templates/latex_table_results_tmpl.tex"
 
 RUN_DIR          = os.environ["RUN_DIR"]
@@ -65,7 +62,7 @@ def _load_performance_data() -> pd.DataFrame:
     """Load and pre-process the query execution time CSV."""
 
     path = f"{measurements_in}/time.csv" 
-    logging.info("Loading performance data from %s", path)
+    LOG.info("Loading performance data from %s", path)
 
     df = pd.read_csv(
         path, delimiter=";", decimal=".",
@@ -169,7 +166,7 @@ def plot_query_performance(triplestore: str, dataset: str,
     out = f"{figures_out}/time_{triplestore}_{dataset}.svg"
     plt.savefig(out, format="svg")
     plt.close()
-    logging.info("Saved %s", out)
+    LOG.info("Saved %s", out)
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +246,7 @@ def plot_storage(triplestore: str, dataset: str,
     out = f"{figures_out}/storage_{triplestore}_{dataset}.svg"
     plt.savefig(out, format="svg")
     plt.close()
-    logging.info("Saved %s", out)
+    LOG.info("Saved %s", out)
 
 
 # ---------------------------------------------------------------------------
@@ -319,7 +316,7 @@ def plot_ingest_time(triplestore: str, dataset: str,
     out = f"{figures_out}/ingest_{triplestore}_{dataset}.svg"
     plt.savefig(out, format="svg")
     plt.close()
-    logging.info("Saved %s", out)
+    LOG.info("Saved %s", out)
 
 
 # ---------------------------------------------------------------------------
@@ -395,7 +392,7 @@ def create_latex_tables():
         max=("execution_time_total", "max"),
         cnt_timeout=("yn_timeout", "sum")
     ).reset_index()
-    logging.info(f"Aggregated measures:\n{queries_agg}")
+    LOG.info(f"Aggregated measures:\n{queries_agg}")
     queries_agg = queries_agg[queries_agg["min"].notna()]
     queries_agg.to_csv(f"{os.environ['RUN_DIR']}/output/logs/visualize/queries.csv", index=False)
 
@@ -457,13 +454,9 @@ def create_latex_tables():
 
     with open(f"{tables_out}/latex_table_results.tex", "w") as f:
         f.write(filled_table)
-    logging.info("LaTeX tables filled and saved.")
+    LOG.info("LaTeX tables filled and saved.")
 
-    # Evaluation metrics (weighted geometric mean, composite score)
-    with open(CONFIG_PATH, "rb") as f:
-        config = tomli.load(f)
-
-    version_counts = {ds: cfg["snapshot_versions"] for ds, cfg in config["datasets"].items()}
+    version_counts = {ds: cfg["snapshot_versions"] for ds, cfg in static_eval_params["datasets"].items()}
     version_counts_norm = {k.lower().replace("-", "_"): v for k, v in version_counts.items()}
 
     def get_version_count(dataset_value):
@@ -566,8 +559,8 @@ def create_latex_tables():
 
     m_size.to_csv(f"{tables_out}/metrics_size_weights.csv",               sep=";", decimal=".", float_format="%.6f")
     m_size_ver.to_csv(f"{tables_out}/metrics_size_and_version_weights.csv", sep=";", decimal=".", float_format="%.6f")
-    logging.info("Metrics (size weights):\n%s", m_size)
-    logging.info("Metrics (size+version weights):\n%s", m_size_ver)
+    LOG.info("Metrics (size weights):\n%s", m_size)
+    LOG.info("Metrics (size+version weights):\n%s", m_size_ver)
 
 
 # ---------------------------------------------------------------------------

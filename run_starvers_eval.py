@@ -42,7 +42,7 @@ from api import run_api
 BASE_DATA_DIR = Path("/starvers_eval/data")
 
 STEPS: list[dict] = [
-    {"number": 1, "name": "download",           "script": Path("/starvers_eval/scripts/1_download/download_data.sh")},
+    {"number": 1, "name": "download",           "script": Path("/starvers_eval/scripts/1_download/download_data.py")},
     {"number": 2, "name": "preprocess_data",    "script": Path("/starvers_eval/scripts/2_preprocess_data/preprocess_data.py")},
     {"number": 3, "name": "construct_datasets", "script": Path("/starvers_eval/scripts/3_construct_datasets/construct_datasets.py")},
     {"number": 4, "name": "ingest",             "script": Path("/starvers_eval/scripts/4_ingest/ingest.py")},

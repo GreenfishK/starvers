@@ -11,59 +11,39 @@ from SPARQLWrapper import SPARQLWrapper, JSON, GET
 import logging
 import sys
 
+from scripts.logging import setup_logging
+
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
-LOG_DIR = Path(f"{os.environ['RUN_DIR']}/output/logs/ingest")
-
-if not LOG_DIR.exists():
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-LOG_FILES = {
-    "ostrich": LOG_DIR / "ingestion_ostrich.txt",
-    "graphdb": LOG_DIR / "ingestion_graphdb.txt",
-    "jenatdb2": LOG_DIR / "ingestion_jena.txt",
-    "ostrich_aggchange": LOG_DIR / "ingestion_ostrich_aggchange.txt",
-}
-
 _loggers: dict[str, logging.Logger] = {}
 
 def get_ts_logger(triplestore: str) -> logging.Logger:
     """Return a logger that writes exclusively to the triplestore's log file."""
+    
     if triplestore in _loggers:
         return _loggers[triplestore]
-
-    log_file = LOG_FILES[triplestore]
-    logger = logging.getLogger(f"ingest.{triplestore}")
-    logger.setLevel(logging.INFO)
-    logger.propagate = False  # don't bubble up to the root logger
-
-    fmt = logging.Formatter(
-        "%(asctime)s %(name)s:%(levelname)s:%(message)s",
-        datefmt="%F %A %T",
-    )
-
-    # File handler — writes only to this triplestore's log file
-    fh = logging.FileHandler(log_file, encoding="utf-8", mode="a+")
-    fh.setFormatter(fmt)
-    logger.addHandler(fh)
-
-    # Console handler — so output still appears in stdout
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(fmt)
-    logger.addHandler(sh)
-
+    _, logger = setup_logging(f"ingestion_{triplestore}")
     _loggers[triplestore] = logger
+
     return logger
 
 def log(triplestore: str, message: str):
     get_ts_logger(triplestore).info(message)
 
 # ---------------------------------------------------------------------------
+# Static eval parameters
+# ---------------------------------------------------------------------------
+CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
+def _load_config() -> dict:
+    with open(CONFIG_PATH, "rb") as f:
+        return tomli.load(f)
+static_eval_params = _load_config()
+
+# ---------------------------------------------------------------------------
 # Environment / path constants
 # ---------------------------------------------------------------------------
 MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
-CONFIG_PATH = "/starvers_eval/configs/eval_setup.toml"
 CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 CONFIG_DIR = f"{os.environ['RUN_DIR']}/configs/ingest"
@@ -124,9 +104,7 @@ class DatasetPolicyLock:
 
 def eval_combi_exists(triplestore: str, dataset: str, policy: str) -> bool:
     try:
-        with open(CONFIG_PATH, "rb") as f:
-            CONFIG = tomli.load(f)
-        return policy in CONFIG["evaluations"][triplestore][dataset]
+        return policy in static_eval_params["evaluations"][triplestore][dataset]
     except KeyError:
         return False
     
@@ -145,10 +123,7 @@ def du_mib(path: Path) -> int:
 
 
 def count_triples(job: Job):
-    with open(CONFIG_PATH, "rb") as f:
-        CONFIG = tomli.load(f)
-
-    query_endpoint = CONFIG["rdf_stores"][job.triplestore]["get"].format(repo=f"{job.policy}_{job.dataset}")
+    query_endpoint = static_eval_params["rdf_stores"][job.triplestore]["get"].format(repo=f"{job.policy}_{job.dataset}")
     log(job.triplestore, f"Setting endpoint for counting triples: {query_endpoint}")
 
     engine = SPARQLWrapper(endpoint=query_endpoint)
@@ -297,10 +272,7 @@ def run_ingestion(job: Job, run: int):
     db_root = Path(f"{os.environ['RUN_DIR']}/databases/{job.triplestore}")
     database_dir = db_root / repository_id
 
-    with open(CONFIG_PATH, "rb") as f:
-        CONFIG = tomli.load(f)
-
-    mgmt_script = CONFIG["rdf_stores"][job.triplestore]["mgmt_script"]
+    mgmt_script = static_eval_params["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.run([f"{mgmt_script}", "create_env", policy, dataset, database_dir, CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
     
     dataset_dir = Path(f"{os.environ['RUN_DIR']}/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")

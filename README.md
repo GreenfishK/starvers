@@ -138,7 +138,7 @@ Then, the whole pipeline can be executed using the command in Section [Run the f
 
 Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file.
 
-### Run the full pipeline 
+### Run the full pipeline (new directory)
 
 ```bash
 docker run -d --rm \
@@ -164,7 +164,7 @@ starvers_eval:latest run step download
 ```
 
 
-### Run the pipeline until a certain step
+### Run the pipeline until a certain step (new directory)
 
 ```bash
 docker run -d --rm \

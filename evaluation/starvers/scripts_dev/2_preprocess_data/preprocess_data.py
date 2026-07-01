@@ -27,7 +27,6 @@ Phase 3 — count all query sets (including orkg which was just extracted)
 
 import csv as _csv
 import json
-import logging
 import os
 import re
 import shlex
@@ -48,39 +47,21 @@ from starvers.starvers import TripleStoreEngine, split_prefixes_query
 sys.path.append(str(Path("/starvers_eval/scripts/5_construct_queries").resolve()))
 from construct_queries import split_solution_modifiers_query
 
+from scripts.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
+LOG_BASE_DIR, LOG = setup_logging("preprocess_data")
 
-LOG_DIR = Path(os.environ["RUN_DIR"]) / "output" / "logs" / "preprocess_data"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE         = LOG_DIR / "preprocess_data.txt"
-EXCLUDE_CSV      = LOG_DIR / "excluded_queries.csv"
-PREPROCESS_CSV   = LOG_DIR / "preprocess_summary.csv"
-QUERIES_META_CSV = Path(os.environ["RUN_DIR"]) / "output" / "logs" / "download" / "queries_meta.csv"
-QUERY_COUNTS_CSV = LOG_DIR / "query_counts.csv"
-
-LOG_FILE.write_text("")
-EXCLUDE_CSV.write_text("query,yn_excluded,reason\n")
-
-logging.basicConfig(
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8", mode="a+"),
-        logging.StreamHandler(sys.stdout),
-    ],
-    format="%(asctime)s %(name)s:%(levelname)s:%(message)s",
-    datefmt="%F %A %T",
-    level=logging.INFO,
-)
-
-clean_handler = logging.FileHandler(LOG_FILE, encoding="utf-8", mode="a+")
-clean_handler.setFormatter(logging.Formatter(
-    "%(asctime)s root:%(levelname)s:%(message)s",
-    datefmt="%Y-%m-%d %A %H:%M:%S",
-))
-LOG = logging.getLogger("clean_datasets")
-LOG.addHandler(clean_handler)
+# ---------------------------------------------------------------------------
+# Static eval parameters
+# ---------------------------------------------------------------------------
+CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
+def _load_config() -> dict:
+    with open(CONFIG_PATH, "rb") as f:
+        return tomli.load(f)
+static_eval_params = _load_config()
 
 # ---------------------------------------------------------------------------
 # Environment / path constants
@@ -88,7 +69,6 @@ LOG.addHandler(clean_handler)
 
 RUN_DIR         = Path(os.environ["RUN_DIR"])
 SCRIPT_DIR      = Path("/starvers_eval/scripts")
-CONFIG_PATH     = Path("/starvers_eval/configs/eval_setup.toml")
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/2_preprocess_data/configs"
 CONFIG_DIR      = f"{os.environ['RUN_DIR']}/configs/preprocess_data"
 
@@ -111,14 +91,15 @@ MAX_WORKERS = min(
     os.cpu_count() or 1,
 )
 
-# ---------------------------------------------------------------------------
-# TOML config helpers
-# ---------------------------------------------------------------------------
+# Recording files
+QUERIES_META_CSV = LOG_BASE_DIR / "download" / "queries_meta.csv"
+EXCLUDE_CSV      = LOG_BASE_DIR / "preprocess_data" / "excluded_queries.csv"
+PREPROCESS_CSV   = LOG_BASE_DIR / "preprocess_data" / "preprocess_summary.csv"
+QUERY_COUNTS_CSV = LOG_BASE_DIR / "preprocess_data" / "query_counts.csv"
 
-def _load_config() -> dict:
-    with open(CONFIG_PATH, "rb") as f:
-        return tomli.load(f)
-
+# ---------------------------------------------------------------------------
+# Static eval parameters helpers
+# ---------------------------------------------------------------------------
 
 def get_snapshot_version(config: dict, dataset: str) -> int | None:
     entry = config.get("datasets", {}).get(dataset)
@@ -300,7 +281,6 @@ def _clean_one_file(
 
 def clean_datasets():
     LOG.info(f"Start corrections (parallel workers: {MAX_WORKERS})")
-    config = _load_config()
 
     preprocess_df = pd.DataFrame(
         columns=["dataset", "variant", "file_number",
@@ -313,8 +293,8 @@ def clean_datasets():
     work_items: list[tuple[str, str, Path, int]] = []
 
     for dataset in DATASETS:
-        versions     = get_snapshot_version(config, dataset)
-        filename_fmt = get_snapshot_filename_format(config, dataset)
+        versions     = get_snapshot_version(static_eval_params, dataset)
+        filename_fmt = get_snapshot_filename_format(static_eval_params, dataset)
         if versions is None or filename_fmt is None:
             continue
 
@@ -678,6 +658,7 @@ def exclude_queries():
     excluded = [r[0] for r in query_results if r[1] == 1]
     LOG.info(f"Excluded the following {len(excluded)} queries: {excluded}")
 
+    EXCLUDE_CSV.write_text("query,yn_excluded,reason\n")
     with open(EXCLUDE_CSV, "a") as f:
         for row in query_results:
             f.write(",".join(map(str, row)) + "\n")
@@ -740,7 +721,6 @@ def write_query_counts():
     count queries in each directory using the count_method from eval_setup.toml,
     and write query_counts.csv with the results.
     """
-    config      = _load_config()
     raw_queries = RUN_DIR / "queries" / "raw_queries"
 
     if not QUERIES_META_CSV.exists():
@@ -753,7 +733,7 @@ def write_query_counts():
             rows.append(dict(row))
 
     def get_count_method(dataset: str, qs_name: str) -> str:
-        return (config.get("datasets", {})
+        return (static_eval_params.get("datasets", {})
                       .get(dataset, {})
                       .get("query_sets", {})
                       .get(qs_name, {})
@@ -800,13 +780,14 @@ def write_query_counts():
 
 if __name__ == "__main__":
     # Phase 1: clean all raw datasets (parallelised across files)
-    clean_datasets()
+    #clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
-    startup()
-    extract_queries()
-    exclude_queries()
-    cleanup()
+    #startup()
+    #extract_queries()
+    #exclude_queries()
+    #cleanup()
 
     # Phase 3: count all query sets (including orkg extracted above)
-    write_query_counts()
+    #write_query_counts()
+    LOG.info("Preprocessing complete.")
