@@ -80,7 +80,8 @@ shutdown() {
     done
 
     if ss -ltnp | grep -q ':42564'; then
-        echo "$(log_timestamp) ${log_level}:WARNING — port 42564 still held after timeout" >> "$log_file"
+        echo "$(log_timestamp) ${log_level}:ERROR — port 42564 still in use after timeout" >> "$log_file"
+        exit 1
     fi
 
     echo "$(log_timestamp) ${log_level}:Shutdown complete" >> "$log_file"
@@ -171,13 +172,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${1:-} == "startup" ]]; then
-    [[ $# -ne 4 && $# -ne 5 ]] && { echo "Usage: $0 startup <database_dir> <policy> <dataset>"; exit 1; }
+    [[ $# -ne 4 && $# -ne 5 ]] && { echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"; exit 1; }
     database_dir=$2; 
     policy=$3; 
     dataset=$4
 
     # not needed
-    config_dir=$5
+    config_dir=${5:-}
 
     startup
 
@@ -224,6 +225,11 @@ elif [[ ${1:-} == "ingest" ]]; then
     ingest
 
 else
-    echo "Usage: $0 startup|shutdown|create_env|ingest|ingest_empty|dump_repo ..."
+    echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
+    echo "Usage: $0 shutdown"
+    echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
+    echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"
+    echo "Usage: $0 ingest <database_dir> <dataset_dir_or_file> <policy> <dataset> <config_dir> [versions]"
+    echo "Usage: $0 ingest_empty <database_dir> <policy> <dataset> <config_dir>"
     exit 1
 fi

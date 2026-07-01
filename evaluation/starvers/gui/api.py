@@ -503,6 +503,7 @@ def _detail_preprocess(run_dir: Path) -> dict:
             "valid_in_ostrich": total_queries - sum(1 for f in pivot.values() if f["invalid_in_ostrich"]),
         }
 
+        logging.info(f"Query table {pivot}")
         detail["sciqa_query_table"] = sorted(
             [
                 {

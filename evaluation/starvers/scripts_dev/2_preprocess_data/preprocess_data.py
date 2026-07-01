@@ -55,7 +55,6 @@ from construct_queries import split_solution_modifiers_query
 
 LOG_DIR = Path(os.environ["RUN_DIR"]) / "output" / "logs" / "preprocess_data"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
-
 LOG_FILE         = LOG_DIR / "preprocess_data.txt"
 EXCLUDE_CSV      = LOG_DIR / "excluded_queries.csv"
 PREPROCESS_CSV   = LOG_DIR / "preprocess_summary.csv"
@@ -472,9 +471,13 @@ def _startup_ostrich():
                     str(OSTRICH_DATABASE_DIR), "", ""], check=True)
 
     LOG.info("Ingest the first ORKG snapshot.")
-    subprocess.run([OSTRICH_MGMT_SCRIPT, "ingest", str(OSTRICH_DATABASE_DIR),
+    subprocess.run([OSTRICH_MGMT_SCRIPT, "ingest", 
+                    str(OSTRICH_DATABASE_DIR),
                     str(RUN_DIR / "rawdata" / "orkg" / "alldata_vdir"),
-                    "ostrich", "orkg", "", "1"], check=True)
+                    "ostrich", 
+                    "orkg", 
+                    "", 
+                    "1"], check=True)
 
     LOG.info("Start Ostrich engine.")
     subprocess.run([OSTRICH_MGMT_SCRIPT, "startup", str(OSTRICH_DATABASE_DIR),
@@ -564,6 +567,10 @@ def extract_queries():
             out_file.write_text(PREFIXES + "\n" + sparql + "\n", encoding="utf-8")
             LOG.info(f"Wrote {out_file}")
 
+            # Write queries to downloaded_queries directory as well for reference
+            parsed_query_out_file = DOWNLOADED_QUERIES_DIR / "orkg" / "complex" / f"{qid}.txt"
+            parsed_query_out_file.write_text(PREFIXES + "\n" + sparql + "\n", encoding="utf-8")
+            LOG.info(f"Wrote {parsed_query_out_file}")
 
     
 def exclude_queries():

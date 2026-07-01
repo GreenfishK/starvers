@@ -118,7 +118,8 @@ shutdown() {
 
     # Final check
     if ss -ltnp | grep -q ':3030'; then
-        echo "$(log_timestamp) ${log_level}:WARNING - Port 3030 still in use after timeout" >> "$log_file"
+        echo "$(log_timestamp) ${log_level}:ERROR - Port 3030 still in use after timeout" >> "$log_file"
+        exit 1
     fi
 
     echo "$(log_timestamp) ${log_level}:Shutdown Jena complete" >> "$log_file"

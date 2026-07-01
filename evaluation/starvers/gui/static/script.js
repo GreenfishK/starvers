@@ -32,6 +32,43 @@ const runMetaEl   = document.getElementById('runMeta');
 const stepsGridEl = document.getElementById('stepsGrid');
 const refreshBtn  = document.getElementById('refreshBtn');
 
+// ── Plot zoom modal ───────────────────────────────────────────
+let zoomModalEl = null;
+
+function ensureZoomModal() {
+  if (zoomModalEl) return zoomModalEl;
+  const el = document.createElement('div');
+  el.id = 'plotZoomModal';
+  el.className = 'plot-zoom-overlay hidden';
+  el.innerHTML = `
+    <div class="plot-zoom-backdrop"></div>
+    <div class="plot-zoom-panel">
+      <button class="plot-zoom-close" type="button" aria-label="Close">×</button>
+      <div class="plot-zoom-title"></div>
+      <div class="plot-zoom-body"></div>
+      <div class="plot-zoom-avgs"></div>
+    </div>`;
+  document.body.appendChild(el);
+
+  function close() { el.classList.add('hidden'); }
+  el.querySelector('.plot-zoom-backdrop').addEventListener('click', close);
+  el.querySelector('.plot-zoom-close').addEventListener('click', close);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !el.classList.contains('hidden')) close();
+  });
+
+  zoomModalEl = el;
+  return el;
+}
+
+function openPlotZoom(titleText, svgHtml, avgHtml) {
+  const el = ensureZoomModal();
+  el.querySelector('.plot-zoom-title').textContent = titleText;
+  el.querySelector('.plot-zoom-body').innerHTML = svgHtml;
+  el.querySelector('.plot-zoom-avgs').innerHTML = avgHtml;
+  el.classList.remove('hidden');
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadRuns();
@@ -176,6 +213,7 @@ function renderDetail(run) {
   });
 }
 
+
 async function loadStepDetail(ts, name) {
   const bodyEl = document.getElementById(`body-${name}`);
   if (!bodyEl) return;
@@ -202,6 +240,10 @@ async function loadStepDetail(ts, name) {
     .querySelectorAll('.query-flow-container')
     .forEach(activateQueryFlowHover);
 
+    bodyEl
+    .querySelectorAll('.tsplot-card')
+    .forEach(activatePlotZoom);
+
     if (isRunning) {
       setTimeout(() => loadStepDetail(ts, name), 10000);
     }
@@ -209,6 +251,17 @@ async function loadStepDetail(ts, name) {
     bodyEl.innerHTML = `<div class="error-msg">Could not load step details: ${e.message}</div>`;
   }
 }
+
+function activatePlotZoom(card) {
+  card.style.cursor = 'zoom-in';
+  card.addEventListener('click', () => {
+    const title  = card.dataset.zoomTitle || '';
+    const svgEl  = card.querySelector('.tsplot-svg-wrap');
+    const avgEl  = card.querySelector('.tsplot-avg-list');
+    openPlotZoom(title, svgEl ? svgEl.innerHTML : '', avgEl ? avgEl.outerHTML : '');
+  });
+}
+
 
 function activateQueryFlowHover(container) {
     const allNodes = [...container.querySelectorAll('.qf-node-group')];
@@ -276,7 +329,6 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
     {id:'jena',    color:'#BA7517', label:'Jena TDB2'},
     {id:'ostrich', color:'#9B3DB8', label:'Ostrich'},
   ];
-  // Fix 1: Ostrich has no timestamped form — only 2 stores for S2→S3
   const STORES_TS = STORES_ALL.filter(s => s.id !== 'ostrich');
 
   function validOrig(q, sid) {
@@ -291,26 +343,39 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
     return true;
   }
 
-  // Fix 3: S2 partitions are non-exclusive — a query appears in VALID if ≥1
-  // store says orig-valid, AND in INVALID if ≥1 store says orig-invalid.
+  // Stage 2 partitions
   const s2ValidSet   = new Set(queryTable.filter(q => STORES_ALL.some(s =>  validOrig(q,s.id))).map(q=>q.query));
   const s2InvalidSet = new Set(queryTable.filter(q => STORES_ALL.some(s => !validOrig(q,s.id))).map(q=>q.query));
   const s2Valid   = queryTable.filter(q => s2ValidSet.has(q.query));
   const s2Invalid = queryTable.filter(q => s2InvalidSet.has(q.query));
 
-  // S3: same non-exclusive logic, only for orig-valid stores
-  const s3ValidSet = new Set(), s3InvalidSet = new Set();
+  // Stage 3 partitions
+  const s3ValidSet = new Set();
+  const s3PartiallyValidSet = new Set();
+  const s3InvalidSet = new Set();
+
   queryTable.forEach(q => {
     STORES_TS.forEach(s => {
       if (!validOrig(q, s.id)) return;
-      if ( validTs(q, s.id))   s3ValidSet.add(q.query);
-      if (!validTs(q, s.id))   s3InvalidSet.add(q.query);
+
+      const validInAll = STORES_TS.every(store => validTs(q, store.id));
+      const validInSome = STORES_TS.some(store => validTs(q, store.id));
+
+      if (validInAll) {
+        s3ValidSet.add(q.query);
+      } else if (validInSome) {
+        s3PartiallyValidSet.add(q.query);
+      } else {
+        s3InvalidSet.add(q.query);
+      }
     });
   });
-  const s3Valid   = queryTable.filter(q => s3ValidSet.has(q.query));
+
+  const s3Valid = queryTable.filter(q => s3ValidSet.has(q.query));
+  const s3PartiallyValid = queryTable.filter(q => s3PartiallyValidSet.has(q.query));
   const s3Invalid = queryTable.filter(q => s3InvalidSet.has(q.query));
 
-  // Fix 2: green only if ALL stores send an edge to this node
+  // Node coloring
   function s2ValidIncoming(q)  { return STORES_ALL.filter(s =>  validOrig(q,s.id)).length; }
   function s3ValidIncoming(q)  { return STORES_TS.filter(s =>   validOrig(q,s.id) &&  validTs(q,s.id)).length; }
   function nodeColor(incoming, max) {
@@ -319,19 +384,41 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
 
   /* ── layout ── */
   const BOX_W=22, BOX_H=80, PORT_R=3;
-  const STAGE_Y=[60,290,520];
+  const STAGE_Y=[60, 290, 520];
   const DX=30, PGAP=48, MARGIN=36;
-  const ANN_W=160, LEGEND_H=72;
+  const COUNT_PANEL_H = 90;
+  const PANEL_Y = STAGE_Y[2] + BOX_H + 24;
+  const LEGEND_Y_TOP = PANEL_Y + COUNT_PANEL_H + 12;
+  const LEGEND_H = 42;
 
   function rowW(arr){ return arr.length*DX; }
-  function partXs(a,b){ return {v:0, i:rowW(a)+PGAP, total:rowW(a)+PGAP+rowW(b)}; }
 
-  const s1W=rowW(queryTable), s2ps=partXs(s2Valid,s2Invalid), s3ps=partXs(s3Valid,s3Invalid);
-  const contentW=Math.max(s1W,s2ps.total,s3ps.total);
-  const SVG_W=contentW+MARGIN*2+ANN_W, SVG_H=STAGE_Y[2]+BOX_H+LEGEND_H+48;
+  // Stage 1 and 2 layout
+  const s1W = rowW(queryTable);
+  const s2ps = {v: 0, i: rowW(s2Valid) + PGAP, total: rowW(s2Valid) + PGAP + rowW(s2Invalid)};
 
-  function stageOX(w){ return MARGIN+(contentW-w)/2; }
-  const s1X=stageOX(s1W), s2X=stageOX(s2ps.total), s3X=stageOX(s3ps.total);
+  // Stage 3 layout
+  const s3ValidW = rowW(s3Valid);
+  const s3PartiallyValidW = rowW(s3PartiallyValid);
+  const s3InvalidW = rowW(s3Invalid);
+  const s3TotalW = s3ValidW + s3PartiallyValidW + s3InvalidW;
+
+  // Compute content width and stage positions first
+  // We need s2X before we can align s3, but s2X depends on contentW
+  const s2RightEdgeEst = s2ps.total;
+  const s3RightEdgeEst = rowW(s2Valid) + Math.max(0, s3TotalW - rowW(s2Valid));
+  const contentW = Math.max(s1W, s2RightEdgeEst, s2ps.v + s3TotalW, s2ps.total);
+  const SVG_W = contentW + MARGIN * 2;
+  const SVG_H = LEGEND_Y_TOP + LEGEND_H + 20;
+
+  function stageOX(w){ return MARGIN + (contentW - w) / 2; }
+  const s1X = stageOX(s1W);
+  const s2X = stageOX(s2ps.total);
+
+  // Stage 3 aligned with Stage 2 valid partition
+  const s3ValidX = s2X + s2ps.v;
+  const s3PartiallyValidX = s3ValidX + s3ValidW;
+  const s3InvalidX = s3ValidX + s3ValidW + s3PartiallyValidW;
 
   function portX(cx, idx, count){
     const pad=4, span=BOX_W-2*pad;
@@ -368,18 +455,21 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
                   font-family="Inter,sans-serif" fill="${color}">${escHtml(label)}</text>`;
   }
 
-  bgSvg += partBgSvg(s2Valid,   s2X+s2ps.v, STAGE_Y[1], '#1A7C3A', 'Valid (original)');
+  bgSvg += partBgSvg(s2Valid, s2X+s2ps.v, STAGE_Y[1], '#1A7C3A', 'Valid (original)');
   bgSvg += partBgSvg(s2Invalid, s2X+s2ps.i, STAGE_Y[1], '#B02020', 'Invalid (original)');
-  bgSvg += partBgSvg(s3Valid,   s3X+s3ps.v, STAGE_Y[2], '#1A7C3A', 'Valid (timestamped)');
-  bgSvg += partBgSvg(s3Invalid, s3X+s3ps.i, STAGE_Y[2], '#B02020', 'Invalid (timestamped)');
+
+  // Stage 3 backgrounds
+  bgSvg += partBgSvg(s3Valid, s3ValidX, STAGE_Y[2], '#1A7C3A', 'Valid (timestamped)');
+  bgSvg += partBgSvg(s3PartiallyValid, s3PartiallyValidX, STAGE_Y[2], '#888888', 'Partially valid (timestamped)');
+  bgSvg += partBgSvg(s3Invalid, s3InvalidX, STAGE_Y[2], '#B02020', 'Invalid (timestamped)');
 
   function stageLblSvg(text, y){
     return `<text x="${MARGIN}" y="${y}" font-size="11" font-weight="600" letter-spacing=".04em"
                   font-family="Inter,sans-serif" fill="#888">${escHtml(text)}</text>`;
   }
-  labelSvg += stageLblSvg('Stage 1 — original queries',    STAGE_Y[0]-22);
-  labelSvg += stageLblSvg('Stage 2 — original validity',   STAGE_Y[1]-40);
-  labelSvg += stageLblSvg('Stage 3 — timestamped validity',STAGE_Y[2]-40);
+  labelSvg += stageLblSvg('Stage 1 — original queries', STAGE_Y[0]-22);
+  labelSvg += stageLblSvg('Stage 2 — original validity', STAGE_Y[1]-40);
+  labelSvg += stageLblSvg('Stage 3 — timestamped validity', STAGE_Y[2]-40);
 
   function addNodeSvg(id, cx, topY, fill, stroke, label){
     nodePos[id]={cx, topY, botY:topY+BOX_H};
@@ -397,23 +487,32 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
   queryTable.forEach((q,i)=>{
     addNodeSvg('s1_'+q.query, s1X+i*DX+BOX_W/2, STAGE_Y[0], '#f5f5f5','#aaa', q.query);
   });
+
   // Stage 2 valid
   s2Valid.forEach((q,i)=>{
     const fill=nodeColor(s2ValidIncoming(q), STORES_ALL.length);
     addNodeSvg('s2v_'+q.query, s2X+s2ps.v+i*DX+BOX_W/2, STAGE_Y[1], fill,'#1A7C3A', q.query);
   });
-  // Stage 2 invalid (always white — presence here means ≥1 store failed)
+
+  // Stage 2 invalid
   s2Invalid.forEach((q,i)=>{
     addNodeSvg('s2i_'+q.query, s2X+s2ps.i+i*DX+BOX_W/2, STAGE_Y[1], '#ffffff','#B02020', q.query);
   });
+
   // Stage 3 valid
   s3Valid.forEach((q,i)=>{
     const fill=nodeColor(s3ValidIncoming(q), STORES_TS.length);
-    addNodeSvg('s3v_'+q.query, s3X+s3ps.v+i*DX+BOX_W/2, STAGE_Y[2], fill,'#1A7C3A', q.query);
+    addNodeSvg('s3v_'+q.query, s3ValidX+i*DX+BOX_W/2, STAGE_Y[2], fill,'#1A7C3A', q.query);
   });
-  // Stage 3 invalid (always white)
+
+  // Stage 3 partially valid
+  s3PartiallyValid.forEach((q,i)=>{
+    addNodeSvg('s3p_'+q.query, s3PartiallyValidX+i*DX+BOX_W/2, STAGE_Y[2], '#ffffff','#888', q.query);
+  });
+
+  // Stage 3 invalid
   s3Invalid.forEach((q,i)=>{
-    addNodeSvg('s3i_'+q.query, s3X+s3ps.i+i*DX+BOX_W/2, STAGE_Y[2], '#ffffff','#B02020', q.query);
+    addNodeSvg('s3i_'+q.query, s3InvalidX+i*DX+BOX_W/2, STAGE_Y[2], '#ffffff','#B02020', q.query);
   });
 
   function addEdgeSvg(srcId, dstId, portIdx, portCount, color){
@@ -432,7 +531,7 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
     ensAdj(dstId); adj[dstId].push({eid,other:srcId});
   }
 
-  // Stage 1 → Stage 2: each store independently, always STORES_ALL.length ports
+  // Stage 1 → Stage 2
   queryTable.forEach(q => {
     STORES_ALL.forEach((s,si) => {
       const dstId = validOrig(q,s.id) ? 's2v_'+q.query : 's2i_'+q.query;
@@ -440,48 +539,67 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
     });
   });
 
-  // Stage 2 valid → Stage 3: STORES_TS only, 2 ports
+  // Stage 2 valid → Stage 3
   queryTable.forEach(q => {
     if (!s2ValidSet.has(q.query)) return;
     STORES_TS.forEach((s,si) => {
-      if (!validOrig(q, s.id)) return; // this store was orig-invalid
-      const dstId = validTs(q,s.id) ? 's3v_'+q.query : 's3i_'+q.query;
+      if (!validOrig(q, s.id)) return;
+
+      const validInAll = STORES_TS.every(store => validTs(q, store.id));
+      const validInSome = STORES_TS.some(store => validTs(q, store.id));
+
+      let dstId;
+      if (validInAll) {
+        dstId = 's3v_'+q.query;
+      } else if (validInSome) {
+        dstId = 's3p_'+q.query;
+      } else {
+        dstId = 's3i_'+q.query;
+      }
+
       addEdgeSvg('s2v_'+q.query, dstId, si, STORES_TS.length, s.color);
     });
   });
 
   /* ── side annotations ── */
-  const annX=SVG_W-ANN_W+8;
-  const midY12=(STAGE_Y[0]+BOX_H+STAGE_Y[1])/2-28;
-  const midY23=(STAGE_Y[1]+BOX_H+STAGE_Y[2])/2-20;
-
-  function annSvg(title, items, y){
-    let s=`<text x="${annX}" y="${y}" font-size="9" font-weight="600"
-                 font-family="Inter,sans-serif" fill="#888">${escHtml(title)}</text>`;
-    items.forEach(({color,label,count,total},i)=>{
-      const ty=y+14+i*16;
-      s+=`<rect x="${annX}" y="${ty-7}" width="8" height="8" rx="2" fill="${color}"/>`;
-      s+=`<text x="${annX+12}" y="${ty}" font-size="10" font-family="Inter,sans-serif"
-               fill="#555">${escHtml(label)}: ${count}/${total}</text>`;
-    });
-    return s;
-  }
-
-  labelSvg += annSvg('valid (original)', STORES_ALL.map(s=>({
-    color:s.color, label:s.label,
-    count: colCounts['valid_in_'+(s.id==='jena'?'jena':s.id)] ??
-           queryTable.filter(q=>validOrig(q,s.id)).length,
+  /* ── count panel ── */
+  const origCounts = STORES_ALL.map(s => ({
+    color: s.color, label: s.label,
+    valid: queryTable.filter(q => validOrig(q,s.id)).length,
     total: queryTable.length,
-  })), midY12);
-  labelSvg += annSvg('valid (timestamped)', STORES_TS.map(s=>({
-    color:s.color, label:s.label,
-    count: colCounts['valid_trans_in_'+(s.id==='jena'?'jena':s.id)] ??
-           queryTable.filter(q=>validTs(q,s.id)).length,
-    total: queryTable.length,
-  })), midY23);
+  }));
+  const tsCounts = STORES_TS.map(s => ({
+    color: s.color, label: s.label,
+    validTs:   queryTable.filter(q => validOrig(q,s.id) && validTs(q,s.id)).length,
+    validOrig: queryTable.filter(q => validOrig(q,s.id)).length,
+  }));
+
+
+  const PANEL_OFFSET = 20;
+
+  // Block 1: original validity
+  labelSvg += `<text x="${MARGIN}" y="${PANEL_Y+PANEL_OFFSET+2}" font-size="10" font-weight="700"
+    font-family="Inter,sans-serif" fill="#555" letter-spacing=".03em">Original validity</text>`;
+  origCounts.forEach(({color, label, valid, total}, i) => {
+    const ry = PANEL_Y + PANEL_OFFSET + 18 + i * 16;
+    labelSvg += `<rect x="${MARGIN}" y="${ry-7}" width="8" height="8" rx="2" fill="${color}"/>`;
+    labelSvg += `<text x="${MARGIN+12}" y="${ry}" font-size="11" font-family="Inter,sans-serif"
+      fill="#333">${escHtml(`${valid}/${total}  ${label}`)}</text>`;
+  });
+
+  // Block 2: timestamped validity
+  const block2X = MARGIN + 180;
+  labelSvg += `<text x="${block2X}" y="${PANEL_Y+PANEL_OFFSET+2}" font-size="10" font-weight="700"
+    font-family="Inter,sans-serif" fill="#555" letter-spacing=".03em">Timestamped validity (of orig. valid)</text>`;
+  tsCounts.forEach(({color, label, validTs, validOrig}, i) => {
+    const ry = PANEL_Y + PANEL_OFFSET + 18 + i * 16;
+    labelSvg += `<rect x="${block2X}" y="${ry-7}" width="8" height="8" rx="2" fill="${color}"/>`;
+    labelSvg += `<text x="${block2X+12}" y="${ry}" font-size="11" font-family="Inter,sans-serif"
+      fill="#333">${escHtml(`${validTs}/${validOrig}  ${label}`)}</text>`;
+  });
 
   /* ── legend ── */
-  const LY=SVG_H-LEGEND_H+12;
+  const LY = LEGEND_Y_TOP;
   labelSvg+=`<text x="${MARGIN}" y="${LY}" font-size="10" font-weight="600"
     font-family="Inter,sans-serif" fill="#888">Triple store color</text>`;
   STORES_ALL.forEach((s,i)=>{
@@ -500,9 +618,6 @@ function renderQueryFlowDiagram(queryTable, colCounts = {}) {
     fill="#fff" stroke="#888" stroke-width="1"/>`;
   labelSvg+=`<text x="${wfx+18}" y="${LY+20}" font-size="10" font-family="Inter,sans-serif"
     fill="#333">Partially valid</text>`;
-
-  /* ── adjacency JSON for inline script ── */
-  const adjJson = JSON.stringify(adj);
 
   return `
 <div class="query-flow-container" style="overflow-x:auto;overflow-y:hidden;max-width:100%">
@@ -656,6 +771,8 @@ function renderStepInfo(stepName, info) {
     // ── Step 2: Query Parsing and Validation ─────────────────
     let step2Body = '';
 
+    console.info("SCIQA query table: " + info.sciqa_query_table)
+
     if (info.sciqa_query_table?.length) {
       const total              = info.sciqa_total ?? info.sciqa_query_table.length;
       const valid_orig_graphdb = info.sciqa_col_counts?.valid_in_graphdb ?? info.sciqa_query_table.filter(r => r.valid_in_graphdb).length;
@@ -684,6 +801,7 @@ function renderStepInfo(stepName, info) {
         `<th style="text-align:center">${label}<br><span style="font-weight:400;font-size:10px">(${cc[key]??0}/${query_count})</span></th>`;
 
       step2Body += renderQueryFlowDiagram(info.sciqa_query_table, info.sciqa_col_counts || {});
+      console.info("Query Graph rendered");
 
     }
 
@@ -1146,7 +1264,13 @@ function renderTimePlots(plotData) {
     byDataset[s.dataset][s.query_set][s.triplestore].push(s);
   });
  
-  const datasets = Object.keys(byDataset).sort();
+  // Fixed 2×2 layout order: row 1 = bearb_day, bearb_hour · row 2 = orkg, bearc
+  const DATASET_ORDER = ['bearb_day', 'bearb_hour', 'orkg', 'bearc'];
+  const availableDatasets = Object.keys(byDataset);
+  const datasets = [
+    ...DATASET_ORDER.filter(d => availableDatasets.includes(d)),
+    ...availableDatasets.filter(d => !DATASET_ORDER.includes(d)).sort(),
+  ];
  
   // ── SVG chart constants ──────────────────────────────────────
   const W     = 300;
@@ -1223,8 +1347,9 @@ function renderTimePlots(plotData) {
     const titleShort = tsName.length > 22 ? tsName.slice(0, 21) + '…' : tsName;
  
     return `
-      <svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg"
-           style="font-family:Inter,sans-serif;overflow:visible;display:block">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style="font-family:Inter,sans-serif;overflow:visible;display:block;width:100%;height:100%">
         <rect x="${padL}" y="${padT}" width="${plotW}" height="${plotH}"
               fill="#fafafa" stroke="#D0D0D0" stroke-width="0.5"/>
         ${yGridSvg}
@@ -1242,8 +1367,31 @@ function renderTimePlots(plotData) {
               font-family="Inter,sans-serif">${escHtml(titleShort)}</text>
       </svg>`;
   }
+
+function buildAverages(seriesList) {
+    const rows = seriesList
+      .map(s => {
+        const vals = s.points.map(p => p[1]).filter(v => v > 0);
+        const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+        return { policy: s.policy, avg, color: policyColorMap[s.policy] || '#666' };
+      })
+      .sort((a, b) => a.policy.localeCompare(b.policy));
+
+    const rowsHtml = rows.map(r => `
+      <div class="tsplot-avg-row">
+        <span class="tsplot-avg-swatch" style="background:${r.color}"></span>
+        <span class="tsplot-avg-key">${escHtml(r.policy)}:</span>
+        <span class="tsplot-avg-val">${r.avg != null ? fmtSec(r.avg) : '—'}</span>
+      </div>`).join('');
+
+    return `
+      <div class="tsplot-avg-list">
+        <div class="tsplot-avg-heading">Avg. over all versions</div>
+        ${rowsHtml}
+      </div>`;
+  }
  
-  // ── Assemble all dataset panels ──────────────────────────────
+  // ── Assemble all dataset panels in a fixed 2×2 grid ──────────
   const datasetPanels = datasets.map(ds => {
     const querySets = Object.keys(byDataset[ds]).sort();
  
@@ -1254,7 +1402,12 @@ function renderTimePlots(plotData) {
       const plotCards = tsNames.map(ts => {
         const seriesList = tsMap[ts];
         const svgHtml    = buildPlot(seriesList, ts);
-        return `<div class="tsplot-card">${svgHtml}</div>`;
+        const avgHtml    = buildAverages(seriesList);
+        const titleAttr  = escHtml(`${ds} — ${qs} — ${ts}`);
+        return `<div class="tsplot-card" data-zoom-title="${titleAttr}">
+          <div class="tsplot-svg-wrap">${svgHtml}</div>
+          ${avgHtml}
+        </div>`;
       }).join('');
  
       return `
@@ -1275,7 +1428,7 @@ function renderTimePlots(plotData) {
       </div>`;
   }).join('');
  
-  return legendHtml + datasetPanels;
+  return legendHtml + `<div class="tsplot-dataset-grid">${datasetPanels}</div>`;
 }
 
 
@@ -1301,6 +1454,14 @@ function fmt(n) {
 function fmtMb(mb) {
   if (mb == null) return '—';
   return Number(mb).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' MiB';
+}
+
+function fmtSec(t) {
+  if (t == null) return '—';
+  if (t >= 3600) return (t / 3600).toFixed(2) + 'h';
+  if (t >= 60)   return (t / 60).toFixed(1) + 'm';
+  if (t >= 1)    return t.toFixed(3) + 's';
+  return (t * 1000).toFixed(1) + 'ms';
 }
 
 // ── Duration with hours/days ──────────────────────────────────

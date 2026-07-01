@@ -105,7 +105,8 @@ shutdown() {
 
     # Final check
     if ss -ltnp | grep -q ':7878'; then
-        echo "$(log_timestamp) ${log_level}:WARNING - Port 7878 still in use after timeout" >> "$log_file"
+        echo "$(log_timestamp) ${log_level}:ERROR - Port 7878 still in use after timeout" >> "$log_file"
+        exit 1
     fi
 
     echo "$(log_timestamp) ${log_level}:Shutdown Onyxgraph complete" >> "$log_file"
@@ -181,7 +182,7 @@ done
 
 if [[ ${1:-} == "startup" ]]; then
     if [[ $# -ne 4 && $# -ne 5]]; then
-        echo "Usage: $0 startup <database_dir> <policy> <dataset>"
+        echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
         exit 1
     fi
 
@@ -190,7 +191,7 @@ if [[ ${1:-} == "startup" ]]; then
     dataset=$4
 
     # not needed
-    config_dir=$5
+    config_dir=${5:-}
 
     startup
 
@@ -264,7 +265,7 @@ elif [[ ${1:-} == "ingest" ]]; then
 
     ingest
 else
-    echo "Usage: $0 startup <database_dir> <policy> <dataset>"
+    echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
     echo "Usage: $0 shutdown"
     echo "Usage: $0 create_env <policy> <dataset> <database_dir> <config_tmpl_dir> <config_dir>"
     echo "Usage: $0 dump_repo <database_dir> <policy> <dataset> <output_file>"

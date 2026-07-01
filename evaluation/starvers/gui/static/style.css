@@ -775,35 +775,53 @@ main {
   white-space: nowrap;
 }
 
-/* Dataset panel */
-.tsplot-dataset-panel {
-  margin-bottom: 28px;
+/* 2×2 dataset grid: row 1 = bearb_day, bearb_hour · row 2 = orkg, bearc */
+.tsplot-dataset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;               /* add this */
 }
+
+.tsplot-dataset-panel {
+  margin-bottom: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  /* removed overflow: hidden */
+}
+
 .tsplot-dataset-heading {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--c-blue);
-  padding: 6px 0 8px;
-  border-bottom: 2px solid var(--c-blue-wash);
-  margin-bottom: 14px;
+  color: #fff;
+  padding: 10px 14px;
+  background: var(--c-blue);
+  margin-bottom: 0;
   font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  border-bottom: none;
 }
 
 /* Query-set groups row — wraps when window narrows */
 .tsplot-qs-wrap {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
+  flex-direction: column;  
+  gap: 14px;
+  padding: 14px 16px;
 }
 
 /* One query-set group card */
 .tsplot-qs-group {
-  flex: 1 1 320px;
+  flex: 1 1 280px;
+  min-width: 240px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border-radius: var(--radius);
   background: var(--surface);
+  /* removed overflow: hidden */
 }
+
 .tsplot-qs-label {
   padding: 7px 14px;
   font-size: 11px;
@@ -816,25 +834,91 @@ main {
   letter-spacing: 0.06em;
 }
 
-/* Row of per-triplestore plots inside a group — also wraps */
+/* ── Time-series plot layout (visualize step) — corrected ────── */
+
 .tsplot-plots-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: stretch;
   gap: 12px;
   padding: 12px;
 }
+
 .tsplot-card {
-  flex: 1 1 280px;
-  min-width: 0;
-  overflow-x: auto;
-}
-.tsplot-card svg {
-  display: block;
+  flex: 1 1 240px;
+  min-width: 240px;     /* floor so a card never gets squeezed to near-zero and "vanish" */
   max-width: 100%;
-  height: auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  /* no fixed height, no overflow:hidden — let content determine height */
 }
 
-/* Mobile: everything stacks vertically */
+.tsplot-svg-wrap {
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 300 / 190;   /* matches the SVG's W/H from buildPlot, keeps it from collapsing or over-growing */
+  display: flex;
+}
+
+.tsplot-card svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tsplot-avg-list {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.tsplot-avg-heading {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  margin-bottom: 2px;
+}
+
+.tsplot-avg-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+.tsplot-avg-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.tsplot-avg-key {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.tsplot-avg-val {
+  color: var(--text);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Mobile / narrow: collapse the 2×2 grid to a single column */
+@media (max-width: 900px) {
+  .tsplot-dataset-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .tsplot-qs-wrap {
     flex-direction: column;
@@ -848,6 +932,76 @@ main {
   .tsplot-card {
     flex: 1 1 100%;
   }
+}
+
+/* ── Plot zoom modal ─────────────────────────────────────────── */
+.plot-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.plot-zoom-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+.plot-zoom-panel {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  width: min(900px, 92vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 16px;
+  overflow: hidden;
+}
+.plot-zoom-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.plot-zoom-close:hover { background: var(--border); color: var(--text); }
+
+.plot-zoom-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-blue);
+  margin-bottom: 12px;
+  padding-right: 30px;
+}
+.plot-zoom-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+.plot-zoom-body svg {
+  width: 100%;
+  height: 100%;
+}
+.plot-zoom-avgs {
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+.plot-zoom-avgs .tsplot-avg-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 14px;
+  border-top: 1px solid var(--border);
 }
 
 
@@ -889,4 +1043,3 @@ main {
   color: var(--text-faint);
   border: 1px solid var(--border);
 }
-
