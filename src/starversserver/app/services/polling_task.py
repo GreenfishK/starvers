@@ -31,6 +31,8 @@ from app.services.versioning_pipeline import VersioningPipeline
 from app.services.metrics_service import MetricsService
 # Logging
 from app.LoggingConfig import get_logger
+# Exceptions
+
 
 LOG = get_logger(__name__)
 
@@ -99,6 +101,7 @@ class PollingTask:
         except Exception as e:
             LOG.error(f"[{self.repository_name}] Polling task failed: {e}\n{traceback.format_exc()}")
             stopped = True
+        
 
         # Either stop permanently or re-queue for the next cycle
         if stopped:

@@ -8,8 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
-<body>
-
+<body{% if active_ts %} data-active-ts="{{ active_ts }}"{% endif %} data-step-url-template="{{ url_for('get_step_html', ts='__TS__', step_name='__STEP__') }}">
   <header>
     <div class="header-inner">
       <div class="logo">
@@ -18,31 +17,130 @@
         <span class="logo-sub">Evaluation Pipeline</span>
       </div>
       <div class="header-meta">
-        <span id="runCount" class="badge">— runs</span>
-        <button id="refreshBtn" class="btn-icon" title="Refresh">↻</button>
+        <span id="runCount" class="badge">{{ runs|length }} run{{ 's' if runs|length != 1 else '' }}</span>
+        <a href="{{ url_for('serve_gui') }}" class="btn-icon" title="Refresh">↻</a>
       </div>
     </div>
   </header>
 
   <main>
+    {# ── Sidebar ── #}
     <aside id="sidebar">
       <div class="sidebar-header">
         <span class="label">Runs</span>
       </div>
-      <ul id="runList"></ul>
+      <ul id="runList">
+        {% if not runs %}
+          <li class="run-item-empty">No evaluation runs found yet.</li>
+        {% else %}
+          {% for run in runs %}
+            <li class="run-item{{ ' active' if run.ts == active_ts else '' }}">
+              <a href="{{ url_for('serve_run', ts=run.ts) }}" class="run-item-link">
+                <span class="run-ts">{{ format_ts(run.ts) }}</span>
+                <div class="run-progress">
+                  <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill {{ 'complete' if run.overall == 'success' else 'failed' if run.overall == 'failed' else '' }}"
+                         style="width:{{ run.pct }}%"></div>
+                  </div>
+                  <span class="run-steps-label">{{ run.completed }}/{{ run.total }}</span>
+                </div>
+              </a>
+            </li>
+          {% endfor %}
+        {% endif %}
+      </ul>
     </aside>
 
+    {# ── Content area ── #}
     <section id="content">
-      <div id="placeholder">
-        <div class="placeholder-icon">⬡</div>
-        <p>Select a run to inspect its execution details.</p>
-      </div>
-      <div id="detailPanel" class="hidden">
-        <div id="runMeta"></div>
-        <div id="stepsGrid"></div>
-      </div>
+
+      {% if not active_run %}
+        <div id="placeholder">
+          <div class="placeholder-icon">⬡</div>
+          <p>Select a run to inspect its execution details.</p>
+        </div>
+
+      {% else %}
+        <div id="detailPanel">
+          {# Meta header #}
+          <div id="runMeta">
+            <div class="run-meta-label">Execution start date</div>
+            <span class="run-meta-ts">{{ format_ts(active_run.ts) }}</span>
+            <span class="run-meta-badge {{ active_run.overall }}">{{ active_run.overall }}</span>
+            <span class="badge run-meta-step-count">{{ active_run.completed }}/{{ active_run.total }} steps</span>
+          </div>
+
+          {# ── Steps ── #}
+          <div id="stepsGrid">
+            {% for name in ALL_STEPS %}
+              {% set step = step_map.get(name, {}) %}
+              {% set status = step.get('status', 'pending') %}
+              {% set info = step_details.get(name) %}
+              {% set duration = calc_duration(step.get('start_time', ''), step.get('end_time', '')) %}
+
+              <div class="step-section" id="step-{{ name }}">
+                {# Header #}
+                <div class="step-section-header">
+                  <span class="step-num">{{ loop.index }}</span>
+                  <span class="step-name">{{ name.replace('_', ' ') }}</span>
+                  <div class="step-header-right">
+                    {% if step.get('start_time') %}
+                      <span class="step-time-label">start:</span>
+                      <span class="step-time-val">{{ format_ts(step.start_time) }}</span>
+                    {% endif %}
+                    {% if step.get('end_time') %}
+                      <span class="step-time-label">end:</span>
+                      <span class="step-time-val">{{ format_ts(step.end_time) }}</span>
+                    {% endif %}
+                    {% if step.get('start_time') and step.get('end_time') %}
+                      <span class="step-time-label">duration:</span>
+                      <span class="step-time-val">{{ duration }}</span>
+                    {% endif %}
+                    <span class="chip {{ status }}">{{ status }}</span>
+                  </div>
+                </div>
+
+                {# Description #}
+                <div class="step-description">
+                  {{ STEP_DESCRIPTIONS.get(name, 'No description available.') }}
+                </div>
+
+                {# ── Step body ── #}
+                <div class="step-section-body" id="step-body-{{ name }}">
+                  {% if status == 'pending' %}
+                    <div class="dim">Step has not run yet.</div>
+                  {% elif status in ['success', 'failed', 'running'] %}
+                    <div class="step-loading" id="step-loading-{{ name }}">
+                      <div class="loading">
+                        <div class="spinner"></div>
+                        <span class="dim">
+                          {% if status == 'running' %}Step is currently running — loading partial results…
+                          {% else %}Loading details…{% endif %}
+                        </span>
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="dim">No detail data available.</div>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
     </section>
   </main>
+
+  {# Zoom modal #}
+  <div id="plotZoomModal" class="plot-zoom-overlay hidden">
+    <div class="plot-zoom-backdrop"></div>
+    <div class="plot-zoom-panel">
+      <button class="plot-zoom-close" type="button" aria-label="Close">×</button>
+      <div class="plot-zoom-title"></div>
+      <div class="plot-zoom-body"></div>
+      <div class="plot-zoom-avgs"></div>
+    </div>
+  </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

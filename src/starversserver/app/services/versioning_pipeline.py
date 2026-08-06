@@ -18,6 +18,8 @@ import time
 from datetime import datetime
 import traceback
 from typing import Optional
+import zipfile
+import re
 
 from app.utils.starvers.starvers import TripleStoreEngine
 from app.AppConfig import Settings
@@ -37,7 +39,7 @@ from app.persistance.graphdb.GraphDatabaseUtils import (
 )
 # Exceptions
 from app.exceptions.VersioningFailedException import VersioningFailedException
-
+from app.exceptions.DatasetNotFoundException import DatasetNotFoundException
 
 class VersioningPipeline:
     """
@@ -205,6 +207,42 @@ class VersioningPipeline:
                 self.LOG.info(f"[{self.repository_name}] Downloading snapshot (attempt {attempt + 1}).")
                 try:
                     obtain_nt(self.tracking_task.rdf_dataset_url, self.snapshot_path)
+                    return
+                except DatasetNotFoundException as e:
+
+                    # Find latest archive: YYYYMMDD-hhmmss_sss.zip
+                    zip_files = [
+                        f for f in os.listdir(self.work_dir)
+                        if re.match(r"^\d{8}-\d{6}_\d{3}\.zip$", f)
+                    ]
+
+                    if not zip_files:
+                        raise FileNotFoundError(
+                            f"No previous snapshot archive found in {self.work_dir}"
+                        ) from e
+
+                    latest_zip = max(zip_files)  # lexical order matches timestamp order
+                    previous_timestamp = os.path.splitext(latest_zip)[0]
+
+                    self.LOG.info(
+                        f"[{self.repository_name}] Unzipping and copying previous local "
+                        f"snapshot file {self.tracking_task.name}_{previous_timestamp}.raw.nt "
+                        f"to {self.snapshot_path}."
+                    )
+
+                    zip_path = os.path.join(self.work_dir, latest_zip)
+                    raw_filename = (f"{self.tracking_task.name}_{previous_timestamp}.raw.nt")
+
+                    # Extract the raw snapshot from the archive
+                    with zipfile.ZipFile(zip_path, "r") as zf:
+                        if raw_filename not in zf.namelist():
+                            raise FileNotFoundError(
+                                f"{raw_filename} not found in archive {zip_path}"
+                            )
+
+                        with zf.open(raw_filename) as src, open(self.snapshot_path, "wb") as dst:
+                            shutil.copyfileobj(src, dst)
+
                     return
                 except Exception as e:
                     if attempt == 1:

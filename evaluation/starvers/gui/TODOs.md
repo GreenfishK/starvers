@@ -366,3 +366,44 @@ Stage 3: It again shows 2 partitions - one for valid timestamped queries and one
 
 Stage independent: 
 * upon hovevering over a box, the flow should be highlighted give me the full function
+
+
+## 06.07.2026
+The evaluation algorithm svg should not shrink in size upon rescaling the window but should stay fixed in size and turn scrollable upon resizing.
+
+The recorded measurements section should be taken out
+
+
+### Coding principles
+separation of concern. Use HTML templates (Jinja?) for every content that is static. Every content that is dynamic and unknown prior to request should be filled. Currently, the index.html is just a bare minimum skeleton. This file should be way bigger because there is a lot of static content that is plugged in via the script.js
+
+If you consider it a good practice, use multiple .js scripts to modularize the content.
+
+use only one backend. currently, it seems that there is javascript and flask used as backend, right? Only use Flask instead of javascript, if possible. Please confirm first, before proceeding.
+
+Changes:
+* major change 1: Restructure and modularize the code according to best practice web programming principles
+    * static text/markup → Jinja; 
+        * Everything that is static should go into index.html. Currently, the index.html is just a bare skeleton. All the html code from script.js that is static should go here.
+    * time plots + ingest charts → generated server-side in Python, embedded as SVG in the JSON response (or rendered as an HTML fragment), zoom stays as a lightweight JS/CSS modal; 
+    * query-flow diagram stays JS-generated since its interactivity depends on it. 
+* Major change 2: Re-organize the GUI so that it is not organized based on execution steps but on the content
+    * The section headers based on the exection step names should be removed. The new organization should be:
+        * Datasets (previously download and construct datasets. the contents from both should be merged)
+        * Preprocessing (stays the same)
+        * Queries (previously construct queries)
+        * Performance
+            * ingest
+            * Query performance (evaluation algorithm SVG + plots below)
+        * Hardware infos
+        * Recorded measurements should be removed
+    * During a run, placeholders should be used across the web page to indicate that the content will only be available when a certain step finishes, i.e. the dependency to a certain step should be shown.
+    * In the sidebar under the run items the currently running step should be shown
+    * At the top of each run (main bar) the status of each step should be shown (basically the info frum the execution.csv)
+* Minor change 1:
+    * in api.py there are two variables: VERSIONING_APPROACH, DATASET_DESCRIPTIONS; these should be outsourced into separate yaml files under templates/versioning_approaches and templates/dataset_descriptions and then be loaded into the api.py (or whichever module seems to be fitting after re-organization)
+
+Important!! The content except for the recorded measurements table should stay the same, it should just be re-organized. The functionality must also stay as it is, it should under no circumstances get lost during code re-organization
+
+Changes:
+* 

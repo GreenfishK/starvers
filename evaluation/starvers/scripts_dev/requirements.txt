@@ -7,3 +7,4 @@ requests
 tomli==2.3.0
 psutil==7.1.2
 flask
+adjustText==1.4.0

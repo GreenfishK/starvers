@@ -1,0 +1,550 @@
+{# 
+  step_detail.html — Rendered server-side, returned as HTML fragment via AJAX.
+  Variables: name, info, fmt, fmt_mb, fmt_sec, format_ts
+  For preprocess: BOX_W, BOX_H, PORT_R, DX, PGAP, MARGIN, STAGE_Y
+#}
+
+{% if info.get('error') %}
+  <div class="error-msg">Error loading step details: {{ info.error }}</div>
+
+{# ═══════════════════════════════════════════ #}
+{# DOWNLOAD                                    #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'download' %}
+  {% if info.datasets %}
+    <div class="detail-section">
+      <div class="detail-section-title">Datasets</div>
+      <div class="detail-section-body">
+        <div class="dataset-cards-grid">
+          {% for d in info.datasets %}
+            <div class="dataset-card">
+              <div class="dataset-card-title">{{ d.name }}</div>
+              <div class="dataset-card-body">
+                <p class="dataset-card-desc">{{ d.description or '' }}</p>
+                <div class="kv-grid">
+                  <span class="kv-key">Versions</span>
+                  <span class="kv-val">{{ fmt(d.versions) }}</span>
+                  <span class="kv-key">All Snapshots Size</span>
+                  <span class="kv-val">{{ fmt_mb(d.size_mb) if d.size_mb is not none else '—' }}</span>
+                  <span class="kv-key">Source</span>
+                  <span class="kv-val">
+                    {% if d.download_link %}
+                      <a class="link" href="{{ d.download_link }}" target="_blank">↗ link</a>
+                    {% else %}—{% endif %}
+                  </span>
+                </div>
+                {% if d.query_sets %}
+                  <div class="dataset-card-qs">
+                    <div class="dataset-card-qs-title">Query Sets</div>
+                    {% for qs in d.query_sets %}
+                      <div class="dataset-card-qs-row">
+                        <span class="dataset-card-qs-name">{{ qs.name }}</span>
+                        <span class="dataset-card-qs-links">
+                          {% for l in qs.links %}
+                            <a class="link" href="{{ l.url }}" target="_blank">↗ {{ l.filename }}</a>
+                          {% else %}—{% endfor %}
+                        </span>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# PREPROCESS DATA                             #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'preprocess_data' %}
+  {# Skolemization #}
+  {% if info.validators or info.skolemization_per_dataset %}
+    <div class="detail-section">
+      <div class="detail-section-title">Step 1: Skolemization and Dataset Validation</div>
+      <div class="detail-section-body">
+        {% if info.validators %}
+          <div class="validators-row">
+            <span class="validators-label">Parsers:</span>
+            <span class="validators-item">
+              <strong>RDF4J</strong>
+              <span class="mono validator-version">{{ info.validators.rdf4j or '—' }}</span>
+            </span>
+            <span class="validators-item">
+              <strong>Apache Jena</strong>
+              <span class="mono validator-version">{{ info.validators.jena or '—' }}</span>
+            </span>
+          </div>
+        {% endif %}
+        {% if info.skolemization_per_dataset %}
+          <table class="data-table">
+            <thead><tr>
+              <th>Dataset</th><th>Blank nodes (subject)</th>
+              <th>Blank nodes (object)</th><th>Invalid triples (total)</th>
+              <th>Invalid triples (avg / snapshot)</th>
+            </tr></thead>
+            <tbody>
+              {% for d in info.skolemization_per_dataset %}
+                <tr>
+                  <td><strong>{{ d.dataset }}</strong></td>
+                  <td>{{ fmt(d.subject) }}</td>
+                  <td>{{ fmt(d.object) }}</td>
+                  <td>{{ fmt(d.invalid) }}</td>
+                  <td>{{ '%.2f'|format(d.invalid_avg) if d.invalid_avg is not none else '—' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# Query flow diagram #}
+  {% if info.get('query_flow') %}
+    {% set qf = info.query_flow %}
+
+    {% set s1_w = qf.stage1_nodes|length * DX %}
+    {% set s2v_w = qf.stage2_valid|length * DX %}
+    {% set s2i_w = qf.stage2_invalid|length * DX %}
+    {% set s2_total = s2v_w + PGAP + s2i_w %}
+    {% set s3v_w = qf.stage3_valid|length * DX %}
+    {% set s3p_w = qf.stage3_partial|length * DX %}
+    {% set s3i_w = qf.stage3_invalid|length * DX %}
+    {% set s3_total = s3v_w + s3p_w + s3i_w %}
+    {% set content_w = [s1_w, s2_total, s3_total]|max %}
+    {% set SVG_W = content_w + MARGIN * 2 %}
+    {% set PANEL_Y = STAGE_Y[2] + BOX_H + 44 %}
+    {% set LEGEND_Y = PANEL_Y + 70 %}
+    {% set SVG_H = LEGEND_Y + 50 %}
+    {% set s1_x = MARGIN + (content_w - s1_w) / 2 %}
+    {% set s2_x = MARGIN + (content_w - s2_total) / 2 %}
+    {% set s3_x = s2_x %}
+
+    {% set s1_idx = {} %}
+    {% for q in qf.stage1_nodes %}{% if s1_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+    {% set s2v_idx = {} %}
+    {% for q in qf.stage2_valid %}{% if s2v_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+    {% set s2i_idx = {} %}
+    {% for q in qf.stage2_invalid %}{% if s2i_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+    {% set s3v_idx = {} %}
+    {% for q in qf.stage3_valid %}{% if s3v_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+    {% set s3p_idx = {} %}
+    {% for q in qf.stage3_partial %}{% if s3p_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+    {% set s3i_idx = {} %}
+    {% for q in qf.stage3_invalid %}{% if s3i_idx.update({q: loop.index0}) %}{% endif %}{% endfor %}
+
+    {% macro node_cx(ox, idx) %}{{ ox + idx * DX + BOX_W / 2.0 }}{% endmacro %}
+    {% macro port_x(cx, pidx, pcount) %}
+      {%- set pad = 4 -%}
+      {%- set span = BOX_W - 2 * pad -%}
+      {%- if pcount <= 1 -%}{{ cx }}{%- else -%}{{ (cx - BOX_W / 2.0) + pad + pidx * (span / (pcount - 1)) }}{%- endif -%}
+    {% endmacro %}
+
+    <div class="detail-section">
+      <div class="detail-section-title">Step 2: Query Parsing and Validation (ORKG queries)</div>
+      <div class="detail-section-body">
+        <div class="query-flow-container">
+          <svg class="query-flow-svg" width="{{ SVG_W }}" height="{{ SVG_H }}" viewBox="0 0 {{ SVG_W }} {{ SVG_H }}">
+            {# Stage labels #}
+            <text class="qf-stage-label" x="{{ MARGIN }}" y="{{ STAGE_Y[0] - 22 }}">Stage 1 — original queries</text>
+            <text class="qf-stage-label" x="{{ MARGIN }}" y="{{ STAGE_Y[1] - 40 }}">Stage 2 — original validity</text>
+            <text class="qf-stage-label" x="{{ MARGIN }}" y="{{ STAGE_Y[2] - 40 }}">Stage 3 — timestamped validity</text>
+
+            {# Stage 2 partition backgrounds #}
+            {% if qf.stage2_valid %}
+              {% set px = s2_x - 8 %}{% set pw = qf.stage2_valid|length * DX + 6 %}
+              <rect class="qf-partition-bg qf-partition-valid" x="{{ px }}" y="{{ STAGE_Y[1] - 22 }}" width="{{ pw }}" height="{{ BOX_H + 40 }}" rx="6" />
+              <text class="qf-partition-label qf-partition-label-valid" x="{{ px + 4 }}" y="{{ STAGE_Y[1] - 26 }}">Valid (original)</text>
+            {% endif %}
+            {% if qf.stage2_invalid %}
+              {% set px = s2_x + s2v_w + PGAP - 8 %}{% set pw = qf.stage2_invalid|length * DX + 6 %}
+              <rect class="qf-partition-bg qf-partition-invalid" x="{{ px }}" y="{{ STAGE_Y[1] - 22 }}" width="{{ pw }}" height="{{ BOX_H + 40 }}" rx="6" />
+              <text class="qf-partition-label qf-partition-label-invalid" x="{{ px + 4 }}" y="{{ STAGE_Y[1] - 26 }}">Invalid (original)</text>
+            {% endif %}
+
+            {# Stage 3 partition backgrounds #}
+            {% if qf.stage3_valid %}
+              {% set px = s3_x - 8 %}{% set pw = qf.stage3_valid|length * DX + 6 %}
+              <rect class="qf-partition-bg qf-partition-valid" x="{{ px }}" y="{{ STAGE_Y[2] - 22 }}" width="{{ pw }}" height="{{ BOX_H + 40 }}" rx="6" />
+              <text class="qf-partition-label qf-partition-label-valid" x="{{ px + 4 }}" y="{{ STAGE_Y[2] - 26 }}">Valid (timestamped)</text>
+            {% endif %}
+            {% if qf.stage3_partial %}
+              {% set px = s3_x + s3v_w - 8 %}{% set pw = qf.stage3_partial|length * DX + 6 %}
+              <rect class="qf-partition-bg qf-partition-partial" x="{{ px }}" y="{{ STAGE_Y[2] - 22 }}" width="{{ pw }}" height="{{ BOX_H + 40 }}" rx="6" />
+              <text class="qf-partition-label qf-partition-label-partial" x="{{ px + 4 }}" y="{{ STAGE_Y[2] - 26 }}">Partially valid (timestamped)</text>
+            {% endif %}
+            {% if qf.stage3_invalid %}
+              {% set px = s3_x + s3v_w + s3p_w - 8 %}{% set pw = qf.stage3_invalid|length * DX + 6 %}
+              <rect class="qf-partition-bg qf-partition-invalid" x="{{ px }}" y="{{ STAGE_Y[2] - 22 }}" width="{{ pw }}" height="{{ BOX_H + 40 }}" rx="6" />
+              <text class="qf-partition-label qf-partition-label-invalid" x="{{ px + 4 }}" y="{{ STAGE_Y[2] - 26 }}">Invalid (timestamped)</text>
+            {% endif %}
+
+            {# Edges: Stage 1 → Stage 2 #}
+            {% for e in qf.edges_s1_s2 %}
+              {% set src_cx = (s1_x + s1_idx[e.src] * DX + BOX_W / 2.0) %}
+              {% if e.dst_partition == 'valid' %}
+                {% set dst_cx = (s2_x + s2v_idx[e.dst] * DX + BOX_W / 2.0) %}
+              {% else %}
+                {% set dst_cx = (s2_x + s2v_w + PGAP + s2i_idx[e.dst] * DX + BOX_W / 2.0) %}
+              {% endif %}
+              {% set sx = port_x(src_cx, e.store_index, qf.num_stores_all)|trim|float %}
+              {% set sy = STAGE_Y[0] + BOX_H %}
+              {% set dx = port_x(dst_cx, e.store_index, qf.num_stores_all)|trim|float %}
+              {% set dy = STAGE_Y[1] %}
+              {% set my = (sy + dy) / 2.0 %}
+              <path class="qf-edge" data-src="s1_{{ e.src }}" data-dst="s2{{ e.dst_partition[0] }}_{{ e.dst }}" stroke="{{ e.store_color }}" d="M{{ sx }},{{ sy }} C{{ sx }},{{ my }} {{ dx }},{{ my }} {{ dx }},{{ dy }}" />
+              <circle class="qf-port" cx="{{ sx }}" cy="{{ sy }}" r="{{ PORT_R }}" fill="{{ e.store_color }}" />
+              <circle class="qf-port" cx="{{ dx }}" cy="{{ dy }}" r="{{ PORT_R }}" fill="{{ e.store_color }}" />
+            {% endfor %}
+
+            {# Edges: Stage 2 → Stage 3 #}
+            {% for e in qf.edges_s2_s3 %}
+              {% set src_cx = (s2_x + s2v_idx[e.src] * DX + BOX_W / 2.0) %}
+              {% if e.dst_partition == 'valid' %}
+                {% set dst_cx = (s3_x + s3v_idx[e.dst] * DX + BOX_W / 2.0) %}
+              {% elif e.dst_partition == 'partial' %}
+                {% set dst_cx = (s3_x + s3v_w + s3p_idx[e.dst] * DX + BOX_W / 2.0) %}
+              {% else %}
+                {% set dst_cx = (s3_x + s3v_w + s3p_w + s3i_idx[e.dst] * DX + BOX_W / 2.0) %}
+              {% endif %}
+              {% set sx = port_x(src_cx, e.store_index, qf.num_stores_ts)|trim|float %}
+              {% set sy = STAGE_Y[1] + BOX_H %}
+              {% set dx = port_x(dst_cx, e.store_index, qf.num_stores_ts)|trim|float %}
+              {% set dy = STAGE_Y[2] %}
+              {% set my = (sy + dy) / 2.0 %}
+              <path class="qf-edge" data-src="s2v_{{ e.src }}" data-dst="s3{{ e.dst_partition[0] }}_{{ e.dst }}" stroke="{{ e.store_color }}" d="M{{ sx }},{{ sy }} C{{ sx }},{{ my }} {{ dx }},{{ my }} {{ dx }},{{ dy }}" />
+              <circle class="qf-port" cx="{{ sx }}" cy="{{ sy }}" r="{{ PORT_R }}" fill="{{ e.store_color }}" />
+              <circle class="qf-port" cx="{{ dx }}" cy="{{ dy }}" r="{{ PORT_R }}" fill="{{ e.store_color }}" />
+            {% endfor %}
+
+            {# Stage 1 nodes #}
+            {% for q in qf.stage1_nodes %}
+              {% set cx = node_cx(s1_x, loop.index0)|trim|float %}
+              <g class="qf-node-group" data-nid="s1_{{ q }}">
+                <rect class="qf-node-box qf-node-s1" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[0] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[0] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[0] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Stage 2 valid nodes #}
+            {% for q in qf.stage2_valid %}
+              {% set cx = node_cx(s2_x, loop.index0)|trim|float %}
+              {% set all_valid = qf.node_valid_all_count[q] == qf.num_stores_all %}
+              <g class="qf-node-group" data-nid="s2v_{{ q }}">
+                <rect class="qf-node-box {{ 'qf-node-all-valid' if all_valid else 'qf-node-partial' }} qf-node-s2-valid" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[1] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[1] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[1] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Stage 2 invalid nodes #}
+            {% for q in qf.stage2_invalid %}
+              {% set cx = node_cx(s2_x + s2v_w + PGAP, loop.index0)|trim|float %}
+              <g class="qf-node-group" data-nid="s2i_{{ q }}">
+                <rect class="qf-node-box qf-node-s2-invalid" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[1] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[1] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[1] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Stage 3 valid nodes #}
+            {% for q in qf.stage3_valid %}
+              {% set cx = node_cx(s3_x, loop.index0)|trim|float %}
+              {% set all_valid = qf.node_valid_ts_count[q] == qf.num_stores_ts %}
+              <g class="qf-node-group" data-nid="s3v_{{ q }}">
+                <rect class="qf-node-box {{ 'qf-node-all-valid' if all_valid else 'qf-node-partial' }} qf-node-s3-valid" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[2] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[2] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[2] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Stage 3 partial nodes #}
+            {% for q in qf.stage3_partial %}
+              {% set cx = node_cx(s3_x + s3v_w, loop.index0)|trim|float %}
+              <g class="qf-node-group" data-nid="s3p_{{ q }}">
+                <rect class="qf-node-box qf-node-s3-partial" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[2] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[2] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[2] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Stage 3 invalid nodes #}
+            {% for q in qf.stage3_invalid %}
+              {% set cx = node_cx(s3_x + s3v_w + s3p_w, loop.index0)|trim|float %}
+              <g class="qf-node-group" data-nid="s3i_{{ q }}">
+                <rect class="qf-node-box qf-node-s3-invalid" x="{{ cx - BOX_W / 2 }}" y="{{ STAGE_Y[2] }}" width="{{ BOX_W }}" height="{{ BOX_H }}" rx="3" />
+                <text class="qf-node-text" x="{{ cx }}" y="{{ STAGE_Y[2] + BOX_H / 2 }}" transform="rotate(-90,{{ cx }},{{ STAGE_Y[2] + BOX_H / 2 }})">{{ q }}</text>
+              </g>
+            {% endfor %}
+
+            {# Counts: original validity #}
+            <text class="qf-count-heading" x="{{ MARGIN }}" y="{{ PANEL_Y }}">Original validity</text>
+            {% for c in qf.orig_counts %}
+              {% set ry = PANEL_Y + 16 + loop.index0 * 16 %}
+              <rect class="qf-count-swatch" x="{{ MARGIN }}" y="{{ ry - 7 }}" width="8" height="8" rx="2" fill="{{ c.color }}" />
+              <text class="qf-count-text" x="{{ MARGIN + 12 }}" y="{{ ry }}">{{ c.valid }}/{{ c.total }}  {{ c.label }}</text>
+            {% endfor %}
+
+            {# Counts: timestamped validity #}
+            {% set b2x = MARGIN + 180 %}
+            <text class="qf-count-heading" x="{{ b2x }}" y="{{ PANEL_Y }}">Timestamped validity (of orig. valid)</text>
+            {% for c in qf.ts_counts %}
+              {% set ry = PANEL_Y + 16 + loop.index0 * 16 %}
+              <rect class="qf-count-swatch" x="{{ b2x }}" y="{{ ry - 7 }}" width="8" height="8" rx="2" fill="{{ c.color }}" />
+              <text class="qf-count-text" x="{{ b2x + 12 }}" y="{{ ry }}">{{ c.valid_ts }}/{{ c.valid_orig }}  {{ c.label }}</text>
+            {% endfor %}
+
+            {# Legend #}
+            <text class="qf-legend-heading" x="{{ MARGIN }}" y="{{ LEGEND_Y }}">Triple store color</text>
+            {% for s in qf.stores_all %}
+              {% set lx = MARGIN + loop.index0 * 120 %}
+              <rect x="{{ lx }}" y="{{ LEGEND_Y + 14 }}" width="24" height="5" rx="2" fill="{{ s.color }}" />
+              <text class="qf-count-text" x="{{ lx + 28 }}" y="{{ LEGEND_Y + 20 }}">{{ s.label }}</text>
+            {% endfor %}
+            {% set gfx = MARGIN + qf.stores_all|length * 120 %}
+            <rect class="qf-legend-swatch-all-valid" x="{{ gfx }}" y="{{ LEGEND_Y + 10 }}" width="14" height="10" rx="2" />
+            <text class="qf-count-text" x="{{ gfx + 18 }}" y="{{ LEGEND_Y + 20 }}">Valid in all stores</text>
+            {% set wfx = gfx + 130 %}
+            <rect class="qf-legend-swatch-partial" x="{{ wfx }}" y="{{ LEGEND_Y + 10 }}" width="14" height="10" rx="2" />
+            <text class="qf-count-text" x="{{ wfx + 18 }}" y="{{ LEGEND_Y + 20 }}">Partially valid</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# CONSTRUCT DATASETS                          #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'construct_datasets' %}
+  {% if info.variants %}
+    {% set by_variant = {} %}
+    {% for v in info.variants %}
+      {% if v.variant not in by_variant %}
+        {% if by_variant.update({v.variant: {'approach': v.versioning_approach, 'datasets': []}}) %}{% endif %}
+      {% endif %}
+      {% if by_variant[v.variant].datasets.append({'dataset': v.dataset, 'size_mb': v.size_mb}) %}{% endif %}
+    {% endfor %}
+    <div class="detail-section">
+      <div class="detail-section-title">Dataset Variants</div>
+      <div class="detail-section-body">
+        <div class="variants-grid">
+          {% for variant, data in by_variant.items() %}
+            <div class="variant-section">
+              <div class="variant-title">{{ variant }}</div>
+              <div class="variant-body">
+                <table class="data-table">
+                  <thead><tr><th>Dataset</th><th>Size</th></tr></thead>
+                  <tbody>
+                    {% for d in data.datasets %}
+                      <tr><td>{{ d.dataset }}</td><td>{{ fmt_mb(d.size_mb) if d.size_mb is not none else '—' }}</td></tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                <div class="variant-approach-label">RDF Versioning Model</div>
+                <div class="dim">Case: A triple with two validation periods.</div>
+                <div class="variant-approach">{{ data.approach or '—' }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# INGEST                                      #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'ingest' %}
+  {% if info.ingestion_summary %}
+    <div class="detail-section">
+      <div class="detail-section-title">Ingestion Results — avg over 10 runs</div>
+      <div class="detail-section-body">
+        {% if info.ingest_charts %}
+          <div class="ingest-charts-grid">
+            {% for ds, img_b64 in info.ingest_charts.items() %}
+              <div class="ingest-chart-panel">
+                <div class="ingest-chart-heading">{{ ds }}</div>
+                <div class="chart-image-wrap">
+                  <img class="chart-image" src="data:image/png;base64,{{ img_b64 }}" alt="Ingestion chart — {{ ds }}" />
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# CONSTRUCT QUERIES                           #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'construct_queries' %}
+  {% if info.datasets and info.policies and info.query_counts %}
+    <div class="detail-section">
+      <div class="detail-section-title">Queries Constructed</div>
+      <div class="detail-section-body">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Dataset</th>
+              {% for p in info.policies %}<th>{{ p }}</th>{% endfor %}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ds in info.datasets %}
+              <tr>
+                <td><strong>{{ ds }}</strong></td>
+                {% for p in info.policies %}
+                  <td class="mono">{{ fmt(info.query_counts.get(p, {}).get(ds, 0)) }}</td>
+                {% endfor %}
+                <td class="mono"><strong>{{ fmt(info.totals_per_dataset.get(ds, 0)) }}</strong></td>
+              </tr>
+            {% endfor %}
+            <tr class="total-row">
+              <td><strong>Total</strong></td>
+              {% for p in info.policies %}
+                {% set p_total = namespace(val=0) %}
+                {% for ds in info.datasets %}
+                  {% set p_total.val = p_total.val + info.query_counts.get(p, {}).get(ds, 0) %}
+                {% endfor %}
+                <td class="mono"><strong>{{ fmt(p_total.val) }}</strong></td>
+              {% endfor %}
+              {% set grand = namespace(val=0) %}
+              {% for ds in info.datasets %}
+                {% set grand.val = grand.val + info.totals_per_dataset.get(ds, 0) %}
+              {% endfor %}
+              <td class="mono"><strong>{{ fmt(grand.val) }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <div class="detail-section">
+      <div class="detail-section-title">Queries Constructed</div>
+      <div class="detail-section-body">
+        <div class="dim">No query files found in final_queries directory.</div>
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# EVALUATE                                    #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'evaluate' %}
+  <div class="detail-section">
+    <div class="detail-section-title">Evaluation Algorithm</div>
+    <div class="detail-section-body">
+      <div class="chart-image-wrap">
+        <img class="chart-image" src="{{ url_for('static', filename='images/evaluation_loop_horizontal.svg') }}" alt="Evaluation loop activity diagram" />      </div>
+    </div>
+  </div>
+
+  {% if info.hardware %}
+    <div class="detail-section">
+      <div class="detail-section-title">Hardware Infos</div>
+      <div class="detail-section-body">
+        <table class="data-table">
+          <thead><tr><th>Property</th><th>Value</th></tr></thead>
+          <tbody>
+            {% for k, v in info.hardware.items() %}
+              <tr><td class="kv-key">{{ k }}</td><td class="kv-val mono">{{ v }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if info.time_header %}
+    <div class="detail-section">
+      <div class="detail-section-title">Recorded Measurements</div>
+      <div class="detail-section-body">
+        <div class="table-scroll-wrap">
+          <table class="data-table">
+            <thead><tr>{% for h in info.time_header %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for row in info.time_samples %}
+                <tr>
+                  {% for v in row %}
+                    <td class="mono">{%- if loop.index0 == 7 and v != '' -%}{{ '%.4f'|format(v|float) }}{%- else -%}{{ v }}{%- endif -%}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if info.time_total_rows > 0 %}
+          <div class="dim table-row-count">Showing 5 of {{ fmt(info.time_total_rows) }} rows</div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{# ═══════════════════════════════════════════ #}
+{# VISUALIZE                                   #}
+{# ═══════════════════════════════════════════ #}
+{% elif name == 'visualize' %}
+  <div class="detail-section">
+    <div class="detail-section-title">Query Performance Plots</div>
+    <div class="detail-section-body">
+      {% if info.plot_info %}
+        <div class="tsplot-legend">
+          <span class="tsplot-legend-heading">Policy (line colour):</span>
+          {% for p in info.plot_info.policy_legend %}
+            <div class="tsplot-legend-item">
+              <span class="tsplot-legend-swatch" style="background:{{ p.color }}"></span>
+              <span class="tsplot-legend-label">{{ p.policy }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% set grouped = {} %}
+        {% for plot in info.plot_info.plots %}
+          {% if plot.dataset not in grouped %}{% if grouped.update({plot.dataset: {}}) %}{% endif %}{% endif %}
+          {% if plot.query_set not in grouped[plot.dataset] %}{% if grouped[plot.dataset].update({plot.query_set: []}) %}{% endif %}{% endif %}
+          {% if grouped[plot.dataset][plot.query_set].append(plot) %}{% endif %}
+        {% endfor %}
+
+        <div class="tsplot-dataset-grid">
+          {% for ds in info.plot_info.datasets_order %}
+            {% if ds in grouped %}
+              <div class="tsplot-dataset-panel">
+                <div class="tsplot-dataset-heading">{{ ds }}</div>
+                <div class="tsplot-qs-wrap">
+                  {% for qs in grouped[ds].keys()|sort %}
+                    <div class="tsplot-qs-group">
+                      <div class="tsplot-qs-label">{{ qs }}</div>
+                      <div class="tsplot-plots-row">
+                        {% for plot in grouped[ds][qs] %}
+                          <div class="tsplot-card" data-zoom-title="{{ ds }} — {{ qs }} — {{ plot.triplestore }}">
+                            <div class="tsplot-svg-wrap">
+                              <img class="chart-image" src="data:image/png;base64,{{ plot.image_b64 }}" alt="{{ plot.triplestore }}" />
+                            </div>
+                            <div class="tsplot-avg-list">
+                              <div class="tsplot-avg-heading">Avg. over all versions</div>
+                              {% for a in plot.averages %}
+                                <div class="tsplot-avg-row">
+                                  <span class="tsplot-avg-swatch" style="background:{{ a.color }}"></span>
+                                  <span class="tsplot-avg-key">{{ a.policy }}:</span>
+                                  <span class="tsplot-avg-val">{{ fmt_sec(a.avg) }}</span>
+                                </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="dim">No measurement data found. Run the evaluate step first.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
