@@ -1,0 +1,38 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["./skills/coding/SKILL.md"],
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "aqueduct/deepseek-v4-flash-284b",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      },
+      "permission": {
+        "skill": {
+          
+        },
+        "read": {
+          "*": "ask",
+          ".opencode/**": "allow",
+          "src/**": "allow"
+        },
+        "edit": {
+          "*": "ask",
+          ".opencode/tools/**": "ask",
+          "src/**": "allow"
+        },
+        "bash": {
+          "*": "allow"
+        },
+        "external_directory": {
+          "/mnt/data/starversserver/**": "allow",
+          "/mnt/data_local/starversserver/**": "allow"
+        }
+        
+      }
+    }
+  }
+}
