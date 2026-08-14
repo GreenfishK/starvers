@@ -135,8 +135,9 @@ Then, the whole pipeline can be executed using the command in Section [Run the f
 | 5 | construct_queries | `construct_queries` |
 | 6 | evaluate | `evaluate` |
 | 7 | visualize | `visualize` |
+| 8 | dataset_metrics | `dataset_metrics` |
 
-Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file.
+Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file. The `dataset_metrics` step computes the BEAR dataset metrics from the rawdata snapshots and changesets and writes a CSV to `output/measurements/dataset_metrics.csv` and a LaTeX table to `output/tables/dataset_metrics.tex`.
 
 ### Run the full pipeline (new directory)
 

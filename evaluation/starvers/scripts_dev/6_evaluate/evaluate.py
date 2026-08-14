@@ -335,29 +335,35 @@ def run_queries(triple_store, policy, dataset) -> list:
 
     return all_rows
 
-def measure_updates(triple_store: str, dataset: str, policy: str, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
-    # HTTPError
-    chunk_sizes = range(1000, 10000, 1000)
-    measure_ts_with_varying_chunk_sizes = partial(insert_ic0_and_cbs, 
-                                                dataset=dataset,
-                                                policy=policy,
-                                                source_ic0=source_ic0, 
-                                                source_cs=source_cs, 
-                                                last_version=last_version, 
-                                                init_timestamp=init_timestamp)
+def measure_updates(triple_store: str, dataset: str, policy: str, chunk_size: int, runs: int, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
+    LOG.info(f"Measuring update times for {triple_store}/{policy}/{dataset} with chunk size {chunk_size} over {runs} runs.")
 
-    measurements: list[pd.DataFrame] = []
-    for ts, chunk_size in product([triple_store], chunk_sizes):
-        result = measure_ts_with_varying_chunk_sizes(ts, chunk_size)
+    run_measurements: list[pd.DataFrame] = []
+    for run_idx in range(runs):
+        LOG.info(f"Run {run_idx + 1}/{runs} ...")
+        result = insert_ic0_and_cbs(triple_store, chunk_size, dataset=dataset, policy=policy,
+                                    source_ic0=source_ic0, source_cs=source_cs,
+                                    last_version=last_version, init_timestamp=init_timestamp)
         if result is False:
             # Stop iteration if HTTPError occurred
+            LOG.info("HTTPError occurred, stopping update evaluation for this combination.")
             break
-        measurements.append(result)
+        run_measurements.append(result)
 
-    combined_measurements = pd.concat(measurements, join="inner")
-    
-    LOG.info("Writing performance measurements to disk ...")            
-    combined_measurements.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{triple_store}_{policy}_{dataset}.csv", sep=";", index=False, mode='w', header=True)
+    if not run_measurements:
+        return
+
+    combined_measurements = pd.concat(run_measurements, join="inner")
+
+    # Average the execution time per batch across runs
+    group_cols = [c for c in combined_measurements.columns if c != 'execution_time']
+    averaged_measurements = combined_measurements.groupby(group_cols, as_index=False)['execution_time'].mean()
+
+    # Add the number of runs that were averaged
+    averaged_measurements.insert(0, 'runs', runs)
+
+    LOG.info("Writing performance measurements to disk ...")
+    averaged_measurements.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{triple_store}_{policy}_{dataset}.csv", sep=";", index=False, mode='w', header=True)
 
     # Remove temporary output files
     dir_path = f"{os.environ['RUN_DIR']}/output/measurements/"
@@ -375,14 +381,14 @@ def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:
     database_dir = f"{databases_dir}/{triple_store_name}"
     mgmt_script = static_eval_params["rdf_stores"][triple_store_name]["mgmt_script"]
 
-    LOG.info("Create GraphDB directories and environment")
+    LOG.info(f"Create {triple_store} directories and environment")
     LOG.info(f"\nDatabase directory {database_dir}\nConfig dirctory:{CONFIG_DIR}\nConfig Template directory:{CONFIG_TMPL_DIR}")
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
 
     LOG.info(f"Ingest empty file into {repository} repository and start {triple_store_name}.")
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
-    LOG.info("Startup GraphDB engine")
+    LOG.info(f"Startup {triple_store} engine")
     subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
 
     LOG.info("Read initial snapshot {0} into memory.".format(source_ic0))
@@ -539,6 +545,8 @@ def main():
     #    time_df.to_csv(TIME_FILE, sep=";", index=False, mode='w', header=True)
 
     # Update evaluation
+    chunk_size = 7000
+    runs = 1
     for dataset in datasets:
         for policy in policies:
             for triple_store in triple_stores:
@@ -548,6 +556,8 @@ def main():
                 measure_updates(triple_store=triple_store,
                         dataset=dataset, 
                         policy=policy,
+                        chunk_size=chunk_size,
+                        runs=runs,
                         source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
                         source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
                         last_version=total_versions, 

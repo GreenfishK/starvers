@@ -11,6 +11,7 @@ Steps (in order):
   5  construct_queries
   6  evaluate
   7  visualize
+  8  dataset_metrics
 
 Usage:
   python run_starvers_eval.py run all
@@ -49,6 +50,7 @@ STEPS: list[dict] = [
     {"number": 5, "name": "construct_queries",  "script": Path("/starvers_eval/scripts/5_construct_queries/construct_queries.py")},
     {"number": 6, "name": "evaluate",           "script": Path("/starvers_eval/scripts/6_evaluate/evaluate.py")},
     {"number": 7, "name": "visualize",          "script": Path("/starvers_eval/scripts/7_visualize/visualize.py")},
+    {"number": 8, "name": "dataset_metrics",    "script": Path("/starvers_eval/scripts/8_dataset_metrics/dataset_metrics.py")},
 ]
 
 EXECUTION_CSV = "execution.csv"
@@ -159,6 +161,7 @@ def execute_steps(steps_to_run: list[dict], run_dir: Path) -> None:
         f"{os.environ['RUN_DIR']}/output/measurements",
         f"{os.environ['RUN_DIR']}/output/result_sets",
         f"{os.environ['RUN_DIR']}/output/figures",
+        f"{os.environ['RUN_DIR']}/output/tables",
         f"{os.environ['RUN_DIR']}/rawdata",
         f"{os.environ['RUN_DIR']}/queries/raw_queries/beara/low",
         f"{os.environ['RUN_DIR']}/queries/raw_queries/beara/high",
@@ -331,14 +334,14 @@ def build_parser() -> argparse.ArgumentParser:
     run_sub = run_p.add_subparsers(dest="subcommand", required=True)
     run_sub.add_parser("all", help="Run the full pipeline")
     step_p = run_sub.add_parser("step", help="Run a single step")
-    step_p.add_argument("step_id", help="Step number (1-7) or name")
+    step_p.add_argument("step_id", help="Step number (1-8) or name")
     from_p = run_sub.add_parser("from", help="Run from a specific step onwards")
-    from_p.add_argument("step_id", help="Step number (1-7) or name")
+    from_p.add_argument("step_id", help="Step number (1-8) or name")
     until_p = run_sub.add_parser("until", help="Run steps until a specific step")
-    until_p.add_argument("step_id", help="Step number (1-7) or name")
+    until_p.add_argument("step_id", help="Step number (1-8) or name")
     # add argument after step <step_id> at <timestamp> to run a step for a specific run
     after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
-    after_p.add_argument("step_id", help="Step number (1-7) or name")
+    after_p.add_argument("step_id", help="Step number (1-8) or name")
     after_p.add_argument("timestamp", help="Run timestamp")
 
 

@@ -159,6 +159,7 @@ def download_datasets(config: dict):
     LOG.info(f"Registered datasets are {sorted(registered_datasets)} ...")
 
     snapshot_dir_name = config.get("general", {}).get("snapshot_dir", "snapshots")
+    change_sets_orig_dir_name = config.get("general", {}).get("change_sets_orig_dir", "alldata.CB.nt")
 
     for dataset in DATASETS:
         if dataset not in registered_datasets:
@@ -173,6 +174,8 @@ def download_datasets(config: dict):
         archive_name_snapshots   = entry.get("archive_name_snapshots", "")
         download_link_ng_dataset = entry.get("download_link_ng_dataset", "")
         archive_name_ng_dataset  = entry.get("archive_name_ng_dataset", "")
+        download_link_changesets = entry.get("download_link_changesets", "")
+        archive_name_changesets  = entry.get("archive_name_changesets", "")
         yn_nested_archives       = entry.get("yn_nested_archives", False)
 
         raw_ds_dir   = RUN_DIR / "rawdata" / dataset
@@ -203,6 +206,19 @@ def download_datasets(config: dict):
         # for CB and CBNG policy: empty initial delete changeset;
         # also used to filter ORKG queries against an empty repository
         (raw_ds_dir / "empty.nt").touch()
+
+        # Original BEAR changesets (alldata.CB.nt.tar.gz) -> rawdata/<dataset>/alldata.CB.nt/
+        if download_link_changesets:
+            change_set_dir = raw_ds_dir / change_sets_orig_dir_name
+            LOG.info(f"Downloading {dataset} original changesets...")
+            _download(download_link_changesets, raw_ds_dir, archive_name_changesets)
+            LOG.info(f"Extracting {dataset} original changesets...")
+            _extract_tar(raw_ds_dir / archive_name_changesets, change_set_dir)
+            for gz_file in change_set_dir.glob("*.gz"):
+                _gunzip(gz_file, gz_file.with_suffix(""))
+                gz_file.unlink()
+            size = _dir_size_mb(change_set_dir)
+            LOG.info(f"Extracted {dataset} original changesets into {change_set_dir} ({size} MB).")
 
         LOG.info(f"Downloading and extracting {dataset} datasets finished.")
 
