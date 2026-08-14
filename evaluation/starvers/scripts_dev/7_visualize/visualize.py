@@ -61,7 +61,7 @@ def _policy_color_map(policies: list[str]) -> dict[str, str]:
 def _load_performance_data() -> pd.DataFrame:
     """Load and pre-process the query execution time CSV."""
 
-    path = f"{measurements_in}/time.csv" 
+    path = f"{measurements_in}/queries_time.csv" 
     LOG.info("Loading performance data from %s", path)
 
     df = pd.read_csv(
@@ -78,9 +78,9 @@ def _load_performance_data() -> pd.DataFrame:
 
 
 def _load_ingestion_data() -> pd.DataFrame:
-    path = f"{measurements_in}/ingestion.csv"
+    path = f"{measurements_in}/storage_and_ingestion.csv"
     if not os.path.exists(path):
-        logging.warning("ingestion.csv not found in %s", measurements_in)
+        logging.warning("storage_and_ingestion.csv not found in %s", measurements_in)
         return pd.DataFrame()
     df = pd.read_csv(path, delimiter=";", decimal=".")
     df["triplestore"] = df["triplestore"].str.lower()
@@ -341,7 +341,7 @@ def create_latex_tables():
     # =========================
     # Load data
     # =========================
-    time_path = f"{measurements_in}/time.csv"
+    time_path = f"{measurements_in}/queries_time.csv"
 
     queries_data = pd.read_csv(
         time_path,
@@ -361,7 +361,7 @@ def create_latex_tables():
         parse_dates=["snapshot_ts"],
     )
 
-    query_build_time_data = pd.read_csv(f"{measurements_in}/query_rewriting_times.csv", delimiter=",", decimal=".",
+    query_build_time_data = pd.read_csv(f"{measurements_in}/queries_rewriting_times.csv", delimiter=",", decimal=".",
         dtype={
             "dataset": "category",
             "policy": "category",
@@ -380,7 +380,7 @@ def create_latex_tables():
     )
     queries_data["execution_time_total"] = (queries_data["execution_time_clean"] + queries_data["rewriting_time"]).clip(upper=30)
     
-    ingestion_data = pd.read_csv(f"{measurements_in}/ingestion.csv", delimiter=";", decimal=".")
+    ingestion_data = pd.read_csv(f"{measurements_in}/storage_and_ingestion.csv", delimiter=";", decimal=".")
     ingestion_data["triplestore"] = ingestion_data["triplestore"].str.lower()
 
     with open(RESULTS_TMPL, "r") as f:
@@ -394,14 +394,14 @@ def create_latex_tables():
     ).reset_index()
     LOG.info(f"Aggregated measures:\n{queries_agg}")
     queries_agg = queries_agg[queries_agg["min"].notna()]
-    queries_agg.to_csv(f"{os.environ['RUN_DIR']}/output/logs/visualize/queries.csv", index=False)
+    queries_agg.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/queries_time_aggr.csv", index=False)
 
     storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"], observed=False).agg(
         ingestion_time=("ingestion_time", "median"),
         raw_file_size=("raw_file_size_MiB", "mean"),
         db_file_size=("db_files_disk_usage_MiB", "mean")
     ).reset_index()
-    storage_agg.to_csv(f"{os.environ['RUN_DIR']}/output/logs/visualize/storage.csv", index=False)
+    storage_agg.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/storage_and_ingestion_aggr.csv", index=False)
 
     def format_exec_time(v):
         if v == 0:
@@ -564,6 +564,63 @@ def create_latex_tables():
 
 
 # ---------------------------------------------------------------------------
+# 5. Dataset metrics LaTeX table  —  generated from evaluate_dataset_metrics.csv
+# ---------------------------------------------------------------------------
+
+def create_dataset_metrics_table():
+    """
+    Read the dataset metrics CSV produced in the evaluate step
+    (evaluate_dataset_metrics.py) and render the LaTeX table to
+    tables_out/dataset_metrics.tex.
+    """
+
+    csv_path = f"{measurements_in}/dataset_metrics.csv"
+    if not os.path.exists(csv_path):
+        LOG.warning("dataset_metrics.csv not found in %s — skipping dataset metrics table.", measurements_in)
+        return
+
+    df = pd.read_csv(csv_path, delimiter=",", decimal=".")
+
+    def pct(value) -> str:
+        return f"{float(value) * 100:.2f}\\%"
+
+    def int_str(value) -> str:
+        return f"{int(value):,}"
+
+    lines = []
+    lines.append("\\begin{table}[ht]")
+    lines.append("\\centering")
+    lines.append("\\caption{Basic dataset infos and BEAR metrics computed from all snapshots and our computed "
+                 "changesets. Change ratio, insertion ratio, deletion "
+                 "ratio, and growth are reported as mean values over all consecutive versions.}")
+    lines.append("\\label{tab:dataset_metrics}")
+    lines.append("\\footnotesize")
+    lines.append("\\setlength{\\tabcolsep}{3pt}")
+    lines.append("\\begin{tabular}{lccccccccc}")
+    lines.append("\\toprule")
+    lines.append("Dataset & versions & $| V_0 |$ & $| V_{last} |$ & $\\overline{growth}$ & "
+                 "$\\bar{\\delta}$ & $\\overline{\\delta^+}$ & $\\overline{\\delta^-}$ & $C_A$ & $O_A$ \\\\")
+    lines.append("\\midrule")
+    for _, row in df.sort_values("dataset").iterrows():
+        tex_dataset = str(row["dataset"]).replace("_", "\\_")
+        lines.append(
+            f"\\texttt{{{tex_dataset}}} & {int(row['versions'])} & {int_str(row['cnt_triples_first_version'])} "
+            f"& {int_str(row['cnt_triples_last_version'])} & {pct(row['mean_growth'])} "
+            f"& {pct(row['mean_change_ratio'])} & {pct(row['mean_insertion_ratio'])} "
+            f"& {pct(row['mean_deletion_ratio'])} & {int_str(row['cnt_triples_static_core'])} "
+            f"& {int_str(row['cnt_triples_version_oblivious'])} \\\\"
+        )
+    lines.append("\\bottomrule")
+    lines.append("\\end{tabular}")
+    lines.append("\\setlength{\\tabcolsep}{6pt}")
+    lines.append("\\end{table}")
+
+    out_path = Path(tables_out) / "dataset_metrics.tex"
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    LOG.info("Saved %s", out_path)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -579,3 +636,4 @@ if __name__ == "__main__":
         plot_ingest_time(      triplestore, dataset, ingest_df, POLICIES)
 
     create_latex_tables()
+    create_dataset_metrics_table()

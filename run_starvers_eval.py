@@ -11,11 +11,17 @@ Steps (in order):
   5  construct_queries
   6  evaluate
   7  visualize
-  8  dataset_metrics
+
+The evaluate step executes the three evaluation sub-runs by default (queries,
+update, dataset_metrics). It can also be run for a single sub-run, e.g.:
+  python run_starvers_eval.py run step evaluate queries
+  python run_starvers_eval.py run step evaluate update
+  python run_starvers_eval.py run step evaluate dataset_metrics
+  python run_starvers_eval.py run step evaluate          # all three (default)
 
 Usage:
   python run_starvers_eval.py run all
-  python run_starvers_eval.py run step <step_number_or_name>
+  python run_starvers_eval.py run step <step_number_or_name> [queries|update|dataset_metrics]
   python run_starvers_eval.py run from <step_number_or_name>
   python run_starvers_eval.py run until <step_number_or_name>
   python run_starvers_eval.py continue
@@ -42,16 +48,23 @@ from api import run_api
 
 BASE_DATA_DIR = Path("/starvers_eval/data")
 
+EVALUATE_SCRIPTS: dict[str, Path] = {
+    "queries":         Path("/starvers_eval/scripts/6_evaluate/evaluate_queries.py"),
+    "update":          Path("/starvers_eval/scripts/6_evaluate/evaluate_update.py"),
+    "dataset_metrics": Path("/starvers_eval/scripts/6_evaluate/evaluate_dataset_metrics.py"),
+}
+
 STEPS: list[dict] = [
     {"number": 1, "name": "download",           "script": Path("/starvers_eval/scripts/1_download/download_data.py")},
     {"number": 2, "name": "preprocess_data",    "script": Path("/starvers_eval/scripts/2_preprocess_data/preprocess_data.py")},
     {"number": 3, "name": "construct_datasets", "script": Path("/starvers_eval/scripts/3_construct_datasets/construct_datasets.py")},
     {"number": 4, "name": "ingest",             "script": Path("/starvers_eval/scripts/4_ingest/ingest.py")},
     {"number": 5, "name": "construct_queries",  "script": Path("/starvers_eval/scripts/5_construct_queries/construct_queries.py")},
-    {"number": 6, "name": "evaluate",           "script": Path("/starvers_eval/scripts/6_evaluate/evaluate.py")},
+    {"number": 6, "name": "evaluate",           "scripts": list(EVALUATE_SCRIPTS.values())},
     {"number": 7, "name": "visualize",          "script": Path("/starvers_eval/scripts/7_visualize/visualize.py")},
-    {"number": 8, "name": "dataset_metrics",    "script": Path("/starvers_eval/scripts/8_dataset_metrics/dataset_metrics.py")},
 ]
+
+EVALUATE_MODES = list(EVALUATE_SCRIPTS)  # ["queries", "update", "dataset_metrics"]
 
 EXECUTION_CSV = "execution.csv"
 CSV_FIELDS = ["step_number", "step_name", "start_time", "end_time", "status"]
@@ -90,6 +103,24 @@ def _resolve_step(identifier: str) -> dict:
     )
 
 
+def _scripts_for_step(step: dict, evaluate_mode: str = "all") -> list[Path]:
+    """Return the script(s) to run for a step.
+
+    Ordinary steps have a single script. The evaluate step has one script per
+    evaluation sub-run; `evaluate_mode` selects it ('all' runs all three).
+    """
+    if step["name"] == "evaluate":
+        if evaluate_mode == "all":
+            return list(EVALUATE_SCRIPTS.values())
+        if evaluate_mode in EVALUATE_SCRIPTS:
+            return [EVALUATE_SCRIPTS[evaluate_mode]]
+        raise ValueError(
+            f"Unknown evaluate mode: {evaluate_mode!r}. "
+            f"Valid modes: all|{'|'.join(EVALUATE_MODES)}"
+        )
+    return [step["script"]]
+
+
 def _read_csv(run_dir: Path) -> list[dict]:
     csv_path = run_dir / EXECUTION_CSV
     if not csv_path.exists():
@@ -121,42 +152,44 @@ def _update_row(rows: list[dict], step: dict, **kwargs) -> list[dict]:
     return rows
 
 
-def _run_step(step: dict, run_dir: Path) -> int:
-    """Run a single step script and return its exit code."""
-    script_path: Path = step["script"]
+def _run_step(step: dict, run_dir: Path, scripts: list[Path]) -> int:
+    """Run the script(s) of a single step and return the exit code."""
+    for script_path in scripts:
+        if not script_path.exists():
+            print(f"[starvers_eval] ERROR: Script not found: {script_path}", file=sys.stderr)
+            return 1
 
-    if not script_path.exists():
-        print(f"[starvers_eval] ERROR: Script not found: {script_path}", file=sys.stderr)
-        return 1
+        suffix = script_path.suffix
+        if suffix == ".sh":
+            cmd = ["bash", str(script_path)]
+        elif suffix == ".py":
+            cmd = ["python", "-u", str(script_path)]
+        else:
+            print(f"[starvers_eval] ERROR: Unsupported script type: {script_path}", file=sys.stderr)
+            return 1
 
-    suffix = script_path.suffix
-    if suffix == ".sh":
-        cmd = ["bash", str(script_path)]
-    elif suffix == ".py":
-        cmd = ["python", "-u", str(script_path)]
-    else:
-        print(f"[starvers_eval] ERROR: Unsupported script type: {script_path}", file=sys.stderr)
-        return 1
+        print(f"\n[starvers_eval] Running step: {step['name']} ({script_path.name})")
+        print(f"[starvers_eval] Command: {' '.join(cmd)}\n")
 
-    print(f"\n[starvers_eval] Running step: {step['name']}")
-    print(f"[starvers_eval] Command: {' '.join(cmd)}\n")
-
-    # Inherit the full environment so scripts can read $datasets, $policies, etc.
-    result = subprocess.run(cmd, env=os.environ.copy())
-    return result.returncode
+        # Inherit the full environment so scripts can read $datasets, $policies, etc.
+        result = subprocess.run(cmd, env=os.environ.copy())
+        if result.returncode != 0:
+            return result.returncode
+    return 0
 
 
 # ---------------------------------------------------------------------------
 # Core pipeline runner
 # ---------------------------------------------------------------------------
 
-def execute_steps(steps_to_run: list[dict], run_dir: Path) -> None:
+def execute_steps(steps_to_run: list[dict], run_dir: Path, evaluate_mode: str = "all") -> None:
     # Crucial for scripts to know where to read/write data for this run
     os.environ["RUN_DIR"] = str(run_dir) 
 
     # Set up directory structure
     for dir_path in [
         f"{os.environ['RUN_DIR']}/databases",
+        f"{os.environ['RUN_DIR']}/databases/updates",
         f"{os.environ['RUN_DIR']}/output/logs",
         f"{os.environ['RUN_DIR']}/output/measurements",
         f"{os.environ['RUN_DIR']}/output/result_sets",
@@ -178,7 +211,8 @@ def execute_steps(steps_to_run: list[dict], run_dir: Path) -> None:
         start = _now_ts()
         rows = _update_row(rows, step, start_time=start, end_time="", status="running")
         _write_csv(run_dir, rows)
-        rc = _run_step(step, run_dir)
+        scripts = _scripts_for_step(step, evaluate_mode)
+        rc = _run_step(step, run_dir, scripts)
         end = _now_ts()
 
         status = "success" if rc == 0 else "failed"
@@ -212,7 +246,18 @@ def cmd_run(args) -> None:
         run_dir = _last_run_dir() or _make_run_dir()
         print(f"[starvers_eval] Run directory: {run_dir}")
         step = _resolve_step(args.step_id)
-        execute_steps([step], run_dir)
+        if step["name"] == "evaluate":
+            mode = getattr(args, "mode", "all")
+            if mode not in ("all",) + tuple(EVALUATE_MODES):
+                print(f"[starvers_eval] ERROR: Invalid evaluate mode: {mode!r}. "
+                      f"Valid: all|{'|'.join(EVALUATE_MODES)}", file=sys.stderr)
+                sys.exit(1)
+        else:
+            mode = getattr(args, "mode", "all")
+            if mode != "all":
+                print(f"[starvers_eval] ERROR: Mode '{mode}' is only valid for the evaluate step.", file=sys.stderr)
+                sys.exit(1)
+        execute_steps([step], run_dir, evaluate_mode=mode)
 
     elif args.subcommand == "all":
         run_dir = _make_run_dir()
@@ -334,14 +379,20 @@ def build_parser() -> argparse.ArgumentParser:
     run_sub = run_p.add_subparsers(dest="subcommand", required=True)
     run_sub.add_parser("all", help="Run the full pipeline")
     step_p = run_sub.add_parser("step", help="Run a single step")
-    step_p.add_argument("step_id", help="Step number (1-8) or name")
+    step_p.add_argument("step_id", help="Step number (1-7) or name")
+    step_p.add_argument(
+        "mode", nargs="?", default="all",
+        choices=["all"] + EVALUATE_MODES,
+        help="Evaluate sub-run to execute (only for the evaluate step). "
+             "Default: all (queries, update, dataset_metrics).",
+    )
     from_p = run_sub.add_parser("from", help="Run from a specific step onwards")
-    from_p.add_argument("step_id", help="Step number (1-8) or name")
+    from_p.add_argument("step_id", help="Step number (1-7) or name")
     until_p = run_sub.add_parser("until", help="Run steps until a specific step")
-    until_p.add_argument("step_id", help="Step number (1-8) or name")
+    until_p.add_argument("step_id", help="Step number (1-7) or name")
     # add argument after step <step_id> at <timestamp> to run a step for a specific run
     after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
-    after_p.add_argument("step_id", help="Step number (1-8) or name")
+    after_p.add_argument("step_id", help="Step number (1-7) or name")
     after_p.add_argument("timestamp", help="Run timestamp")
 
 

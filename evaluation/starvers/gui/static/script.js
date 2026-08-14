@@ -28,10 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadStepsSequentially(ts, stepEls, index) {
   if (index >= stepEls.length) {
-    // All done — schedule refresh if any step is running
-    if (document.querySelector('.chip.running')) {
-      setTimeout(() => window.location.reload(), 15000);
-    }
+    // Auto-refresh disabled (previously reloaded every 15s while a step ran).
+    // Manual refresh is available via the ↻ button.
     return;
   }
 

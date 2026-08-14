@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-dataset_metrics.py
+evaluate_dataset_metrics.py
 
 Compute the BEAR dataset metrics (see the BEAR paper) for every dataset in the
 rawdata directory (BEARB_day, BEARB_hour, BEARC, and ORKG).
+
+This step only creates the CSV files for the dataset metrics (the pure metric
+computation). The generation of the LaTeX table from these CSV files is done in
+the visualize step.
 
 Inputs (per dataset under {RUN_DIR}/rawdata/<dataset>/):
     alldata.IC.nt/*                 all snapshots
@@ -21,13 +25,12 @@ are computed from the added/deleted deltas of the changesets:
     deletion ratio  = |deleted| / |Vi ∪ Vj|
 
 The metrics are computed twice:
-    1. using CHANGESET_DIR       (our computed changesets) -> dataset_metrics.csv       + LaTeX table
-    2. using CHANGESET_ORIG_DIR  (original changesets)      -> dataset_metrics_orig.csv (no LaTeX table)
+    1. using CHANGESET_DIR       (our computed changesets) -> dataset_metrics.csv
+    2. using CHANGESET_ORIG_DIR  (original changesets)      -> dataset_metrics_orig.csv
 
 Outputs:
     {RUN_DIR}/output/measurements/dataset_metrics.csv      (computed changesets)
     {RUN_DIR}/output/measurements/dataset_metrics_orig.csv (original changesets)
-    {RUN_DIR}/output/tables/dataset_metrics.tex            (LaTeX table for the computed variant)
 """
 
 import csv
@@ -43,7 +46,6 @@ CHANGESET_ORIG_DIR = "alldata.CB.nt"
 
 OUTPUT_CSV = "dataset_metrics.csv"
 OUTPUT_CSV_ORIG = "dataset_metrics_orig.csv"
-OUTPUT_TEX = "dataset_metrics.tex"
 
 CSV_FIELDS = [
     "dataset",
@@ -190,55 +192,17 @@ def write_csv(metrics_by_dataset: dict, out_path: Path) -> None:
             writer.writerow(row)
 
 
-def write_tex(metrics_by_dataset: dict, out_path: Path) -> None:
-    def pct(value: float) -> str:
-        return f"{value * 100:.2f}\\%"
-
-    def int_str(value: int) -> str:
-        return f"{value:,}"
-
-    lines = []
-    lines.append("\\begin{table}[ht]")
-    lines.append("\\centering")
-    lines.append("\\caption{Basic dataset infos and BEAR metrics computed from all snapshots and our computed "
-                 "changesets. Change ratio, insertion ratio, deletion "
-                 "ratio, and growth are reported as mean values over all consecutive versions.}")
-    lines.append("\\label{tab:dataset_metrics}")
-    lines.append("\\footnotesize")
-    lines.append("\\setlength{\\tabcolsep}{3pt}")
-    lines.append("\\begin{tabular}{lccccccccc}")
-    lines.append("\\toprule")
-    lines.append("Dataset & versions & $| V_0 |$ & $| V_{last} |$ & $\\overline{growth}$ & "
-                 "$\\bar{\\delta}$ & $\\overline{\\delta^+}$ & $\\overline{\\delta^-}$ & $C_A$ & $O_A$ \\\\")
-    lines.append("\\midrule")
-    for dataset in sorted(metrics_by_dataset):
-        m = metrics_by_dataset[dataset]
-        tex_dataset = dataset.replace("_", "\\_")
-        lines.append(
-            f"\\texttt{{{tex_dataset}}} & {m['versions']} & {int_str(m['cnt_triples_first_version'])} "
-            f"& {int_str(m['cnt_triples_last_version'])} & {pct(m['mean_growth'])} "
-            f"& {pct(m['mean_change_ratio'])} & {pct(m['mean_insertion_ratio'])} "
-            f"& {pct(m['mean_deletion_ratio'])} & {int_str(m['cnt_triples_static_core'])} "
-            f"& {int_str(m['cnt_triples_version_oblivious'])} \\\\"
-        )
-    lines.append("\\bottomrule")
-    lines.append("\\end{tabular}")
-    lines.append("\\setlength{\\tabcolsep}{6pt}")
-    lines.append("\\end{table}")
-    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
 def main() -> None:
     run_dir = Path(os.environ["RUN_DIR"])
     rawdata_dir = run_dir / "rawdata"
     if not rawdata_dir.is_dir():
-        print(f"[dataset_metrics] ERROR: rawdata directory not found: {rawdata_dir}",
+        print(f"[evaluate_dataset_metrics] ERROR: rawdata directory not found: {rawdata_dir}",
               file=sys.stderr)
         sys.exit(1)
 
     datasets = find_datasets(rawdata_dir)
     if not datasets:
-        print(f"[dataset_metrics] ERROR: no datasets found in {rawdata_dir}", file=sys.stderr)
+        print(f"[evaluate_dataset_metrics] ERROR: no datasets found in {rawdata_dir}", file=sys.stderr)
         sys.exit(1)
 
     metrics_computed: dict = {}
@@ -246,7 +210,7 @@ def main() -> None:
 
     for d in datasets:
         name = d.name
-        print(f"[dataset_metrics] Computing metrics for dataset '{name}'...", flush=True)
+        print(f"[evaluate_dataset_metrics] Computing metrics for dataset '{name}'...", flush=True)
 
         snapshots = load_snapshots(d / SNAPSHOT_DIR)
 
@@ -259,25 +223,21 @@ def main() -> None:
         metrics_computed[name] = compute_dataset_metrics(snapshots, deltas_computed)
         metrics_orig[name] = compute_dataset_metrics(snapshots, deltas_orig)
 
-        print(f"[dataset_metrics]   computed change ratio: {metrics_computed[name]['mean_change_ratio']:.5f} "
+        print(f"[evaluate_dataset_metrics]   computed change ratio: {metrics_computed[name]['mean_change_ratio']:.5f} "
                f"(insertion {metrics_computed[name]['mean_insertion_ratio']:.5f}, "
                f"deletion {metrics_computed[name]['mean_deletion_ratio']:.5f})", flush=True)
-        print(f"[dataset_metrics]   orig     change ratio: {metrics_orig[name]['mean_change_ratio']:.5f} "
+        print(f"[evaluate_dataset_metrics]   orig     change ratio: {metrics_orig[name]['mean_change_ratio']:.5f} "
                f"(insertion {metrics_orig[name]['mean_insertion_ratio']:.5f}, "
                f"deletion {metrics_orig[name]['mean_deletion_ratio']:.5f})", flush=True)
 
     measurements_dir = run_dir / "output" / "measurements"
-    tables_dir = run_dir / "output" / "tables"
     measurements_dir.mkdir(parents=True, exist_ok=True)
-    tables_dir.mkdir(parents=True, exist_ok=True)
 
     write_csv(metrics_computed, measurements_dir / OUTPUT_CSV)
-    write_tex(metrics_computed, tables_dir / OUTPUT_TEX)
     write_csv(metrics_orig, measurements_dir / OUTPUT_CSV_ORIG)
 
-    print(f"[dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV}")
-    print(f"[dataset_metrics] Wrote {tables_dir / OUTPUT_TEX}")
-    print(f"[dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV_ORIG}")
+    print(f"[evaluate_dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV}")
+    print(f"[evaluate_dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV_ORIG}")
 
 
 if __name__ == "__main__":

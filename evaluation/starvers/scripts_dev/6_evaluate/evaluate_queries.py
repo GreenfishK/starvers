@@ -3,7 +3,6 @@ import sys
 import time
 import csv
 import socket
-import shlex
 import logging
 import subprocess
 from pathlib import Path
@@ -11,13 +10,9 @@ from datetime import datetime, timedelta, timezone
 from itertools import product
 import tomli
 import pandas as pd
-from SPARQLWrapper import Wrapper, SPARQLWrapper, JSON, POST
+from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from SPARQLWrapper.SPARQLExceptions import EndPointInternalError, QueryBadFormed
-from itertools import product, takewhile
-from functools import partial
-from urllib.error import HTTPError
 from enum import Enum
-from starvers.starvers import TripleStoreEngine
 import psutil
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 import socket
@@ -27,7 +22,7 @@ from scripts.logging import setup_logging
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
-BASE_LOG_DIR, LOG = setup_logging("evaluate")
+BASE_LOG_DIR, LOG = setup_logging("evaluate_queries")
 
 # ---------------------------------------------------------------------------
 # Static eval parameters
@@ -38,33 +33,19 @@ def _load_config() -> dict:
         return tomli.load(f)
 static_eval_params = _load_config()
 
-
-
 # ---------------------------------------------------------------------------
 # Environment / path constants
 # ---------------------------------------------------------------------------
-CONFIG_TMPL_DIR="/starvers_eval/scripts/4_ingest/configs"
-CONFIG_DIR: str=f"{os.environ['RUN_DIR']}/configs/ingest"
+CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
+CONFIG_DIR: str = f"{os.environ['RUN_DIR']}/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
-TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/time.csv"
+TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/queries_time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
 databases_dir = f"{os.environ['RUN_DIR']}/databases"
-LOG_FILE = f"{BASE_LOG_DIR}/evaluate/evaluate_update.log"
 
-triple_stores =  os.environ.get("triple_stores").split(" ")
-policies =  os.environ.get("policies").split(" ")
-datasets =  os.environ.get("datasets").split(" ")
-
-# For update evaluation
-in_frm = "nt"
-LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
-init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
-
-
-dataset_versions = {dataset: infos['snapshot_versions'] for dataset, infos in static_eval_params['datasets'].items()}
-ic_basename_lengths = {dataset: infos['ic_basename_length'] for dataset, infos in static_eval_params['datasets'].items()}
-snapshot_dir = static_eval_params['general']['snapshot_dir']
-change_sets_dir = static_eval_params['general']['change_sets_dir']
+triple_stores = os.environ.get("triple_stores").split(" ")
+policies = os.environ.get("policies").split(" ")
+datasets = os.environ.get("datasets").split(" ")
 
 # ---------------------------------------------------------------------------
 # Classes and functions
@@ -116,11 +97,9 @@ def config_engine(triple_store, dataset, policy):
 
 def parse_results(result) -> list:
     """
-
     :param result:
-    :return: Dataframe
+    :return: list of rows (header + values)
     """
-
     if result is None:
         return [["None"]]
 
@@ -169,9 +148,7 @@ def print_mem_file_tail(mem_file, lines=20):
             LOG.info({line})
         LOG.info(f"--------------- Memory tail end --------------- ")
 
-##########################################################
-# Evaluation functions
-##########################################################
+
 def run_queries(triple_store, policy, dataset) -> list:
     LOCAL_TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
     init_ts = datetime(2022, 10, 1, 12, 0, 0, tzinfo=LOCAL_TIMEZONE)
@@ -190,7 +167,7 @@ def run_queries(triple_store, policy, dataset) -> list:
     for query_set in query_sets:
         LOG.info(f"Evaluating {triple_store} {policy} {dataset} for query set: {query_set}")
         rows = []
-        
+
         # Startup database
         mgmt_script = static_eval_params["rdf_stores"][triple_store]["mgmt_script"]
         db_dir = f"{databases_dir}/{triple_store}/{policy}_{dataset}"
@@ -210,27 +187,26 @@ def run_queries(triple_store, policy, dataset) -> list:
 
         with open(pid_file) as f:
             pid = int(f.read().strip())
-        
+
         LOG.info("Starting memory tracker")
         tracker = start_mem_tracker(pid, f"{policy}_{dataset}", MEM_FILE, 0.5)
 
         # Dry run
         LOG.info("Starting dry run.")
-        engine = config_engine(triple_store, dataset, policy)        
-        
+        engine = config_engine(triple_store, dataset, policy)
+
         dry_query = static_eval_params["rdf_stores"][triple_store]["dry_run_query"]
         engine.setQuery(dry_query)
         LOG.info(f"Dry run query:\n{dry_query}")
 
-        # Try 5 times to mitigates Database Index buildup
-        try_counter = 0
+        # Try 5 times to mitigate Database Index buildup
         for try_counter in range(5):
             try:
                 result = engine.query().convert()
+                break
             except Exception as e:
                 logging.error(f"Dry run failed with error: {e}")
                 LOG.info("Retrying dry run after waiting for 5 seconds...")
-                try_counter += 1
                 time.sleep(5)
         LOG.info("Dry run query result:\n " + str(result))
 
@@ -245,7 +221,7 @@ def run_queries(triple_store, policy, dataset) -> list:
 
                 with open(path) as f:
                     query = f.read()
-                
+
                 engine = config_engine(triple_store, dataset, policy)
                 engine.setQuery(query)
 
@@ -261,7 +237,7 @@ def run_queries(triple_store, policy, dataset) -> list:
                     result['end'] = time.time()
 
                 try:
-                    future = executor.submit(run) 
+                    future = executor.submit(run)
                     future.result(timeout=30)
                     response = result['response']
                     exec_time = result['end'] - result['start']
@@ -298,7 +274,7 @@ def run_queries(triple_store, policy, dataset) -> list:
 
                 finally:
                     executor.shutdown(wait=False, cancel_futures=True)
-                    
+
                     if (response is None and yn_timeout == 0) \
                         or psutil.virtual_memory().percent >= 85:
 
@@ -334,138 +310,6 @@ def run_queries(triple_store, policy, dataset) -> list:
         tracker.join(timeout=1)
 
     return all_rows
-
-def measure_updates(triple_store: str, dataset: str, policy: str, chunk_size: int, runs: int, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
-    LOG.info(f"Measuring update times for {triple_store}/{policy}/{dataset} with chunk size {chunk_size} over {runs} runs.")
-
-    run_measurements: list[pd.DataFrame] = []
-    for run_idx in range(runs):
-        LOG.info(f"Run {run_idx + 1}/{runs} ...")
-        result = insert_ic0_and_cbs(triple_store, chunk_size, dataset=dataset, policy=policy,
-                                    source_ic0=source_ic0, source_cs=source_cs,
-                                    last_version=last_version, init_timestamp=init_timestamp)
-        if result is False:
-            # Stop iteration if HTTPError occurred
-            LOG.info("HTTPError occurred, stopping update evaluation for this combination.")
-            break
-        run_measurements.append(result)
-
-    if not run_measurements:
-        return
-
-    combined_measurements = pd.concat(run_measurements, join="inner")
-
-    # Average the execution time per batch across runs
-    group_cols = [c for c in combined_measurements.columns if c != 'execution_time']
-    averaged_measurements = combined_measurements.groupby(group_cols, as_index=False)['execution_time'].mean()
-
-    # Add the number of runs that were averaged
-    averaged_measurements.insert(0, 'runs', runs)
-
-    LOG.info("Writing performance measurements to disk ...")
-    averaged_measurements.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{triple_store}_{policy}_{dataset}.csv", sep=";", index=False, mode='w', header=True)
-
-    # Remove temporary output files
-    dir_path = f"{os.environ['RUN_DIR']}/output/measurements/"
-    files_to_remove = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.startswith(f"time_update_{triple_store}_{policy}_{dataset}_") and f.endswith(".csv")]
-    for file in files_to_remove:
-        os.remove(file)
-
-
-def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:str,
-                        source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
-    triple_store_name = triple_store.lower()
-    LOG.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
-
-    repository = policy + "_" + dataset
-    database_dir = f"{databases_dir}/{triple_store_name}"
-    mgmt_script = static_eval_params["rdf_stores"][triple_store_name]["mgmt_script"]
-
-    LOG.info(f"Create {triple_store} directories and environment")
-    LOG.info(f"\nDatabase directory {database_dir}\nConfig dirctory:{CONFIG_DIR}\nConfig Template directory:{CONFIG_TMPL_DIR}")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
-
-    LOG.info(f"Ingest empty file into {repository} repository and start {triple_store_name}.")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
-
-    LOG.info(f"Startup {triple_store} engine")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
-
-    LOG.info("Read initial snapshot {0} into memory.".format(source_ic0))
-    added_triples_raw = open(source_ic0, "r").read().splitlines()
-    added_triples_raw = list(filter(None, added_triples_raw))
-    added_triples_raw = list(filter(lambda x: not x.startswith("# "), added_triples_raw))
-
-    LOG.info("Add triples from initial snapshot {0} as nested triples into the RDF-star dataset.".format(source_ic0))
-    
-    query_endpoint = static_eval_params["rdf_stores"][triple_store_name]["get"].format(repo=f"{policy}_{dataset}")
-    update_endpoint = static_eval_params["rdf_stores"][triple_store_name]["post"].format(repo=f"{policy}_{dataset}")
-    rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint)
-    try:
-        start = time.time()
-        rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
-        end = time.time()
-    except HTTPError:
-        LOG.info("Too many triples transfered over HTTP. No measures for this chunk size setting will be recorded")
-        return False
-    execution_time_insert = end - start
-    
-    df = pd.DataFrame(columns=['triplestore', 'dataset', 'batch', 'cnt_batch_trpls', 'chunk_size', 'execution_time'],
-                        data=[[triple_store, dataset, 'snapshot_0', len(added_triples_raw), chunk_size, execution_time_insert]])
-
-    # Map versions to files in chronological orders
-    change_sets = {}
-    for filename in sorted(os.listdir(source_cs)):
-        if not (filename.startswith("data-added") or filename.startswith("data-deleted")):
-            continue 
-        version = int(filename.split('-')[2].split('.')[0].zfill(len(str(last_version)))) - 1
-        change_sets[filename] = version
-
-    # Apply changesets to RDF-star dataset
-    for filename, version in sorted(change_sets.items(), key=lambda item: item[1]):
-        vers_ts = init_timestamp + timedelta(seconds=version)
-
-        mem_in_usage = psutil.virtual_memory().percent
-        LOG.info(f"Memory in usage: {mem_in_usage}%")
-        if mem_in_usage > 85:
-            # Reboot to free up main memory
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
-        
-        if filename.startswith("data-added"):
-            LOG.info("Read positive changeset {0} into memory.".format(filename))
-            added_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
-            added_triples_raw = list(filter(None, added_triples_raw))
-            cnt_trpls = len(added_triples_raw)
-
-            LOG.info(f"Add {cnt_trpls} triples from changeset {filename} as nested triples into the RDF-star dataset.")
-            start = time.time()
-            rdf_star_engine.insert(triples=added_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
-            end = time.time()
-            execution_time_insert = end - start
-            new_row = pd.DataFrame([[triple_store, dataset, 'positive_change_set_' + str(version), len(added_triples_raw), chunk_size, execution_time_insert]], columns=df.columns)
-            df = pd.concat([df, new_row], ignore_index=True)
-
-        if filename.startswith("data-deleted"):
-            LOG.info("Read negative changeset {0} into memory.".format(filename))
-            deleted_triples_raw = open(source_cs + "/" + filename, "r").read().splitlines()
-            deleted_triples_raw = list(filter(None, deleted_triples_raw))
-            cnt_trpls = len(deleted_triples_raw)
-
-            LOG.info(f"Oudate {cnt_trpls} triples in the RDF-star dataset which match the triples in {filename}.")                
-            start = time.time()
-            rdf_star_engine.outdate(triples=deleted_triples_raw, timestamp=vers_ts, chunk_size=chunk_size)
-            end = time.time()
-            execution_time_outdate = end - start
-            new_row = pd.DataFrame([[triple_store, dataset, 'negative_change_set_' + str(version), len(deleted_triples_raw), chunk_size, execution_time_outdate]], columns=df.columns)
-            df = pd.concat([df, new_row], ignore_index=True)
-    
-        df.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/time_update_{triple_store}_{policy}_{dataset}_{str(chunk_size)}.csv", sep=";", index=False, mode='w', header=True)
-
-    # Shutdown engine
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
-
-    return df
 
 
 def load_or_init_time_df(header):
@@ -511,6 +355,7 @@ def upsert_rows(df, new_rows, header, key_cols=('triplestore', 'dataset', 'polic
     df = pd.concat([df, new_df], ignore_index=True)
     return df
 
+
 # ---------------------------------------------------------------------------
 # Execution
 # ---------------------------------------------------------------------------
@@ -522,47 +367,26 @@ def main():
     ]
 
     # Load existing measurements (if any) instead of overwriting
-    #time_df = load_or_init_time_df(header)
+    time_df = load_or_init_time_df(header)
 
-    #combinations = product(triple_stores, policies, datasets)
+    combinations = product(triple_stores, policies, datasets)
 
-    # Create memory file
-    #with open(MEM_FILE, "w") as f:
-    #    f.write("timestamp;label;pid;memory_gb\n")
+    Path(os.path.dirname(MEM_FILE)).mkdir(parents=True, exist_ok=True)
+    with open(MEM_FILE, "w") as f:
+        f.write("timestamp;label;pid;memory_gb\n")
 
-    # Query evaluation
-    #for triple_store, policy, dataset in combinations:
+    for triple_store, policy, dataset in combinations:
+        if not eval_combi_exists(triple_store, dataset, policy):
+            LOG.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped")
+            continue
 
-    #    if not eval_combi_exists(triple_store, dataset, policy):
-    #        LOG.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped")
-    #        continue
-
-    #    new_rows = run_queries(triple_store, policy, dataset)
-    #    time_df = upsert_rows(time_df, new_rows, header)
+        new_rows = run_queries(triple_store, policy, dataset)
+        time_df = upsert_rows(time_df, new_rows, header)
 
         # Write back after each combination so progress isn't lost on crash
-    #    LOG.info(f"Writing results to {TIME_FILE}")
-    #    time_df.to_csv(TIME_FILE, sep=";", index=False, mode='w', header=True)
+        LOG.info(f"Writing results to {TIME_FILE}")
+        time_df.to_csv(TIME_FILE, sep=";", index=False, mode='w', header=True)
 
-    # Update evaluation
-    chunk_size = 7000
-    runs = 1
-    for dataset in datasets:
-        for policy in policies:
-            for triple_store in triple_stores:
-                data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
-                total_versions = dataset_versions[dataset]
-
-                measure_updates(triple_store=triple_store,
-                        dataset=dataset, 
-                        policy=policy,
-                        chunk_size=chunk_size,
-                        runs=runs,
-                        source_ic0=f"{data_dir}/{snapshot_dir}/" + "1".zfill(ic_basename_lengths[dataset])  + ".nt",
-                        source_cs=f"{data_dir}/{change_sets_dir}.{in_frm}", 
-                        last_version=total_versions, 
-                        init_timestamp=init_version_timestamp)
 
 if __name__ == "__main__":
     main()
-

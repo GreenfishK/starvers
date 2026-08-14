@@ -31,7 +31,7 @@ static_eval_params = _load_config()
 # ---------------------------------------------------------------------------
 raw_queries_base=f"{os.environ['RUN_DIR']}/queries/raw_queries/"
 output_queries_base=f"{os.environ['RUN_DIR']}/queries/final_queries/"
-query_rewriting_measurements_path=f"{os.environ['RUN_DIR']}/output/measurements/query_rewriting_times.csv"
+query_rewriting_measurements_path=f"{os.environ['RUN_DIR']}/output/measurements/queries_rewriting_times.csv"
 
 policies = os.environ.get("policies").split(" ")
 datasets = os.environ.get("datasets").split(" ")
@@ -58,11 +58,11 @@ def _count_queries():
     # Count the .txt files at the bottom of each branch and
     #  aggregate the counts on the third directory level,
     #  e.g. f"{os.environ['RUN_DIR']}/queries/final_queries/ic_sr_ng/orkg/complex
-    # Save the counts for each policy, dataset, and query set in a csv file at f"{os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv" with columns: policy, dataset, query_set, query_count
+    # Save the counts for each policy, dataset, and query set in a csv file at f"{os.environ['RUN_DIR']}/output/measurements/queries_counts.csv" with columns: policy, dataset, query_set, query_count
 
     QUERIES_DIR = f"{os.environ['RUN_DIR']}/queries/final_queries/"
     query_count = 0
-    with open(f"{os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv", 'w') as count_file:
+    with open(f"{os.environ['RUN_DIR']}/output/measurements/queries_counts.csv", 'w') as count_file:
         count_file.write("policy,dataset,query_set,query_count\n")
         for policy in os.listdir(QUERIES_DIR):
             policy_path = os.path.join(QUERIES_DIR, policy)
@@ -210,7 +210,7 @@ def main():
     # Count generated queries
     LOG.info("Counting generated queries.")
     _count_queries()
-    LOG.info(f"Finished counting generated queries. File saved to {os.environ['RUN_DIR']}/output/logs/construct_queries/query_counts.csv")
+    LOG.info(f"Finished counting generated queries. File saved to {os.environ['RUN_DIR']}/output/measurements/queries_counts.csv")
 
 if __name__ == "__main__":
     main()

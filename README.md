@@ -135,9 +135,30 @@ Then, the whole pipeline can be executed using the command in Section [Run the f
 | 5 | construct_queries | `construct_queries` |
 | 6 | evaluate | `evaluate` |
 | 7 | visualize | `visualize` |
-| 8 | dataset_metrics | `dataset_metrics` |
 
-Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file. The `dataset_metrics` step computes the BEAR dataset metrics from the rawdata snapshots and changesets and writes a CSV to `output/measurements/dataset_metrics.csv` and a LaTeX table to `output/tables/dataset_metrics.tex`.
+Each step can be run in isolation, or the full pipeline can be executed to run all steps consecutively. Parameters, such as the triple stores, versioning policies, and datasets to evaluate are read from the .env file.
+
+The `evaluate` step (step 6) runs three evaluation sub-runs by default: the
+query evaluation (`evaluate_queries.py`), the update evaluation
+(`evaluate_update.py`), and the dataset-metrics computation
+(`evaluate_dataset_metrics.py`, which writes `output/measurements/dataset_metrics.csv`
+and `output/measurements/dataset_metrics_orig.csv`). It can be restricted to a
+single sub-run:
+
+```bash
+docker run --rm ... starvers_eval:latest run step evaluate          # default: all three
+docker run --rm ... starvers_eval:latest run step evaluate queries
+docker run --rm ... starvers_eval:latest run step evaluate update
+docker run --rm ... starvers_eval:latest run step evaluate dataset_metrics
+```
+
+The `visualize` step (step 7) generates the figures, the query/storage LaTeX
+tables, and the dataset-metrics LaTeX table (`output/tables/dataset_metrics.tex`)
+from the CSV files produced in the evaluate step.
+
+To avoid overwriting the repositories created during the ingest step, the update
+evaluation stores its own repositories and database files under
+`<run_dir>/databases/updates/`.
 
 ### Run the full pipeline (new directory)
 

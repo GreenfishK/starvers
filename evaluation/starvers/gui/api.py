@@ -402,7 +402,7 @@ def _run_stats(run):
     return {"completed": completed, "total": total, "overall": overall}
 
 
-# ── Query flow classification from excluded_queries.csv ────────
+# ── Query flow classification from queries_excluded.csv ────────
 
 
 def _classify_queries(pivot):
@@ -810,7 +810,7 @@ def _detail_download(run_dir: Path) -> dict:
     discovered = set(_discovered_datasets(run_dir))
 
     sizes = {}
-    meta_csv = run_dir / "output" / "logs" / "download" / "datasets_meta.csv"
+    meta_csv = run_dir / "output" / "measurements" / "datasets_meta.csv"
     if meta_csv.exists():
         with open(meta_csv, newline="") as f:
             for row in csv.DictReader(f):
@@ -821,7 +821,7 @@ def _detail_download(run_dir: Path) -> dict:
                     pass
 
     query_sets_by_dataset = {}
-    queries_csv = run_dir / "output" / "logs" / "download" / "queries_meta.csv"
+    queries_csv = run_dir / "output" / "measurements" / "queries_meta.csv"
     if queries_csv.exists():
         with open(queries_csv, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
@@ -896,7 +896,7 @@ def _detail_preprocess(run_dir: Path) -> dict:
     }
 
     preprocess_csv = (
-        run_dir / "output" / "logs" / "preprocess_data" / "preprocess_summary.csv"
+        run_dir / "output" / "measurements" / "preprocess_summary.csv"
     )
     per_dataset = {}
     if preprocess_csv.exists():
@@ -936,9 +936,9 @@ def _detail_preprocess(run_dir: Path) -> dict:
         for ds, vals in per_dataset.items()
     ]
 
-    # Parse excluded_queries.csv and classify
+    # Parse queries_excluded.csv and classify
     excl_csv = (
-        run_dir / "output" / "logs" / "preprocess_data" / "excluded_queries.csv"
+        run_dir / "output" / "measurements" / "queries_excluded.csv"
     )
     if excl_csv.exists():
         pivot = {}
@@ -992,7 +992,7 @@ def _detail_construct_datasets(run_dir: Path) -> dict:
 
 
 def _detail_ingest(run_dir: Path) -> dict:
-    ingest_csv = run_dir / "output" / "measurements" / "ingestion.csv"
+    ingest_csv = run_dir / "output" / "measurements" / "storage_and_ingestion.csv"
     summary = []
     if ingest_csv.exists():
         groups = defaultdict(list)
@@ -1033,7 +1033,7 @@ def _detail_ingest(run_dir: Path) -> dict:
 
 def _detail_construct_queries(run_dir: Path) -> dict:
     query_counts_path = (
-        run_dir / "output" / "logs" / "construct_queries" / "query_counts.csv"
+        run_dir / "output" / "measurements" / "queries_counts.csv"
     )
     counts = defaultdict(lambda: defaultdict(int))
     policies_found = set()
@@ -1072,7 +1072,7 @@ def _detail_construct_queries(run_dir: Path) -> dict:
 
 
 def _detail_evaluate(run_dir: Path) -> dict:
-    time_csv = run_dir / "output" / "measurements" / "time.csv"
+    time_csv = run_dir / "output" / "measurements" / "queries_time.csv"
     time_header = []
     time_samples = []
     time_total_rows = 0
@@ -1098,8 +1098,8 @@ def _detail_evaluate(run_dir: Path) -> dict:
 
 
 def _detail_visualize(run_dir: Path) -> dict:
-    time_csv = run_dir / "output" / "measurements" / "time.csv"
-    rewrite_csv = run_dir / "output" / "measurements" / "query_rewriting_times.csv"
+    time_csv = run_dir / "output" / "measurements" / "queries_time.csv"
+    rewrite_csv = run_dir / "output" / "measurements" / "queries_rewriting_times.csv"
 
     if not time_csv.exists():
         return {"plot_info": None}

@@ -43,7 +43,7 @@ static_eval_params = _load_config()
 # ---------------------------------------------------------------------------
 # Environment / path constants
 # ---------------------------------------------------------------------------
-MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/ingestion.csv"
+MEASUREMENTS_FILE = f"{os.environ['RUN_DIR']}/output/measurements/storage_and_ingestion.csv"
 CNT_QUERIES_PATH = "/starvers_eval/scripts/4_ingest/cnt_queries"
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 CONFIG_DIR = f"{os.environ['RUN_DIR']}/configs/ingest"
@@ -65,7 +65,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_re": "alldata.TB_star_reif.ttl"
 }
 
-RUNS = 1
+RUNS = 10
 
 # ---------------------------------------------------------------------------
 # Classes
@@ -178,7 +178,7 @@ def enqueue_jobs():
         sys.exit(1)
 
 HEADER = "triplestore;policy;dataset;run;ingestion_time;raw_file_size_MiB;db_files_disk_usage_MiB"
-KEY_COLS = ("triplestore", "policy", "dataset")
+KEY_COLS = ("triplestore", "policy", "dataset", "run")
 
 
 def load_or_init_measurements() -> list[dict]:
@@ -212,8 +212,10 @@ def save_measurements(rows: list[dict]):
 
 def upsert_result(existing: list[dict], new_row: tuple) -> list[dict]:
     """
-    Insert or replace a row in *existing* using (triplestore, policy, dataset)
-    as the primary key.  Returns the updated list.
+    Insert or replace a row in *existing* using
+    (triplestore, policy, dataset, run) as the primary key.  A re-run for the
+    same store/policy/dataset/run replaces the earlier measurement.  Returns
+    the updated list.
     """
     col_names = HEADER.split(";")
     new_dict  = dict(zip(col_names, map(str, new_row)))

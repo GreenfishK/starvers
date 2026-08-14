@@ -8,14 +8,15 @@ Downloads:
   2. Query sets for BEARA, BEARB, BEARC, and ORKG (SciQA).
 
 Writes:
-  - RUN_DIR/output/logs/download/datasets_meta.csv
-  - RUN_DIR/output/logs/download/queries_meta.csv
+  - RUN_DIR/output/measurements/datasets_meta.csv
+  - RUN_DIR/output/measurements/queries_meta.csv
 """
 
 import csv
 import gzip
 import os
 import shutil
+import subprocess
 import tarfile
 import zipfile
 from pathlib import Path
@@ -46,9 +47,9 @@ static_eval_params = _load_config()
 # ---------------------------------------------------------------------------
 RUN_DIR     = Path(os.environ["RUN_DIR"])
 
-DOWNLOAD_LOG_DIR = BASE_LOG_DIR / "download"
-METADATA_CSV     = DOWNLOAD_LOG_DIR / "datasets_meta.csv"
-QUERIES_CSV      = DOWNLOAD_LOG_DIR / "queries_meta.csv"
+MEASUREMENTS_DIR = RUN_DIR / "output" / "measurements"
+METADATA_CSV     = MEASUREMENTS_DIR / "datasets_meta.csv"
+QUERIES_CSV      = MEASUREMENTS_DIR / "queries_meta.csv"
 
 DOWNLOADED_QUERIES_DIR = RUN_DIR / "queries" / "downloaded_queries"
 
@@ -145,9 +146,13 @@ def _gunzip(src: Path, dest: Path):
 
 
 def _dir_size_mb(path: Path) -> int:
-    """Mirrors `du -s -L --block-size=1M --apparent-size`."""
-    total_bytes = sum(p.stat().st_size for p in path.rglob("*") if p.is_file())
-    return -(-total_bytes // (1024 * 1024))  # ceil division to MB
+    """Apparent size in MiB, using the same du invocation as ingest.py's du_mib so
+    measurements are comparable."""
+    result = subprocess.run(
+        ["du", "-s", "-L", "--block-size=1M", "--apparent-size", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return int(result.stdout.split()[0])
 
 
 # ---------------------------------------------------------------------------

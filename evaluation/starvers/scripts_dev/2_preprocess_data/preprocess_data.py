@@ -4,7 +4,7 @@ preprocess_data.py
 Rewrite of clean_datasets.sh + parse_SciQA_queries.py executed consecutively.
 
 Phase 1 — clean_datasets:
-  For each dataset and each variant (ic, BEAR_ng):
+  For each dataset snapshot/version (ic):
     1. Skolemize blank nodes in subject position
     2. Skolemize blank nodes in object position
     3. Comment out invalid triples via the Java RDF validator
@@ -78,7 +78,7 @@ JENA_MGMT_SCRIPT    = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh
 
 RDF_VALIDATOR_JAR   = str(SCRIPT_DIR / "2_preprocess_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar")
 
-DATASET_VARIANTS = ["ic", "BEAR_ng"]
+DATASET_VARIANTS = ["ic"] 
 DATASETS         = os.environ.get("datasets", "").split()
 
 JAVA_ENV = {**os.environ, "JAVA_HOME": "/opt/java/java11/openjdk",
@@ -92,10 +92,11 @@ MAX_WORKERS = min(
 )
 
 # Recording files
-QUERIES_META_CSV = LOG_BASE_DIR / "download" / "queries_meta.csv"
-EXCLUDE_CSV      = LOG_BASE_DIR / "preprocess_data" / "excluded_queries.csv"
-PREPROCESS_CSV   = LOG_BASE_DIR / "preprocess_data" / "preprocess_summary.csv"
-QUERY_COUNTS_CSV = LOG_BASE_DIR / "preprocess_data" / "query_counts.csv"
+MEASUREMENTS_DIR    = RUN_DIR / "output" / "measurements"
+QUERIES_META_CSV    = MEASUREMENTS_DIR / "queries_meta.csv"
+EXCLUDE_CSV         = MEASUREMENTS_DIR / "queries_excluded.csv"
+PREPROCESS_CSV      = MEASUREMENTS_DIR / "preprocess_summary.csv"
+QUERY_COUNTS_CSV    = MEASUREMENTS_DIR / "queries_raw_counts.csv"
 
 # ---------------------------------------------------------------------------
 # Static eval parameters helpers
@@ -299,25 +300,14 @@ def clean_datasets():
             continue
 
         for ds_var in DATASET_VARIANTS:
-            if ds_var == "BEAR_ng":
-                ds_path = RUN_DIR / "rawdata" / dataset / "alldata.TB.nq"
-                if not ds_path.is_file():
-                    LOG.info(
-                        f"The BEAR named graphs dataset does not exist at {ds_path}. "
-                        "Skipping."
-                    )
-                    continue
-                # BEAR_ng is a single file; treat as file_number=1
-                work_items.append((dataset, ds_var, ds_path, 1))
-
-            elif ds_var == "ic":
+            if ds_var == "ic":
                 for c_int in range(1, versions + 1):
                     c      = filename_fmt % c_int
                     raw_ds = RUN_DIR / "rawdata" / dataset / "alldata.IC.nt" / f"{c}.nt"
                     work_items.append((dataset, ds_var, raw_ds, c_int))
 
             else:
-                LOG.error("Dataset variant must be ic or BEAR_ng.")
+                LOG.error("Dataset variant must be ic.")
                 sys.exit(2)
 
     LOG.info(f"Submitting {len(work_items)} files to the cleaning pool")
@@ -556,7 +546,7 @@ def extract_queries():
 def exclude_queries():
     """
     Test every extracted query against GraphDB and Ostrich.
-    Queries that fail any check are removed from disk and logged to excluded_queries.csv.
+    Queries that fail any check are removed from disk and logged to queries_excluded.csv.
     """
     ostrich_engine = SPARQLWrapper(endpoint="http://Starvers:42564/sparql")
     ostrich_engine.timeout = 120
@@ -699,7 +689,7 @@ def cleanup():
 
 
 # ---------------------------------------------------------------------------
-# Phase 3: count extracted queries and write query_counts.csv
+# Phase 3: count extracted queries and write query_raw_counts.csv
 # ---------------------------------------------------------------------------
 
 def _count_by_lines(directory: Path) -> int:
@@ -719,7 +709,7 @@ def write_query_counts():
     """
     Read queries_meta.csv (written by download.sh, contains links but no counts),
     count queries in each directory using the count_method from eval_setup.toml,
-    and write query_counts.csv with the results.
+    and write query_raw_counts.csv with the results.
     """
     raw_queries = RUN_DIR / "queries" / "raw_queries"
 
@@ -780,7 +770,7 @@ def write_query_counts():
 
 if __name__ == "__main__":
     # Phase 1: clean all raw datasets (parallelised across files)
-    #clean_datasets()
+    clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
     #startup()

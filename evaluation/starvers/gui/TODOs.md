@@ -305,7 +305,7 @@ There should not be focus on technical details, e.g. how the PIDs are checked, t
 
 The timeout should be mentioned and the fact that the engine is started and where in the process it is started and shut down regularly
 
-* What is recorded: The header of time.csv should be shown with a few sample rows. 
+* What is recorded: The header of queries_time.csv should be shown with a few sample rows. 
 
 ## 07.05.2026 09:39
 ### General
