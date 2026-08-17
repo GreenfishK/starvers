@@ -542,8 +542,70 @@
             {% endif %}
           {% endfor %}
         </div>
-      {% else %}
+        {% else %}
         <div class="dim">No measurement data found. Run the evaluate step first.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="detail-section">
+    <div class="detail-section-title">Update Performance Plots</div>
+    <div class="detail-section-body">
+      {% if info.update_plot_info %}
+        <div class="tsplot-legend">
+          <span class="tsplot-legend-heading">Policy (line colour):</span>
+          {% for p in info.update_plot_info.policy_legend %}
+            <div class="tsplot-legend-item">
+              <span class="tsplot-legend-swatch" style="background:{{ p.color }}"></span>
+              <span class="tsplot-legend-label">{{ p.policy }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        {% set grouped = {} %}
+        {% for plot in info.update_plot_info.plots %}
+          {% if plot.dataset not in grouped %}{% if grouped.update({plot.dataset: {}}) %}{% endif %}{% endif %}
+          {% if plot.batch_type not in grouped[plot.dataset] %}{% if grouped[plot.dataset].update({plot.batch_type: []}) %}{% endif %}{% endif %}
+          {% if grouped[plot.dataset][plot.batch_type].append(plot) %}{% endif %}
+        {% endfor %}
+
+        <div class="tsplot-dataset-grid">
+          {% for ds in info.update_plot_info.datasets_order %}
+            {% if ds in grouped %}
+              <div class="tsplot-dataset-panel">
+                <div class="tsplot-dataset-heading">{{ ds }}</div>
+                <div class="tsplot-qs-wrap">
+                  {% for bt in grouped[ds].keys()|sort %}
+                    <div class="tsplot-qs-group">
+                      <div class="tsplot-qs-label">{{ bt }}</div>
+                      <div class="tsplot-plots-row">
+                        {% for plot in grouped[ds][bt] %}
+                          <div class="tsplot-card" data-zoom-title="{{ ds }} — {{ bt }} — {{ plot.triplestore }}">
+                            <div class="tsplot-svg-wrap">
+                              <img class="chart-image" src="data:image/png;base64,{{ plot.image_b64 }}" alt="{{ plot.triplestore }}" />
+                            </div>
+                            <div class="tsplot-avg-list">
+                              <div class="tsplot-avg-heading">Avg. over all versions</div>
+                              {% for a in plot.averages %}
+                                <div class="tsplot-avg-row">
+                                  <span class="tsplot-avg-swatch" style="background:{{ a.color }}"></span>
+                                  <span class="tsplot-avg-key">{{ a.policy }}:</span>
+                                  <span class="tsplot-avg-val">{{ fmt_sec(a.avg) }}</span>
+                                </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="dim">No update measurement data found. Run the evaluate update step first.</div>
       {% endif %}
     </div>
   </div>

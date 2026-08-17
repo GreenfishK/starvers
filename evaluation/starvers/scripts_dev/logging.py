@@ -6,15 +6,19 @@ from pathlib import Path
 # Walk up one frame to the caller of setup_logging()
 
 
-def setup_logging(log_file_name: str) -> tuple[Path, logging.Logger]:
+def setup_logging(log_file_name: str, sub_dir: str | None = None) -> tuple[Path, logging.Logger]:
     """
     Sets up a logger that logs messages in `LOG_DIR` to a file that is of the
     same name as the script that invokes this function.
     log_file_name: The name of the log file without extension.
+    sub_dir: Optional sub-directory under output/logs in which to place the log
+        file. When omitted, the log file is placed in a directory named after
+        `log_file_name` (backward-compatible behavior). When provided, the file
+        is written to output/logs/<sub_dir>/<log_file_name>.log.
     """
     
     LOG_BASE_DIR: Path = Path(os.environ["RUN_DIR"]) / "output" / "logs"
-    LOG_DIR: Path = LOG_BASE_DIR / f"{log_file_name}"
+    LOG_DIR: Path = LOG_BASE_DIR / sub_dir if sub_dir else LOG_BASE_DIR / f"{log_file_name}"
     LOG_FILE = LOG_DIR / f"{log_file_name}.log"
 
     # Create a logger

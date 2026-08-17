@@ -23,7 +23,7 @@ def get_ts_logger(triplestore: str) -> logging.Logger:
     
     if triplestore in _loggers:
         return _loggers[triplestore]
-    _, logger = setup_logging(f"ingestion_{triplestore}")
+    _, logger = setup_logging(f"ingestion_{triplestore}", sub_dir="ingest")
     _loggers[triplestore] = logger
 
     return logger
@@ -65,7 +65,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_re": "alldata.TB_star_reif.ttl"
 }
 
-RUNS = 10
+RUNS = 1
 
 # ---------------------------------------------------------------------------
 # Classes

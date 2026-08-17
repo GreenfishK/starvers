@@ -1097,9 +1097,128 @@ def _detail_evaluate(run_dir: Path) -> dict:
     }
 
 
+def _build_update_time_plots(plot_series):
+    """
+    Build update-time line charts, one per (dataset, batch_type, triplestore),
+    with one line per policy over versions.
+
+    Each chart is a stacked figure of two subplots:
+      - top:    execution time (s) over versions (log scale)
+      - bottom: number of inserted/invalidated triples over versions (log scale)
+
+    Batch types are "insert" (initial snapshot v0 + positive change sets) and
+    "invalidate" (negative change sets).
+    """
+    policy_color_map = {}
+    ci = 0
+    for p in sorted(set(s["policy"] for s in plot_series)):
+        if p in POLICY_COLORS:
+            policy_color_map[p] = POLICY_COLORS[p]
+        else:
+            policy_color_map[p] = POLICY_COLOR_FALLBACKS[ci % len(POLICY_COLOR_FALLBACKS)]
+            ci += 1
+
+    by_ds = {}
+    for s in plot_series:
+        by_ds.setdefault(s["dataset"], {}).setdefault(
+            s["batch_type"], {}
+        ).setdefault(s["triplestore"], []).append(s)
+
+    DATASET_ORDER = ["bearb_day", "bearb_hour", "orkg", "bearc"]
+    available = list(by_ds.keys())
+    datasets = [d for d in DATASET_ORDER if d in available] + sorted(
+        set(available) - set(DATASET_ORDER)
+    )
+    BATCH_ORDER = ["insert", "invalidate"]
+
+    result_plots = []
+
+    for ds in datasets:
+        batch_types = [b for b in BATCH_ORDER if b in by_ds[ds]] + sorted(
+            set(by_ds[ds].keys()) - set(BATCH_ORDER)
+        )
+        for bt in batch_types:
+            ts_map = by_ds[ds][bt]
+            for ts_name in sorted(ts_map.keys()):
+                series_list = ts_map[ts_name]
+
+                fig, (ax_time, ax_cnt) = plt.subplots(
+                    2, 1, figsize=(4, 4.2), sharex=True,
+                    gridspec_kw={"height_ratios": [1.15, 1], "hspace": 0.12},
+                )
+                fig.suptitle(ts_name, fontsize=9, fontweight="bold", color="#006699", y=0.99)
+
+                # ── Top: execution time ──
+                ax_time.set_yscale("log")
+                ax_time.set_ylim(0.001, max([s.get("max", 30) for s in series_list] or [30]) * 1.5)
+                ax_time.set_ylabel("Update time (s)", fontsize=8)
+                ax_time.tick_params(axis="both", labelsize=7)
+                ax_time.set_facecolor("#fafafa")
+                ax_time.grid(True, alpha=0.3)
+
+                averages = []
+                for s in sorted(series_list, key=lambda x: x["policy"]):
+                    color = policy_color_map.get(s["policy"], "#666")
+                    tpts = [(int(p[0]), p[1]) for p in s.get("points", []) if p[1] > 0]
+                    tvals = [p[1] for p in s.get("points", []) if p[1] > 0]
+                    avg = sum(tvals) / len(tvals) if tvals else None
+                    averages.append({"policy": s["policy"], "avg": avg, "color": color})
+                    if len(tpts) >= 2:
+                        ax_time.plot(
+                            [p[0] for p in tpts], [p[1] for p in tpts], color=color,
+                            linewidth=1.8, label=s["policy"], solid_capstyle="round",
+                        )
+                    elif len(tpts) == 1:
+                        ax_time.plot(
+                            [tpts[0][0]], [tpts[0][1]], color=color,
+                            marker="o", markersize=5, label=s["policy"],
+                        )
+
+                # ── Bottom: number of triples ──
+                ax_cnt.set_yscale("log")
+                ax_cnt.set_ylabel("# triples", fontsize=8)
+                ax_cnt.set_xlabel("Version", fontsize=8)
+                ax_cnt.tick_params(axis="both", labelsize=7)
+                ax_cnt.set_facecolor("#fafafa")
+                ax_cnt.grid(True, alpha=0.3)
+
+                for s in sorted(series_list, key=lambda x: x["policy"]):
+                    color = "#000000"
+                    cpts = [(int(p[0]), p[1]) for p in s.get("count_points", []) if p[1] > 0]
+                    if len(cpts) >= 2:
+                        ax_cnt.plot(
+                            [p[0] for p in cpts], [p[1] for p in cpts], color=color,
+                            linewidth=1.8, solid_capstyle="round",
+                        )
+                    elif len(cpts) == 1:
+                        ax_cnt.plot(
+                            [cpts[0][0]], [cpts[0][1]], color=color,
+                            marker="o", markersize=5,
+                        )
+
+                img_b64 = _fig_to_base64(fig)
+                result_plots.append({
+                    "dataset": ds,
+                    "batch_type": bt,
+                    "triplestore": ts_name,
+                    "image_b64": img_b64,
+                    "averages": averages,
+                })
+
+    return {
+        "plots": result_plots,
+        "policy_legend": [
+            {"policy": p, "color": policy_color_map[p]}
+            for p in sorted(policy_color_map.keys())
+        ],
+        "datasets_order": datasets,
+    }
+
+
 def _detail_visualize(run_dir: Path) -> dict:
     time_csv = run_dir / "output" / "measurements" / "queries_time.csv"
     rewrite_csv = run_dir / "output" / "measurements" / "queries_rewriting_times.csv"
+    update_csv = run_dir / "output" / "measurements" / "update_time.csv"
 
     if not time_csv.exists():
         return {"plot_info": None}
@@ -1191,7 +1310,78 @@ def _detail_visualize(run_dir: Path) -> dict:
         except Exception as e:
             logging.error(f"Error building time plots: {e}")
 
-    return {"plot_info": plot_info}
+    # ── Update-time plots from update_time.csv ─────────────────────────
+    update_plot_info = None
+    if update_csv.exists():
+        update_rows = []
+        with open(update_csv, newline="") as f:
+            for row in csv.DictReader(f, delimiter=";"):
+                try:
+                    exec_time = float(row.get("execution_time", -1) or -1)
+                except (ValueError, TypeError):
+                    continue
+                if exec_time < 0:
+                    continue
+                try:
+                    cnt = int(float(row.get("cnt_batch_trpls", 0) or 0))
+                except (ValueError, TypeError):
+                    cnt = 0
+                batch = row.get("batch", "").strip()
+                # Merge initial snapshot (v0) into the "insert" batch type
+                if batch == "snapshot_0":
+                    batch_type = "insert"
+                    version = 0
+                elif batch.startswith("positive_change_set"):
+                    batch_type = "insert"
+                    version = int(batch.split("_")[-1])
+                elif batch.startswith("negative_change_set"):
+                    batch_type = "invalidate"
+                    version = int(batch.split("_")[-1])
+                else:
+                    continue
+                update_rows.append({
+                    "triplestore": row.get("triplestore", "").strip(),
+                    "dataset": row.get("dataset", "").strip(),
+                    "policy": row.get("policy", "").strip(),
+                    "batch_type": batch_type,
+                    "version": version,
+                    "exec_time": exec_time,
+                    "cnt": cnt,
+                })
+
+        up_series_map = {}
+        for r in update_rows:
+            key = (r["triplestore"], r["policy"], r["dataset"], r["batch_type"])
+            if key not in up_series_map:
+                up_series_map[key] = {
+                    "triplestore": r["triplestore"], "policy": r["policy"],
+                    "dataset": r["dataset"], "batch_type": r["batch_type"],
+                    "points": {}, "count_points": {},
+                }
+            up_series_map[key]["points"][r["version"]] = max(
+                up_series_map[key]["points"].get(r["version"], 0),
+                r["exec_time"],
+            )
+            up_series_map[key]["count_points"][r["version"]] = max(
+                up_series_map[key]["count_points"].get(r["version"], 0),
+                r["cnt"],
+            )
+
+        up_plot_series = []
+        for s in up_series_map.values():
+            s["max"] = max(s["points"].values()) if s["points"] else 30
+            s["points"] = sorted(s["points"].items())
+            s["count_points"] = sorted(s["count_points"].items())
+            up_plot_series.append(s)
+
+        if up_plot_series:
+            try:
+                update_plot_info = _build_update_time_plots(up_plot_series)
+            except Exception as e:
+                logging.error(f"Error building update time plots: {e}")
+                update_plot_info = None
+
+    return {"plot_info": plot_info, "update_plot_info": update_plot_info}
 
 
 

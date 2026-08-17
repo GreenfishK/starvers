@@ -288,8 +288,57 @@ docker run -d \
 ontotext/graphdb:10.5.0
 ```
 
-## Starversserver Evaluation
+### GraphDB and Jena retrieval explanation
 
+These scripts generate the query-plan / explain-plan proof used by the "RDF
+stores" section of the paper. They produce plain-text plan files under
+`paper/RDF-star-retrieval/{GraphDB,Jena}`.
+
+Both scripts accept `--run-dir` (the in-container path of the run whose
+repositories you want to analyse), `--out` (where to write the plans),
+`--dataset`, `--model`, and `--prefix`. Set `--model tb_sr_rs` to analyse the
+RDF-star decorator model or `--model tb_sr_re` for the reification model; omit
+it to run both.
+
+**Jena TDB2** (uses ARQ `tdb2.tdbquery --explain` directly on the raw
+`Data-0001` TDB2 location; no Fuseki server is started because the analyzer
+needs an exclusive lock on the dataset):
+
+```bash
+docker run --rm \
+  --name starvers-analysis-jena \
+  --env-file .env \
+  --network starvers_prod_net \
+  -v "/mnt/data_local/starvers_eval:/starvers_eval/data" \
+  -v "$(pwd)/paper:/starvers_eval/paper" \
+  --entrypoint python \
+  starvers_eval:latest \
+  /starvers_eval/scripts/analysis/rdf_star_retrieval/scripts/run_jena_analysis.py \
+    --run-dir /starvers_eval/data/20260426T15-22-09.348 \
+    --out /starvers_eval/paper/RDF-star-retrieval/Jena \
+    --dataset orkg
+```
+
+**GraphDB** (boots a temporary GraphDB instance on the selected repository and
+runs `FROM onto:explain` to obtain the query plan):
+
+```bash
+docker run --rm \
+  --name starvers-analysis-graphdb \
+  --env-file .env \
+  --network starvers_prod_net \
+  -v "/mnt/data_local/starvers_eval:/starvers_eval/data" \
+  -v "$(pwd)/paper:/starvers_eval/paper" \
+  --entrypoint python \
+  starvers_eval:latest \
+  /starvers_eval/scripts/analysis/rdf_star_retrieval/scripts/run_graphdb_analysis.py \
+    --run-dir /starvers_eval/data/20260426T15-22-09.348 \
+    --out /starvers_eval/paper/RDF-star-retrieval/GraphDB \
+    --dataset orkg
+```
+
+
+## Starversserver Evaluation
 ### Pipeline Steps
 
 | # | Step | Docker-Compose Service |
