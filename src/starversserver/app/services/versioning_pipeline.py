@@ -20,6 +20,7 @@ import traceback
 from typing import Optional
 import zipfile
 import re
+import requests
 
 from app.utils.starvers.starvers import TripleStoreEngine
 from app.AppConfig import Settings
@@ -96,7 +97,7 @@ class VersioningPipeline:
             # Archive the working directory
             self._archive_and_clean(self.base_path)
             self.LOG.info(f"[{self.repository_name}] Initial versioning complete.")
-        except TimeoutError as e:
+        except (TimeoutError, requests.exceptions.ConnectTimeout)  as e:
             self.LOG.error(f"[{self.repository_name}] Initial versioning failed due to timeout: {e}")
             raise e
         except Exception as e:
@@ -174,7 +175,7 @@ class VersioningPipeline:
                 versioning_duration_ms=0,  # caller may compute if needed
                 timestamp=version_timestamp,
             )
-        except TimeoutError as e:
+        except (TimeoutError, requests.exceptions.ConnectTimeout) as e:
             self.LOG.error(f"[{self.repository_name}] Incremental versioning failed due to timeout: {e}")
             raise e
         except Exception as e:
@@ -244,6 +245,9 @@ class VersioningPipeline:
                             shutil.copyfileobj(src, dst)
 
                     return
+                except requests.exceptions.ConnectTimeout as e:
+                    self.LOG.error("Timeout reached while trying to download the file.")
+                    raise
                 except Exception as e:
                     if attempt == 1:
                         raise

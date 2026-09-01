@@ -154,7 +154,11 @@ class PollingTask:
             self._versioning_pipeline.run_initial_versioning(version_timestamp)
         else:
             LOG.info(f"[{self.repository_name}] Running incremental versioning.")
-            delta = self._versioning_pipeline.run_versioning(version_timestamp)
+            try:
+                delta = self._versioning_pipeline.run_versioning(version_timestamp)
+            except (TimeoutError, requests.exceptions.ConnectTimeout) as e:
+                LOG.info("Versioning failed due to timeout exception. Task will be re-scheduled.")
+                return False
 
             if delta.totalInsertions > 0 or delta.totalDeletions > 0:
                 LOG.info(f"[{self.repository_name}] Changes detected: +{delta.totalInsertions} / -{delta.totalDeletions}")

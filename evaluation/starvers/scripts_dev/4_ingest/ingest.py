@@ -10,6 +10,7 @@ import tomli
 from SPARQLWrapper import SPARQLWrapper, JSON, GET
 import logging
 import sys
+import shutil
 
 from scripts.logging import setup_logging
 
@@ -65,7 +66,7 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_re": "alldata.TB_star_reif.ttl"
 }
 
-RUNS = 1
+RUNS = 10
 
 # ---------------------------------------------------------------------------
 # Classes
