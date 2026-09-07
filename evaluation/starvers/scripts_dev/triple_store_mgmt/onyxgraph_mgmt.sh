@@ -48,11 +48,15 @@ shutdown() {
     # --------------------------------------------------
     # Locate PID file
     # --------------------------------------------------
-    pidfile=$(ls /tmp/graphdb_*.pid 2>/dev/null | head -n 1)
+    shopt -s nullglob
+    pidfiles=(/tmp/onyxgraph_*.pid)
+    shopt -u nullglob
+    pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
         echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback pkill" >> "$log_file"
         pkill -9 -f '/root/.cargo/bin/oxigraph serve' 2>/dev/null || true
+        fuser -k 7878/tcp 2>/dev/null || true
     else
         PID=$(cat "$pidfile")
         echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
@@ -181,7 +185,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${1:-} == "startup" ]]; then
-    if [[ $# -ne 4 && $# -ne 5]]; then
+    if [[ $# -ne 4 && $# -ne 5 ]]; then
         echo "Usage: $0 startup <database_dir> <policy> <dataset> [config_dir]"
         exit 1
     fi

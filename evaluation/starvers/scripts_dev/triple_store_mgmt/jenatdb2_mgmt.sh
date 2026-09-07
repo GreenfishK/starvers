@@ -60,11 +60,15 @@ shutdown() {
     # --------------------------------------------------
     # Locate PID file
     # --------------------------------------------------
-    pidfile=$(ls /tmp/jenatdb2_*.pid 2>/dev/null | head -n 1)
+    shopt -s nullglob
+    pidfiles=(/tmp/jenatdb2_*.pid)
+    shopt -u nullglob
+    pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
         echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
         pkill -9 -f ${JAVA_HOME}/bin/java 2>/dev/null || true
+        fuser -k 3030/tcp 2>/dev/null || true
     else
         PID=$(cat "$pidfile")
         echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
@@ -161,7 +165,7 @@ create_env() {
     rm -rf ${database_dir}
     rm -rf ${config_dir}/jenatdb2/${repositoryID}
     rm -rf /run/configuration
-    rm -rf /tmp/*
+    rm -f /tmp/jenatdb2_${policy}_${dataset}.pid
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p ${database_dir}

@@ -17,3 +17,4 @@ evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/maven-s
 paper/
 
 evaluation/starvers/scripts_dev/*/__pycache__
+evaluation/starvers/scripts_dev/analysis/rdf_star_retrieval/scripts/__pycache__/

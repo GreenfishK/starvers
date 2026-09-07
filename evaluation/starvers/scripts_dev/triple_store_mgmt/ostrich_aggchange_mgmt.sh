@@ -55,7 +55,10 @@ startup() {
 shutdown() {
     echo "$(log_timestamp) ${log_level}:Shutdown ostrich_aggchange start" >> "$log_file"
 
-    pidfile=$(ls /tmp/ostrich_aggchange_*.pid 2>/dev/null | head -n 1)
+    shopt -s nullglob
+    pidfiles=(/tmp/ostrich_aggchange_*.pid)
+    shopt -u nullglob
+    pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
         echo "$(log_timestamp) ${log_level}:No PID file, fallback pkill" >> "$log_file"

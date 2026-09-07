@@ -38,6 +38,29 @@ def run(cmd):
     return subprocess.run(cmd, capture_output=True, text=True, check=False)
 
 
+def _strip_result_set(text: str) -> str:
+    """Remove the query result set (tabular output) from the --explain output.
+
+    The plan/ALGEBRA/TDB2 sections are shown first; the actual result set (the
+    ASCII table of matched bindings rendered after the ``Execute ::`` line)
+    carries no informational value for a plan proof, so we cut everything from
+    the first separator line of dashes that follows the ``Execute`` line.
+    """
+    lines = text.splitlines()
+    cut = None
+    for i, line in enumerate(lines):
+        if "INFO  exec" in line and "Execute" in line:
+            # find the first all-dash separator after the Execute line
+            for j in range(i + 1, len(lines)):
+                if lines[j].lstrip().startswith("-") and set(lines[j].strip()) == {"-"}:
+                    cut = j
+                    break
+            break
+    if cut is not None:
+        return "\n".join(lines[:cut]) + "\n"
+    return text
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-dir", required=True,
@@ -98,7 +121,8 @@ def main():
                 f"# query      :\n"
             )
             body = "\n".join("  " + l for l in scen["jena_query"].splitlines())
-            text = header + body + "\n\n" + (res.stdout or "") + (res.stderr or "")
+            output = _strip_result_set(res.stdout or "")
+            text = header + body + "\n\n" + output + (res.stderr or "")
             out_file.write_text(text)
             print(f"[ok] {out_file}", flush=True)
 

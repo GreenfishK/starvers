@@ -394,14 +394,12 @@ def create_latex_tables():
     ).reset_index()
     LOG.info(f"Aggregated measures:\n{queries_agg}")
     queries_agg = queries_agg[queries_agg["min"].notna()]
-    queries_agg.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/queries_time_aggr.csv", index=False)
 
     storage_agg = ingestion_data.groupby(["triplestore", "dataset", "policy"], observed=False).agg(
         ingestion_time=("ingestion_time", "median"),
         raw_file_size=("raw_file_size_MiB", "mean"),
         db_file_size=("db_files_disk_usage_MiB", "mean")
     ).reset_index()
-    storage_agg.to_csv(f"{os.environ['RUN_DIR']}/output/measurements/storage_and_ingestion_aggr.csv", index=False)
 
     def format_exec_time(v):
         if v == 0:

@@ -54,11 +54,15 @@ shutdown() {
     # --------------------------------------------------
     # Locate PID file
     # --------------------------------------------------
-    pidfile=$(ls /tmp/ostrich_*.pid 2>/dev/null | head -n 1)
+    shopt -s nullglob
+    pidfiles=(/tmp/ostrich_*.pid)
+    shopt -u nullglob
+    pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
         echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
         pkill -9 -f '/opt/comunica-feature-versioning/engines/query-sparql-ostrich/bin/http.js' 2>/dev/null || true
+        fuser -k 42564/tcp 2>/dev/null || true
     else
         PID=$(cat "$pidfile")
         echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
@@ -132,7 +136,7 @@ create_env() {
     # Create database directory
     echo "$(log_timestamp) ${log_level}:Clean database directory ${database_dir}" >> $log_file
     rm -rf ${database_dir}
-    rm -rf /tmp/*
+    rm -f /tmp/ostrich_*.pid
 
     echo "$(log_timestamp) ${log_level}:Create database directory ${database_dir}" >> $log_file
     mkdir -p ${database_dir}

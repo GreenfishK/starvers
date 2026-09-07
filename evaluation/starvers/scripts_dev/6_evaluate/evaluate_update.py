@@ -181,6 +181,19 @@ def measure_updates(triple_store: str, dataset: str, policy: str, chunk_size: in
     update_df.to_csv(update_time_path, sep=";", index=False, mode='w', header=True)
 
 
+def run_mgmt(*cmd: str) -> None:
+    """Run a triple-store mgmt subcommand and fail loudly on non-zero exit.
+
+    The mgmt scripts return 1 when e.g. a port cannot be reclaimed or a
+    repository never becomes reachable; without this check those failures
+    used to be silently swallowed and the run would query a stale server.
+    """
+    LOG.info(f"Running mgmt command: {' '.join(cmd)}")
+    ret = subprocess.call(shlex.split(" ".join(cmd)))
+    if ret != 0:
+        raise RuntimeError(f"mgmt command failed (exit {ret}): {' '.join(cmd)}")
+
+
 def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy: str,
                         source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     triple_store_name = triple_store.lower()
@@ -192,13 +205,13 @@ def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:
 
     LOG.info(f"Create {triple_store} directories and environment")
     LOG.info(f"\nDatabase directory {database_dir}\nConfig dirctory:{CONFIG_DIR}\nConfig Template directory:{CONFIG_TMPL_DIR}")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}"))
+    run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} create_env {policy} {dataset} {database_dir} {CONFIG_TMPL_DIR} {CONFIG_DIR}")
 
     LOG.info(f"Ingest empty file into {repository} repository and start {triple_store_name}.")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}"))
+    run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} ingest_empty {database_dir} {policy} {dataset} {CONFIG_DIR}")
 
     LOG.info(f"Startup {triple_store} engine")
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
+    run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}")
 
     LOG.info("Read initial snapshot {0} into memory.".format(source_ic0))
     added_triples_raw = open(source_ic0, "r").read().splitlines()
@@ -238,8 +251,8 @@ def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:
         LOG.info(f"Memory in usage: {mem_in_usage}%")
         if mem_in_usage > 85:
             # Reboot to free up main memory
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
-            subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}"))
+            run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} shutdown")
+            run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} startup {database_dir} {policy} {dataset} {CONFIG_DIR}")
 
         if filename.startswith("data-added"):
             LOG.info("Read positive changeset {0} into memory.".format(filename))
@@ -270,7 +283,7 @@ def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:
             df = pd.concat([df, new_row], ignore_index=True)
 
     # Shutdown engine
-    subprocess.call(shlex.split(f"{mgmt_script} --log-file {LOG_FILE} shutdown"))
+    run_mgmt(f"{mgmt_script} --log-file {LOG_FILE} shutdown")
 
     return df
 

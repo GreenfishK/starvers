@@ -19,8 +19,22 @@ fi
 # Functions
 #######################################################################
 startup() {
+    repositoryID=${policy}_${dataset}
+
     echo "$(log_timestamp) ${log_level}:Updating query timeouts to 30 sec ..." >> $log_file
     export GDB_JAVA_OPTS="$GDB_JAVA_OPTS -Dhealth.max.query.time.seconds=30"
+
+    # If a stale GraphDB instance is still bound to :7200 (e.g. after an
+    # incomplete shutdown), reclaim the port so the new server can actually
+    # bind and register ${repositoryID}.
+    if ss -ltnp | grep -q ':7200'; then
+        echo "$(log_timestamp) ${log_level}:Port 7200 already in use by a previous instance; reclaiming it" >> "$log_file"
+        fuser -k 7200/tcp 2>/dev/null || true
+        for i in {1..30}; do
+            ss -ltnp | grep -q ':7200' || break
+            sleep 1
+        done
+    fi
 
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
     /opt/graphdb/dist/bin/graphdb -s >> "$log_file" 2>&1 &
@@ -29,21 +43,23 @@ startup() {
 
     timeout=120
     elapsed=0
-    while [[ $(curl -I http://Starvers:7200 2>/dev/null | head -n 1 | cut -d$' ' -f2) != '406' ]]; do
+    # Wait for THIS server to come up AND to have registered the repository,
+    # so we never mistake a stale instance on :7200 for our freshly started one.
+    until [ "$(curl -s -o /dev/null -w '%{http_code}' http://Starvers:7200/repositories/${repositoryID}/size 2>/dev/null)" = "200" ]; do
         sleep 1
         elapsed=$((elapsed + 1))
         if [ $elapsed -ge $timeout ]; then
-            echo "$(log_timestamp) ${log_level}:ERROR — GraphDB did not come up after ${timeout}s" >> $log_file
+            echo "$(log_timestamp) ${log_level}:ERROR — repository ${repositoryID} not reachable after ${timeout}s" >> "$log_file"
             exit 1
         fi
         if ! kill -0 $db_pid 2>/dev/null; then
-            echo "$(log_timestamp) ${log_level}:ERROR — GraphDB process $db_pid died" >> $log_file
+            echo "$(log_timestamp) ${log_level}:ERROR — GraphDB process $db_pid died" >> "$log_file"
             exit 1
         fi
     done
 
     echo $db_pid > /tmp/graphdb_${policy}_${dataset}.pid
-    echo "$(log_timestamp) ${log_level}:GraphDB server is up" >> $log_file
+    echo "$(log_timestamp) ${log_level}:GraphDB server is up" >> "$log_file"
 }
 
 shutdown() {
@@ -52,11 +68,15 @@ shutdown() {
     # --------------------------------------------------
     # Locate PID file
     # --------------------------------------------------
-    pidfile=$(ls /tmp/graphdb_*.pid 2>/dev/null | head -n 1)
+    shopt -s nullglob
+    pidfiles=(/tmp/graphdb_*.pid)
+    shopt -u nullglob
+    pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
-        echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback pkill" >> "$log_file"
+        echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
         pkill -9 -f ${JAVA_HOME}/bin/java 2>/dev/null || true
+        fuser -k 7200/tcp 2>/dev/null || true
     else
         PID=$(cat "$pidfile")
         echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
@@ -142,7 +162,9 @@ create_env() {
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf ${database_dir}/repositories/${repositoryID}
     rm -rf ${config_dir}/graphdb/${repositoryID}
-    rm -rf /tmp/*
+    # Remove only this repository's PID file (never scrub all of /tmp —
+    # that deletes PID files for every other store and breaks their shutdown).
+    rm -f /tmp/graphdb_${policy}_${dataset}.pid
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p ${database_dir}/repositories/${repositoryID}
