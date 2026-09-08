@@ -1,0 +1,8 @@
+
+PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?s{<< <<?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://orkg.org/orkg/class/C23008>>> vers:valid_from ?valid_from_1 >> vers:valid_until ?valid_until_1.
+filter(?valid_from_1 <= ?tsBGP_0 && ?tsBGP_0 < ?valid_until_1)
+
+bind("2021-01-01T00:00:00.000+00:00"^^xsd:dateTime as ?tsBGP_0)}
