@@ -146,12 +146,27 @@ def upsert_rows(df, new_rows, key_cols=('runs', 'triplestore', 'dataset', 'polic
 def measure_updates(triple_store: str, dataset: str, policy: str, chunk_size: int, runs: int, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     LOG.info(f"Measuring update times for {triple_store}/{policy}/{dataset} with chunk size {chunk_size} over {runs} runs.")
 
+    # tb_sr_rs and tb_sr_re share the per-delta RDF-star update mechanism but
+    # differ only in the RDF-star serialization (decorator vs reification).
+    # The non-RDF-star policies (ic_sr_ng, tb_sr_ng) are deliberately not
+    # evaluated: tb_sr_ng's grouped version-string update is impractical
+    # (a full scan of all surviving triples is required on every new version).
+    if policy == "tb_sr_rs":
+        mode = "decorator"
+    elif policy == "tb_sr_re":
+        mode = "reification"
+    else:
+        raise ValueError(f"No update mechanism for policy: {policy}")
+    impl = lambda: insert_ic0_and_cbs_rdf_star(triple_store, chunk_size=chunk_size, dataset=dataset, policy=policy,
+                                               source_ic0=source_ic0, source_cs=source_cs,
+                                               last_version=last_version, init_timestamp=init_timestamp, mode=mode)
+
     run_measurements: list[pd.DataFrame] = []
     for run_idx in range(runs):
         LOG.info(f"Run {run_idx + 1}/{runs} ...")
-        result = insert_ic0_and_cbs(triple_store, chunk_size, dataset=dataset, policy=policy,
-                                    source_ic0=source_ic0, source_cs=source_cs,
-                                    last_version=last_version, init_timestamp=init_timestamp)
+        result = impl()
+
+
         if result is False:
             # Stop iteration if HTTPError occurred
             LOG.info("HTTPError occurred, stopping update evaluation for this combination.")
@@ -194,8 +209,8 @@ def run_mgmt(*cmd: str) -> None:
         raise RuntimeError(f"mgmt command failed (exit {ret}): {' '.join(cmd)}")
 
 
-def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy: str,
-                        source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
+def insert_ic0_and_cbs_rdf_star(triple_store: str, chunk_size: int, dataset: str, policy: str,
+                        source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime, mode: str):
     triple_store_name = triple_store.lower()
     LOG.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
 
@@ -222,7 +237,7 @@ def insert_ic0_and_cbs(triple_store: str, chunk_size: int, dataset: str, policy:
 
     query_endpoint = static_eval_params["rdf_stores"][triple_store_name]["get"].format(repo=f"{policy}_{dataset}")
     update_endpoint = static_eval_params["rdf_stores"][triple_store_name]["post"].format(repo=f"{policy}_{dataset}")
-    rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint)
+    rdf_star_engine = TripleStoreEngine(query_endpoint, update_endpoint, mode=mode)
     try:
         start = time.time()
         rdf_star_engine.insert(triples=added_triples_raw, timestamp=init_timestamp, chunk_size=chunk_size)
@@ -317,3 +332,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
