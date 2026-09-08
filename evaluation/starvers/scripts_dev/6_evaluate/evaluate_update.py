@@ -334,5 +334,18 @@ if __name__ == "__main__":
     main()
 
 
-
+# Assumptions:
+# * Change sets and ICs (snapshots) are given on disk.
+#
+# tb_sr_rs: RDF-star decorator model. Each delta triple is inserted as a nested
+#           timestamped triple `<< s p o >> valid_from ... valid_until ...`
+#           (TripleStoreEngine mode="decorator").
+# tb_sr_re: RDF-star reification model. Each delta triple maps to a reifier
+#           `_:b rdf:reifies <<s p o>> ; valid_from ... ; valid_until ...`
+#           (TripleStoreEngine mode="reification").
+#
+# Only tb_sr_rs and tb_sr_re are evaluated for updates. The non-RDF-star
+# policies (ic_sr_ng, tb_sr_ng) are excluded: in particular the grouped
+# version-string update of tb_sr_ng is impractical because it requires a full
+# scan of all surviving triples on every new version.
 
