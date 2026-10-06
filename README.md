@@ -110,7 +110,7 @@ Starvers (timestamped-based versioning method) and Starversserver (RDF dataset t
 
 ---
 
-## Starvers Evaluation
+## Starvers Benchmark Evaluation
 Starvers is evaluated using an automated pipeline that has three main input parameters:
 * triple stores
 * dataset
@@ -277,7 +277,40 @@ starvers_eval:latest gui
 ```
 
 
-### GraphDB and Jena retrieval explanation
+---
+
+## Starvers Retrieval Evaluation
+The retrieval evaluation empirically tests the theoretical cost analysis of the
+"RDF stores" section of the paper (Jena TDB2 outside-in vs. GraphDB inside-out)
+with three synthetic 1M-triple datasets — `D1`, `D2`, `D3` — that cross the two
+store-specific cost parameters. It measures query runtime on GraphDB 10.5 and
+Jena TDB2 5.1 for the decorator (`tb_sr_rs`) retrieval query `Q`:
+
+```
+<< <<?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://dbpedia.org/ontology/Film>>>
+   <vers>valid_from "2022-10-01T12:00:00.000+00:00" >>
+   <vers>valid_until "9999-12-31T12:00:00.000+00:00" .
+```
+
+| Dataset | Jena candidates `C` (valid_until = 9999) | GraphDB matches `M` (?s rdf:type Film) | Expected |
+|---------|-----------------------------------|-------------------------------------|----------|
+| D1 | 10 | 10 | equal |
+| D2 | 1,000,000 | 10 | Jena slower |
+| D3 | 10 | 1,000,000 | Jena faster |
+
+Run this experiment with:
+
+```bash
+docker run -d --rm \
+--name starvers_retrieval \
+--env-file .env \
+--ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+starvers_eval:latest run retrieval_exp
+```
+
+### GraphDB and Jena query plans generation
 
 These scripts generate the query-plan / explain-plan proof used by the "RDF
 stores" section of the paper. They produce plain-text plan files under

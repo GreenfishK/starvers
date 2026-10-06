@@ -66,6 +66,21 @@ STEPS: list[dict] = [
 
 EVALUATE_MODES = list(EVALUATE_SCRIPTS)  # ["queries", "update", "dataset_metrics"]
 
+# ---------------------------------------------------------------------------
+# Starvers Retrieval Evaluation
+# ---------------------------------------------------------------------------
+RETRIEVAL_BASE = Path("/starvers_eval/data/retrieval_exp")
+
+# Steps of the retrieval experiment (D1/D2/D3, GraphDB vs Jena TDB2). Additional
+# steps (query execution + timing) will be appended here.
+RETRIEVAL_STEPS: list[dict] = [
+    {"number": 1, "name": "dataset generation",
+     "script": Path("/starvers_eval/experiments/retrieval/dataset_gen.py")},
+    {"number": 2, "name": "ingest",
+     "script": Path("/starvers_eval/experiments/retrieval/ingest.py")},
+    # TODO step 3: run the retrieval query Q and measure runtime on both stores
+]
+
 EXECUTION_CSV = "execution.csv"
 CSV_FIELDS = ["step_number", "step_name", "start_time", "end_time", "status"]
 
@@ -290,9 +305,40 @@ def cmd_run(args) -> None:
         step = _resolve_step(args.step_id)
         execute_steps([step], run_dir)
 
+    elif args.subcommand == "retrieval_exp":
+        cmd_retrieval_exp(args)
+
     else:
         print(f"Unknown run subcommand: {args.subcommand}", file=sys.stderr)
         sys.exit(1)
+
+
+def cmd_retrieval_exp(args) -> None:
+    """Run the Starvers Retrieval Evaluation pipeline (D1/D2/D3, two stores)."""
+    RETRIEVAL_BASE.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env["RETRIEVAL_BASE"] = str(RETRIEVAL_BASE)
+    print(f"[starvers_eval] Retrieval base: {RETRIEVAL_BASE}")
+
+    for step in RETRIEVAL_STEPS:
+        script = step["script"]
+        if not script.exists():
+            print(f"[starvers_eval] ERROR: Script not found: {script}", file=sys.stderr)
+            sys.exit(1)
+        suffix = script.suffix
+        cmd = (["bash", str(script)] if suffix == ".sh"
+               else ["python", "-u", str(script)])
+        print(f"\n[starvers_eval] Running retrieval step {step['number']}: "
+              f"{step['name']} ({script.name})")
+        print(f"[starvers_eval] Command: {' '.join(cmd)}\n")
+        rc = subprocess.run(cmd, env=env).returncode
+        if rc != 0:
+            print(f"[starvers_eval] ERROR: retrieval step '{step['name']}' "
+                  f"failed (rc={rc})", file=sys.stderr)
+            sys.exit(rc)
+
+    print("[starvers_eval] Retrieval experiment steps completed successfully "
+          f"in {RETRIEVAL_BASE}")
 
 
 def cmd_continue(args) -> None:
@@ -394,6 +440,7 @@ def build_parser() -> argparse.ArgumentParser:
     after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
     after_p.add_argument("step_id", help="Step number (1-7) or name")
     after_p.add_argument("timestamp", help="Run timestamp")
+    run_sub.add_parser("retrieval_exp", help="Run the Starvers Retrieval Evaluation pipeline")
 
 
     sub.add_parser("continue", help="Continue the last failed/interrupted run")

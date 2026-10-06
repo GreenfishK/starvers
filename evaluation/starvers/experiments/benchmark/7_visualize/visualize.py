@@ -320,7 +320,7 @@ def plot_ingest_time(triplestore: str, dataset: str,
 
 
 # ---------------------------------------------------------------------------
-# 4. LaTeX tables  —  UNCHANGED from original
+# 4. LaTeX tables
 # ---------------------------------------------------------------------------
 
 def create_latex_tables():
@@ -562,7 +562,7 @@ def create_latex_tables():
 
 
 # ---------------------------------------------------------------------------
-# 5. Dataset metrics LaTeX table  —  generated from evaluate_dataset_metrics.csv
+# 5. Dataset metrics LaTeX table
 # ---------------------------------------------------------------------------
 
 def create_dataset_metrics_table():
