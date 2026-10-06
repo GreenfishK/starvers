@@ -5,7 +5,7 @@ import pandas as pd
 import tomli
 from pathlib import Path
 
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

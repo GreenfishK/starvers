@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 import requests
 import tomli
 
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

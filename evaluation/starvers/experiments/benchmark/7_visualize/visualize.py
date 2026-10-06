@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import tomli
 from pathlib import Path
-from scripts.logging_setup import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

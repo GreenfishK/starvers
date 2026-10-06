@@ -9,7 +9,7 @@ import re
 import tomli
 
 from starvers.starvers import timestamp_query, split_prefixes_query
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

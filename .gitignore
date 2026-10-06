@@ -9,12 +9,12 @@ tests/__pycache__/
 src/starvers/__pycache__/
 src/starvers.egg-info/
 
-evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/classes/
-evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/archive-tmp/
-evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/generated-sources/
-evaluation/starvers/scripts_dev/2_clean_raw_datasets/RDFValidator/target/maven-status/
+evaluation/starvers/experiments/benchmark/2_preprocess_data/RDFValidator/target/classes/
+evaluation/starvers/experiments/benchmark/2_preprocess_data/RDFValidator/target/archive-tmp/
+evaluation/starvers/experiments/benchmark/2_preprocess_data/RDFValidator/target/generated-sources/
+evaluation/starvers/experiments/benchmark/2_preprocess_data/RDFValidator/target/maven-status/
 
 paper/
 
-evaluation/starvers/scripts_dev/*/__pycache__
-evaluation/starvers/scripts_dev/analysis/rdf_star_retrieval/scripts/__pycache__/
+evaluation/starvers/experiments/benchmark/*/__pycache__
+evaluation/starvers/experiments/analysis/rdf_star_retrieval/scripts/__pycache__/

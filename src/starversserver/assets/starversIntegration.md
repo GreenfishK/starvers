@@ -51,15 +51,21 @@ Starvers
     |-- starvers_eval
         |-- output/
         |-- raw_queries/
-        |-- scripts_dev
-            |-- 1_download
-            |-- 2_clean_raw_datasets
-            |-- 3_construct_datasets
-            |-- 4_ingest
-            |-- 5_construct_queries
-            |-- 6_evaluate
-            |-- 7 visualize
+        |-- experiments
+            |-- benchmark
+                |-- 1_download
+                |-- 2_preprocess_data
+                |-- 3_construct_datasets
+                |-- 4_ingest
+                |-- 5_construct_queries
+                |-- 6_evaluate
+                |-- 7_visualize
+                |-- triple_store_mgmt
+                |-- eval_setup.toml
             |-- analysis
+            |-- retrieval
+            |-- logging.py
+            |-- requirements.txt
         |-- .env
         |-- docker-compose.yaml
         |-- Dockerfile

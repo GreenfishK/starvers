@@ -47,7 +47,7 @@ from starvers.starvers import TripleStoreEngine, split_prefixes_query
 sys.path.append(str(Path("/starvers_eval/scripts/5_construct_queries").resolve()))
 from construct_queries import split_solution_modifiers_query
 
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

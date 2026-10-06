@@ -8,7 +8,7 @@ import psutil
 from pathlib import Path
 
 from starvers._helper import versioning_timestamp_format
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

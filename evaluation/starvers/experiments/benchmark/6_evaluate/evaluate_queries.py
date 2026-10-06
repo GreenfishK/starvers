@@ -17,7 +17,7 @@ import psutil
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 import socket
 
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup

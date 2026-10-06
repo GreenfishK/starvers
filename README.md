@@ -302,7 +302,7 @@ docker run --rm \
   -v "$(pwd)/paper:/starvers_eval/paper" \
   --entrypoint python \
   starvers_eval:latest \
-  /starvers_eval/scripts/analysis/rdf_star_retrieval/scripts/run_jena_analysis.py \
+  /starvers_eval/experiments/analysis/rdf_star_retrieval/scripts/run_jena_analysis.py \
     --run-dir /starvers_eval/data/20260426T15-22-09.348 \
     --out /starvers_eval/paper/RDF-star-retrieval/Jena \
     --dataset orkg
@@ -320,7 +320,7 @@ docker run --rm \
   -v "$(pwd)/paper:/starvers_eval/paper" \
   --entrypoint python \
   starvers_eval:latest \
-  /starvers_eval/scripts/analysis/rdf_star_retrieval/scripts/run_graphdb_analysis.py \
+  /starvers_eval/experiments/analysis/rdf_star_retrieval/scripts/run_graphdb_analysis.py \
     --run-dir /starvers_eval/data/20260426T15-22-09.348 \
     --out /starvers_eval/paper/RDF-star-retrieval/GraphDB \
     --dataset orkg

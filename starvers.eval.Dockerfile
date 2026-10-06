@@ -140,10 +140,13 @@ FROM python:3.11-slim-bookworm AS python_base
 WORKDIR /starvers_eval
 
 COPY src/starvers /starvers_eval/starvers
-COPY evaluation/starvers/scripts_dev/requirements.txt .
+COPY evaluation/starvers/experiments/requirements.txt .
 COPY evaluation/starvers/gui /starvers_eval/gui
-COPY evaluation/starvers/scripts_dev/eval_setup.toml  /starvers_eval/configs/eval_setup.toml
-COPY evaluation/starvers/scripts_dev /starvers_eval/scripts
+COPY evaluation/starvers/experiments/benchmark/eval_setup.toml  /starvers_eval/configs/eval_setup.toml
+COPY evaluation/starvers/experiments/benchmark /starvers_eval/scripts
+COPY evaluation/starvers/experiments/logging.py  /starvers_eval/experiments/logging.py
+COPY evaluation/starvers/experiments/analysis /starvers_eval/experiments/analysis
+COPY evaluation/starvers/experiments/retrieval /starvers_eval/experiments/retrieval
 COPY run_starvers_eval.py /starvers_eval/run_starvers_eval.py
 
 RUN pip install --no-cache-dir -r requirements.txt

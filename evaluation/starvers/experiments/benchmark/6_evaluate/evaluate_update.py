@@ -13,7 +13,7 @@ import psutil
 
 from starvers.starvers import TripleStoreEngine
 
-from scripts.logging import setup_logging
+from experiments.logging import setup_logging
 
 # ---------------------------------------------------------------------------
 # Logging setup
