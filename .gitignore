@@ -2,6 +2,8 @@
 .pytest_cache/
 .ipynb_checkpoints/
 
+.opencode/
+
 __pycache__/
 *.py[cod]
 
