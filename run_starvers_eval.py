@@ -78,7 +78,10 @@ RETRIEVAL_STEPS: list[dict] = [
      "script": Path("/starvers_eval/experiments/retrieval/dataset_gen.py")},
     {"number": 2, "name": "ingest",
      "script": Path("/starvers_eval/experiments/retrieval/ingest.py")},
-    # TODO step 3: run the retrieval query Q and measure runtime on both stores
+    {"number": 3, "name": "evaluate",
+     "script": Path("/starvers_eval/experiments/retrieval/evaluate.py")},
+    {"number": 4, "name": "visualize",
+     "script": Path("/starvers_eval/experiments/retrieval/visualize.py")},
 ]
 
 EXECUTION_CSV = "execution.csv"

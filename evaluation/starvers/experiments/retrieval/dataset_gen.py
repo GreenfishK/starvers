@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-dataset_gen.py — generate the synthetic 1M-triple datasets (D1, D2, D3) for the
+dataset_gen.py — generate the synthetic 5M-triple datasets (D1, D2, D3) for the
 Starvers Retrieval Evaluation (GraphDB vs Jena TDB2, decorator / tb_sr_rs model).
 
-Each dataset contains 1,000,000 decorator-style RDF-star triples of the form
+Each dataset contains 5,000,000 decorator-style RDF-star triples of the form
 
     << << <s> <rdf:type> <dbpedia:Film> >> <vers:valid_from> "vf"^^xsd:dateTime >>
        <vers:valid_until> "vu"^^xsd:dateTime > .
@@ -21,19 +21,19 @@ Run either on the host or inside the starvers_eval container:
 The retrieval base dir can be overridden with the RETRIEVAL_BASE env var
 (default in-container: /starvers_eval/data/retrieval_exp).
 """
-import logging
 import os
 import sys
 from pathlib import Path
+
+from experiments.logging import setup_logging
 
 BASE = Path(os.environ.get(
     "RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
 
 DATA_DIR = BASE / "data"
-LOG_DIR = BASE / "logs"
-LOG_FILE = LOG_DIR / "dataset_gen.log"
+LOG_FILE = BASE / "output" / "logs" / "dataset_gen" / "dataset_gen.log"
 
-TOTAL = 1_000_000
+TOTAL = 5_000_000
 N_MATCH = 10            # triples matching query Q exactly
 N_BULK = TOTAL - N_MATCH
 
@@ -54,24 +54,6 @@ T_BULK_VF = "2025-10-01T12:00:00.000+00:00"    # D1/D2 bulk valid_from
 T_D1_VU = "2026-12-31T12:00:00.000+00:00"      # D1 bulk valid_until
 T_D3_VF = "2020-10-01T12:00:00.000+00:00"      # D3 bulk valid_from
 T_D3_VU = "2021-12-31T12:00:00.000+00:00"      # D3 bulk valid_until
-
-
-def setup_log() -> logging.Logger:
-    """Configure a logger writing to <base>/logs/dataset_gen.log."""
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    logger = logging.getLogger("dataset_gen")
-    logger.setLevel(logging.INFO)
-    logger.handlers.clear()
-
-    fmt = logging.Formatter("%(asctime)s %(name)s:%(levelname)s:%(message)s",
-                            datefmt="%Y-%m-%d %A %H:%M:%S")
-    fh = logging.FileHandler(LOG_FILE, encoding="utf-8", mode="a+")
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setFormatter(fmt)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return logger
 
 
 def subject(i: int) -> str:
@@ -122,7 +104,8 @@ def count(lines_path: Path) -> int:
 
 
 def main() -> None:
-    logger = setup_log()
+    os.environ["RUN_DIR"] = str(BASE)
+    _, logger = setup_logging("dataset_gen")
     logger.info("Retrieval base: %s", BASE)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 

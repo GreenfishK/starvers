@@ -31,7 +31,7 @@ except ModuleNotFoundError:  # Python 3.11+ stdlib replacement
 def _load_config():
     for candidate in (
         Path("/starvers_eval/configs/eval_setup.toml"),
-        Path(__file__).resolve().parent.parent / "eval_setup.toml",
+        Path(__file__).resolve().parent.parent.parent / "eval_setup.toml",
     ):
         if candidate.exists():
             with open(candidate, "rb") as f:

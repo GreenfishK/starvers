@@ -3,125 +3,76 @@
 ingest.py — ingest the three synthetic retrieval datasets (D1/D2/D3) into
 GraphDB and Jena TDB2 for the Starvers Retrieval Evaluation.
 
-Layout produced (relative to RETRIEVAL_BASE):
-    <base>/databases/graphdb/<d1|d2|d3>/
-    <base>/databases/jenatdb2/<d1|d2|d3>/
-    <base>/configs/graphdb|jenatdb2/<d1|d2|d3>/<dataset>.ttl
-Logging:  <base>/logs/ingest.log
+Uses the shared triple_store_mgmt shell scripts (graphdb_mgmt.sh /
+jenatdb2_mgmt.sh) and the endpoints/mgmt paths from eval_setup.toml, so no
+ports/hosts/Java paths are hardcoded here.
 
-Runs inside the starvers_eval container: RETRIEVAL_BASE defaults to
-/starvers_eval/data/retrieval_exp. Uses the same config templates and bulk
-loaders as the benchmark ingest step, but keeps repository IDs equal to the
-dataset names (d1/d2/d3).
+Layout produced (relative to RETRIEVAL_BASE; each repository is
+<dataset>_tb_sr_rs):
+    <base>/databases/graphdb/<dataset>_tb_sr_rs/
+    <base>/databases/jenatdb2/<dataset>_tb_sr_rs/
+    <base>/configs/graphdb|jenatdb2/<dataset>_tb_sr_rs/<repo>.ttl
+Logging: <base>/output/logs/ingest/ingest.log (plus mgmt scripts' own logs)
 """
-import logging
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+import tomli
+
+from experiments.logging import setup_logging
 
 BASE = Path(os.environ.get("RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
 DATA_DIR = BASE / "data"
 DB_ROOT = BASE / "databases"
 CONFIG_DIR = BASE / "configs"
-LOG_FILE = BASE / "logs" / "ingest.log"
+CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
+CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 
 DATASETS = ["d1", "d2", "d3"]
-
-# Store binaries / templates (reuse the ones the benchmark pipeline ships)
-GRAPHDB_TEMPLATE = Path("/starvers_eval/scripts/4_ingest/configs/graphdb-config_template.ttl")
-JENA_TEMPLATE = Path("/starvers_eval/scripts/4_ingest/configs/jenatdb2-config_template.ttl")
-IMPORTRDF = "/opt/graphdb/dist/bin/importrdf"
-TD_BLOADER = "/jena-fuseki/tdbloader2"
-
-JAVA11 = "/opt/java/java11/openjdk"
-JAVA17 = "/opt/java/java17/openjdk"
+POLICY = "tb_sr_rs"
+STORES = ["graphdb", "jenatdb2"]
 
 
-def setup_log() -> logging.Logger:
-    (LOG_FILE.parent).mkdir(parents=True, exist_ok=True)
-    logger = logging.getLogger("ingest")
-    logger.setLevel(logging.INFO)
-    logger.handlers.clear()
-    fmt = logging.Formatter("%(asctime)s %(name)s:%(levelname)s:%(message)s",
-                            datefmt="%Y-%m-%d %A %H:%M:%S")
-    fh = logging.FileHandler(LOG_FILE, encoding="utf-8", mode="a+")
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setFormatter(fmt)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return logger
+def load_config() -> dict:
+    with open(CONFIG_PATH, "rb") as f:
+        return tomli.load(f)
 
 
-def render(template: Path, dest: Path, subs: dict) -> None:
-    text = template.read_text()
-    for key, val in subs.items():
-        text = text.replace(key, str(val))
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(text)
+def repo(dataset: str) -> str:
+    return f"{dataset}_{POLICY}"
 
 
-def ingest_graphdb(log, dataset: str) -> None:
-    repo = dataset
-    db_dir = DB_ROOT / "graphdb" / repo
-    cfg_file = CONFIG_DIR / "graphdb" / repo / f"{repo}.ttl"
-    data_file = DATA_DIR / dataset / "dataset.ttl"
-
-    log.info("GraphDB: setup repo=%s (db=%s)", repo, db_dir)
-    shutil.rmtree(db_dir, ignore_errors=True)
-    shutil.rmtree(cfg_file.parent, ignore_errors=True)
-    (db_dir / "repositories" / repo).mkdir(parents=True, exist_ok=True)
-    render(GRAPHDB_TEMPLATE, cfg_file, {"{{repositoryID}}": repo})
-
-    env = dict(os.environ)
-    env["JAVA_HOME"] = JAVA11
-    env["PATH"] = f"{JAVA11}/bin:" + env.get("PATH", "")
-    env["GDB_JAVA_OPTS"] = env.get("GDB_JAVA_OPTS", "") + f" -Dgraphdb.home.data={db_dir}"
-
-    log.info("GraphDB: preloading %s -> %s", data_file, repo)
-    cmd = [IMPORTRDF, "preload", "--force", "-c", str(cfg_file), str(data_file)]
-    subprocess.run(cmd, cwd=str(db_dir), env=env, check=True)
-    log.info("GraphDB: ingested %s", repo)
-
-
-def ingest_jena(log, dataset: str) -> None:
-    repo = dataset
-    db_dir = DB_ROOT / "jenatdb2" / repo
-    cfg_file = CONFIG_DIR / "jenatdb2" / repo / f"{repo}.ttl"
-    data_file = DATA_DIR / dataset / "dataset.ttl"
-
-    log.info("Jena: setup repo=%s (db=%s)", repo, db_dir)
-    shutil.rmtree(db_dir, ignore_errors=True)
-    shutil.rmtree(cfg_file.parent, ignore_errors=True)
-    db_dir.mkdir(parents=True, exist_ok=True)
-    render(JENA_TEMPLATE, cfg_file,
-           {"{{repositoryID}}": repo, "{{RUN_DIR}}": str(BASE)})
-
-    env = dict(os.environ)
-    env["JAVA_HOME"] = JAVA17
-    env["PATH"] = f"{JAVA17}/bin:" + env.get("PATH", "")
-
-    log.info("Jena: tdb2 loading %s -> %s", data_file, repo)
-    cmd = [TD_BLOADER, "--loc", str(db_dir), str(data_file)]
-    subprocess.run(cmd, cwd=str(db_dir), env=env, check=True)
-    log.info("Jena: ingested %s", repo)
+def run_mgmt(args: list, log) -> None:
+    log.info("  $ %s", " ".join(args))
+    subprocess.run([str(a) for a in args], check=True)
 
 
 def main() -> None:
-    log = setup_log()
+    os.environ["RUN_DIR"] = str(BASE)
+    _, log = setup_logging("ingest")
+    config = load_config()
     log.info("RETRIEVAL_BASE = %s", BASE)
-    log.info("Dataset files: %s", DATA_DIR)
     DB_ROOT.mkdir(parents=True, exist_ok=True)
 
-    for d in DATASETS:
-        if not (DATA_DIR / d / "dataset.ttl").exists():
-            log.error("Missing dataset file for %s under %s", d, DATA_DIR / d)
+    for dataset in DATASETS:
+        data_file = DATA_DIR / dataset / "dataset.ttl"
+        if not data_file.exists():
+            log.error("Missing dataset file: %s", data_file)
             sys.exit(1)
 
-        ingest_graphdb(log, d)
-        ingest_jena(log, d)
+        for store in STORES:
+            rep = repo(dataset)
+            db_dir = DB_ROOT / store / rep
+            mgmt_script = config["rdf_stores"][store]["mgmt_script"]
+            log.info("Ingesting %s into %s (repo=%s, db=%s)", dataset, store, rep, db_dir)
+
+            run_mgmt([mgmt_script, "create_env", dataset, POLICY,
+                      str(db_dir), CONFIG_TMPL_DIR, str(CONFIG_DIR)], log)
+            run_mgmt([mgmt_script, "ingest", str(db_dir), str(data_file),
+                      dataset, POLICY, str(CONFIG_DIR)], log)
+            log.info("Ingested %s -> %s", dataset, rep)
 
     log.info("Ingestion complete. Data under %s", DB_ROOT)
 

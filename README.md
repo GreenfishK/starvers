@@ -263,20 +263,6 @@ docker run -d --rm \
 starvers_eval:latest gui
 ```
 
-### Debugging
-For developing, bind the gui scripts
-
-```bash
-docker run -d --rm \
---name starvers-gui \
---env-file .env \
---network starvers_prod_net \
--v /mnt/data_local/starvers_eval:/starvers_eval/data \
--v ./evaluation/starvers/gui:/starvers_eval/gui \
-starvers_eval:latest gui
-```
-
-
 ---
 
 ## Starvers Retrieval Evaluation
@@ -295,8 +281,8 @@ Jena TDB2 5.1 for the decorator (`tb_sr_rs`) retrieval query `Q`:
 | Dataset | Jena candidates `C` (valid_until = 9999) | GraphDB matches `M` (?s rdf:type Film) | Expected |
 |---------|-----------------------------------|-------------------------------------|----------|
 | D1 | 10 | 10 | equal |
-| D2 | 1,000,000 | 10 | Jena slower |
-| D3 | 10 | 1,000,000 | Jena faster |
+| D2 | 5,000,000 | 10 | Jena slower |
+| D3 | 10 | 5,000,000 | Jena faster |
 
 Run this experiment with:
 

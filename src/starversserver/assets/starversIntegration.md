@@ -60,10 +60,10 @@ Starvers
                 |-- 5_construct_queries
                 |-- 6_evaluate
                 |-- 7_visualize
-                |-- triple_store_mgmt
-                |-- eval_setup.toml
             |-- analysis
             |-- retrieval
+            |-- triple_store_mgmt
+            |-- eval_setup.toml
             |-- logging.py
             |-- requirements.txt
         |-- .env
