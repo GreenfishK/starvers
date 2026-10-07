@@ -2,6 +2,9 @@
 .pytest_cache/
 .ipynb_checkpoints/
 
+__pycache__/
+*.py[cod]
+
 build/
 
 tests/__pycache__/
