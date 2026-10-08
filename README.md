@@ -1,12 +1,12 @@
-# Starvers module
+# 1. Starvers module
 Starvers is a python module for timestamp-based versioning of RDF data. It enables the creation of temporal knowledge graphs and ontologies with the possibility to query arbitrary snapshots of these datasets as they were at a specific point in time. 
 
 The module leverages sparql-star's and rdf-star's nested triples paradigm to automatically decorate normal triples with creation and deletion timestamps. SPARQL insert or delete statements are transformed into temporal SPARQL-star queries. Additionally, we provide a generic update function that allows to overwrite a set of valid triples with another set of equal length. SPARQL queries are transformed into temporal SPARQL-star queries by parsing the user SPARQL query into a query tree, inserting the necessary temporal extensions as nodes at the right positions in the tree and parsing the tree back into a query. As timestamps are intrinsic properties of these datasets, porting them to any RDF-star triple store which supports multilevel nesting is made possible. An example for multilevel nesting would be `<< <<?s ?p ?o>> ?x ?y >> ?a ?b`.
 In the following we will guide you through the installation process and give examples of how the offered functions should be used to operate on an RDF dataset.
 
-## Installation
+## 1.1. Installation
 Clone the repository and run `pip install .` 
-## Example usage
+## 1.2. Example usage
 For every operation we need to create a constructor and setup a connection to a triple store that supports multilevel nesting with RDF-star and SPARQL-star, such as GraphDB. 
 
 ```
@@ -18,7 +18,7 @@ engine = TripleStoreEngine(get_endpoint, post_endpoint)
 
 ```
 
-### Version all triples - initialize dataset
+### 1.2.1. Version all triples - initialize dataset
 First, we need to initialize our dataset and wrap every triple with a valid\_from and a valid\_until timestamp. Consider following example RDF dataset:
 
 | Subject      | Predicate | Object |
@@ -39,7 +39,7 @@ engine.version_all_triples(initial_timestamp)
 | << << <http://example.com/Obama> <http://example.com/occupation> <http://example.com/President> >> https://github.com/GreenfishK/DataCitation/versioning/valid_from "2022-10-12T14:43:21.941000+02:00"^^xsd:dateTime >> | https://github.com/GreenfishK/DataCitation/versioning/valid_until | "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime |
 | << << <http://example.com/Hamilton> <http://example.com/occupation> <http://example.com/Formel1Driver> >> https://github.com/GreenfishK/DataCitation/versioning/valid_from "2022-10-12T14:43:21.941000+02:00"^^xsd:dateTime >> | https://github.com/GreenfishK/DataCitation/versioning/valid_until | "9999-12-31T00:00:00.000+02:00"^^xsd:dateTime |
 
-### Insert new triples
+### 1.2.2. Insert new triples
 To insert new triples we first need to prepare a list of triples and then pass them to the insert function. The triples must already be in n3 syntax, i.e. in case of an IRI, include the pointy brackets < > in the string.
 
 ```
@@ -48,7 +48,7 @@ new_triples = ['<http://example.com/Brad_Pitt> <http://example.com/occupation> <
 engine.insert(new_triples)
 ```
 
-### Update triples
+### 1.2.3. Update triples
 To update triples we need to provide two lists of triples - one with the triples to be updated and one with the new values. Essentially, these are two nx3 matrices where one gets overriden by the other. If a value should not be updated None should be simply passed to the new matrix on the desired position. In the following example we are updating the subject position in the first triple and the object position in the second triple.
 
 ```
@@ -60,14 +60,14 @@ new_triples=[['<http://example.com/Donald_Trump>', None, None],
 
 ```
 
-### Delete (Outdate) triples
+### 1.2.4. Delete (Outdate) triples
 To outdate triples we need to provide a list of valid triples which should be deleted. The valid_until timestamp of any matched triple will be replaced by the current system timestamp of python's datetime.now() function.
 ```
 engine.outdate(['<http://example.com/Donald_Trump> <http://example.com/occupation> <http://example.com/President> .'])
 ```
 
 
-### Query actual or historical data
+### 1.2.5. Query actual or historical data
 To query actual data we just need to pass the query as a string ... 
 
 ```
@@ -104,13 +104,13 @@ Result set:
 | <http://example.com/Hamilton> | <http://example.com/Formel1Driver> |
 
 
-# Evaluation 
+# 2. Evaluation 
 
 Starvers (timestamped-based versioning method) and Starversserver (RDF dataset tracker and automatic versioning system) are evaluated separately using two different Dockerfiles, as shown below.
 
 ---
 
-## Starvers Benchmark Evaluation
+## 2.1. Starvers Benchmark Evaluation
 Starvers is evaluated using an automated pipeline that has three main input parameters:
 * triple stores
 * dataset
@@ -124,7 +124,7 @@ docker build -t starvers_eval:latest -f starvers.eval.Dockerfile .
 
 Then, the whole pipeline can be executed using the command in Section [Run the full pipeline](#run-the-full-pipeline).
 
-### Pipeline Steps
+### 2.1.1. Pipeline Steps
 
 | # | Step | Docker-Compose Service |
 |---|------|------------------------|
@@ -160,7 +160,7 @@ To avoid overwriting the repositories created during the ingest step, the update
 evaluation stores its own repositories and database files under
 `<run_dir>/databases/updates/`.
 
-### Run the full pipeline (new directory)
+### 2.1.2. Run the full pipeline (new directory)
 
 ```bash
 docker run -d --rm \
@@ -173,7 +173,7 @@ docker run -d --rm \
 starvers_eval:latest run all
 ```
 
-### Run a single step
+### 2.1.3. Run a single step
 ```bash
 docker run -d --rm \
 --name starvers_eval \
@@ -186,7 +186,7 @@ starvers_eval:latest run step download
 ```
 
 
-### Run the pipeline until a certain step (new directory)
+### 2.1.4. Run the pipeline until a certain step (new directory)
 
 ```bash
 docker run -d --rm \
@@ -199,7 +199,7 @@ docker run -d --rm \
 starvers_eval:latest run until download
 ```
 
-### Run from a specific step
+### 2.1.5. Run from a specific step
 
 ```bash
 docker run -d --rm \
@@ -212,7 +212,7 @@ docker run -d --rm \
 starvers_eval:latest run from construct_datasets
 ```
 
-### Continue a previously interrupted run
+### 2.1.6. Continue a previously interrupted run
 
 The orchestrator records each step's start time, end time, and status in
 `/mnt/data_local/starvers_eval/<timestamp>/execution.csv`. If a run was interrupted
@@ -229,7 +229,7 @@ docker run -d --rm \
 starvers_eval:latest continue
 ```
 
-### List all runs
+### 2.1.7. List all runs
 
 ```bash
 docker run -d --rm \
@@ -239,7 +239,7 @@ docker run -d --rm \
 starvers_eval:latest list
 ```
 
-### Delete old runs
+### 2.1.8. Delete old runs
 
 ```bash
 # Delete all run directories created before 2026-01-01 00:00:00
@@ -250,7 +250,7 @@ docker run -d --rm \
 starvers_eval:latest delete --older-than 20260101T000000
 ```
 
-### Starvers Monitoring GUI
+### 2.1.9. Starvers Monitoring GUI
 
 Run the gui:
 
@@ -265,7 +265,7 @@ starvers_eval:latest gui
 
 ---
 
-## Starvers Retrieval Evaluation
+## 2.2. Starvers Retrieval Evaluation
 The retrieval evaluation empirically tests the theoretical cost analysis of the
 "RDF stores" section of the paper (Jena TDB2 outside-in vs. GraphDB inside-out)
 with three synthetic 1M-triple datasets — `D1`, `D2`, `D3` — that cross the two
@@ -293,10 +293,10 @@ docker run -d --rm \
 --ulimit nofile=1048576:1048576 \
 --add-host Starvers:127.0.0.1 \
 -v /mnt/data_local/starvers_eval:/starvers_eval/data \
-starvers_eval:latest run retrieval_exp
+starvers_eval:latest run synth_perf_eval
 ```
 
-### GraphDB and Jena query plans generation
+### 2.2.1. GraphDB and Jena query plans generation
 
 These scripts generate the query-plan / explain-plan proof used by the "RDF
 stores" section of the paper. They produce plain-text plan files under
@@ -321,7 +321,7 @@ docker run --rm \
   -v "$(pwd)/paper:/starvers_eval/paper" \
   --entrypoint python \
   starvers_eval:latest \
-  /starvers_eval/experiments/analysis/rdf_star_retrieval/scripts/run_jena_analysis.py \
+  /starvers_eval/experiments/query_plans/scripts/run_jena_analysis.py \
     --run-dir /starvers_eval/data/20260426T15-22-09.348 \
     --out /starvers_eval/paper/RDF-star-retrieval/Jena \
     --dataset orkg
@@ -339,15 +339,32 @@ docker run --rm \
   -v "$(pwd)/paper:/starvers_eval/paper" \
   --entrypoint python \
   starvers_eval:latest \
-  /starvers_eval/experiments/analysis/rdf_star_retrieval/scripts/run_graphdb_analysis.py \
+  /starvers_eval/experiments/query_plans/scripts/run_graphdb_analysis.py \
     --run-dir /starvers_eval/data/20260426T15-22-09.348 \
     --out /starvers_eval/paper/RDF-star-retrieval/GraphDB \
     --dataset orkg
 ```
 
+## 2.3. BEAR DQ report
+The following statement checks the BEAR datasets for four different error types and creates a Data Quality report for the BEAR datasets:
+* inconsistent diff sets in BEARB_hour
+* Overstated validity periods in BEARB_hour and BEARB_day
+* Shattered version strings in BEARB_hour and BEARB_day
+* invalid RDF triples in BEARA
 
-## Starversserver Evaluation
-### Pipeline Steps
+```bash
+docker run -d --rm \
+--name starvers_retrieval \
+--env-file .env \
+--ulimit nofile=1048576:1048576 \
+--add-host Starvers:127.0.0.1 \
+-v /mnt/data_local/starvers_eval:/starvers_eval/data \
+starvers_eval:latest run dq_report
+```
+
+
+## 2.4. Starversserver Evaluation
+### 2.4.1.  Pipeline Steps
 
 | # | Step | Docker-Compose Service |
 |---|------|------------------------|
@@ -355,7 +372,7 @@ docker run --rm \
 | 2 | create_plots | `create_plots` |
 
 
-### Run compute 
+### 2.4.2. Run compute 
 Creates a timestamped graph from all snapshots on our local disk and computes metrics for a specific dataset/repository.
 
 ```bash
@@ -377,7 +394,7 @@ Possible parameters for /code/evaluation/compute.py are
 * "<repo_name>",  (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "v": Runs only versioning without metrics computation for the specified repository from a specific timestamp
 * "<repo_name>", (<from_version|from_scratch>), ("yyyyMMdd-HHmmss_sss"), "dm, sm": Runs only thout metrics computation without versioning for the specified repository, with the possibility of running from scratch or from a specific timestamp
 
-### Run evaluation 
+### 2.4.3. Run evaluation 
 Creates plots from the timing files
 
 ```bash

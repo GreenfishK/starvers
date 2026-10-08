@@ -17,9 +17,9 @@ Dataset layout (host): <base>/data/<d1|d2|d3>/dataset.ttl
 Logs:                  <base>/logs/dataset_gen.log
 
 Run either on the host or inside the starvers_eval container:
-    python experiments/retrieval/dataset_gen.py
-The retrieval base dir can be overridden with the RETRIEVAL_BASE env var
-(default in-container: /starvers_eval/data/retrieval_exp).
+    python experiments/synth_perf_eval/dataset_gen.py
+The output base dir can be overridden with the SYNTH_PERF_EVAL_BASE env var
+(default in-container: /starvers_eval/data/synth_perf_eval).
 """
 import os
 import sys
@@ -28,7 +28,7 @@ from pathlib import Path
 from experiments.logging import setup_logging
 
 BASE = Path(os.environ.get(
-    "RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
+    "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 
 DATA_DIR = BASE / "data"
 LOG_FILE = BASE / "output" / "logs" / "dataset_gen" / "dataset_gen.log"

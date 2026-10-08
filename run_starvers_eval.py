@@ -67,21 +67,21 @@ STEPS: list[dict] = [
 EVALUATE_MODES = list(EVALUATE_SCRIPTS)  # ["queries", "update", "dataset_metrics"]
 
 # ---------------------------------------------------------------------------
-# Starvers Retrieval Evaluation
+# Starvers synthetic performance evaluation
 # ---------------------------------------------------------------------------
-RETRIEVAL_BASE = Path("/starvers_eval/data/retrieval_exp")
+SYNTH_PERF_EVAL_BASE = Path("/starvers_eval/data/synth_perf_eval")
 
-# Steps of the retrieval experiment (D1/D2/D3, GraphDB vs Jena TDB2). Additional
-# steps (query execution + timing) will be appended here.
-RETRIEVAL_STEPS: list[dict] = [
+# Steps of the synthetic performance experiment (D1/D2/D3, GraphDB vs Jena
+# TDB2). Additional steps (query execution + timing) will be appended here.
+SYNTH_PERF_EVAL_STEPS: list[dict] = [
     {"number": 1, "name": "dataset generation",
-     "script": Path("/starvers_eval/experiments/retrieval/dataset_gen.py")},
+     "script": Path("/starvers_eval/experiments/synth_perf_eval/dataset_gen.py")},
     {"number": 2, "name": "ingest",
-     "script": Path("/starvers_eval/experiments/retrieval/ingest.py")},
+     "script": Path("/starvers_eval/experiments/synth_perf_eval/ingest.py")},
     {"number": 3, "name": "evaluate",
-     "script": Path("/starvers_eval/experiments/retrieval/evaluate.py")},
+     "script": Path("/starvers_eval/experiments/synth_perf_eval/evaluate.py")},
     {"number": 4, "name": "visualize",
-     "script": Path("/starvers_eval/experiments/retrieval/visualize.py")},
+     "script": Path("/starvers_eval/experiments/synth_perf_eval/visualize.py")},
 ]
 
 EXECUTION_CSV = "execution.csv"
@@ -308,22 +308,25 @@ def cmd_run(args) -> None:
         step = _resolve_step(args.step_id)
         execute_steps([step], run_dir)
 
-    elif args.subcommand == "retrieval_exp":
-        cmd_retrieval_exp(args)
+    elif args.subcommand == "synth_perf_eval":
+        cmd_synth_perf_eval(args)
+
+    elif args.subcommand == "dq_report":
+        cmd_dq_report(args)
 
     else:
         print(f"Unknown run subcommand: {args.subcommand}", file=sys.stderr)
         sys.exit(1)
 
 
-def cmd_retrieval_exp(args) -> None:
-    """Run the Starvers Retrieval Evaluation pipeline (D1/D2/D3, two stores)."""
-    RETRIEVAL_BASE.mkdir(parents=True, exist_ok=True)
+def cmd_synth_perf_eval(args) -> None:
+    """Run the Starvers synthetic performance evaluation (D1/D2/D3, two stores)."""
+    SYNTH_PERF_EVAL_BASE.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
-    env["RETRIEVAL_BASE"] = str(RETRIEVAL_BASE)
-    print(f"[starvers_eval] Retrieval base: {RETRIEVAL_BASE}")
+    env["SYNTH_PERF_EVAL_BASE"] = str(SYNTH_PERF_EVAL_BASE)
+    print(f"[starvers_eval] Synth perf eval base: {SYNTH_PERF_EVAL_BASE}")
 
-    for step in RETRIEVAL_STEPS:
+    for step in SYNTH_PERF_EVAL_STEPS:
         script = step["script"]
         if not script.exists():
             print(f"[starvers_eval] ERROR: Script not found: {script}", file=sys.stderr)
@@ -331,17 +334,36 @@ def cmd_retrieval_exp(args) -> None:
         suffix = script.suffix
         cmd = (["bash", str(script)] if suffix == ".sh"
                else ["python", "-u", str(script)])
-        print(f"\n[starvers_eval] Running retrieval step {step['number']}: "
+        print(f"\n[starvers_eval] Running step {step['number']}: "
               f"{step['name']} ({script.name})")
         print(f"[starvers_eval] Command: {' '.join(cmd)}\n")
         rc = subprocess.run(cmd, env=env).returncode
         if rc != 0:
-            print(f"[starvers_eval] ERROR: retrieval step '{step['name']}' "
+            print(f"[starvers_eval] ERROR: step '{step['name']}' "
                   f"failed (rc={rc})", file=sys.stderr)
             sys.exit(rc)
 
-    print("[starvers_eval] Retrieval experiment steps completed successfully "
-          f"in {RETRIEVAL_BASE}")
+    print("[starvers_eval] Synthetic performance evaluation steps completed "
+          f"successfully in {SYNTH_PERF_EVAL_BASE}")
+
+
+def cmd_dq_report(args) -> None:
+    """Generate the BEAR data-quality report for the most recent run."""
+    run_dir = _last_run_dir()
+    if run_dir is None:
+        print("[starvers_eval] No previous runs found.", file=sys.stderr)
+        sys.exit(1)
+    script = Path("/starvers_eval/experiments/dq/bear_dq.py")
+    if not script.exists():
+        print(f"[starvers_eval] ERROR: Script not found: {script}", file=sys.stderr)
+        sys.exit(1)
+    print(f"[starvers_eval] DQ report for run: {run_dir}")
+    env = os.environ.copy()
+    env["RUN_DIR"] = str(run_dir)
+    rc = subprocess.run(["python", "-u", str(script)], env=env).returncode
+    if rc != 0:
+        print(f"[starvers_eval] ERROR: DQ report failed (rc={rc})", file=sys.stderr)
+        sys.exit(rc)
 
 
 def cmd_continue(args) -> None:
@@ -443,7 +465,8 @@ def build_parser() -> argparse.ArgumentParser:
     after_p = run_sub.add_parser("step_at", help="Run a step for a specific run")
     after_p.add_argument("step_id", help="Step number (1-7) or name")
     after_p.add_argument("timestamp", help="Run timestamp")
-    run_sub.add_parser("retrieval_exp", help="Run the Starvers Retrieval Evaluation pipeline")
+    run_sub.add_parser("synth_perf_eval", help="Run the Starvers synthetic performance evaluation pipeline")
+    run_sub.add_parser("dq_report", help="Generate the BEAR data-quality report")
 
 
     sub.add_parser("continue", help="Continue the last failed/interrupted run")

@@ -22,4 +22,4 @@ evaluation/starvers/experiments/benchmark/2_preprocess_data/RDFValidator/target/
 paper/
 
 evaluation/starvers/experiments/benchmark/*/__pycache__
-evaluation/starvers/experiments/analysis/rdf_star_retrieval/scripts/__pycache__/
+evaluation/starvers/experiments/query_plans/scripts/__pycache__/

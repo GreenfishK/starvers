@@ -26,7 +26,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON, POST
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
+BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 DB_ROOT = BASE / "databases"
 CONFIG_DIR = BASE / "configs"
 OUTPUT = BASE / "output"
@@ -34,7 +34,7 @@ MEAS_DIR = OUTPUT / "measurements"
 MEAS_FILE = MEAS_DIR / "retrieval.csv"
 
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
-QUERY_FILE = Path("/starvers_eval/experiments/retrieval/decorator_query.txt")
+QUERY_FILE = Path("/starvers_eval/experiments/synth_perf_eval/decorator_query.txt")
 
 POLICY = "tb_sr_rs"
 DATASETS = ["d1", "d2", "d3"]
@@ -108,7 +108,7 @@ def main() -> None:
     _, log = setup_logging("evaluate")
     config = load_config()
     query = QUERY_FILE.read_text()
-    log.info("RETRIEVAL_BASE = %s; RUNS = %d", BASE, RUNS)
+    log.info("SYNTH_PERF_EVAL_BASE = %s; RUNS = %d", BASE, RUNS)
     log.info("Query:\n%s", query)
 
     MEAS_DIR.mkdir(parents=True, exist_ok=True)

@@ -22,7 +22,7 @@ import pandas as pd
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
+BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 OUTPUT = BASE / "output"
 MEAS_DIR = OUTPUT / "measurements"
 MEAS_FILE = MEAS_DIR / "retrieval.csv"
@@ -141,7 +141,7 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
 def main() -> None:
     os.environ["RUN_DIR"] = str(BASE)
     _, log = setup_logging("visualize")
-    log.info("RETRIEVAL_BASE = %s", BASE)
+    log.info("SYNTH_PERF_EVAL_BASE = %s", BASE)
 
     averages = load_averages()
     log.info("Averaged query times (s): %s", averages)

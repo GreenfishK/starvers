@@ -7,7 +7,7 @@ Uses the shared triple_store_mgmt shell scripts (graphdb_mgmt.sh /
 jenatdb2_mgmt.sh) and the endpoints/mgmt paths from eval_setup.toml, so no
 ports/hosts/Java paths are hardcoded here.
 
-Layout produced (relative to RETRIEVAL_BASE; each repository is
+Layout produced (relative to SYNTH_PERF_EVAL_BASE; each repository is
 <dataset>_tb_sr_rs):
     <base>/databases/graphdb/<dataset>_tb_sr_rs/
     <base>/databases/jenatdb2/<dataset>_tb_sr_rs/
@@ -23,7 +23,7 @@ import tomli
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("RETRIEVAL_BASE", "/starvers_eval/data/retrieval_exp"))
+BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 DATA_DIR = BASE / "data"
 DB_ROOT = BASE / "databases"
 CONFIG_DIR = BASE / "configs"
@@ -53,7 +53,7 @@ def main() -> None:
     os.environ["RUN_DIR"] = str(BASE)
     _, log = setup_logging("ingest")
     config = load_config()
-    log.info("RETRIEVAL_BASE = %s", BASE)
+    log.info("SYNTH_PERF_EVAL_BASE = %s", BASE)
     DB_ROOT.mkdir(parents=True, exist_ok=True)
 
     for dataset in DATASETS:

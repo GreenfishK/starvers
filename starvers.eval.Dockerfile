@@ -146,8 +146,9 @@ COPY evaluation/starvers/experiments/eval_setup.toml  /starvers_eval/configs/eva
 COPY evaluation/starvers/experiments/benchmark /starvers_eval/scripts
 COPY evaluation/starvers/experiments/triple_store_mgmt /starvers_eval/scripts/triple_store_mgmt
 COPY evaluation/starvers/experiments/logging.py  /starvers_eval/experiments/logging.py
-COPY evaluation/starvers/experiments/analysis /starvers_eval/experiments/analysis
-COPY evaluation/starvers/experiments/retrieval /starvers_eval/experiments/retrieval
+COPY evaluation/starvers/experiments/query_plans /starvers_eval/experiments/query_plans
+COPY evaluation/starvers/experiments/dq /starvers_eval/experiments/dq
+COPY evaluation/starvers/experiments/synth_perf_eval /starvers_eval/experiments/synth_perf_eval
 COPY run_starvers_eval.py /starvers_eval/run_starvers_eval.py
 
 RUN pip install --no-cache-dir -r requirements.txt
