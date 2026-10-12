@@ -47,7 +47,7 @@ from starvers.starvers import TripleStoreEngine, split_prefixes_query
 sys.path.append(str(Path("/starvers_eval/scripts/5_construct_queries").resolve()))
 from construct_queries import split_solution_modifiers_query
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -769,6 +769,8 @@ def write_query_counts():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    log_start("Start Preprocess Data", LOG)
+
     # Phase 1: clean all raw datasets (parallelised across files)
     clean_datasets()
 
@@ -781,3 +783,4 @@ if __name__ == "__main__":
     # Phase 3: count all query sets (including orkg extracted above)
     #write_query_counts()
     LOG.info("Preprocessing complete.")
+    log_end("End Preprocess Data", LOG)

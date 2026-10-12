@@ -5,7 +5,7 @@ import pandas as pd
 import tomli
 from pathlib import Path
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -37,6 +37,7 @@ df_cnt_rows = pd.DataFrame(columns=['triple_store', 'dataset', 'query_set', 'sna
 # ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
+log_start("Start Verify Results", LOG)
 for triple_store in triple_stores:         
     for dataset in datasets:
         # Check size of all result sets
@@ -62,5 +63,6 @@ df_cnt_rows = df_cnt_rows.unstack()
 
 LOG.info(df_cnt_rows.index)
 LOG.info(df_cnt_rows)
+log_end("End Verify Results", LOG)
 
 

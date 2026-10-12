@@ -13,7 +13,7 @@ import psutil
 
 from starvers.starvers import TripleStoreEngine
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -212,7 +212,7 @@ def run_mgmt(*cmd: str) -> None:
 def insert_ic0_and_cbs_rdf_star(triple_store: str, chunk_size: int, dataset: str, policy: str,
                         source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime, mode: str):
     triple_store_name = triple_store.lower()
-    LOG.info(f"Constructing timestamped RDF-star dataset from ICs and changesets triple store {triple_store} and chunk size {chunk_size}.")
+    LOG.info(f"Constructing timestamped RDF-star dataset from ICs and changesets with triple store {triple_store} and chunk size {chunk_size}.")
 
     repository = policy + "_" + dataset
     database_dir = f"{databases_dir}/{triple_store_name}/{repository}"
@@ -309,6 +309,7 @@ def insert_ic0_and_cbs_rdf_star(triple_store: str, chunk_size: int, dataset: str
 def main():
     # Dedicated run directory for update repositories/database files so that
     # running the update evaluation never overwrites ingest-created repositories.
+    log_start("Start Update Evaluation", LOG)
     os.makedirs(databases_dir, exist_ok=True)
 
     chunk_size = 7000
@@ -329,6 +330,7 @@ def main():
                         last_version=total_versions,
                         init_timestamp=init_version_timestamp)
 
+    log_end("End Update Evaluation", LOG)
 
 if __name__ == "__main__":
     main()

@@ -9,7 +9,7 @@ import re
 import tomli
 
 from starvers.starvers import timestamp_query, split_prefixes_query
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -84,6 +84,7 @@ def _count_queries():
 # Execution
 # ---------------------------------------------------------------------------
 def main():
+    log_start("Start Construct Queries", LOG)
     init_version_timestamp = datetime(2022,10,1,12,0,0,0,LOCAL_TIMEZONE)
     vers_ts = init_version_timestamp
 
@@ -211,6 +212,7 @@ def main():
     LOG.info("Counting generated queries.")
     _count_queries()
     LOG.info(f"Finished counting generated queries. File saved to {os.environ['RUN_DIR']}/output/measurements/queries_counts.csv")
+    log_end("End Construct Queries", LOG)
 
 if __name__ == "__main__":
     main()

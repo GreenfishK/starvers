@@ -8,7 +8,7 @@ import psutil
 from pathlib import Path
 
 from starvers._helper import versioning_timestamp_format
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -450,6 +450,7 @@ def construct_TB(source_ic0: str, source_cs: str, destination: str, last_version
 # ---------------------------------------------------------------------------
 # Execution
 # ---------------------------------------------------------------------------
+log_start("Start Construct Datasets", LOG)
 LOG.info(f"Starting procedure for constructing the different dataset variants for the datasets: {datasets}")
 for dataset in datasets:
     if dataset not in allowed_datasets:
@@ -493,3 +494,4 @@ for dataset in datasets:
                      basename_length=ic_basename_lengths[dataset])
     
 LOG.info("Finished with constructing datasets.")
+log_end("End Construct Datasets", LOG)

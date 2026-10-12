@@ -12,7 +12,7 @@ import logging
 import sys
 import shutil
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -315,6 +315,9 @@ def run_ingestion(job: Job, run: int):
 def main():
     global _results
 
+    BASE_LOG_DIR, LOG = setup_logging("ingest")
+    log_start("Start Ingest", LOG)
+
     # Load whatever is already on disk (may be empty on first run)
     _results = load_or_init_measurements()
 
@@ -334,6 +337,8 @@ def main():
     if _worker_exception is not None:
         print(f"[ingest] Worker failed: {_worker_exception}", file=sys.stderr)
         sys.exit(1)
+
+    log_end("End Ingest", LOG)
 
 
 if __name__ == "__main__":

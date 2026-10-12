@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 import requests
 import tomli
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -291,7 +291,11 @@ def download_query_sets(config: dict):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    log_start("Start Download Data", LOG)
+
     _init_csvs()
 
     download_datasets(static_eval_params)
     download_query_sets(static_eval_params)
+
+    log_end("End Download Data", LOG)

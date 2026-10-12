@@ -17,7 +17,7 @@ import psutil
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 import socket
 
-from experiments.logging import setup_logging
+from experiments.logging import setup_logging, log_start, log_end
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -360,6 +360,7 @@ def upsert_rows(df, new_rows, header, key_cols=('triplestore', 'dataset', 'polic
 # Execution
 # ---------------------------------------------------------------------------
 def main():
+    log_start("Start Evaluate Queries", LOG)
     header = [
         'triplestore', 'dataset', 'policy', 'query_set',
         'snapshot', 'snapshot_ts', 'query',
@@ -386,6 +387,8 @@ def main():
         # Write back after each combination so progress isn't lost on crash
         LOG.info(f"Writing results to {TIME_FILE}")
         time_df.to_csv(TIME_FILE, sep=";", index=False, mode='w', header=True)
+
+    log_end("End Evaluate Queries", LOG)
 
 
 if __name__ == "__main__":

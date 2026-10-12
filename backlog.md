@@ -34,3 +34,14 @@ The necessary additions must be placed in the following files
 * nginx file: nginx_default.conf
 * A new directory under evaluation/starversserver/gui
 * Docker commands for the README.md for executing the GUI in a container, thereby making the subpage under https://starvers.ec.tuwien.ac.at/evaluation/starversserver accessible
+
+
+## Ingest
+Replace the labeling in the ingest plots with a symbol for each approach. 
+* tb_sr_ng should get a "x"
+* ic_sr_ng should get the symbol used for "copy this code", such as in chatGPT, i.e. two overlapping squares with rounded corners
+* tb_sr_rs should get a star
+* tb_sr_re should get a star in a circle
+* ostrich should get an ostrich
+
+Add a legend

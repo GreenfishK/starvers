@@ -40,6 +40,13 @@ import statistics
 import sys
 from pathlib import Path
 
+from experiments.logging import setup_logging, log_start, log_end
+
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
+BASE_LOG_DIR, LOG = setup_logging("evaluate_dataset_metrics")
+
 SNAPSHOT_DIR = "alldata.IC.nt"
 CHANGESET_DIR = "alldata.CB_computed.nt"
 CHANGESET_ORIG_DIR = "alldata.CB.nt"
@@ -193,16 +200,16 @@ def write_csv(metrics_by_dataset: dict, out_path: Path) -> None:
 
 
 def main() -> None:
+    log_start("Start Evaluate Dataset Metrics", LOG)
     run_dir = Path(os.environ["RUN_DIR"])
     rawdata_dir = run_dir / "rawdata"
     if not rawdata_dir.is_dir():
-        print(f"[evaluate_dataset_metrics] ERROR: rawdata directory not found: {rawdata_dir}",
-              file=sys.stderr)
+        LOG.error(f"rawdata directory not found: {rawdata_dir}")
         sys.exit(1)
 
     datasets = find_datasets(rawdata_dir)
     if not datasets:
-        print(f"[evaluate_dataset_metrics] ERROR: no datasets found in {rawdata_dir}", file=sys.stderr)
+        LOG.error(f"no datasets found in {rawdata_dir}")
         sys.exit(1)
 
     metrics_computed: dict = {}
@@ -210,7 +217,7 @@ def main() -> None:
 
     for d in datasets:
         name = d.name
-        print(f"[evaluate_dataset_metrics] Computing metrics for dataset '{name}'...", flush=True)
+        LOG.info(f"Computing metrics for dataset '{name}'...")
 
         snapshots = load_snapshots(d / SNAPSHOT_DIR)
 
@@ -223,12 +230,12 @@ def main() -> None:
         metrics_computed[name] = compute_dataset_metrics(snapshots, deltas_computed)
         metrics_orig[name] = compute_dataset_metrics(snapshots, deltas_orig)
 
-        print(f"[evaluate_dataset_metrics]   computed change ratio: {metrics_computed[name]['mean_change_ratio']:.5f} "
-               f"(insertion {metrics_computed[name]['mean_insertion_ratio']:.5f}, "
-               f"deletion {metrics_computed[name]['mean_deletion_ratio']:.5f})", flush=True)
-        print(f"[evaluate_dataset_metrics]   orig     change ratio: {metrics_orig[name]['mean_change_ratio']:.5f} "
-               f"(insertion {metrics_orig[name]['mean_insertion_ratio']:.5f}, "
-               f"deletion {metrics_orig[name]['mean_deletion_ratio']:.5f})", flush=True)
+        LOG.info(f"  computed change ratio: {metrics_computed[name]['mean_change_ratio']:.5f} "
+                 f"(insertion {metrics_computed[name]['mean_insertion_ratio']:.5f}, "
+                 f"deletion {metrics_computed[name]['mean_deletion_ratio']:.5f})")
+        LOG.info(f"  orig     change ratio: {metrics_orig[name]['mean_change_ratio']:.5f} "
+                 f"(insertion {metrics_orig[name]['mean_insertion_ratio']:.5f}, "
+                 f"deletion {metrics_orig[name]['mean_deletion_ratio']:.5f})")
 
     measurements_dir = run_dir / "output" / "measurements"
     measurements_dir.mkdir(parents=True, exist_ok=True)
@@ -236,8 +243,9 @@ def main() -> None:
     write_csv(metrics_computed, measurements_dir / OUTPUT_CSV)
     write_csv(metrics_orig, measurements_dir / OUTPUT_CSV_ORIG)
 
-    print(f"[evaluate_dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV}")
-    print(f"[evaluate_dataset_metrics] Wrote {measurements_dir / OUTPUT_CSV_ORIG}")
+    LOG.info(f"Wrote {measurements_dir / OUTPUT_CSV}")
+    LOG.info(f"Wrote {measurements_dir / OUTPUT_CSV_ORIG}")
+    log_end("End Evaluate Dataset Metrics", LOG)
 
 
 if __name__ == "__main__":

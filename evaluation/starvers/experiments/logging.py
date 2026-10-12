@@ -49,3 +49,15 @@ def setup_logging(log_file_name: str, sub_dir: str | None = None) -> tuple[Path,
     logger.addHandler(console_handler)
 
     return LOG_BASE_DIR, logger
+
+
+def log_start(message:str, logger: logging.Logger):
+    logger.info("================== START =====================")
+    logger.info(f"= {message}")
+    logger.info("==============================================")
+
+
+def log_end(message:str, logger: logging.Logger):
+    logger.info("=================== END ======================")
+    logger.info(f"= {message}")
+    logger.info("==============================================")
