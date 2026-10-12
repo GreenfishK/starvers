@@ -314,8 +314,8 @@ def main():
 
     chunk_size = 7000
     runs = 1
-    for dataset in datasets:
-        for policy in policies:
+    for policy in policies:
+        for dataset in datasets:
             for triple_store in triple_stores:
                 data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
                 total_versions = dataset_versions[dataset]
