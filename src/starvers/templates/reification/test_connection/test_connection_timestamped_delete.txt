@@ -2,6 +2,6 @@ PREFIX pub: <http://ontology.ontotext.com/taxonomy/>
 {0}
 delete where
 {{
-_:b rdf:reifies << <http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil' >> .
-_:b ?vers ?valid_date .
+?b rdf:reifies << <http://ontology.ontotext.com/resource/tsk9hdnas934> pub:countryOfCitizenship 'Brazil' >> .
+?b ?vers ?valid_date .
 }}
