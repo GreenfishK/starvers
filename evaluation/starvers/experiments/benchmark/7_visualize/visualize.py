@@ -60,7 +60,8 @@ POLICY_COLOR_FALLBACKS = ["#646363", "#6AAAA5", "#EEB473", "#CD81A8"]
 
 TS_COLORS_CHART = {
     "graphdb": "#006699",
-    "jenatdb2": "#E18922",
+    "jenatdb2_rdf_star": "#E18922",
+    "jenatdb2_rdf1_2": "#7C3AED",
     "ostrich": "#BA4682",
     "ostrich_aggchange": "#007E71",
 }
@@ -111,6 +112,18 @@ def _policy_color_map(policies: list[str]) -> dict[str, str]:
 def _policy_label(policy: str) -> str:
     """Human-readable policy name (drops the redundant '_sr' token)."""
     return policy.replace("_sr", "")
+
+
+def _ts_label(ts: str) -> str:
+    """Human-readable triple-store name for legends."""
+    labels = {
+        "graphdb": "GraphDB",
+        "jenatdb2_rdf_star": "Jena RDF Star",
+        "jenatdb2_rdf1_2": "Jena RDF 1.2",
+        "ostrich": "Ostrich",
+        "ostrich_aggchange": "Ostrich (agg)",
+    }
+    return labels.get(ts, ts)
 
 
 def _apply_time_scale(ax, t_min: float, t_max: float) -> None:
@@ -308,7 +321,7 @@ def create_plot_ingest():
 
     # ── Legend 2: triple-store colours — colour = triplestore ──
     store_handles = [
-        Patch(facecolor=ts_colors[ts], edgecolor="black", label=ts)
+        Patch(facecolor=ts_colors[ts], edgecolor="black", label=_ts_label(ts))
         for ts in ts_colors
     ]
 
@@ -528,9 +541,10 @@ def create_ltx_table_query_perf():
                    "query_set": "category", "snapshot": "string",
                    "query": "string", "rewriting_time": "float"},
         )
+        query_build_time_data = query_build_time_data.rename(columns={"triple_store": "triplestore"})
         queries_data = queries_data.merge(
             query_build_time_data,
-            on=["dataset", "policy", "query_set", "snapshot", "query"],
+            on=["triplestore", "dataset", "policy", "query_set", "snapshot", "query"],
             how="left",
         )
         queries_data["rewriting_time"] = queries_data["rewriting_time"].fillna(0)
@@ -582,8 +596,8 @@ def create_ltx_table_query_perf():
     if not present:
         LOG.warning("No triple store data in queries_time.csv — skipping.")
         return
-    # Deterministic display order (GraphDB, Jena TDB2, Ostrich) as in the paper.
-    store_order = ["graphdb", "jenatdb2", "ostrich", "ostrich_aggchange"]
+    # Deterministic display order (GraphDB, Jena RDF Star, Jena RDF 1.2, Ostrich) as in the paper.
+    store_order = ["graphdb", "jenatdb2_rdf_star", "jenatdb2_rdf1_2", "ostrich", "ostrich_aggchange"]
     present_stores = [s for s in store_order if s in present] + \
                      sorted(set(present) - set(store_order))
     if not present_stores:

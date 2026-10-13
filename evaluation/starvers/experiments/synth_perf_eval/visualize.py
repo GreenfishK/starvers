@@ -31,8 +31,8 @@ OUT_FILE = TABLES_DIR / "retrieval_table.tex"
 
 POLICY = "tb_sr_rs"
 DATASETS = ["d1", "d2", "d3"]
-STORES = ["graphdb", "jenatdb2"]
-STORE_LABELS = {"graphdb": "GraphDB", "jenatdb2": "Jena TDB2"}
+STORES = ["graphdb", "jenatdb2_RDF_star"]
+STORE_LABELS = {"graphdb": "GraphDB", "jenatdb2_RDF_star": "Jena RDF Star"}
 
 # Fixed dataset characteristics / hypotheses (from the paper's tab:datasets).
 # The average times are filled in from retrieval.csv; the left-hand columns are
@@ -118,7 +118,7 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
                 chars["large"],
                 chars["hypothesis"],
                 cell_time(averages, dataset, "graphdb"),
-                cell_time(averages, dataset, "jenatdb2"),
+                cell_time(averages, dataset, "jenatdb2_RDF_star"),
             )
         )
         lines.append(r"\addlinespace")

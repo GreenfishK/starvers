@@ -41,8 +41,10 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None, mo
         _templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/decorator"
     elif mode == "reification":
         _templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification"
+    elif mode == "reification_rdf12":
+        _templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification_rdf12"
     else:
-        raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator' or 'reification'.".format(mode))
+        raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator', 'reification', or 'reification_rdf12'.".format(mode))
 
 
     logger.info("Creating timestamped query ...")
@@ -200,6 +202,12 @@ def timestamp_query(query: str, version_timestamp: Optional[datetime] = None, mo
                         "?valid_until_{0}".format(str(triple_stmts_cnt)),
                         bgp_identifier,
                         str(triple_stmts_cnt))
+            elif mode == "reification_rdf12":
+                ver_block += templ.format(triple_n3,
+                        "?valid_from_{0}".format(str(triple_stmts_cnt)),
+                        "?valid_until_{0}".format(str(triple_stmts_cnt)),
+                        bgp_identifier,
+                        str(triple_stmts_cnt))
 
         # Replace dummy triple with versioned triple
         dummy_triple = rdflib.term.Literal('__{0}dummy_subject__'.format(bgp_identifier)).n3() + " "\
@@ -252,8 +260,10 @@ class TripleStoreEngine:
             self._templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/decorator"
         elif mode == "reification":
             self._templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification"
+        elif mode == "reification_rdf12":
+            self._templates_dir = os.path.join(os.path.dirname(__file__), "templates") + "/reification_rdf12"
         else:
-            raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator' or 'reification'.".format(mode))
+            raise WrongInputFormatException("The provided mode {0} is not supported. Use 'decorator', 'reification', or 'reification_rdf12'.".format(mode))
 
         self.sparql_get = SPARQLWrapper(query_endpoint)
         self.sparql_get.setHTTPAuth(DIGEST)
@@ -361,7 +371,7 @@ class TripleStoreEngine:
                     "and an artificial end date 9999-12-31T00:00:00.000+02:00".format(version_timestamp))
 
 
-    def query(self, select_statement: str, timestamp: Optional[datetime] = None, yn_timestamp_query: bool = True, as_df: bool = True) -> Union[pd.DataFrame, Wrapper.QueryResult]:
+    def query(self, select_statement: str, timestamp: Optional[datetime] = None, yn_timestamp_query: bool = True, as_df: bool = True, mode: Optional[str] = None) -> Union[pd.DataFrame, Wrapper.QueryResult]:
         """
         Executes the SPARQL select statement and returns a result set. If :timestamp is provided the result set
         will be a snapshot of the data as of :timestamp. Otherwise, the most recent version of the data will be returned.
@@ -372,10 +382,14 @@ class TripleStoreEngine:
         Otherwise, the select statement is executed as it is against the RDF-star store. 
         Set this flag to 'False' and leave :timestamp blank if :select_statement is a timestamped query already.
         :param as_df: If true, the result set will be converted into a pandas dataframe.
+        :param mode: The starvers versioning mode used to transform the query ('decorator', 'reification', or
+        'reification_rdf12'). Defaults to the mode the engine was constructed with. Only relevant when
+        :yn_timestamp_query is True.
         """
 
         if yn_timestamp_query:
-            timestamped_query, version_timestamp = timestamp_query(query=select_statement, version_timestamp=timestamp)
+            effective_mode = mode if mode is not None else self.mode
+            timestamped_query, version_timestamp = timestamp_query(query=select_statement, version_timestamp=timestamp, mode=effective_mode)
 
             logger.info("Timestamped query with timestamp {0} being executed:"
                          " \n {1}".format(version_timestamp, timestamped_query))

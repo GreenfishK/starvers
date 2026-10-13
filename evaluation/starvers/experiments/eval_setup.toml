@@ -10,11 +10,17 @@
         bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
         orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
 
-    [evaluations.jenatdb2]
+    [evaluations.jenatdb2_RDF_star]
         bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
         bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
         bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
         orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
+
+    [evaluations.jenatdb2_RDF1_2]
+        bearb_day   = ["ic_sr_ng", "tb_sr_ng", "tb_sr_re"]
+        bearb_hour = ["ic_sr_ng", "tb_sr_ng", "tb_sr_re"]
+        bearc      = ["ic_sr_ng", "tb_sr_ng", "tb_sr_re"]
+        orkg       = ["ic_sr_ng", "tb_sr_ng", "tb_sr_re"]
 
     [evaluations.ostrich]
         bearb_day   = ["ostrich"]
@@ -30,7 +36,8 @@
 
 [rdf_stores]
     graphdb = {get = "http://Starvers:7200/repositories/{repo}", post = "http://Starvers:7200/repositories/{repo}/statements", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
-    jenatdb2 = {get = "http://Starvers:3030/{repo}/sparql", post = "http://Starvers:3030/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
+    jenatdb2_RDF_star = {get = "http://Starvers:3030/{repo}/sparql", post = "http://Starvers:3030/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_RDF_star.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
+    jenatdb2_RDF1_2 = {get = "http://Starvers:3032/{repo}/sparql", post = "http://Starvers:3032/{repo}/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_rdf1_2_mgmt.sh", dry_run_query = "select ?s ?p ?o {?s ?p ?o .} limit 10"}
     ostrich = {get = "http://Starvers:42564/sparql", post = "http://Starvers:42564/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh", dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"}
     ostrich_aggchange = {get = "http://Starvers:42564/sparql", post = "http://Starvers:42564/update", mgmt_script = "/starvers_eval/scripts/triple_store_mgmt/ostrich_aggchange_mgmt.sh", dry_run_query = "select ?s ?p ?o {GRAPH <version:0> {?s ?p ?o .}} limit 10"}
 

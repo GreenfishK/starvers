@@ -66,6 +66,12 @@ DATASET_DIR_OR_FILE_MAP = {
     "tb_sr_re": "alldata.TB_star_reif.ttl"
 }
 
+def get_dataset_file(triple_store: str, policy: str) -> str:
+    """Return the raw dataset file for the given triple store / policy."""
+    if policy == "tb_sr_re" and triple_store == "jenatdb2_RDF1_2":
+        return "alldata.TB_rdf1_2_reif.ttl"
+    return DATASET_DIR_OR_FILE_MAP[policy]
+
 RUNS = 10
 
 # ---------------------------------------------------------------------------
@@ -272,13 +278,13 @@ def run_ingestion(job: Job, run: int):
     log(job.triplestore, f"Run {run}: Starting {job.triplestore} for dataset={dataset}, policy={policy}")
     
     # Setup environment
-    db_root = Path(f"{os.environ['RUN_DIR']}/databases/{job.triplestore}")
+    db_root = Path(f"{os.environ['RUN_DIR']}/databases/queries/{job.triplestore}")
     database_dir = db_root / repository_id
 
     mgmt_script = static_eval_params["rdf_stores"][job.triplestore]["mgmt_script"]
     subprocess.run([f"{mgmt_script}", "create_env", policy, dataset, database_dir, CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
     
-    dataset_dir = Path(f"{os.environ['RUN_DIR']}/rawdata/{dataset}/{DATASET_DIR_OR_FILE_MAP[policy]}")
+    dataset_dir = Path(f"{os.environ['RUN_DIR']}/rawdata/{dataset}/{get_dataset_file(job.triplestore, policy)}")
 
     # Ingest and measure time
     start = time.time()

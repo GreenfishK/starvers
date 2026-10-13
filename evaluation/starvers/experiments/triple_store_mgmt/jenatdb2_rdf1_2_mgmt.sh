@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Logging variables
-log_file=${RUN_DIR}/output/logs/jenatdb2_mgmt.txt
+log_file=${RUN_DIR}/output/logs/jenatdb2_rdf1_2_mgmt.txt
 log_dir=$(dirname "$log_file")
 log_timestamp() { date +%Y-%m-%d\ %A\ %H:%M:%S; }
 log_level="root:INFO"
@@ -17,22 +17,23 @@ fi
 
 
 
+
 startup() {
     echo "$(log_timestamp) ${log_level}:Update query timeouts to 30 sec ..." >> $log_file
     repositoryID=${policy}_${dataset}
 
     # config file must exist at this point
-    ttl_file="${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl"
+    ttl_file="${config_dir}/jenatdb2_RDF1_2/${repositoryID}/${repositoryID}.ttl"
     sed -i 's/\(ja:cxtValue "\)0,0/\130000,30000/' "$ttl_file"
 
     echo "$(log_timestamp) ${log_level}:Start database server in background..." >> $log_file
-    /jena-fuseki/fuseki-server --config=$ttl_file --port=3030 --tdb2 >> "$log_file" 2>&1 &
+    /jena-fuseki-RDF1_2/fuseki-server --config=$ttl_file --port=3032 --tdb2 >> "$log_file" 2>&1 &
     db_pid=$!  # capture immediately
     echo "$(log_timestamp) ${log_level}:Fuseki PID is $db_pid" >> $log_file
 
     timeout=120
     elapsed=0
-    until curl -s --max-time 5 -X POST http://localhost:3030/${repositoryID}/sparql \
+    until curl -s --max-time 5 -X POST http://localhost:3032/${repositoryID}/sparql \
         -H "Content-Type: application/sparql-query" \
         --data "SELECT * WHERE { ?s ?p ?o } LIMIT 1" \
         >/dev/null 2>&1
@@ -49,7 +50,7 @@ startup() {
         fi
     done
 
-    echo $db_pid > /tmp/jenatdb2_${policy}_${dataset}.pid
+    echo $db_pid > /tmp/jenatdb2_rdf1_2_${policy}_${dataset}.pid
     echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
 }
 
@@ -61,14 +62,14 @@ shutdown() {
     # Locate PID file
     # --------------------------------------------------
     shopt -s nullglob
-    pidfiles=(/tmp/jenatdb2_*.pid)
+    pidfiles=(/tmp/jenatdb2_rdf1_2_*.pid)
     shopt -u nullglob
     pidfile="${pidfiles[0]:-}"
 
     if [ -z "$pidfile" ]; then
         echo "$(log_timestamp) ${log_level}:No PID file found, attempting fallback kill" >> "$log_file"
         pkill -9 -f ${JAVA_HOME}/bin/java 2>/dev/null || true
-        fuser -k 3030/tcp 2>/dev/null || true
+        fuser -k 3032/tcp 2>/dev/null || true
     else
         PID=$(cat "$pidfile")
         echo "$(log_timestamp) ${log_level}:Found PID file $pidfile with PID $PID" >> "$log_file"
@@ -112,17 +113,17 @@ shutdown() {
     # Wait for port release
     # --------------------------------------------------
     for i in {1..30}; do
-        if ! ss -ltnp | grep -q ':3030'; then
-            echo "$(log_timestamp) ${log_level}:Port 3030 released after $i seconds" >> "$log_file"
+        if ! ss -ltnp | grep -q ':3032'; then
+            echo "$(log_timestamp) ${log_level}:Port 3032 released after $i seconds" >> "$log_file"
             break
         fi
-        echo "$(log_timestamp) ${log_level}:Waiting for port 3030 to be released ($i/30)" >> "$log_file"
+        echo "$(log_timestamp) ${log_level}:Waiting for port 3032 to be released ($i/30)" >> "$log_file"
         sleep 1
     done
 
     # Final check
-    if ss -ltnp | grep -q ':3030'; then
-        echo "$(log_timestamp) ${log_level}:ERROR - Port 3030 still in use after timeout" >> "$log_file"
+    if ss -ltnp | grep -q ':3032'; then
+        echo "$(log_timestamp) ${log_level}:ERROR - Port 3032 still in use after timeout" >> "$log_file"
         exit 1
     fi
 
@@ -136,8 +137,8 @@ dump_repo() {
     # TODO: Test this function
 
     # Run CONSTRUCT query
-    /jena-fuseki/bin/s-query \
-        --service "http://Starvers:3030/${repositoryID}/query" \
+    /jena-fuseki-RDF1_2/bin/s-query \
+        --service "http://Starvers:3032/${repositoryID}/query" \
         "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         PREFIX vers: <https://github.com/GreenfishK/DataCitation/versioning/>
 
@@ -156,40 +157,41 @@ dump_repo() {
 }
 
 create_env() {
-    if ps aux | grep '[j]ena-fuseki/fuseki-server.jar' >/dev/null; then
+    if ps aux | grep '[j]ena-fuseki.*fuseki-server' >/dev/null; then
         shutdown
     fi
     repositoryID=${policy}_${dataset}
 
     echo "$(log_timestamp) ${log_level}:Clean repositories..." >> $log_file
     rm -rf ${database_dir}
-    rm -rf ${config_dir}/jenatdb2/${repositoryID}
+    rm -rf ${config_dir}/jenatdb2_RDF1_2/${repositoryID}
     rm -rf /run/configuration
-    rm -f /tmp/jenatdb2_${policy}_${dataset}.pid
+    rm -f /tmp/jenatdb2_rdf1_2_${policy}_${dataset}.pid
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p ${database_dir}
-    mkdir -p ${config_dir}/jenatdb2/${repositoryID}
+    mkdir -p ${config_dir}/jenatdb2_RDF1_2/${repositoryID}
     mkdir -p /run/configuration
 
     echo "$(log_timestamp) ${log_level}:Parametrize and copy config file..." >> $log_file
     echo "$(log_timestamp) ${log_level}:RUN_DIR=${RUN_DIR}" >> $log_file
-    cp ${config_tmpl_dir}/jenatdb2-config_template.ttl ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
-    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
-    sed -i "s|{{RUN_DIR}}|${RUN_DIR}|g" ${config_dir}/jenatdb2/${repositoryID}/${repositoryID}.ttl
+    cp ${config_tmpl_dir}/jenatdb2-config_template.ttl ${config_dir}/jenatdb2_RDF1_2/${repositoryID}/${repositoryID}.ttl
+    sed -i "s/{{repositoryID}}/$repositoryID/g" ${config_dir}/jenatdb2_RDF1_2/${repositoryID}/${repositoryID}.ttl
+    sed -i "s|{{RUN_DIR}}|${RUN_DIR}|g" ${config_dir}/jenatdb2_RDF1_2/${repositoryID}/${repositoryID}.ttl
+    sed -i "s|{{DATABASE_DIR}}|${database_dir}|g" ${config_dir}/jenatdb2_RDF1_2/${repositoryID}/${repositoryID}.ttl
 }
 
 ingest() {
     echo "$(log_timestamp) ${log_level}:Ingest dataset ${dataset} for policy ${policy} into Jena TDB2" >> $log_file
     repositoryID=${policy}_${dataset}
-    cd ${database_dir} && /jena-fuseki/tdbloader2 --loc ${database_dir} ${dataset_dir_or_file}
+    cd ${database_dir} && /jena-fuseki-RDF1_2/tdbloader2 --loc ${database_dir} ${dataset_dir_or_file}
 
 }
 
 ingest_empty() {
     echo "$(log_timestamp) ${log_level}:Ingest empty dataset..." >> $log_file
     repositoryID=${policy}_${dataset}
-    /jena-fuseki/tdbloader2 --loc ${database_dir} ${RUN_DIR}/rawdata/${dataset}/empty.nt
+    /jena-fuseki-RDF1_2/tdbloader2 --loc ${database_dir} ${RUN_DIR}/rawdata/${dataset}/empty.nt
 }
 
 
@@ -200,8 +202,9 @@ ingest_empty() {
 set -euo pipefail
 
 # Set environment variables
-export JAVA_HOME=/opt/java/java17/openjdk
-export PATH=/opt/java/java17/openjdk/bin:$PATH
+export FUSEKI_HOME=/jena-fuseki-RDF1_2
+export JAVA_HOME=/opt/java/java21/openjdk
+export PATH=/opt/java/java21/openjdk/bin:$PATH
 
 # --------------------------------------------------
 # Optional arguments parsing

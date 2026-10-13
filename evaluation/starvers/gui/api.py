@@ -1039,15 +1039,22 @@ def _detail_construct_queries(run_dir: Path) -> dict:
     policies_found = set()
     datasets_found = set()
     if query_counts_path.exists():
+        seen = set()
         with open(query_counts_path, newline="") as f:
             for row in csv.DictReader(f):
                 policy = row.get("policy", "").strip()
                 dataset = row.get("dataset", "").strip()
+                # queries_counts.csv now has one row per triple store; the same
+                # (policy, dataset) is generated identically for every store, so
+                # count it once to avoid double-counting.
+                if (policy, dataset) in seen:
+                    continue
+                seen.add((policy, dataset))
                 try:
                     count = int(row.get("query_count", 0))
                 except ValueError:
                     count = 0
-                counts[policy][dataset] += count
+                counts[policy][dataset] = count
                 policies_found.add(policy)
                 datasets_found.add(dataset)
 

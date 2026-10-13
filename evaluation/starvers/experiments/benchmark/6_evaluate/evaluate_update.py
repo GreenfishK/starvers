@@ -143,16 +143,25 @@ def upsert_rows(df, new_rows, key_cols=('runs', 'triplestore', 'dataset', 'polic
     return df
 
 
+def eval_combi_exists(triplestore, dataset, policy):
+    return policy in static_eval_params.get("evaluations", {}).get(triplestore, {}).get(dataset, [])
+
+
 def measure_updates(triple_store: str, dataset: str, policy: str, chunk_size: int, runs: int, source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime):
     LOG.info(f"Measuring update times for {triple_store}/{policy}/{dataset} with chunk size {chunk_size} over {runs} runs.")
 
-    # tb_sr_rs and tb_sr_re share the per-delta RDF-star update mechanism but
-    # differ only in the RDF-star serialization (decorator vs reification).
-    # The non-RDF-star policies (ic_sr_ng, tb_sr_ng) are deliberately not
-    # evaluated: tb_sr_ng's grouped version-string update is impractical
-    # (a full scan of all surviving triples is required on every new version).
+    # tb_sr_rs (decorator) and tb_sr_re (reification) share the per-delta
+    # RDF-star update mechanism but differ in the RDF-star serialization. The
+    # non-RDF-star policies (ic_sr_ng, tb_sr_ng) are deliberately not
+    # evaluated: tb_sr_ng's grouped version-string update is impractical (a
+    # full scan of all surviving triples is required on every new version).
+    # tb_sr_re is a single reification policy with two serializations: RDF-star
+    # `<< s p o >>` for the RDF-star store and RDF 1.2 `<<( s p o )>>` for the
+    # RDF 1.2 store. The serialization is picked by the triple store.
     if policy == "tb_sr_rs":
         mode = "decorator"
+    elif policy == "tb_sr_re" and triple_store == "jenatdb2_RDF1_2":
+        mode = "reification_rdf12"
     elif policy == "tb_sr_re":
         mode = "reification"
     else:
@@ -211,7 +220,7 @@ def run_mgmt(*cmd: str) -> None:
 
 def insert_ic0_and_cbs_rdf_star(triple_store: str, chunk_size: int, dataset: str, policy: str,
                         source_ic0: str, source_cs: str, last_version: int, init_timestamp: datetime, mode: str):
-    triple_store_name = triple_store.lower()
+    triple_store_name = triple_store
     LOG.info(f"Constructing timestamped RDF-star dataset from ICs and changesets with triple store {triple_store} and chunk size {chunk_size}.")
 
     repository = policy + "_" + dataset
@@ -317,6 +326,9 @@ def main():
     for policy in policies:
         for dataset in datasets:
             for triple_store in triple_stores:
+                if not eval_combi_exists(triple_store, dataset, policy):
+                    LOG.info(f"The combination {triple_store}, {dataset}, and {policy} is not supported and will be skipped")
+                    continue
                 data_dir = f"{os.environ['RUN_DIR']}/rawdata/{dataset}"
                 total_versions = dataset_versions[dataset]
 
@@ -344,9 +356,11 @@ if __name__ == "__main__":
 #           (TripleStoreEngine mode="decorator").
 # tb_sr_re: RDF-star reification model. Each delta triple maps to a reifier
 #           `_:b rdf:reifies <<s p o>> ; valid_from ... ; valid_until ...`
-#           (TripleStoreEngine mode="reification").
+#           (TripleStoreEngine mode="reification") on the RDF-star store, and
+#           uses the RDF 1.2 triple-term syntax `_:b rdf:reifies <<( s p o )>>`
+#           (TripleStoreEngine mode="reification_rdf12") on the RDF 1.2 store.
 #
-# Only tb_sr_rs and tb_sr_re are evaluated for updates. The non-RDF-star
+# Only the RDF-star-based policies are evaluated for updates. The non-RDF-star
 # policies (ic_sr_ng, tb_sr_ng) are excluded: in particular the grouped
 # version-string update of tb_sr_ng is impractical because it requires a full
 # scan of all surviving triples on every new version.

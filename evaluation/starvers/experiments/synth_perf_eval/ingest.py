@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
 ingest.py — ingest the three synthetic retrieval datasets (D1/D2/D3) into
-GraphDB and Jena TDB2 for the Starvers Retrieval Evaluation.
+GraphDB and Jena TDB2 (RDF-star) for the Starvers Retrieval Evaluation.
 
 Uses the shared triple_store_mgmt shell scripts (graphdb_mgmt.sh /
-jenatdb2_mgmt.sh) and the endpoints/mgmt paths from eval_setup.toml, so no
+jenatdb2_RDF_star.sh) and the endpoints/mgmt paths from eval_setup.toml, so no
 ports/hosts/Java paths are hardcoded here.
 
 Layout produced (relative to SYNTH_PERF_EVAL_BASE; each repository is
 <dataset>_tb_sr_rs):
-    <base>/databases/graphdb/<dataset>_tb_sr_rs/
-    <base>/databases/jenatdb2/<dataset>_tb_sr_rs/
-    <base>/configs/graphdb|jenatdb2/<dataset>_tb_sr_rs/<repo>.ttl
+    <base>/databases/queries/graphdb/<dataset>_tb_sr_rs/
+    <base>/databases/queries/jenatdb2_RDF_star/<dataset>_tb_sr_rs/
+    <base>/configs/graphdb|jenatdb2_RDF_star/<dataset>_tb_sr_rs/<repo>.ttl
 Logging: <base>/output/logs/ingest/ingest.log (plus mgmt scripts' own logs)
 """
 import os
@@ -25,14 +25,14 @@ from experiments.logging import setup_logging
 
 BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 DATA_DIR = BASE / "data"
-DB_ROOT = BASE / "databases"
+DB_ROOT = BASE / "databases" / "queries"
 CONFIG_DIR = BASE / "configs"
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 
 DATASETS = ["d1", "d2", "d3"]
 POLICY = "tb_sr_rs"
-STORES = ["graphdb", "jenatdb2"]
+STORES = ["graphdb", "jenatdb2_RDF_star"]
 
 
 def load_config() -> dict:

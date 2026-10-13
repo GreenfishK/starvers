@@ -94,12 +94,51 @@ RUN cd /opt/ostrich-hp/build && make -j"$(nproc)"
 
 #########################################################
 # Stage 2: fuseki_base
-# Pulls Jena Fuseki and its required JDK (Java 17).
+# Pulls Jena Fuseki 5.1 (original RDF-star) and its
+# required JDK (Java 17). Used for the tb_sr_rs policy.
 #########################################################
 FROM scratch AS fuseki_base
 
 COPY --from=stain/jena-fuseki:5.1.0       /jena-fuseki  /jena-fuseki
 COPY --from=eclipse-temurin:17.0.16_8-jdk /opt/java     /opt/java/java17
+
+
+#########################################################
+# Stage 2b: fuseki_rdf12_base
+# Pulls the latest Apache Jena Fuseki (RDF 1.2 / triple
+# terms) and its required JDK (Java 21).
+# stain/jena-fuseki only publishes up to 5.1.0, so the
+# RDF 1.2 build is downloaded directly from Apache.
+# The layout is made to match stain's image so the same
+# paths (/fuseki-server, /bin/s-query, /tdbloader2)
+# keep working.
+#########################################################
+FROM eclipse-temurin:21-jdk AS fuseki_rdf12_base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates tar \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG JENA_FUSEKI_VERSION=6.2.0
+RUN set -eux; \
+    (curl --location --silent --show-error --fail --retry 3 --output fuseki.tar.gz \
+       https://dlcdn.apache.org/jena/binaries/apache-jena-fuseki-${JENA_FUSEKI_VERSION}.tar.gz || \
+     curl --location --silent --show-error --fail --retry 3 --output fuseki.tar.gz \
+       https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-${JENA_FUSEKI_VERSION}.tar.gz) && \
+    tar -xz -f fuseki.tar.gz -C / && \
+    mv /apache-jena-fuseki-${JENA_FUSEKI_VERSION} /jena-fuseki-RDF1_2 && \
+    rm fuseki.tar.gz && \
+    chmod 755 /jena-fuseki-RDF1_2/fuseki-server && \
+    # The apache-jena-fuseki tarball ships no bin/ directory, so the tdbloader2
+    # tool is not present. Provide a wrapper that runs the loader class from
+    # the bundled fuseki-server.jar (TDB2 bulk loader).
+    rm -f /jena-fuseki-RDF1_2/tdbloader2 /jena-fuseki-RDF1_2/tdbloader && \
+    printf '%s\n' \
+      '#!/bin/bash' \
+      'JAVA_BIN="${JAVA_HOME:-/opt/java/java21/openjdk}/bin/java"' \
+      'exec "$JAVA_BIN" -cp /jena-fuseki-RDF1_2/fuseki-server.jar tdb2.tdbloader "$@"' \
+      > /jena-fuseki-RDF1_2/tdbloader2 && \
+    chmod 755 /jena-fuseki-RDF1_2/tdbloader2
 
 
 #########################################################
@@ -189,8 +228,10 @@ COPY --from=ostrich_hp_build /usr/local/lib/libkyotocabinet.so* \
                              /usr/local/lib/
 
 # ── Jena Fuseki ──────────────────────────────────────
-COPY --from=fuseki_base  /jena-fuseki       /jena-fuseki
-COPY --from=fuseki_base  /opt/java/java17   /opt/java/java17
+COPY --from=fuseki_base         /jena-fuseki           /jena-fuseki
+COPY --from=fuseki_base         /opt/java/java17       /opt/java/java17
+COPY --from=fuseki_rdf12_base   /jena-fuseki-RDF1_2    /jena-fuseki-RDF1_2
+COPY --from=fuseki_rdf12_base   /opt/java              /opt/java/java21
 
 # ── GraphDB ──────────────────────────────────────────
 COPY --from=graphdb_base /opt/graphdb       /opt/graphdb

@@ -41,7 +41,7 @@ CONFIG_DIR: str = f"{os.environ['RUN_DIR']}/configs/ingest"
 RESULT_DIR = f"{os.environ['RUN_DIR']}/output/result_sets"
 TIME_FILE = f"{os.environ['RUN_DIR']}/output/measurements/queries_time.csv"
 MEM_FILE = f"{os.environ['RUN_DIR']}/output/measurements/memory_consumption.csv"
-databases_dir = f"{os.environ['RUN_DIR']}/databases"
+databases_dir = f"{os.environ['RUN_DIR']}/databases/queries"
 
 triple_stores = os.environ.get("triple_stores").split(" ")
 policies = os.environ.get("policies").split(" ")
@@ -213,7 +213,7 @@ def run_queries(triple_store, policy, dataset) -> list:
         LOG.info("Running queries")
         socket.setdefaulttimeout(30)
         for version in range(versions):
-            base = f"{os.environ['RUN_DIR']}/queries/final_queries/{query_set}/{version}"
+            base = f"{os.environ['RUN_DIR']}/queries/final_queries/{policy}/{triple_store}/{query_set.split('/')[1]}/{query_set.split('/')[2]}/{version}"
             snapshot_ts = init_ts + timedelta(seconds=version)
 
             for file_name in os.listdir(base):

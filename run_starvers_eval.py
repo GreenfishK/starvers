@@ -207,6 +207,7 @@ def execute_steps(steps_to_run: list[dict], run_dir: Path, evaluate_mode: str = 
     # Set up directory structure
     for dir_path in [
         f"{os.environ['RUN_DIR']}/databases",
+        f"{os.environ['RUN_DIR']}/databases/queries",
         f"{os.environ['RUN_DIR']}/databases/updates",
         f"{os.environ['RUN_DIR']}/output/logs",
         f"{os.environ['RUN_DIR']}/output/measurements",

@@ -67,15 +67,26 @@ static_eval_params = _load_config()
 # Environment / path constants
 # ---------------------------------------------------------------------------
 
+# Dirs
 RUN_DIR         = Path(os.environ["RUN_DIR"])
 SCRIPT_DIR      = Path("/starvers_eval/scripts")
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/2_preprocess_data/configs"
 CONFIG_DIR      = f"{os.environ['RUN_DIR']}/configs/preprocess_data"
+MEASUREMENTS_DIR    = RUN_DIR / "output" / "measurements"
 
-GRAPHDB_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
-OSTRICH_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"
-JENA_MGMT_SCRIPT    = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_mgmt.sh"
+# Scripts
+GRAPHDB_MGMT_SCRIPT    = "/starvers_eval/scripts/triple_store_mgmt/graphdb_mgmt.sh"
+OSTRICH_MGMT_SCRIPT    = "/starvers_eval/scripts/triple_store_mgmt/ostrich_mgmt.sh"
+JENA_RDF_STAR_MGMT_SCRIPT = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_RDF_star.sh"
+JENA_RDF1_2_MGMT_SCRIPT   = "/starvers_eval/scripts/triple_store_mgmt/jenatdb2_rdf1_2_mgmt.sh"
 
+# Recording files
+QUERIES_META_CSV    = MEASUREMENTS_DIR / "queries_meta.csv"
+EXCLUDE_CSV         = MEASUREMENTS_DIR / "queries_excluded.csv"
+PREPROCESS_CSV      = MEASUREMENTS_DIR / "preprocess_summary.csv"
+QUERY_COUNTS_CSV    = MEASUREMENTS_DIR / "queries_raw_counts.csv"
+
+# Other
 RDF_VALIDATOR_JAR   = str(SCRIPT_DIR / "2_preprocess_data/RDFValidator/target/rdfvalidator-1.0-jar-with-dependencies.jar")
 
 DATASET_VARIANTS = ["ic"] 
@@ -90,13 +101,6 @@ MAX_WORKERS = min(
     int(os.environ.get("PREPROCESS_WORKERS", 10)),
     os.cpu_count() or 1,
 )
-
-# Recording files
-MEASUREMENTS_DIR    = RUN_DIR / "output" / "measurements"
-QUERIES_META_CSV    = MEASUREMENTS_DIR / "queries_meta.csv"
-EXCLUDE_CSV         = MEASUREMENTS_DIR / "queries_excluded.csv"
-PREPROCESS_CSV      = MEASUREMENTS_DIR / "preprocess_summary.csv"
-QUERY_COUNTS_CSV    = MEASUREMENTS_DIR / "queries_raw_counts.csv"
 
 # ---------------------------------------------------------------------------
 # Static eval parameters helpers
@@ -364,7 +368,8 @@ SUBDIRS      = ["train", "test", "valid"]
 
 GRAPHDB_DATABASE_DIR = RUN_DIR / "databases" / "preprocess_data" / "graphdb" / "dummy_orkg"
 OSTRICH_DATABASE_DIR = RUN_DIR / "databases" / "preprocess_data" / "ostrich" / "dummy_orkg"
-JENA_DATABASE_DIR    = RUN_DIR / "databases" / "preprocess_data" / "jenatdb2" / "dummy_orkg"
+JENA_RDF_STAR_DATABASE_DIR = RUN_DIR / "databases" / "preprocess_data" / "jenatdb2_rdf_star" / "dummy_orkg"
+JENA_RDF1_2_DATABASE_DIR   = RUN_DIR / "databases" / "preprocess_data" / "jenatdb2_rdf1_2" / "dummy_orkg"
 
 SELECT_ALIAS_RE = re.compile(
     r"""
@@ -456,23 +461,38 @@ def _startup_ostrich():
 
 def _startup_jena():
     LOG.info("Create database environment for Jena.")
-    subprocess.run([JENA_MGMT_SCRIPT, "create_env", "dummy", "orkg",
-                    str(JENA_DATABASE_DIR), CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
+    subprocess.run([JENA_RDF_STAR_MGMT_SCRIPT, "create_env", "dummy", "orkg",
+                    str(JENA_RDF_STAR_DATABASE_DIR), CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
 
     LOG.info("Ingest the first ORKG snapshot.")
-    subprocess.run([JENA_MGMT_SCRIPT, "ingest_empty", str(JENA_DATABASE_DIR),
+    subprocess.run([JENA_RDF_STAR_MGMT_SCRIPT, "ingest_empty", str(JENA_RDF_STAR_DATABASE_DIR),
                     "dummy", "orkg", CONFIG_DIR], check=True)
 
     LOG.info("Start Jena engine.")
-    subprocess.run([JENA_MGMT_SCRIPT, "startup", str(JENA_DATABASE_DIR),
+    subprocess.run([JENA_RDF_STAR_MGMT_SCRIPT, "startup", str(JENA_RDF_STAR_DATABASE_DIR),
                     "dummy", "orkg", CONFIG_DIR], check=True)
     LOG.info("Jena is up")
 
+def _startup_jena_rdf12():
+    LOG.info("Create database environment for Jena (RDF 1.2).")
+    subprocess.run([JENA_RDF1_2_MGMT_SCRIPT, "create_env", "dummy", "orkg",
+                    str(JENA_RDF1_2_DATABASE_DIR), CONFIG_TMPL_DIR, CONFIG_DIR], check=True)
+
+    LOG.info("Ingest the first ORKG snapshot.")
+    subprocess.run([JENA_RDF1_2_MGMT_SCRIPT, "ingest_empty", str(JENA_RDF1_2_DATABASE_DIR),
+                    "dummy", "orkg", CONFIG_DIR], check=True)
+
+    LOG.info("Start Jena (RDF 1.2) engine.")
+    subprocess.run([JENA_RDF1_2_MGMT_SCRIPT, "startup", str(JENA_RDF1_2_DATABASE_DIR),
+                    "dummy", "orkg", CONFIG_DIR], check=True)
+    LOG.info("Jena (RDF 1.2) is up")
+
 def startup():
-    """Spin up GraphDB and Ostrich with a dummy ORKG snapshot for query validation."""
+    """Spin up GraphDB, Ostrich and both Jena versions with a dummy ORKG snapshot for query validation."""
     _startup_graphdb()
     _startup_ostrich()
     _startup_jena()
+    _startup_jena_rdf12()
 
 
 def _copy_subdirs(src, dst):
@@ -567,6 +587,12 @@ def exclude_queries():
         skip_connection_test=True,
     )
 
+    jena_rdf12_starvers_engine = TripleStoreEngine(
+        "http://Starvers:3032/dummy_orkg/sparql",
+        "http://Starvers:3032/dummy_orkg/update",
+        skip_connection_test=True,
+    )
+
     ostrich_template_path = "/starvers_eval/scripts/5_construct_queries/templates/ostrich/sparql_full.txt"
     with open(ostrich_template_path, "r") as f:
         ostrich_template = f.read()
@@ -598,30 +624,67 @@ def exclude_queries():
 
         try:
             LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
-            graphdb_starvers_engine.query(sparql, yn_timestamp_query=True)
+            graphdb_starvers_engine.query(sparql, yn_timestamp_query=True, mode="decorator")
             LOG.info(f"Timestamped query {query_file.name} successfully executed against GraphDB")
         except Exception as e:
             LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-            query_results.append([query_file.name, 1, "Malformed Starvers transformation (GraphDB)"])
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (GraphDB, decorator)"])
             flag_for_deletion = True  
 
-        # Jena block
         try:
-            LOG.info(f"Executing query {query_file.name} against Jena TDB2")
-            jena_starvers_engine.query(sparql, yn_timestamp_query=False)
-            LOG.info(f"Query {query_file.name} successfully executed against Jena TDB2")
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
+            graphdb_starvers_engine.query(sparql, yn_timestamp_query=True, mode="reification")
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against GraphDB")
         except Exception as e:
-            LOG.info(f"Original query {query_file.name} is invalid in Jena TDB2 and will be excluded: {e}")
-            query_results.append([query_file.name, 1, "Invalid Original in Jena TDB2"])
+            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (GraphDB, reification)"])
+            flag_for_deletion = True  
+
+        # Jena RDF star block
+        try:
+            LOG.info(f"Executing query {query_file.name} against Jena TDB2 (RDF-Star)")
+            jena_starvers_engine.query(sparql, yn_timestamp_query=False)
+            LOG.info(f"Query {query_file.name} successfully executed against Jena TDB2 (RDF-Star)")
+        except Exception as e:
+            LOG.info(f"Original query {query_file.name} is invalid in Jena TDB2 (RDF-Star) and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Invalid Original in Jena TDB2 (RDF-Star)"])
             flag_for_deletion = True
 
         try:
             LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
-            jena_starvers_engine.query(sparql, yn_timestamp_query=True)
+            jena_starvers_engine.query(sparql, yn_timestamp_query=True, mode="decorator")
             LOG.info(f"Timestamped query {query_file.name} successfully executed against Jena TDB2")
         except Exception as e:
             LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
-            query_results.append([query_file.name, 1, "Malformed Starvers transformation (Jena)"])
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (Jena RDF-Star, decorator)"])
+            flag_for_deletion = True
+
+        try:
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
+            jena_starvers_engine.query(sparql, yn_timestamp_query=True, mode="reification")
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against Jena TDB2")
+        except Exception as e:
+            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (Jena RDF-Star, reification)"])
+            flag_for_deletion = True
+
+        # Jena RDF 1.2 block
+        try:
+            LOG.info(f"Executing query {query_file.name} against Jena TDB2 (RDF 1.2)")
+            jena_rdf12_starvers_engine.query(sparql, yn_timestamp_query=False)
+            LOG.info(f"Query {query_file.name} successfully executed against Jena TDB2 (RDF 1.2)")
+        except Exception as e:
+            LOG.info(f"Original query {query_file.name} is invalid in Jena TDB2 (RDF 1.2) and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Invalid Original in Jena TDB2 (RDF 1.2)"])
+            flag_for_deletion = True
+
+        try:
+            LOG.info(f"Executing timestamped SPARQL query {query_file.name}.")
+            jena_rdf12_starvers_engine.query(sparql, yn_timestamp_query=True, mode="reification_rdf12")
+            LOG.info(f"Timestamped query {query_file.name} successfully executed against Jena TDB2 (RDF 1.2)")
+        except Exception as e:
+            LOG.info(f"Query {query_file.name} could not get transformed successfully and will be excluded: {e}")
+            query_results.append([query_file.name, 1, "Malformed Starvers transformation (Jena RDF 1.2)"])
             flag_for_deletion = True
 
         # Ostrich block    
@@ -645,19 +708,23 @@ def exclude_queries():
         else:
             query_results.append([query_file.name, 0, ""])
 
-    excluded = [r[0] for r in query_results if r[1] == 1]
-    LOG.info(f"Excluded the following {len(excluded)} queries: {excluded}")
+    excluded_files = [r[0] for r in query_results if r[1] == 1]
+    unique_excluded = list(dict.fromkeys(excluded_files))
+    total_queries = len({r[0] for r in query_results})
+    LOG.info(f"Excluded {len(unique_excluded)} of {total_queries} queries: {unique_excluded}")
 
-    EXCLUDE_CSV.write_text("query,yn_excluded,reason\n")
-    with open(EXCLUDE_CSV, "a") as f:
-        for row in query_results:
-            f.write(",".join(map(str, row)) + "\n")
+    with open(EXCLUDE_CSV, "w", newline="") as f:
+        writer = _csv.writer(f)
+        writer.writerow(["query", "yn_excluded", "reason"])
+        writer.writerows(query_results)
 
 
 def cleanup():
     """Remove raw SciQA files and temporary database directories."""
 
     subprocess.call(shlex.split(f"{GRAPHDB_MGMT_SCRIPT} shutdown"))
+    subprocess.call(shlex.split(f"{JENA_RDF_STAR_MGMT_SCRIPT} shutdown"))
+    subprocess.call(shlex.split(f"{JENA_RDF1_2_MGMT_SCRIPT} shutdown"))
     time.sleep(5)
 
     for item in BASE_DIR.iterdir():
@@ -772,15 +839,15 @@ if __name__ == "__main__":
     log_start("Start Preprocess Data", LOG)
 
     # Phase 1: clean all raw datasets (parallelised across files)
-    clean_datasets()
+    # clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
-    #startup()
-    #extract_queries()
-    #exclude_queries()
-    #cleanup()
+    startup()
+    extract_queries()
+    exclude_queries()
+    cleanup()
 
     # Phase 3: count all query sets (including orkg extracted above)
-    #write_query_counts()
+    write_query_counts()
     LOG.info("Preprocessing complete.")
     log_end("End Preprocess Data", LOG)

@@ -35,7 +35,7 @@ def add_versioning_prefixes(prefixes: Union[dict[str, str], str], mode: str = "d
             vers_prfx = prefix_vers + "\n"
         if not "xsd" in prefixes:
             vers_prfx += prefix_xsd + "\n"
-        if mode == "reification" and "rdf" not in prefixes:
+        if mode in ("reification", "reification_rdf12") and "rdf" not in prefixes:
             vers_prfx += prefix_rdf + "\n"
 
         return sparql_prefixes + "\n" + vers_prfx
@@ -48,7 +48,7 @@ def add_versioning_prefixes(prefixes: Union[dict[str, str], str], mode: str = "d
             vers_prfx += prefix_vers + "\n"
         if prefixes.find("xsd:") == -1:
             vers_prfx += prefix_xsd + "\n"
-        if mode == "reification" and prefixes.find("rdf:") == -1:
+        if mode in ("reification", "reification_rdf12") and prefixes.find("rdf:") == -1:
             vers_prfx += prefix_rdf + "\n"
 
         return sparql_prefixes + "\n" + vers_prfx

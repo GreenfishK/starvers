@@ -74,12 +74,12 @@ TB_FILES = ("alldata.TB.nq", "alldata.TB_computed.nq")  # (orig, corrected)
 DATASET_LABELS = {"bearb_day": "BEARB_day", "bearb_hour": "BEARB_hour"}
 
 # Impact ingests: 8 repositories (4 dataset/variant x 2 stores).
-STORES = ("graphdb", "jenatdb2")
+STORES = ("graphdb", "jenatdb2_RDF_star")
 DQ_DB = RUN_DIR / "databases" / "dq"
 MGMT_DIR = Path("/starvers_eval/scripts/triple_store_mgmt")
 MGMT_SCRIPT = {
     "graphdb": MGMT_DIR / "graphdb_mgmt.sh",
-    "jenatdb2": MGMT_DIR / "jenatdb2_mgmt.sh",
+    "jenatdb2_RDF_star": MGMT_DIR / "jenatdb2_RDF_star.sh",
 }
 CONFIG_TMPL_DIR = Path("/starvers_eval/scripts/4_ingest/configs")
 CONFIG_DIR = RUN_DIR / "configs" / "ingest"

@@ -27,7 +27,7 @@ from SPARQLWrapper import SPARQLWrapper, JSON, POST
 from experiments.logging import setup_logging
 
 BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
-DB_ROOT = BASE / "databases"
+DB_ROOT = BASE / "databases" / "queries"
 CONFIG_DIR = BASE / "configs"
 OUTPUT = BASE / "output"
 MEAS_DIR = OUTPUT / "measurements"
@@ -38,7 +38,7 @@ QUERY_FILE = Path("/starvers_eval/experiments/synth_perf_eval/decorator_query.tx
 
 POLICY = "tb_sr_rs"
 DATASETS = ["d1", "d2", "d3"]
-STORES = ["graphdb", "jenatdb2"]
+STORES = ["graphdb", "jenatdb2_RDF_star"]
 RUNS = int(os.environ.get("RETRIEVAL_RUNS", 10))
 QUERY_TIMEOUT = 300
 
@@ -128,7 +128,7 @@ def main() -> None:
             db_dir = DB_ROOT / store / rep
 
             log.info("%s: starting repo=%s", store, rep)
-            if store == "jenatdb2":
+            if store == "jenatdb2_RDF_star":
                 subprocess.run([mgmt_script, "startup", str(db_dir),
                                 dataset, POLICY, str(CONFIG_DIR)], check=True)
             else:
