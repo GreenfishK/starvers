@@ -61,7 +61,7 @@ POLICY_COLOR_FALLBACKS = ["#646363", "#6AAAA5", "#EEB473", "#CD81A8"]
 TS_COLORS_CHART = {
     "graphdb": "#006699",
     "jenatdb2_rdf_star": "#E18922",
-    "jenatdb2_rdf1_2": "#7C3AED",
+    "jenatdb2_rdf1_2": "#A85C00",
     "ostrich": "#BA4682",
     "ostrich_aggchange": "#007E71",
 }
@@ -118,8 +118,8 @@ def _ts_label(ts: str) -> str:
     """Human-readable triple-store name for legends."""
     labels = {
         "graphdb": "GraphDB",
-        "jenatdb2_rdf_star": "Jena RDF Star",
-        "jenatdb2_rdf1_2": "Jena RDF 1.2",
+        "jenatdb2_rdf_star": "Jena 5",
+        "jenatdb2_rdf1_2": "Jena 6",
         "ostrich": "Ostrich",
         "ostrich_aggchange": "Ostrich (agg)",
     }
@@ -191,7 +191,7 @@ def create_plot_ingest():
     A 2x2 grid, one panel per dataset. Each panel is a scatter of DB size
     (GiB, log x-axis) vs avg ingest time (s, log y-axis). Markers encode the
     versioning policy (monochrome SVG icon); the colour of each marker encodes
-    the triple store. A vertical line marks the raw dataset size.
+    the triple store.
     """
     df = _load_ingestion_data()
     if df.empty:
@@ -225,9 +225,6 @@ def create_plot_ingest():
     )
     fig.subplots_adjust(left=0.10, right=0.97, top=0.92, bottom=0.28)
     axes = np.atleast_2d(axes).reshape(n_rows, n_cols)
-
-    # Raw-size value per dataset (used only for the vertical line).
-    raw_by_ds = {}
 
     for idx, ds in enumerate(datasets):
         r, c = divmod(idx, n_cols)
@@ -263,20 +260,14 @@ def create_plot_ingest():
                     facecolors="none", edgecolors=col, linewidths=1.4,
                 )
 
-        # ── Vertical line at raw dataset size ──
-        raw_gib = float(row_df["raw_file_size_MiB"].iloc[0]) / 1024
-        raw_by_ds[ds] = raw_gib
-        ax.axvline(raw_gib, color="#666666", linestyle="--", linewidth=0.8,
-                   label="raw size")
-
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("DB Size (GiB)", fontsize=8)
         ax.set_ylabel("Ingest Time", fontsize=8)
         ax.set_title(ds, fontsize=9, fontweight="bold")
 
-        db_min = min(db_vals_gib.min(), raw_gib)
-        db_max = max(db_vals_gib.max(), raw_gib)
+        db_min = db_vals_gib.min()
+        db_max = db_vals_gib.max()
         ax.set_xlim(max(db_min * 0.3, 1e-6), db_max * 5)
         ax.xaxis.set_major_formatter(ticker.FuncFormatter(
             lambda v, _: f"{v:.2f}" if v < 1 else f"{v:.1f}" if v < 10 else f"{v:.0f}"
@@ -346,24 +337,33 @@ def create_plot_ingest():
 def create_plot_updates():
     """
     Style follows the GUI "Update Performance Plots".
-    A 2x2 grid, one panel per dataset. Inside each panel a 2x2 grid:
-      top-left:    update time for inserted triples
-      bottom-left: number of inserted triples
-      top-right:   update time for invalidated triples
-      bottom-right:number of invalidated triples
-    (16 plots total: 4 per panel x 4 panels.)
+    A 2x2 grid, one panel per dataset. Inside each panel two columns
+    (insert | invalidate). Each column is a TradingView-style stack of two
+    lanes that share the same x-axis:
+      top lane (1/3 height):  incoming-triple volume (black bars, log scale)
+      bottom lane (2/3):      update time per (store, policy) curve (log scale)
+    Each line is a (triple store, versioning policy) curve, coloured
+    distinctly; the triple store appears in the legend, not the panel title.
     """
     df = _load_update_data()
     if df.empty:
         LOG.warning("No update data — skipping update plot.")
         return
 
-    policy_colors = _policy_color_map(sorted(df["policy"].unique()))
+    def norm_ts(ts: str) -> str:
+        return str(ts).strip().lower()
+
+    df["triplestore"] = df["triplestore"].map(norm_ts)
+
     datasets = _sorted_datasets(set(df["dataset"].unique()))
 
     if not datasets:
         LOG.warning("No datasets in update data — skipping update plot.")
         return
+
+    # Colour encodes the triple store; line style encodes the policy.
+    stores = sorted(set(df["triplestore"]))
+    ts_colors = _ts_color_map(stores)
 
     def classify(row) -> tuple[str, int]:
         batch = str(row["batch"]).strip()
@@ -375,22 +375,14 @@ def create_plot_updates():
             return "invalidate", int(batch.split("_")[-1])
         return None, None
 
-    # Representative triplestore per dataset (first available alphabetically).
-    ds_ts = {}
-    for ds in datasets:
-        sub = df[df["dataset"] == ds]["triplestore"].dropna().unique()
-        if len(sub):
-            ds_ts[ds] = sorted(sub)[0]
-
-    fig = plt.figure(figsize=(12, 10))
+    fig = plt.figure(figsize=(12, 9))
     # Outer 2x2 grid of dataset panels.
-    outer = fig.add_gridspec(2, 2, hspace=0.35, wspace=0.28,
-                             left=0.08, right=0.98, top=0.90, bottom=0.07)
+    outer = fig.add_gridspec(2, 2, hspace=0.55, wspace=0.30,
+                             left=0.08, right=0.98, top=0.90, bottom=0.20)
 
     for idx, ds in enumerate(datasets):
         r, c = divmod(idx, 2)
-        ts = ds_ts.get(ds)
-        sub = df[(df["dataset"] == ds) & (df["triplestore"] == ts)] if ts else df[df["dataset"] == ds]
+        sub = df[df["dataset"] == ds]
         if sub.empty:
             panel = fig.add_subplot(outer[r, c])
             panel.axis("off")
@@ -403,10 +395,10 @@ def create_plot_updates():
         )
         inner = inner[inner["batch_type"].notna()]
 
-        # Per (policy, batch_type): map version -> (execution_time, cnt).
+        # Per (triplestore, policy, batch_type): map version -> (time, cnt).
         series = {}
         for _, row in inner.iterrows():
-            key = (row["policy"], row["batch_type"])
+            key = (row["triplestore"], row["policy"], row["batch_type"])
             series.setdefault(key, {})[row["version"]] = (
                 row["execution_time"], row["cnt_batch_trpls"]
             )
@@ -415,84 +407,101 @@ def create_plot_updates():
         v_idx = {v: i for i, v in enumerate(versions)}
         n_versions = len(versions)
 
-        # Inner 2x2 grid inside this panel. A larger hspace gives room so the
-        # top row's version-number labels don't collide with the titles of the
-        # bottom row (inserted / invalidated triples).
-        inner_gs = outer[r, c].subgridspec(2, 2, hspace=0.45, wspace=0.3)
+        # Two columns (insert | invalidate), each a TradingView-style stack of
+        # two lanes sharing the x-axis.
+        cols_gs = outer[r, c].subgridspec(1, 2, wspace=0.35)
 
-        # TL: update time (insert);  BL: # inserted triples;
-        # TR: update time (invalidate);  BR: # invalidated triples.
-        plots = {
-            (0, 0): ("insert", "time"),
-            (1, 0): ("insert", "cnt"),
-            (0, 1): ("invalidate", "time"),
-            (1, 1): ("invalidate", "cnt"),
-        }
+        for ic, bt in enumerate(["insert", "invalidate"]):
+            # Time (2/3) on top, triples volume (1/3) at the bottom, sharing
+            # the x-axis.
+            lane_gs = cols_gs[0, ic].subgridspec(
+                2, 1, height_ratios=[2, 1], hspace=0.10
+            )
+            ax_time = fig.add_subplot(lane_gs[0, 0])
+            ax_vol = fig.add_subplot(lane_gs[1, 0], sharex=ax_time)
 
-        for (ir, ic), (bt, metric) in plots.items():
-            sub_ax = fig.add_subplot(inner_gs[ir, ic])
-            sub_ax.set_yscale("log")
-            sub_ax.set_facecolor("#fafafa")
-            sub_ax.grid(True, alpha=0.3)
-            sub_ax.tick_params(axis="both", labelsize=6)
-
-            for pol in sorted(policy_colors.keys()):
-                ser = series.get((pol, bt))
-                if not ser:
+            # ── Bottom lane (1/3): incoming-triple volume, black bars, log. ──
+            ax_vol.set_yscale("log")
+            ax_vol.set_facecolor("#fafafa")
+            ax_vol.grid(True, which="major", alpha=0.3)
+            ax_vol.tick_params(axis="both", labelsize=6)
+            count_by_ver = {}
+            for (_, _, sbt), valmap in series.items():
+                if sbt != bt:
                     continue
-                pts = [(v_idx[v], vals[0] if metric == "time" else vals[1])
-                       for v, vals in sorted(ser.items()) if v in v_idx]
-                pts = [(x, y) for x, y in pts if y > 0]
-                if not pts:
+                for v, vals in valmap.items():
+                    if v not in v_idx or vals[1] <= 0:
+                        continue
+                    count_by_ver.setdefault(v, []).append(vals[1])
+            if count_by_ver:
+                bx = [v_idx[v] for v in count_by_ver]
+                by = [float(np.mean(count_by_ver[v])) for v in count_by_ver]
+                ax_vol.bar(bx, by, width=0.3, color="black", alpha=0.85,
+                           edgecolor="none", zorder=2)
+            ax_vol.set_ylabel("# triples", fontsize=7)
+            ax_vol.tick_params(labelbottom=False)
+
+            # ── Top lane (2/3): CUMULATIVE update time (running sum over
+            #    versions). Line style encodes the policy (solid = tb_sr_re,
+            #    dashed = tb_sr_rs); colour encodes the triple store. ──
+            ax_time.set_yscale("log")
+            ax_time.set_facecolor("#fafafa")
+            ax_time.grid(True, which="major", alpha=0.3)
+            ax_time.tick_params(axis="both", labelsize=6)
+            cum_vals = []
+            for (sts, spol, sbt), valmap in series.items():
+                if sbt != bt:
                     continue
-                px = [p[0] for p in pts]
-                py = [p[1] for p in pts]
-                color = "#000000" if metric == "cnt" else policy_colors[pol]
-                sub_ax.plot(px, py, color=color, linewidth=1.8,
-                            label=_policy_label(pol) if metric == "time" and ir == 0 else None,
-                            solid_capstyle="round")
+                items = [(v, vals[0]) for v, vals in sorted(valmap.items())
+                         if v in v_idx and vals[0] > 0]
+                if not items:
+                    continue
+                px = [v_idx[v] for v, _ in items]
+                py = np.cumsum([t for _, t in items])
+                cum_vals.extend(py.tolist())
+                col = ts_colors.get(sts, "#666666")
+                ls = "--" if spol.endswith("_rs") else "-"
+                ax_time.plot(px, py, color=col, linestyle=ls, linewidth=0.6,
+                             alpha=0.9, solid_capstyle="round")
 
-            label = {"time": "Update time (s)", "cnt": "# triples"}[metric]
-            sub_ax.set_ylabel(label, fontsize=7)
-            sub_ax.set_xlabel("Version", fontsize=7)
-            sub_ax.set_title(f"{bt} {'time' if metric == 'time' else 'triples'}",
-                             fontsize=7)
+            ax_time.set_ylabel("Cumulative update time (s)", fontsize=7)
+            ax_time.set_title(bt, fontsize=8)
 
-            if metric == "time":
-                # Same seconds/minutes scale as the ingestion plot.
-                tm = [vals[0] for (spol, sbt), valmap in series.items()
-                      if sbt == bt
-                      for vals in valmap.values() if vals[0] > 0]
-                t_min = max(min(tm), 1e-6) if tm else 1e-3
-                t_max = max(tm) if tm else 1
-                sub_ax.set_ylim(t_min * 0.3, t_max * 5)
-                _apply_time_scale(sub_ax, t_min, t_max)
+            t_min = max(min(cum_vals), 1e-6) if cum_vals else 1e-3
+            t_max = max(cum_vals) if cum_vals else 1
+            ax_time.set_ylim(t_min * 0.3, t_max * 5)
+            _apply_time_scale(ax_time, t_min, t_max)
 
             n_ticks = min(5, n_versions)
             tick_positions = np.linspace(0, n_versions - 1, n_ticks, dtype=int)
-            sub_ax.set_xticks(tick_positions)
-            sub_ax.set_xticklabels(
+            ax_time.set_xticks(tick_positions)
+            ax_time.set_xticklabels(
                 [versions[i] for i in tick_positions],
                 rotation=45, ha="right", fontsize=5,
             )
 
-        # Dataset label above the panel.
-        panel_title = ds if not ts else f"{ds}\n({ts})"
+        # Dataset label above the panel (store now lives in the legend).
         pos = outer[r, c].get_position(fig)
         fig.text(
-            (pos.x0 + pos.x1) / 2, pos.y1 + 0.008, panel_title,
+            (pos.x0 + pos.x1) / 2, pos.y1 + 0.01, ds,
             ha="center", va="bottom", fontsize=10, fontweight="bold",
         )
 
-    # Single policy legend from the collected time-line artists.
-    if policy_colors:
-        from matplotlib.patches import Patch as _Patch
-        legend_handles = [_Patch(color=c, label=_policy_label(p))
-                          for p, c in policy_colors.items()]
-        legend_labels = [_policy_label(p) for p, _ in policy_colors.items()]
-        fig.legend(legend_handles, legend_labels, loc="upper left", fontsize=6,
-                   ncol=3, framealpha=0.8, bbox_to_anchor=(0.005, 0.96),
-                   title="Versioning policy", title_fontsize=6)
+    # Bottom legend: one entry per (store, policy) line — colour = triple
+    # store, line style = policy (solid tb_sr_re, dashed tb_sr_rs).
+    combo_handles = []
+    for ts, pol in sorted(set(zip(df["triplestore"], df["policy"]))):
+        col = ts_colors.get(ts, "#666666")
+        ls = "--" if pol.endswith("_rs") else "-"
+        combo_handles.append(Line2D(
+            [], [], color=col, linestyle=ls, linewidth=1.2,
+            label=f"{_ts_label(ts)} · {_policy_label(pol)}",
+        ))
+    if combo_handles:
+        fig.legend(handles=combo_handles, loc="lower center",
+                   ncol=min(len(combo_handles), 4), fontsize=7, framealpha=0.8,
+                   bbox_to_anchor=(0.5, 0.02),
+                   title="Triple store · versioning policy", title_fontsize=6)
 
     fig.suptitle("Update Performance", fontsize=11, fontweight="bold")
     out = f"{figures_out}/updates.pdf"
@@ -807,8 +816,8 @@ def create_ltx_table_ds_metrics():
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     log_start("Start Visualize", LOG)
-    create_plot_ingest()
+    #create_plot_ingest()
     create_plot_updates()
-    create_ltx_table_query_perf()
-    create_ltx_table_ds_metrics()
+    #create_ltx_table_query_perf()
+    #create_ltx_table_ds_metrics()
     log_end("End Visualize", LOG)

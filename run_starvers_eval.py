@@ -322,10 +322,14 @@ def cmd_run(args) -> None:
 
 def cmd_synth_perf_eval(args) -> None:
     """Run the Starvers synthetic performance evaluation (D1/D2/D3, two stores)."""
-    SYNTH_PERF_EVAL_BASE.mkdir(parents=True, exist_ok=True)
+    # Integrate into the most recent run directory so outputs are collected under
+    # <RUN_DIR>/{configs/synth,rawdata/synth,databases/synth,output/logs/synth,...}.
+    run_dir = _last_run_dir() or _make_run_dir()
     env = os.environ.copy()
-    env["SYNTH_PERF_EVAL_BASE"] = str(SYNTH_PERF_EVAL_BASE)
-    print(f"[starvers_eval] Synth perf eval base: {SYNTH_PERF_EVAL_BASE}")
+    env["RUN_DIR"] = str(run_dir)
+    # Backward-compatible alias for scripts that still read SYNTH_PERF_EVAL_BASE.
+    env["SYNTH_PERF_EVAL_BASE"] = str(run_dir)
+    print(f"[starvers_eval] Synth perf eval run dir: {run_dir}")
 
     for step in SYNTH_PERF_EVAL_STEPS:
         script = step["script"]
@@ -345,7 +349,7 @@ def cmd_synth_perf_eval(args) -> None:
             sys.exit(rc)
 
     print("[starvers_eval] Synthetic performance evaluation steps completed "
-          f"successfully in {SYNTH_PERF_EVAL_BASE}")
+          f"successfully in {run_dir}")
 
 
 def cmd_dq_report(args) -> None:

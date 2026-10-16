@@ -11,8 +11,8 @@ For each (store, dataset) it starts the store via its mgmt script, executes the
 decorator retrieval query Q RETRIEVAL_RUNS times (default 10), records one row
 per run, then shuts the store down:
 
-    <base>/output/measurements/retrieval.csv
-Logging: <base>/output/logs/evaluate/evaluate.log (plus mgmt scripts' own logs)
+    <RUN_DIR>/output/measurements/synth_retrieval.csv
+Logging: <RUN_DIR>/output/logs/synth/evaluate.log (plus mgmt scripts' own logs)
 """
 import csv
 import os
@@ -26,12 +26,14 @@ from SPARQLWrapper import SPARQLWrapper, JSON, POST
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
-DB_ROOT = BASE / "databases" / "queries"
-CONFIG_DIR = BASE / "configs"
-OUTPUT = BASE / "output"
+RUN_DIR = Path(os.environ.get(
+    "RUN_DIR") or os.environ.get(
+        "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
+DB_ROOT = RUN_DIR / "databases" / "synth"
+CONFIG_DIR = RUN_DIR / "configs" / "synth"
+OUTPUT = RUN_DIR / "output"
 MEAS_DIR = OUTPUT / "measurements"
-MEAS_FILE = MEAS_DIR / "retrieval.csv"
+MEAS_FILE = MEAS_DIR / "synth_retrieval.csv"
 
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
 QUERY_FILE = Path("/starvers_eval/experiments/synth_perf_eval/decorator_query.txt")
@@ -104,11 +106,11 @@ def timed_runs(endpoint: str, query: str, log) -> list[float]:
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
-    os.environ["RUN_DIR"] = str(BASE)
-    _, log = setup_logging("evaluate")
+    os.environ["RUN_DIR"] = str(RUN_DIR)
+    _, log = setup_logging("evaluate", sub_dir="synth")
     config = load_config()
     query = QUERY_FILE.read_text()
-    log.info("SYNTH_PERF_EVAL_BASE = %s; RUNS = %d", BASE, RUNS)
+    log.info("SYNTH_PERF_EVAL_BASE = %s; RUNS = %d", RUN_DIR, RUNS)
     log.info("Query:\n%s", query)
 
     MEAS_DIR.mkdir(parents=True, exist_ok=True)

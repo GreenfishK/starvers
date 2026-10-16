@@ -839,7 +839,7 @@ if __name__ == "__main__":
     log_start("Start Preprocess Data", LOG)
 
     # Phase 1: clean all raw datasets (parallelised across files)
-    # clean_datasets()
+    clean_datasets()
 
     # Phase 2: parse and validate SciQA queries
     startup()

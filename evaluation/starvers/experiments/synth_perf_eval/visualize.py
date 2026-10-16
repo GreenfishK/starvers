@@ -5,15 +5,15 @@ GraphDB vs. Jena TDB2) with average query times.
 
 Reads the per-run measurements from
 
-    <base>/output/measurements/retrieval.csv
+    <RUN_DIR>/output/measurements/synth_retrieval.csv
 
 (CSV header: triplestore;dataset;run;query_time_s) and emits a booktabs LaTeX
 table that reproduces the paper's Dataset characteristics / hypotheses table
 (Target set, Large set, Hypothesis) with two additional columns for the GraphDB
 and Jena TDB2 average query time, in seconds.
 
-Output: <base>/output/tables/retrieval_table.tex
-Logging: <base>/output/logs/visualize/visualize.log
+Output: <RUN_DIR>/output/tables/synth_retrieval.tex
+Logging: <RUN_DIR>/output/logs/synth/visualize.log
 """
 import os
 from pathlib import Path
@@ -22,12 +22,14 @@ import pandas as pd
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
-OUTPUT = BASE / "output"
+RUN_DIR = Path(os.environ.get(
+    "RUN_DIR") or os.environ.get(
+        "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
+OUTPUT = RUN_DIR / "output"
 MEAS_DIR = OUTPUT / "measurements"
-MEAS_FILE = MEAS_DIR / "retrieval.csv"
+MEAS_FILE = MEAS_DIR / "synth_retrieval.csv"
 TABLES_DIR = OUTPUT / "tables"
-OUT_FILE = TABLES_DIR / "retrieval_table.tex"
+OUT_FILE = TABLES_DIR / "synth_retrieval.tex"
 
 POLICY = "tb_sr_rs"
 DATASETS = ["d1", "d2", "d3"]
@@ -94,8 +96,7 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Dataset characteristics and hypotheses for the inside-out "
-        r"vs. outside-in experiment. Each dataset has 5M triples, with the "
+        r"\caption{Characteristics of three synthetic datasets, hypotheses about triple store performance, and actual query performance for Jena 5.1 and GraphDB 10.5 for a query that fits these datasets to test the retrival mechanisms. Each dataset has 5M triples, with the "
         r"Target Set consisting of 10 triples and the Large set consisting of "
         r"the rest.}",
         "\\begin{tabular}{%s}" % col_spec,
@@ -139,9 +140,9 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
 
 
 def main() -> None:
-    os.environ["RUN_DIR"] = str(BASE)
-    _, log = setup_logging("visualize")
-    log.info("SYNTH_PERF_EVAL_BASE = %s", BASE)
+    os.environ["RUN_DIR"] = str(RUN_DIR)
+    _, log = setup_logging("visualize", sub_dir="synth")
+    log.info("SYNTH_PERF_EVAL_BASE = %s", RUN_DIR)
 
     averages = load_averages()
     log.info("Averaged query times (s): %s", averages)

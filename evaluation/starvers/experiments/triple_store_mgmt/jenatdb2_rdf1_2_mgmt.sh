@@ -50,7 +50,7 @@ startup() {
         fi
     done
 
-    echo $db_pid > /tmp/jenatdb2_rdf1_2_${policy}_${dataset}.pid
+    echo $db_pid > /tmp/jenatdb2_RDF1_2_${policy}_${dataset}.pid
     echo "$(log_timestamp) ${log_level}:Fuseki server is up" >> $log_file
 }
 
@@ -62,7 +62,7 @@ shutdown() {
     # Locate PID file
     # --------------------------------------------------
     shopt -s nullglob
-    pidfiles=(/tmp/jenatdb2_rdf1_2_*.pid)
+    pidfiles=(/tmp/jenatdb2_RDF1_2_*.pid)
     shopt -u nullglob
     pidfile="${pidfiles[0]:-}"
 
@@ -166,7 +166,7 @@ create_env() {
     rm -rf ${database_dir}
     rm -rf ${config_dir}/jenatdb2_RDF1_2/${repositoryID}
     rm -rf /run/configuration
-    rm -f /tmp/jenatdb2_rdf1_2_${policy}_${dataset}.pid
+    rm -f /tmp/jenatdb2_RDF1_2_${policy}_${dataset}.pid
 
     echo "$(log_timestamp) ${log_level}:Create directories..." >> $log_file
     mkdir -p ${database_dir}

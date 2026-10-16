@@ -1035,6 +1035,11 @@ def _detail_construct_queries(run_dir: Path) -> dict:
     query_counts_path = (
         run_dir / "output" / "measurements" / "queries_counts.csv"
     )
+    # The tb_sr_re policy is emitted under serialization-specific output dirs
+    # (tb_sr_re_star for Turtle-star and tb_sr_re_RDF1_2 for RDF 1.2 Turtle,
+    # see _output_policy_dir in 5_construct_queries). Both carry the same
+    # queries and the same counts, so fold them into the single logical policy.
+    _RE_POLICY_VARIANTS = {"tb_sr_re_star", "tb_sr_re_RDF1_2"}
     counts = defaultdict(lambda: defaultdict(int))
     policies_found = set()
     datasets_found = set()
@@ -1044,9 +1049,8 @@ def _detail_construct_queries(run_dir: Path) -> dict:
             for row in csv.DictReader(f):
                 policy = row.get("policy", "").strip()
                 dataset = row.get("dataset", "").strip()
-                # queries_counts.csv now has one row per triple store; the same
-                # (policy, dataset) is generated identically for every store, so
-                # count it once to avoid double-counting.
+                # queries_counts.csv has one row per (policy, dataset) with the
+                # aggregate query count; count each combination once.
                 if (policy, dataset) in seen:
                     continue
                 seen.add((policy, dataset))
@@ -1054,11 +1058,13 @@ def _detail_construct_queries(run_dir: Path) -> dict:
                     count = int(row.get("query_count", 0))
                 except ValueError:
                     count = 0
+                if policy in _RE_POLICY_VARIANTS:
+                    policy = "tb_sr_re"
                 counts[policy][dataset] = count
                 policies_found.add(policy)
                 datasets_found.add(dataset)
 
-    POLICY_ORDER = ["ic_sr_ng", "ostrich", "ostrich_aggchange", "tb_sr_ng", "tb_sr_rs"]
+    POLICY_ORDER = ["ic_sr_ng", "ostrich", "ostrich_aggchange", "tb_sr_ng", "tb_sr_rs", "tb_sr_re"]
     DATASET_ORDER = ["bearb_day", "bearb_hour", "bearc", "orkg"]
     policies = [p for p in POLICY_ORDER if p in policies_found] + sorted(
         policies_found - set(POLICY_ORDER)

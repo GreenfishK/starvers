@@ -7,6 +7,7 @@ import shutil
 import logging
 import re
 import tomli
+from collections import defaultdict
 
 from starvers.starvers import timestamp_query, split_prefixes_query
 from experiments.logging import setup_logging, log_start, log_end
@@ -54,35 +55,62 @@ def split_solution_modifiers_query(query: str) -> list:
     return solution_modifiers, query_without_solution_modifiers
 
 
+def _output_policy_dir(policy: str, triple_store: str) -> str:
+    """Return the top-level output policy directory for a (policy, triple_store).
+
+    The tb_sr_re policy is emitted under the serialization-specific directory:
+    Jena RDF 1.2 uses tb_sr_re_RDF1_2, all other stores use tb_sr_re_star. The
+    template file itself is shared (templates/tb_sr_re/<type>.txt).
+    """
+    if policy == "tb_sr_re":
+        return "tb_sr_re_RDF1_2" if triple_store == "jenatdb2_RDF1_2" else "tb_sr_re_star"
+    return policy
+
+
+def _mode_for(policy: str, triple_store: str) -> str | None:
+    """Return the starvers versioning mode for a (policy, triple_store), or None."""
+    if policy == "tb_sr_rs":
+        return "decorator"
+    if policy == "tb_sr_re":
+        return "reification_rdf12" if triple_store == "jenatdb2_RDF1_2" else "reification"
+    return None
+
+
 def _count_queries():
-    # Iterate recursively through f"{os.environ['RUN_DIR']}/queries/final_queries/"
-    # Count the .txt files at the bottom of each branch and
-    #  aggregate the counts on the third directory level,
-    #  e.g. f"{os.environ['RUN_DIR']}/queries/final_queries/ic_sr_ng/orkg/complex
-    # Save the counts for each policy, dataset, and query set in a csv file at f"{os.environ['RUN_DIR']}/output/measurements/queries_counts.csv" with columns: policy, dataset, query_set, query_count
+    # The generated query tree is laid out as
+    #   final_queries/<policy>/<dataset>/<query_set>/<query_set_version>/<file>.txt
+    # (see _output_policy_dir and the write loop below). There is no triple
+    # store level, and each query set is split into per-version directories.
+    # Aggregate the number of .txt files per (policy, dataset) and write one
+    # row per (policy, dataset) to queries_counts.csv. The GUI reads only the
+    # policy, dataset, and query_count columns, so we emit exactly those.
 
     QUERIES_DIR = f"{os.environ['RUN_DIR']}/queries/final_queries/"
-    query_count = 0
-    with open(f"{os.environ['RUN_DIR']}/output/measurements/queries_counts.csv", 'w') as count_file:
-        count_file.write("policy,triple_store,dataset,query_set,query_count\n")
-        for policy in os.listdir(QUERIES_DIR):
-            policy_path = os.path.join(QUERIES_DIR, policy)
-            if not os.path.isdir(policy_path):
+    counts = defaultdict(int)
+    for policy in os.listdir(QUERIES_DIR):
+        policy_path = os.path.join(QUERIES_DIR, policy)
+        if not os.path.isdir(policy_path):
+            continue
+        for dataset in os.listdir(policy_path):
+            dataset_path = os.path.join(policy_path, dataset)
+            if not os.path.isdir(dataset_path):
                 continue
-            for triple_store in os.listdir(policy_path):
-                triple_store_path = os.path.join(policy_path, triple_store)
-                if not os.path.isdir(triple_store_path):
+            for query_set in os.listdir(dataset_path):
+                query_set_path = os.path.join(dataset_path, query_set)
+                if not os.path.isdir(query_set_path):
                     continue
-                for dataset in os.listdir(triple_store_path):
-                    dataset_path = os.path.join(triple_store_path, dataset)
-                    if not os.path.isdir(dataset_path):
+                for query_set_version in os.listdir(query_set_path):
+                    version_path = os.path.join(query_set_path, query_set_version)
+                    if not os.path.isdir(version_path):
                         continue
-                    for query_set in os.listdir(dataset_path):
-                        query_set_path = os.path.join(dataset_path, query_set)
-                        if not os.path.isdir(query_set_path):
-                            continue
-                        query_count = sum([len(files) for r, d, files in os.walk(query_set_path) if any(file.endswith('.txt') for file in files)])
-                        count_file.write(f"{policy},{triple_store},{dataset},{query_set},{query_count}\n")
+                    counts[(policy, dataset)] += sum(
+                        len(files) for _, _, files in os.walk(version_path)
+                        if any(file.endswith('.txt') for file in files)
+                    )
+    with open(f"{os.environ['RUN_DIR']}/output/measurements/queries_counts.csv", 'w') as count_file:
+        count_file.write("policy,dataset,query_count\n")
+        for (policy, dataset), count in sorted(counts.items()):
+            count_file.write(f"{policy},{dataset},{count}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -126,24 +154,32 @@ def main():
                         continue
                     
                     template_relative_path = infos['template']
+                    if isinstance(template_relative_path, list):
+                        template_relative_path = template_relative_path[0]
                     query_set_versions = infos['versions']
 
                     LOG.info(f"Generating queries for {query_set_versions} dataset versions of {dataset}, query set {query_set_name}, and policy {policy}")
 
+                    # The output dir and versioning mode are decided by the (triple_store, policy)
+                    # combination; the template file itself is shared.
+                    output_policy_dir = _output_policy_dir(policy, triple_store)
+                    mode = _mode_for(policy, triple_store)
+
+                    LOG.info(f"Policy {policy}, triple store {triple_store} -> output policy dir {output_policy_dir}, mode {mode}, template {template_relative_path}")
 
                     for query_set_version in range(query_set_versions):
-                        LOG.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, policy {policy}, triple store {triple_store}, and query set version {query_set_version}")
-                        output_queries_dir_path = Path(output_queries_base + policy + "/" + triple_store + "/" + dataset + "/" + query_set_name + "/" + str(query_set_version))
+                        LOG.info(f"Generating queries for dataset: {dataset}, query set {query_set_name}, policy {output_policy_dir}, triple store {triple_store}, and query set version {query_set_version}")
+                        output_queries_dir_path = Path(output_queries_base + output_policy_dir + "/" + dataset + "/" + query_set_name + "/" + str(query_set_version))
                         if output_queries_dir_path.exists():
                             shutil.rmtree(output_queries_dir_path)
-                        
+
                         LOG.info("Create directory {0}".format(output_queries_dir_path))
                         output_queries_dir_path.mkdir(parents=True, exist_ok=True)
-                        
+
                         LOG.info("Create queries and save to {0}".format(output_queries_dir_path))
                         LOG.info(f"There are {len(os.listdir(raw_queries_dir_path))} raw queries.")
                         LOG.info(f"The raw query diretory is: {raw_queries_dir_path}")
-                        
+
                         for k, raw_query_name in enumerate(os.listdir(raw_queries_dir_path)):
                             if not raw_query_name.endswith(".txt"):
                                 LOG.info(f"Skipping file {raw_query_name} as it does not end with .txt")
@@ -151,13 +187,13 @@ def main():
 
                             if not os.path.isfile(raw_queries_dir_path + "/" + raw_query_name):
                                 logging.error("No such file: " + raw_queries_dir_path + "/" + raw_query_name)
-                            
+
                             LOG.info(f"Template relative path is: {template_relative_path}")
                             with open(raw_queries_dir_path + "/" + raw_query_name, 'r', encoding='utf-8', errors='ignore') as raw_query_file:
                                 if template_relative_path.split('/')[1] == 'ts' and query_set_name == "lookup": # BEAR lookup queries are just one line
                                     raw_queries = raw_query_file.readlines()
                                 else:
-                                    raw_queries = [raw_query_file.read()]  
+                                    raw_queries = [raw_query_file.read()]
 
                                 # Iterate over file that holds one or more raw queries.
                                 for i, raw_query in enumerate(raw_queries):
@@ -165,7 +201,7 @@ def main():
                                     prefixes, raw_query = split_prefixes_query(raw_query)
                                     modifiers, raw_query = split_solution_modifiers_query(raw_query)
                                     queryCounter =  i if template_relative_path.split('/')[1] == 'ts' else k
-                                    output_query = ""    
+                                    output_query = ""
 
                                     # Read template and create query string
                                     with open(os.path.join(sys.path[0]) +"/templates/" + template_relative_path + ".txt", 'r') as templateFile:
@@ -182,33 +218,24 @@ def main():
                                                                            str(query_set_version),
                                                                            raw_query, 
                                                                            modifiers)
-                                    
-                                    
+
+
                                     # Write query string to file. For the RDF-star policies transform it to a
                                     # timestamp-based RDF-star query first.
                                     output_query_file_name = raw_query_name.split('.')[0] + "_q" + str(queryCounter) + "_v" + str(query_set_version) + ".txt"
                                     with open(output_queries_dir_path / output_query_file_name, 'w') as output_file:
-                                        if policy in ["tb_sr_rs"]:
-                                            mode = "decorator"
-                                        elif policy in ["tb_sr_re"] and triple_store in ["jenatdb2_RDF1_2"]:
-                                            mode = "reification_rdf12"
-                                        elif policy in ["tb_sr_re"]:
-                                            mode = "reification"
-                                        else:
-                                            mode = None
-
                                         if mode is not None:
                                             start = time.time()
                                             timestamped_output_query = timestamp_query(output_query, vers_ts, mode=mode)
                                             end = time.time()
                                             rewriting_time = end - start
-                                            
+
                                             with open(query_rewriting_measurements_path, 'a') as measure_file:
                                                 measure_file.write("{0},{1},{2},{3},{4},{5},{6}\n".format(policy, triple_store, dataset, 
                                                     query_set_name, str(query_set_version), output_query_file_name, rewriting_time))
                                             output_file.write(timestamped_output_query[0])
                                         else:
-                                            output_file.write(output_query) 
+                                            output_file.write(output_query)
                     # Only for tb_sr_rs policy
                     vers_ts = vers_ts + timedelta(seconds=1)
                 vers_ts = init_version_timestamp      

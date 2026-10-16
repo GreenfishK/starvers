@@ -282,7 +282,7 @@ Jena TDB2 5.1 for the decorator (`tb_sr_rs`) retrieval query `Q`:
 |---------|-----------------------------------|-------------------------------------|----------|
 | D1 | 10 | 10 | equal |
 | D2 | 5,000,000 | 10 | Jena slower |
-| D3 | 10 | 5,000,000 | Jena faster |
+| D3 | 10 | 5,000,000 | ?|
 
 Run this experiment with:
 

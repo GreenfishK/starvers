@@ -7,12 +7,11 @@ Uses the shared triple_store_mgmt shell scripts (graphdb_mgmt.sh /
 jenatdb2_RDF_star.sh) and the endpoints/mgmt paths from eval_setup.toml, so no
 ports/hosts/Java paths are hardcoded here.
 
-Layout produced (relative to SYNTH_PERF_EVAL_BASE; each repository is
-<dataset>_tb_sr_rs):
-    <base>/databases/queries/graphdb/<dataset>_tb_sr_rs/
-    <base>/databases/queries/jenatdb2_RDF_star/<dataset>_tb_sr_rs/
-    <base>/configs/graphdb|jenatdb2_RDF_star/<dataset>_tb_sr_rs/<repo>.ttl
-Logging: <base>/output/logs/ingest/ingest.log (plus mgmt scripts' own logs)
+Layout produced (relative to RUN_DIR; each repository is <dataset>_tb_sr_rs):
+    <RUN_DIR>/databases/synth/graphdb/<dataset>_tb_sr_rs/
+    <RUN_DIR>/databases/synth/jenatdb2_RDF_star/<dataset>_tb_sr_rs/
+    <RUN_DIR>/configs/synth/graphdb|jenatdb2_RDF_star/<dataset>_tb_sr_rs/<repo>.ttl
+Logging: <RUN_DIR>/output/logs/synth/ingest.log (plus mgmt scripts' own logs)
 """
 import os
 import subprocess
@@ -23,10 +22,12 @@ import tomli
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get("SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
-DATA_DIR = BASE / "data"
-DB_ROOT = BASE / "databases" / "queries"
-CONFIG_DIR = BASE / "configs"
+RUN_DIR = Path(os.environ.get(
+    "RUN_DIR") or os.environ.get(
+        "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
+DATA_DIR = RUN_DIR / "rawdata" / "synth"
+DB_ROOT = RUN_DIR / "databases" / "synth"
+CONFIG_DIR = RUN_DIR / "configs" / "synth"
 CONFIG_PATH = Path("/starvers_eval/configs/eval_setup.toml")
 CONFIG_TMPL_DIR = "/starvers_eval/scripts/4_ingest/configs"
 
@@ -50,10 +51,10 @@ def run_mgmt(args: list, log) -> None:
 
 
 def main() -> None:
-    os.environ["RUN_DIR"] = str(BASE)
-    _, log = setup_logging("ingest")
+    os.environ["RUN_DIR"] = str(RUN_DIR)
+    _, log = setup_logging("ingest", sub_dir="synth")
     config = load_config()
-    log.info("SYNTH_PERF_EVAL_BASE = %s", BASE)
+    log.info("SYNTH_PERF_EVAL_BASE = %s", RUN_DIR)
     DB_ROOT.mkdir(parents=True, exist_ok=True)
 
     for dataset in DATASETS:

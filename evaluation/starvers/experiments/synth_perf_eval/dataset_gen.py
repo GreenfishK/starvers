@@ -13,13 +13,13 @@ which is exactly the shape matched by the retrieval query Q:
     << <<?s rdf:type dbpedia:Film>> vers:valid_from "2022-10-01T12:00:00.000+00:00" >>
        vers:valid_until "9999-12-31T12:00:00.000+00:00" .
 
-Dataset layout (host): <base>/data/<d1|d2|d3>/dataset.ttl
-Logs:                  <base>/logs/dataset_gen.log
+Dataset layout (host): <RUN_DIR>/rawdata/synth/<d1|d2|d3>/dataset.ttl
+Logs:                  <RUN_DIR>/output/logs/synth/dataset_gen.log
 
 Run either on the host or inside the starvers_eval container:
     python experiments/synth_perf_eval/dataset_gen.py
-The output base dir can be overridden with the SYNTH_PERF_EVAL_BASE env var
-(default in-container: /starvers_eval/data/synth_perf_eval).
+The run directory is taken from the RUN_DIR env var (falling back to the
+SYNTH_PERF_EVAL_BASE var, or the default in-container path).
 """
 import os
 import sys
@@ -27,11 +27,11 @@ from pathlib import Path
 
 from experiments.logging import setup_logging
 
-BASE = Path(os.environ.get(
-    "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
+RUN_DIR = Path(os.environ.get(
+    "RUN_DIR") or os.environ.get(
+        "SYNTH_PERF_EVAL_BASE", "/starvers_eval/data/synth_perf_eval"))
 
-DATA_DIR = BASE / "data"
-LOG_FILE = BASE / "output" / "logs" / "dataset_gen" / "dataset_gen.log"
+DATA_DIR = RUN_DIR / "rawdata" / "synth"
 
 TOTAL = 5_000_000
 N_MATCH = 10            # triples matching query Q exactly
@@ -104,9 +104,9 @@ def count(lines_path: Path) -> int:
 
 
 def main() -> None:
-    os.environ["RUN_DIR"] = str(BASE)
-    _, logger = setup_logging("dataset_gen")
-    logger.info("Retrieval base: %s", BASE)
+    os.environ["RUN_DIR"] = str(RUN_DIR)
+    _, logger = setup_logging("dataset_gen", sub_dir="synth")
+    logger.info("Retrieval base: %s", RUN_DIR)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     for name, gen in (("d1", gen_d1), ("d2", gen_d2), ("d3", gen_d3)):
@@ -115,7 +115,7 @@ def main() -> None:
         n = count(DATA_DIR / name / "dataset.ttl")
         logger.info("Wrote %s -> %s triples", name, n)
 
-    logger.info("Done. Data in %s, log at %s", DATA_DIR, LOG_FILE)
+    logger.info("Done. Data in %s, log at %s/output/logs/synth/dataset_gen.log", DATA_DIR, RUN_DIR)
 
 
 if __name__ == "__main__":
