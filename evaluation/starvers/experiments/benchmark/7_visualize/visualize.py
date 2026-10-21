@@ -60,8 +60,8 @@ POLICY_COLOR_FALLBACKS = ["#646363", "#6AAAA5", "#EEB473", "#CD81A8"]
 
 TS_COLORS_CHART = {
     "graphdb": "#006699",
-    "jenatdb2_rdf_star": "#E18922",
-    "jenatdb2_rdf1_2": "#A85C00",
+    "jenatdb2_RDF_star": "#E18922",
+    "jenatdb2_RDF1_2": "#A85C00",
     "ostrich": "#BA4682",
     "ostrich_aggchange": "#007E71",
 }
@@ -111,19 +111,39 @@ def _policy_color_map(policies: list[str]) -> dict[str, str]:
 
 def _policy_label(policy: str) -> str:
     """Human-readable policy name (drops the redundant '_sr' token)."""
-    return policy.replace("_sr", "")
+    # Ostrich is a change-based versioner, so we show it under the same
+    # change-based-policy label (cb_ng) used by the other versioning schemes.
+    labels = {"ostrich": "cb_ng"}
+    return labels.get(policy, policy.replace("_sr", ""))
 
 
 def _ts_label(ts: str) -> str:
     """Human-readable triple-store name for legends."""
     labels = {
         "graphdb": "GraphDB",
-        "jenatdb2_rdf_star": "Jena 5",
-        "jenatdb2_rdf1_2": "Jena 6",
+        "jenatdb2_RDF_star": "Jena 5",
+        "jenatdb2_RDF1_2": "Jena 6",
         "ostrich": "Ostrich",
         "ostrich_aggchange": "Ostrich (agg)",
     }
     return labels.get(ts, ts)
+
+
+def _dataset_label(ds: str) -> str:
+    """Human-readable dataset name: BEAR + lowercase suffix, or the uppercase
+    acronym. Used for plot panel titles and table headers."""
+    labels = {
+        "bearb_day": "BEARB_day",
+        "bearb_hour": "BEARB_hour",
+        "bearc": "BEARC",
+        "orkg": "ORKG",
+    }
+    return labels.get(ds, ds.upper())
+
+
+def _dataset_label_tex(ds: str) -> str:
+    """Dataset label with LaTeX-escaped underscores (for .tex tables)."""
+    return _dataset_label(ds).replace("_", r"\_")
 
 
 def _apply_time_scale(ax, t_min: float, t_max: float) -> None:
@@ -162,7 +182,6 @@ def _load_ingestion_data() -> pd.DataFrame:
         LOG.warning("storage_and_ingestion.csv not found in %s", measurements_in)
         return pd.DataFrame()
     df = pd.read_csv(path, delimiter=";", decimal=".")
-    df["triplestore"] = df["triplestore"].str.lower()
     return df
 
 
@@ -232,7 +251,7 @@ def create_plot_ingest():
         row_df = agg[agg["dataset"] == ds]
         if row_df.empty:
             ax.axis("off")
-            ax.set_title(ds, fontsize=9)
+            ax.set_title(_dataset_label(ds), fontsize=9)
             continue
 
         db_vals_gib = row_df["db_files_disk_usage_MiB"] / 1024
@@ -264,7 +283,7 @@ def create_plot_ingest():
         ax.set_yscale("log")
         ax.set_xlabel("DB Size (GiB)", fontsize=8)
         ax.set_ylabel("Ingest Time", fontsize=8)
-        ax.set_title(ds, fontsize=9, fontweight="bold")
+        ax.set_title(_dataset_label(ds), fontsize=9, fontweight="bold")
 
         db_min = db_vals_gib.min()
         db_max = db_vals_gib.max()
@@ -316,11 +335,11 @@ def create_plot_ingest():
         for ts in ts_colors
     ]
 
-    fig.suptitle("Ingestion Results — avg over 10 runs",
+    fig.suptitle("Ingestion Results, avg over 10 runs",
                  fontsize=11, fontweight="bold")
     fig.legend(handles=policy_handles, loc="lower center", ncol=len(policy_handles),
                fontsize=7, framealpha=0.8, bbox_to_anchor=(0.5, 0.155),
-               title="Versioning policy", title_fontsize=6)
+               title="Versioning model", title_fontsize=6)
     fig.legend(handles=store_handles, loc="lower center", ncol=len(store_handles),
                fontsize=7, framealpha=0.8, bbox_to_anchor=(0.5, 0.105),
                title="Triple store", title_fontsize=6)
@@ -351,7 +370,7 @@ def create_plot_updates():
         return
 
     def norm_ts(ts: str) -> str:
-        return str(ts).strip().lower()
+        return str(ts).strip()
 
     df["triplestore"] = df["triplestore"].map(norm_ts)
 
@@ -386,7 +405,7 @@ def create_plot_updates():
         if sub.empty:
             panel = fig.add_subplot(outer[r, c])
             panel.axis("off")
-            panel.set_title(ds, fontsize=10, fontweight="bold")
+            panel.set_title(_dataset_label(ds), fontsize=10, fontweight="bold")
             continue
 
         inner = sub.copy()
@@ -483,7 +502,7 @@ def create_plot_updates():
         # Dataset label above the panel (store now lives in the legend).
         pos = outer[r, c].get_position(fig)
         fig.text(
-            (pos.x0 + pos.x1) / 2, pos.y1 + 0.01, ds,
+            (pos.x0 + pos.x1) / 2, pos.y1 + 0.01, _dataset_label(ds),
             ha="center", va="bottom", fontsize=10, fontweight="bold",
         )
 
@@ -501,7 +520,7 @@ def create_plot_updates():
         fig.legend(handles=combo_handles, loc="lower center",
                    ncol=min(len(combo_handles), 4), fontsize=7, framealpha=0.8,
                    bbox_to_anchor=(0.5, 0.02),
-                   title="Triple store · versioning policy", title_fontsize=6)
+                   title="Triple store · versioning model", title_fontsize=6)
 
     fig.suptitle("Update Performance", fontsize=11, fontweight="bold")
     out = f"{figures_out}/updates.pdf"
@@ -592,31 +611,29 @@ def create_ltx_table_query_perf():
             s = f"{v:.1f}"
             return s[:-2] if s.endswith(".0") else s
 
-    # ── Build the table faithfully to the template's multirow layout, but
-    #    without the "Metric Class" grouping column and without the storage
-    #    (raw/db size) rows.
-    #
-    #    Column structure (matching the template):
-    #      Dataset | Query Set | Metric | <store × policy columns>
-    #    Dataset spans all rows of a dataset block (min/avg/max × query sets);
-    #    Query Set spans 3 rows (min/avg/max); Metric holds min/avg/max. ──
     present = [s for s in triplestores
                if s in set(queries_agg["triplestore"].unique())]
     if not present:
         LOG.warning("No triple store data in queries_time.csv — skipping.")
         return
-    # Deterministic display order (GraphDB, Jena RDF Star, Jena RDF 1.2, Ostrich) as in the paper.
-    store_order = ["graphdb", "jenatdb2_rdf_star", "jenatdb2_rdf1_2", "ostrich", "ostrich_aggchange"]
-    present_stores = [s for s in store_order if s in present] + \
-                     sorted(set(present) - set(store_order))
+    # Deterministic display order and the policies reported per store:
+    #   GraphDB (ic_ng, tb_ng, tb_re, tb_rs) | Jena 6 (ic_ng, tb_ng, tb_re) |
+    #   Jena 5 (tb_rs) | Ostrich (ostrich)
+    STORE_ORDER = ["graphdb", "jenatdb2_RDF1_2", "jenatdb2_RDF_star", "ostrich"]
+    STORE_POLICIES = {
+        "graphdb": ["ic_sr_ng", "tb_sr_ng", "tb_sr_re", "tb_sr_rs"],
+        "jenatdb2_RDF1_2": ["ic_sr_ng", "tb_sr_ng", "tb_sr_re"],
+        "jenatdb2_RDF_star": ["tb_sr_rs"],
+        "ostrich": ["ostrich"],
+    }
+
+    present_stores = [s for s in STORE_ORDER if s in present]
     if not present_stores:
         LOG.warning("No triple store data in queries_time.csv — skipping.")
         return
 
     def store_policies(store: str) -> list[str]:
-        return sorted(set(queries_agg[
-            queries_agg["triplestore"] == store
-        ]["policy"].unique()))
+        return STORE_POLICIES.get(store, [])
 
     # Number of policy columns per store, total table columns.
     npol_per_store = {s: len(store_policies(s)) for s in present_stores}
@@ -647,7 +664,7 @@ def create_ltx_table_query_perf():
     for i, s in enumerate(present_stores):
         align = "c" if i == len(present_stores) - 1 else "c|"
         hdr1_cells.append(
-            r"\multicolumn{%d}{%s}{\textbf{%s}}" % (npol_per_store[s], align, s)
+            r"\multicolumn{%d}{%s}{\textbf{%s}}" % (npol_per_store[s], align, _ts_label(s))
         )
     hdr1_line = " & ".join(hdr1_cells) + r" \\"
 
@@ -670,16 +687,7 @@ def create_ltx_table_query_perf():
     body = []
     for dsi, ds in enumerate(datasets_present):
         ds_versions = ds_config.get(ds, {}).get("snapshot_versions")
-        if ds == "bearc":
-            ds_display = "BEARC"
-        elif ds == "orkg":
-            ds_display = "ORKG"
-        elif ds == "bearb_day":
-            ds_display = r"BEARB\_day"
-        elif ds == "bearb_hour":
-            ds_display = r"BEARB\_hour"
-        else:
-            ds_display = ds.replace("_", r"\_").upper()
+        ds_display = _dataset_label_tex(ds)
         if ds_versions:
             ds_label = r"\shortstack[c]{%s \\ %s versions}" % (
                 ds_display, ds_versions,
@@ -731,7 +739,7 @@ def create_ltx_table_query_perf():
         r"\begin{table}[htbp]",
         r"\centering",
         r"\caption{Query execution time (in seconds) for Lookup, Join, and "
-        r"complex (cplx) queries across datasets, versioning policies, and "
+        r"complex (cplx) queries across datasets, versioning models, and "
         r"RDF-star stores. Values are the min, mean, and max over all queries "
         r"and runs. The number of queries that hit the 30-seconds timeout are "
         r"shown in brackets.}",
@@ -816,8 +824,8 @@ def create_ltx_table_ds_metrics():
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     log_start("Start Visualize", LOG)
-    #create_plot_ingest()
+    create_plot_ingest()
     create_plot_updates()
-    #create_ltx_table_query_perf()
-    #create_ltx_table_ds_metrics()
+    create_ltx_table_query_perf()
+    create_ltx_table_ds_metrics()
     log_end("End Visualize", LOG)

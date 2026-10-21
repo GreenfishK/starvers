@@ -34,7 +34,7 @@ OUT_FILE = TABLES_DIR / "synth_retrieval.tex"
 POLICY = "tb_sr_rs"
 DATASETS = ["d1", "d2", "d3"]
 STORES = ["graphdb", "jenatdb2_RDF_star"]
-STORE_LABELS = {"graphdb": "GraphDB", "jenatdb2_RDF_star": "Jena RDF Star"}
+STORE_LABELS = {"graphdb": "GraphDB", "jenatdb2_RDF_star": "Jena 5"}
 
 # Fixed dataset characteristics / hypotheses (from the paper's tab:datasets).
 # The average times are filled in from retrieval.csv; the left-hand columns are
@@ -96,13 +96,13 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
     lines = [
         r"\begin{table}[htbp]",
         r"\centering",
-        r"\caption{Characteristics of three synthetic datasets, hypotheses about triple store performance, and actual query performance for Jena 5.1 and GraphDB 10.5 for a query that fits these datasets to test the retrival mechanisms. Each dataset has 5M triples, with the "
+        r"\caption{Characteristics of three synthetic datasets, hypotheses about triple store performance, and actual query performance for Jena 5 and GraphDB for a query that fits these datasets to test the retrival mechanisms. Each dataset has 5M triples, with the "
         r"Target Set consisting of 10 triples and the Large set consisting of "
         r"the rest.}",
         "\\begin{tabular}{%s}" % col_spec,
         r"\toprule",
-        r" & \textbf{Target set} & \textbf{Large set} & \textbf{Hypothesis} "
-        r"& \textbf{GraphDB (s)} & \textbf{Jena TDB2 (s)} \\",
+        r" & \textbf{Target set} & \textbf{Large set} "
+        r"& \textbf{GraphDB (s)} & \textbf{Jena 5 (s)} & \textbf{Verdict} \\",
         r"\midrule",
     ]
     for dataset in DATASETS:
@@ -117,16 +117,16 @@ def build_table(averages: dict[str, dict[str, float]]) -> str:
                 chars["label"],
                 chars["target"],
                 chars["large"],
-                chars["hypothesis"],
                 cell_time(averages, dataset, "graphdb"),
                 cell_time(averages, dataset, "jenatdb2_RDF_star"),
+                chars["hypothesis"],
             )
         )
         lines.append(r"\addlinespace")
     lines.extend([
         r"\midrule",
-        r"\multicolumn{6}{l}{\textbf{Triple pattern $Q$ evaluated against each "
-        r"dataset:}} \\",
+        r"\multicolumn{6}{l}{\textbf{RDF-star Triple pattern $Q$ evaluated "
+        r"against each dataset:}} \\",
         r"\multicolumn{6}{l}{\texttt{<< <<?s rdf:type dbp:Film>> "
         r'vers:valid\_from "2022-10-01T12:00:00" >>}} \\',
         r"\multicolumn{6}{l}{\texttt{\hspace{2em}vers:valid\_until "
